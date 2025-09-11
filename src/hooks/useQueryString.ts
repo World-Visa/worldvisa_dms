@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
-import { parse, stringify } from 'query-string';
+import queryString from 'query-string';
 import { FilterParams } from '@/types/common';
 
 export function useQueryString() {
@@ -12,7 +12,7 @@ export function useQueryString() {
 
   // Parse current query parameters
   const queryParams = useMemo(() => {
-    return parse(searchParams.toString(), {
+    return queryString.parse(searchParams.toString(), {
       parseNumbers: true,
       parseBooleans: true,
     }) as FilterParams;
@@ -30,12 +30,13 @@ export function useQueryString() {
         }
       });
 
-      const queryString = stringify(newParams, {
+      const queryStringResult = queryString.stringify(newParams, {
+        arrayFormat: 'bracket',
         skipNull: true,
         skipEmptyString: true,
       });
 
-      const url = queryString ? `${pathname}?${queryString}` : pathname;
+      const url = queryStringResult ? `${pathname}?${queryStringResult}` : pathname;
       
       if (options?.replace) {
         router.replace(url);
@@ -52,12 +53,13 @@ export function useQueryString() {
       const newParams = { ...queryParams };
       delete newParams[key];
       
-      const queryString = stringify(newParams, {
+      const queryStringResult = queryString.stringify(newParams, {
+        arrayFormat: 'bracket',
         skipNull: true,
         skipEmptyString: true,
       });
 
-      const url = queryString ? `${pathname}?${queryString}` : pathname;
+      const url = queryStringResult ? `${pathname}?${queryStringResult}` : pathname;
       router.push(url);
     },
     [queryParams, pathname, router]
