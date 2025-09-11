@@ -4,6 +4,9 @@ import React from 'react';
 import { useParams } from 'next/navigation';
 import { ApplicantDetails } from '@/components/applications/ApplicantDetails';
 import { DocumentsTable } from '@/components/applications/DocumentsTable';
+import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
+import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
+import { AddCompanyDialog } from '@/components/applications/AddCompanyDialog';
 import { useApplicationDetails } from '@/hooks/useApplicationDetails';
 import { useApplicationDocuments } from '@/hooks/useApplicationDocuments';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,10 +14,17 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { useState } from 'react';
+import { DocumentCategory, Company } from '@/types/documents';
 
 export default function ApplicationDetailsPage() {
   const params = useParams();
   const applicationId = params.id as string;
+  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>('submitted');
+  const [companies, setCompanies] = useState<Company[]>([]);
+  const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
+  const [documentsPage, setDocumentsPage] = useState(1);
+  const maxCompanies = 5;
 
   const {
     data: applicationData,
@@ -30,6 +40,34 @@ export default function ApplicationDetailsPage() {
 
   const application = applicationData?.data;
   const documents = documentsData?.data;
+
+  const handleAddCompany = (company: Company) => {
+    setCompanies(prev => [...prev, company]);
+  };
+
+  const handleRemoveCompany = (companyName: string) => {
+    setCompanies(prev => prev.filter(company => company.name !== companyName));
+    if (selectedCategory === `company-${companyName}`) {
+      setSelectedCategory('all');
+    }
+  };
+
+  const handleOpenAddCompanyDialog = () => {
+    setIsAddCompanyDialogOpen(true);
+  };
+
+  const handleCloseAddCompanyDialog = () => {
+    setIsAddCompanyDialogOpen(false);
+  };
+
+  const handleDocumentsPageChange = (page: number) => {
+    setDocumentsPage(page);
+  };
+
+  // Reset documents page when category changes
+  React.useEffect(() => {
+    setDocumentsPage(1);
+  }, [selectedCategory]);
 
   if (applicationError || documentsError) {
     return (
@@ -109,15 +147,48 @@ export default function ApplicationDetailsPage() {
             documentsError={documentsError}
           />
 
-          {/* Documents Table */}
-          <DocumentsTable
-            documents={documents}
-            isLoading={isDocumentsLoading}
-            error={documentsError}
-            applicationId={applicationId}
-          />
+          {/* Documents Section */}
+          <div className="space-y-6">
+            {/* Category Filter */}
+            <DocumentCategoryFilter
+              selectedCategory={selectedCategory}
+              onCategoryChange={setSelectedCategory}
+              companies={companies}
+              onAddCompany={handleOpenAddCompanyDialog}
+              maxCompanies={maxCompanies}
+            />
+
+            {/* Conditional Rendering */}
+            {selectedCategory === 'submitted' ? (
+              <DocumentsTable
+                applicationId={applicationId}
+                currentPage={documentsPage}
+                limit={10}
+                onPageChange={handleDocumentsPageChange}
+              />
+            ) : (
+              <DocumentChecklistTable
+                documents={documents}
+                isLoading={isDocumentsLoading}
+                error={documentsError}
+                applicationId={applicationId}
+                selectedCategory={selectedCategory}
+                companies={companies}
+                onRemoveCompany={handleRemoveCompany}
+              />
+            )}
+          </div>
         </div>
       )}
+
+      {/* Add Company Dialog */}
+      <AddCompanyDialog
+        isOpen={isAddCompanyDialogOpen}
+        onClose={handleCloseAddCompanyDialog}
+        onAddCompany={handleAddCompany}
+        existingCompanies={companies}
+        maxCompanies={maxCompanies}
+      />
     </div>
   );
 }

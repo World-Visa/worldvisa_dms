@@ -11,30 +11,31 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useAddDocument } from '@/hooks/useMutationsDocuments';
+import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
-import { DocumentTypeSelector } from './DocumentTypeSelector';
-
-interface UploadDocumentsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  applicationId: string;
-}
-
-interface UploadedFile {
-  file: File;
-  progress: number;
-  id: string;
-}
+import { UploadDocumentsModalProps, UploadedFile } from '@/types/documents';
 
 
-export function UploadDocumentsModal({ isOpen, onClose, applicationId }: UploadDocumentsModalProps) {
-  const [selectedDocumentType, setSelectedDocumentType] = useState<string>('');
+export function UploadDocumentsModal({ isOpen, onClose, applicationId, selectedDocumentType: propSelectedDocumentType, selectedDocumentCategory: propSelectedDocumentCategory }: UploadDocumentsModalProps) {
+  const [selectedDocumentType, setSelectedDocumentType] = useState<string>(propSelectedDocumentType || '');
+  const [selectedDocumentCategory, setSelectedDocumentCategory] = useState<string>(propSelectedDocumentCategory || '');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addDocumentMutation = useAddDocument();
+  const { user } = useAuth();
+
+  // Update selectedDocumentType and category when props change
+  React.useEffect(() => {
+    if (propSelectedDocumentType) {
+      setSelectedDocumentType(propSelectedDocumentType);
+    }
+    if (propSelectedDocumentCategory) {
+      setSelectedDocumentCategory(propSelectedDocumentCategory);
+    }
+  }, [propSelectedDocumentType, propSelectedDocumentCategory]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -73,47 +74,46 @@ export function UploadDocumentsModal({ isOpen, onClose, applicationId }: UploadD
 
   const handleUpload = async () => {
     if (!selectedDocumentType || uploadedFiles.length === 0) {
-      toast.error('Please select a document type and upload at least one file.');
+      toast.error('Please upload at least one file.');
+      return;
+    }
+
+    if (!user?.username) {
+      toast.error('User information not available. Please login again.');
       return;
     }
 
     setIsUploading(true);
 
     try {
-      // Upload files one by one
-      for (const uploadedFile of uploadedFiles) {
-        // Simulate progress updates
-        const progressInterval = setInterval(() => {
-          setUploadedFiles(prev => 
-            prev.map(file => 
-              file.id === uploadedFile.id 
-                ? { ...file, progress: Math.min(file.progress + 10, 90) }
-                : file
-            )
-          );
-        }, 200);
+      // Simulate progress updates for all files
+      const progressInterval = setInterval(() => {
+        setUploadedFiles(prev => 
+          prev.map(file => 
+            ({ ...file, progress: Math.min(file.progress + 5, 90) })
+          )
+        );
+      }, 200);
 
-        try {
-          await addDocumentMutation.mutateAsync({
-            applicationId,
-            file: uploadedFile.file,
-            token: undefined,
-          });
+      try {
+        // Upload all files at once with the new API
+        await addDocumentMutation.mutateAsync({
+          applicationId,
+          files: uploadedFiles.map(uf => uf.file),
+          document_name: selectedDocumentType,
+          document_category: getDocumentCategory(selectedDocumentType, selectedDocumentCategory),
+          uploaded_by: user.username,
+        });
 
-          // Complete progress
-          setUploadedFiles(prev => 
-            prev.map(file => 
-              file.id === uploadedFile.id 
-                ? { ...file, progress: 100 }
-                : file
-            )
-          );
+        // Complete progress for all files
+        setUploadedFiles(prev => 
+          prev.map(file => ({ ...file, progress: 100 }))
+        );
 
-          clearInterval(progressInterval);
-        } catch (error) {
-          clearInterval(progressInterval);
-          throw error;
-        }
+        clearInterval(progressInterval);
+      } catch (error) {
+        clearInterval(progressInterval);
+        throw error;
       }
 
       toast.success('All documents uploaded successfully!');
@@ -121,6 +121,7 @@ export function UploadDocumentsModal({ isOpen, onClose, applicationId }: UploadD
       
       // Reset state
       setSelectedDocumentType('');
+      setSelectedDocumentCategory('');
       setUploadedFiles([]);
     } catch {
       toast.error('Failed to upload documents. Please try again.');
@@ -129,9 +130,29 @@ export function UploadDocumentsModal({ isOpen, onClose, applicationId }: UploadD
     }
   };
 
+  // Helper function to determine document category based on document type and category
+  const getDocumentCategory = (documentType: string, category: string): string => {
+    // Check if it's a company document (contains company name pattern)
+    if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
+      // Extract company name from category (e.g., "WorldVisa Documents" -> "WorldVisa(company1)")
+      const companyName = category.replace(' Documents', '');
+      return `${companyName}(company1)`;
+    }
+    
+    // Map categories to API categories
+    const categoryMap: Record<string, string> = {
+      'Identity Documents': 'identity',
+      'Education Documents': 'education',
+      'Other Documents': 'other',
+    };
+
+    return categoryMap[category] || 'other';
+  };
+
   const handleClose = () => {
     if (!isUploading) {
       setSelectedDocumentType('');
+      setSelectedDocumentCategory('');
       setUploadedFiles([]);
       onClose();
     }
@@ -145,13 +166,17 @@ export function UploadDocumentsModal({ isOpen, onClose, applicationId }: UploadD
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Step 1: Document Type Selection */}
-          <DocumentTypeSelector
-            selectedDocumentType={selectedDocumentType}
-            onDocumentTypeChange={setSelectedDocumentType}
-          />
+          {/* Document Type Display (if pre-selected) */}
+          {selectedDocumentType && (
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Document Type</label>
+              <div className="p-3 bg-muted rounded-lg">
+                <p className="text-sm font-medium">{selectedDocumentType}</p>
+              </div>
+            </div>
+          )}
 
-          {/* Step 2: File Upload */}
+          {/* File Upload */}
           <div className="space-y-3">
             <label className="text-sm font-medium">Upload Files</label>
             <div
@@ -172,7 +197,7 @@ export function UploadDocumentsModal({ isOpen, onClose, applicationId }: UploadD
               <p className="text-sm text-muted-foreground mb-2">
                 {selectedDocumentType
                   ? 'Drop your PDF files here, or click to browse'
-                  : 'Select a document type first'}
+                  : 'Please select a document type first'}
               </p>
               <p className="text-xs text-muted-foreground">
                 Supports: PDF, Max file size 5MB

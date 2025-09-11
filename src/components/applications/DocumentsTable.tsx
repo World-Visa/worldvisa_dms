@@ -9,39 +9,68 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import { Document } from '@/types/applications';
+import { DeleteDocumentDialog } from './DeleteDocumentDialog';
 import { formatDate } from '@/utils/format';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDeleteDocument } from '@/hooks/useMutationsDocuments';
+import { useApplicationDocumentsPaginated } from '@/hooks/useApplicationDocumentsPaginated';
 import { UploadDocumentsModal } from './UploadDocumentsModal';
-import { Trash2, Upload, FileText, CheckCircle, Clock, Eye, AlertCircle, XCircle } from 'lucide-react';
+import { ApplicationsPagination } from './ApplicationsPagination';
+import { Trash2, Upload, FileText, CheckCircle, Clock, Eye, XCircle, AlertCircle } from 'lucide-react';
 import ViewDocumentSheet from './ViewDocumentSheet';
 
 interface DocumentsTableProps {
-    documents: Document[] | undefined;
-    isLoading: boolean;
-    error: Error | null;
     applicationId: string;
+    currentPage?: number;
+    limit?: number;
+    onPageChange?: (page: number) => void;
 }
 
-export function DocumentsTable({ documents, isLoading, error, applicationId }: DocumentsTableProps) {
+export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onPageChange }: DocumentsTableProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [documentToDelete, setDocumentToDelete] = useState<{ id: string; name: string } | null>(null);
 
     const deleteDocumentMutation = useDeleteDocument();
+    
+    // Fetch paginated documents
+    const {
+        data: documentsData,
+        isLoading,
+        error,
+        refetch
+    } = useApplicationDocumentsPaginated(applicationId, currentPage, limit);
+
+    const documents = documentsData?.data;
+    const pagination = documentsData?.pagination;
 
 
-    const handleDeleteDocument = async (documentId: string, fileName: string) => {
-        if (window.confirm(`Are you sure you want to delete "${fileName}"?`)) {
-            try {
-                await deleteDocumentMutation.mutateAsync(documentId);
-            } catch {
-                // Error is handled in the mutation hook
-            }
+    const handleDeleteDocument = (documentId: string, fileName: string) => {
+        setDocumentToDelete({ id: documentId, name: fileName });
+        setDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = async () => {
+        if (!documentToDelete) return;
+        
+        try {
+            await deleteDocumentMutation.mutateAsync(documentToDelete.id);
+            setDeleteDialogOpen(false);
+            setDocumentToDelete(null);
+            // Refetch documents after successful deletion
+            refetch();
+        } catch {
+            // Error is handled in the mutation hook
         }
     };
 
+    const cancelDelete = () => {
+        setDeleteDialogOpen(false);
+        setDocumentToDelete(null);
+    };
 
-        const getStatusConfig = (status: string) => {
+
+    const getStatusConfig = (status: string) => {
         switch (status) {
             case 'approved':
                 return {
@@ -140,83 +169,96 @@ export function DocumentsTable({ documents, isLoading, error, applicationId }: D
     }
 
     return (
-        <Card className='w-full'>
-            <CardHeader>
-                <div className="flex items-center justify-between">
-                    <CardTitle>Documents</CardTitle>
-                    <Button
-                        onClick={() => setIsModalOpen(true)}
-                        size="sm"
-                        className='cursor-pointer'
-                    >
-                        <Upload className="h-4 w-4 mr-2" />
-                        Upload Documents
-                    </Button>
-                </div>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>S.No</TableHead>
-                            <TableHead>Document Name</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Uploaded By</TableHead>
-                            <TableHead>Submitted At</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {documents.map((document, index) => (
-                            <TableRow key={document._id}>
-                                <TableCell className="font-medium">{index + 1}</TableCell>
-                                <TableCell>
-                                    <div className="flex items-center space-x-2">
-                                        <FileText className="h-4 w-4 text-muted-foreground" />
-                                        <span className="truncate max-w-[200px]" title={document.file_name}>
-                                            {document.file_name}
-                                        </span>
-                                    </div>
-                                </TableCell>
-                                <TableCell>
-                                    {(() => {
-                                        const statusConfig = getStatusConfig(document.status);
-                                        return (
-                                            <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${statusConfig.className}`}>
-                                                <span className={statusConfig.iconClassName}>
-                                                    {statusConfig.icon}
-                                                </span>
-                                                <span className='font-lexend'>{statusConfig.label}</span>
-                                            </div>
-                                        );
-                                    })()}
-                                </TableCell>
-                                <TableCell>{document.uploaded_by}</TableCell>
-                                <TableCell>{formatDate(document.uploaded_at, 'time')}</TableCell>
-                                <TableCell className="text-right">
-                                    <div className="flex items-center justify-end space-x-2 w-full">
-                                        <ViewDocumentSheet document={document} documents={documents} applicationId={applicationId} />
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            onClick={() => handleDeleteDocument(document._id, document.file_name)}
-                                            disabled={deleteDocumentMutation.isPending}
-                                            className='cursor-pointer'
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </TableCell>
+        <>
+            <Card className='w-full'>
+                <CardHeader>
+                    <div className="flex items-center justify-between">
+                        <CardTitle>Documents</CardTitle>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>S.No</TableHead>
+                                <TableHead>Document Name</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead>Uploaded By</TableHead>
+                                <TableHead>Submitted At</TableHead>
+                                <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-            </CardContent>
-            <UploadDocumentsModal
-                isOpen={isModalOpen}
-                onClose={() => setIsModalOpen(false)}
-                applicationId={applicationId}
+                        </TableHeader>
+                        <TableBody>
+                            {documents?.map((document, index) => (
+                                <TableRow key={document._id}>
+                                    <TableCell className="font-medium">{(pagination?.currentPage ? (pagination.currentPage - 1) * pagination.limit : 0) + index + 1}</TableCell>
+                                    <TableCell>
+                                        <div className="flex items-center space-x-2">
+                                            <FileText className="h-4 w-4 text-muted-foreground" />
+                                            <span className="truncate max-w-[200px]" title={document.file_name}>
+                                                {document.file_name}
+                                            </span>
+                                        </div>
+                                    </TableCell>
+                                    <TableCell>
+                                        {(() => {
+                                            const statusConfig = getStatusConfig(document.status);
+                                            return (
+                                                <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${statusConfig.className}`}>
+                                                    <span className={statusConfig.iconClassName}>
+                                                        {statusConfig.icon}
+                                                    </span>
+                                                    <span className='font-lexend'>{statusConfig.label}</span>
+                                                </div>
+                                            );
+                                        })()}
+                                    </TableCell>
+                                    <TableCell>{document.uploaded_by}</TableCell>
+                                    <TableCell>{formatDate(document.uploaded_at, 'time')}</TableCell>
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end space-x-2 w-full">
+                                            <ViewDocumentSheet document={document} documents={documents} applicationId={applicationId} />
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDeleteDocument(document._id, document.file_name)}
+                                                disabled={deleteDocumentMutation.isPending}
+                                                className='cursor-pointer'
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+
+                    {/* Pagination */}
+                    {pagination && (
+                        <ApplicationsPagination
+                            currentPage={pagination.currentPage}
+                            totalRecords={pagination.totalRecords}
+                            limit={pagination.limit}
+                            onPageChange={onPageChange || (() => {})}
+                        />
+                    )}
+                </CardContent>
+                <UploadDocumentsModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    applicationId={applicationId}
+                />
+            </Card>
+
+            {/* Delete Confirmation Dialog */}
+            <DeleteDocumentDialog
+                isOpen={deleteDialogOpen}
+                onClose={cancelDelete}
+                onConfirm={confirmDelete}
+                documentName={documentToDelete?.name || ''}
+                isDeleting={deleteDocumentMutation.isPending}
             />
-        </Card>
+        </>
     );
 }

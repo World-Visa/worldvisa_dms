@@ -4,9 +4,11 @@ const ZOHO_BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com/api/zoh
 
 export interface AddDocumentRequest {
   applicationId: string;
-  file: File;
+  files: File[];
+  document_name: string;
+  document_category: string;
+  uploaded_by: string;
   token?: string;
-  uploaded_by?: string;
 }
 
 export interface AddDocumentResponse {
@@ -17,13 +19,22 @@ export interface AddDocumentResponse {
     size: number;
     type: string;
     uploaded_at: string;
-  };
+  }[];
   message?: string;
 }
 
 export async function addDocument(data: AddDocumentRequest): Promise<AddDocumentResponse> {
   const formData = new FormData();
-  formData.append('file', data.file);
+  
+  // Add multiple files
+  data.files.forEach(file => {
+    formData.append('files', file);
+  });
+  
+  // Add required parameters
+  formData.append('document_name', data.document_name);
+  formData.append('document_category', data.document_category);
+  formData.append('uploaded_by', data.uploaded_by);
 
   const headers: Record<string, string> = {};
   if (data.token) {
