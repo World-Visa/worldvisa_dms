@@ -1,36 +1,222 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# WorldVisa DMS
 
-## Getting Started
+A modern Document Management System built with Next.js 15, TypeScript, and a comprehensive technology stack.
 
-First, run the development server:
+## 🚀 Technology Stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- **Framework**: Next.js 15 with App Router
+- **Language**: TypeScript
+- **Styling**: TailwindCSS
+- **UI Components**: Shadcn UI
+- **State Management**: Zustand
+- **Server State**: Tanstack Query
+- **Caching**: Redis
+- **Error Tracking**: Sentry
+- **URL Management**: Query String
+- **Animations**: GSAP
+- **Linting**: ESLint
+
+## 📋 Prerequisites
+
+- Node.js 18+ 
+- npm, yarn, or pnpm
+- Redis server (for caching)
+
+## 🛠️ Installation
+
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd worldvisa_dms
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
+
+3. **Set up environment variables**
+   ```bash
+   cp env.example .env.local
+   ```
+   
+   Update the following variables in `.env.local`:
+   ```env
+   # Redis Configuration
+   REDIS_URL=redis://localhost:6379
+   
+   # Sentry Configuration (optional)
+   NEXT_PUBLIC_SENTRY_DSN=your_sentry_dsn_here
+   
+   # Next.js Configuration
+   NEXT_PUBLIC_APP_URL=http://localhost:3000
+   ```
+
+4. **Start Redis server** (if not already running)
+   ```bash
+   # Using Docker
+   docker run -d -p 6379:6379 redis:alpine
+   
+   # Or install Redis locally
+   # Windows: Download from https://github.com/microsoftarchive/redis/releases
+   # macOS: brew install redis && brew services start redis
+   # Linux: sudo apt-get install redis-server
+   ```
+
+5. **Run the development server**
+   ```bash
+   npm run dev
+   # or
+   yarn dev
+   # or
+   pnpm dev
+   ```
+
+6. **Open your browser**
+   Navigate to [http://localhost:3000](http://localhost:3000)
+
+## 🏗️ Project Structure
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── globals.css        # Global styles
+│   ├── layout.tsx         # Root layout with providers
+│   └── page.tsx           # Home page with demos
+├── components/            # React components
+│   └── ui/               # Shadcn UI components
+├── lib/                  # Utility libraries
+│   ├── providers.tsx     # Tanstack Query provider
+│   ├── redis.ts          # Redis client and utilities
+│   ├── store.ts          # Zustand store
+│   ├── query-string.ts   # Query string utilities
+│   ├── gsap.ts           # GSAP animation utilities
+│   └── utils.ts          # General utilities
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🎯 Features
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### ✅ Implemented
+- **Next.js 15** with App Router and TypeScript
+- **TailwindCSS** for styling
+- **Shadcn UI** components
+- **Zustand** for client-side state management
+- **Tanstack Query** for server state management
+- **Redis** integration for caching
+- **Sentry** for error tracking
+- **Query String** utilities
+- **GSAP** for animations
+- **ESLint** for code quality
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### 🔧 Configuration Files
+- `next.config.ts` - Next.js configuration with Sentry
+- `tailwind.config.ts` - TailwindCSS configuration
+- `tsconfig.json` - TypeScript configuration
+- `eslint.config.mjs` - ESLint configuration
+- `components.json` - Shadcn UI configuration
 
-## Learn More
+## 🎨 UI Components
 
-To learn more about Next.js, take a look at the following resources:
+The project includes pre-configured Shadcn UI components:
+- Button
+- Card
+- Input
+- Label
+- Form
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+To add more components:
+```bash
+npx shadcn@latest add [component-name]
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📊 State Management
 
-## Deploy on Vercel
+### Zustand Store
+- User authentication state
+- Theme management
+- UI state (sidebar, loading)
+- Persistent storage for user and theme
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### Tanstack Query
+- Server state management
+- Automatic caching and refetching
+- Loading and error states
+- DevTools integration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🗄️ Redis Integration
+
+Redis utilities for:
+- Caching API responses
+- Session storage
+- Real-time features
+- Performance optimization
+
+## 🎭 Animations
+
+GSAP utilities for:
+- Fade in/out animations
+- Slide animations
+- Scale animations
+- Scroll-triggered animations
+- Text typing effects
+- Stagger animations
+
+## 🐛 Error Tracking
+
+Sentry integration for:
+- Client-side error tracking
+- Server-side monitoring
+- Performance monitoring
+- Session replay
+
+## 🚀 Deployment
+
+### Vercel (Recommended)
+1. Push your code to GitHub
+2. Connect your repository to Vercel
+3. Set environment variables in Vercel dashboard
+4. Deploy!
+
+### Other Platforms
+The app can be deployed to any platform that supports Next.js:
+- Netlify
+- Railway
+- DigitalOcean App Platform
+- AWS Amplify
+
+## 📝 Scripts
+
+```bash
+npm run dev          # Start development server
+npm run build        # Build for production
+npm run start        # Start production server
+npm run lint         # Run ESLint
+npm run type-check   # Run TypeScript compiler
+```
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Run tests and linting
+5. Submit a pull request
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+## 🆘 Support
+
+For support and questions:
+- Check the documentation
+- Open an issue on GitHub
+- Contact the development team
+
+---
+
+Built with ❤️ using Next.js 15 and modern web technologies.

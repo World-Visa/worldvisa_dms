@@ -1,26 +1,153 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+@custom-variant dark (&:is(.dark *));
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-lexend: var(--font-lexend);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+:root {
+  --radius: 0.625rem;
+  /* Airbnb-inspired color scheme */
+  --background: #ffffff;
+  --foreground: #222222; /* Airbnb black */
+  --card: #ffffff;
+  --card-foreground: #222222;
+  --popover: #ffffff;
+  --popover-foreground: #222222;
+  --primary: #0066CC; /* Blue primary */
+  --primary-foreground: #ffffff;
+  --secondary: #f7f7f7; /* Light gray */
+  --secondary-foreground: #222222;
+  --muted: #f7f7f7;
+  --muted-foreground: #717171; /* Medium gray */
+  --accent: #f7f7f7;
+  --accent-foreground: #222222;
+  --destructive: #FF5A5F;
+  --border: #dddddd; /* Light border */
+  --input: #f7f7f7;
+  --ring: #0066CC;
+  --chart-1: #FF5A5F;
+  --chart-2: #00A699; /* Airbnb teal */
+  --chart-3: #FC642D; /* Airbnb orange */
+  --chart-4: #484848; /* Dark gray */
+  --chart-5: #767676; /* Medium gray */
+  --sidebar: #ffffff;
+  --sidebar-foreground: #222222;
+  --sidebar-primary: #0066CC;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f7f7f7;
+  --sidebar-accent-foreground: #222222;
+  --sidebar-border: #dddddd;
+  --sidebar-ring: #0066CC;
+}
+
+.dark {
+  /* Dark mode Airbnb-inspired colors */
+  --background: #1a1a1a; /* Dark background */
+  --foreground: #ffffff; /* White text */
+  --card: #2a2a2a; /* Dark card */
+  --card-foreground: #ffffff;
+  --popover: #2a2a2a;
+  --popover-foreground: #ffffff;
+  --primary: #0066CC; /* Blue primary */
+  --primary-foreground: #ffffff;
+  --secondary: #3a3a3a; /* Dark gray */
+  --secondary-foreground: #ffffff;
+  --muted: #3a3a3a;
+  --muted-foreground: #a0a0a0; /* Light gray text */
+  --accent: #3a3a3a;
+  --accent-foreground: #ffffff;
+  --destructive: #FF5A5F;
+  --border: #404040; /* Dark border */
+  --input: #3a3a3a;
+  --ring: #0066CC;
+  --chart-1: #FF5A5F;
+  --chart-2: #00A699;
+  --chart-3: #FC642D;
+  --chart-4: #ffffff;
+  --chart-5: #a0a0a0;
+  --sidebar: #2a2a2a;
+  --sidebar-foreground: #ffffff;
+  --sidebar-primary: #0066CC;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #3a3a3a;
+  --sidebar-accent-foreground: #ffffff;
+  --sidebar-border: #404040;
+  --sidebar-ring: #0066CC;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
   }
-}
-
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  body {
+    @apply bg-background text-foreground;
+  }
+  
+  /* Smart responsive container - automatically adjusts max-width based on screen size */
+  .container {
+    @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
+    @apply max-w-sm sm:max-w-2xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-screen-2xl;
+  }
+  
+  /* Responsive text utilities */
+  .text-responsive {
+    @apply text-sm sm:text-base lg:text-lg;
+  }
+  
+  .heading-responsive {
+    @apply text-xl sm:text-2xl lg:text-3xl xl:text-4xl;
+  }
+  
+  .subheading-responsive {
+    @apply text-lg sm:text-xl lg:text-2xl;
+  }
+  
+  /* Hide scrollbar utility */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+  }
 }
