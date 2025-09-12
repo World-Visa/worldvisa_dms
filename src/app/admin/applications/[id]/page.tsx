@@ -30,7 +30,6 @@ export default function ApplicationDetailsPage() {
   // Initialize companies from localStorage or empty array
   const [companies, setCompanies] = useState<Company[]>(() => {
     const savedCompanies = localStorageUtils.loadCompanies(applicationId, []);
-    // Companies restored from localStorage
     return savedCompanies;
   });
   
@@ -54,7 +53,6 @@ export default function ApplicationDetailsPage() {
   const documents = documentsData?.data;
 
   const handleAddCompany = (company: Company) => {
-    // Add category field to the company
     const companyWithCategory = {
       ...company,
       category: `${company.name} Company Documents`

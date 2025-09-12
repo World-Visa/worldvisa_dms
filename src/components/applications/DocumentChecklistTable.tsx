@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +25,10 @@ import {
 } from '@/types/documents';
 import { Document } from '@/types/applications';
 import { DocumentListModal } from './DocumentListModal';
+import { useQueryClient } from '@tanstack/react-query';
+import { SearchBox } from '@/components/ui/SearchBox';
+import { HighlightText } from '@/components/ui/HighlightText';
+import { useSearchMemo } from '@/lib/utils/search';
 
 interface ExtendedDocumentChecklistTableProps extends DocumentChecklistTableProps {
   onRemoveCompany?: (companyName: string) => void;
@@ -39,7 +43,9 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
   const [isDocumentListModalOpen, setIsDocumentListModalOpen] = useState(false);
   const [selectedDocumentsForView, setSelectedDocumentsForView] = useState<Document[]>([]);
   const [selectedDocumentTypeForView, setSelectedDocumentTypeForView] = useState<string>('');
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const itemsPerPage = 10;
+  const queryClient = useQueryClient();
 
   // Combine all document types from checklist
   const allDocumentTypes = useMemo(() => {
@@ -111,8 +117,7 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
   }, [allDocumentTypes, documents]);
 
   // Filter items based on selected category
-  const filteredItems = useMemo(() => {
-    // Check if it's a company category (contains "Company Documents")
+  const categoryFilteredItems = useMemo(() => {
     if (selectedCategory.includes('Company Documents')) {
       return checklistItems.filter(item => item.category === selectedCategory);
     }
@@ -129,6 +134,14 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
         return checklistItems;
     }
   }, [checklistItems, selectedCategory]);
+
+  // Apply search filtering with highlighting
+  const filteredItems = useSearchMemo(
+    categoryFilteredItems,
+    searchQuery,
+    (item) => item.documentType,
+    { keys: ['documentType'], threshold: 0.3 }
+  );
 
   // Get current company if a company category is selected
   const currentCompany = useMemo(() => {
@@ -166,18 +179,31 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
     setSelectedCompany(undefined);
   };
 
-  const handleViewDocuments = (documentType: string) => {
+  const filterDocumentsByType = useCallback((documents: Document[], documentType: string): Document[] => {
     const expectedDocType = documentType.toLowerCase().replace(/\s+/g, '_');
     
-    const matchingDocuments = documents?.filter(doc => {
+    return documents.filter(doc => {
+      // First try to match by document_type field (preferred method)
       if (doc.document_type && doc.document_type === expectedDocType) {
         return true;
       }
       
+      // Fallback to filename matching for documents without document_type
       const fileName = doc.file_name.toLowerCase();
       const docTypeName = documentType.toLowerCase();
       return fileName.includes(docTypeName);
-    }) || [];
+    });
+  }, []);
+
+
+  const getLatestDocuments = useCallback((fallbackDocuments: Document[]): Document[] => {
+    const latestDocumentsData = queryClient.getQueryData<{ success: boolean; data: Document[] }>(['application-documents', applicationId]);
+    return latestDocumentsData?.data || fallbackDocuments || [];
+  }, [queryClient, applicationId]);
+
+  const handleViewDocuments = (documentType: string) => {
+    const latestDocuments = getLatestDocuments(documents || []);
+    const matchingDocuments = filterDocumentsByType(latestDocuments, documentType);
     
     setSelectedDocumentsForView(matchingDocuments);
     setSelectedDocumentTypeForView(documentType);
@@ -185,10 +211,19 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
   };
 
 
-  // Reset to first page when category changes
-  React.useEffect(() => {
+  // Reset to first page when category or search changes
+  useEffect(() => {
     setCurrentPage(1);
-  }, [selectedCategory]);
+  }, [selectedCategory, searchQuery]);
+
+  // Update modal documents when the main documents data changes
+  useEffect(() => {
+    if (isDocumentListModalOpen && selectedDocumentTypeForView) {
+      const latestDocuments = getLatestDocuments(documents || []);
+      const matchingDocuments = filterDocumentsByType(latestDocuments, selectedDocumentTypeForView);
+      setSelectedDocumentsForView(matchingDocuments);
+    }
+  }, [documents, isDocumentListModalOpen, selectedDocumentTypeForView, applicationId, queryClient, getLatestDocuments, filterDocumentsByType]);
 
   // Helper function to get category badge styling
   const getCategoryBadgeStyle = (category: string) => {
@@ -255,10 +290,40 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
 
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>Document Checklist</CardTitle>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <CardTitle>Document Checklist</CardTitle>
+            <div className="search-container">
+              <SearchBox
+                value={searchQuery}
+                onChange={setSearchQuery}
+                placeholder="Search documents..."
+                aria-label="Search document checklist"
+                className="w-full lg:w-[60%]"
+              />
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            {/* Search Results Indicator */}
+            {searchQuery && (
+              <div 
+                id="search-results"
+                className="text-sm text-muted-foreground"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {filteredItems.length === categoryFilteredItems.length ? (
+                  <span>Showing all {filteredItems.length} documents</span>
+                ) : (
+                  <span>
+                    Showing {filteredItems.length} of {categoryFilteredItems.length} documents
+                    {filteredItems.length === 0 && ' - no matches found'}
+                  </span>
+                )}
+              </div>
+            )}
           <Table>
             <TableHeader>
               <TableRow>
@@ -301,9 +366,13 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <FileText className="h-4 w-4 text-muted-foreground" />
-                        <span className="truncate max-w-[200px]" title={item.documentType}>
-                          {item.documentType}
-                        </span>
+                        <div className="truncate max-w-[200px]" title={item.documentType}>
+                          <HighlightText
+                            text={item.documentType}
+                            query={searchQuery}
+                            className="text-sm"
+                          />
+                        </div>
                       </div>
                     </TableCell>
                     <TableCell>
@@ -378,8 +447,13 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
         documents={selectedDocumentsForView}
         applicationId={applicationId}
         onDocumentDeleted={() => {
-          // Refresh the documents list after deletion
-          // This will be handled by the query invalidation in the mutation hook
+          queryClient.refetchQueries({ 
+            queryKey: ['application-documents', applicationId] 
+          }).then(() => {
+            const latestDocuments = getLatestDocuments(documents || []);
+            const matchingDocuments = filterDocumentsByType(latestDocuments, selectedDocumentTypeForView);
+            setSelectedDocumentsForView(matchingDocuments);
+          });
         }}
       />
     </div>

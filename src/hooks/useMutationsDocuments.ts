@@ -55,6 +55,12 @@ export function useDeleteDocument() {
       queryClient.invalidateQueries({
         queryKey: ['application-details'],
       });
+      
+      // Force refetch all application documents to ensure immediate update
+      queryClient.refetchQueries({
+        queryKey: ['application-documents'],
+      });
+      
       toast.success('Document deleted successfully');
     },
     onError: (error: Error) => {

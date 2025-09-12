@@ -150,4 +150,30 @@
   .scrollbar-hide::-webkit-scrollbar { 
     display: none;  /* Safari and Chrome */
   }
+  
+  /* Highlight search styles */
+  .highlight-match {
+    @apply bg-yellow-200 text-yellow-900 px-0.5 rounded-sm;
+    @apply dark:bg-yellow-800 dark:text-yellow-100;
+    @apply transition-colors duration-150;
+  }
+  
+  .highlight-match:hover {
+    @apply bg-yellow-300 dark:bg-yellow-700;
+  }
+  
+  /* Search box focus styles */
+  .search-box:focus-within {
+    @apply ring-0;
+  }
+  
+  /* Search results container */
+  .search-results {
+    @apply transition-all duration-200 ease-in-out;
+  }
+  
+  /* Mobile-first responsive search */
+  .search-container {
+    @apply w-full max-w-md mx-auto sm:max-w-lg md:max-w-xl lg:max-w-2xl ;
+  }
 }
