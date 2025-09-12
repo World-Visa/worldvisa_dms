@@ -13,15 +13,18 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Upload, FileText } from 'lucide-react';
+import { Upload, Eye, FileText } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { UploadDocumentsModal } from './UploadDocumentsModal';
 import { TablePagination } from '@/components/common/TablePagination';
 import { CompanyHeader } from './CompanyHeader';
 import { IDENTITY_DOCUMENTS, EDUCATION_DOCUMENTS, OTHER_DOCUMENTS, COMPANY_DOCUMENTS } from '@/lib/documents/checklist';
 import { 
+  Company,
   DocumentChecklistTableProps
 } from '@/types/documents';
+import { Document } from '@/types/applications';
+import { DocumentListModal } from './DocumentListModal';
 
 interface ExtendedDocumentChecklistTableProps extends DocumentChecklistTableProps {
   onRemoveCompany?: (companyName: string) => void;
@@ -31,7 +34,11 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>('');
   const [selectedDocumentCategory, setSelectedDocumentCategory] = useState<string>('');
+  const [selectedCompany, setSelectedCompany] = useState<Company | undefined>(undefined);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isDocumentListModalOpen, setIsDocumentListModalOpen] = useState(false);
+  const [selectedDocumentsForView, setSelectedDocumentsForView] = useState<Document[]>([]);
+  const [selectedDocumentTypeForView, setSelectedDocumentTypeForView] = useState<string>('');
   const itemsPerPage = 10;
 
   // Combine all document types from checklist
@@ -46,7 +53,7 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
     const companyDocuments = companies.flatMap(company => 
       COMPANY_DOCUMENTS.map(doc => ({
         ...doc,
-        category: `${company.name} Documents`,
+        category: company.category, // Use the company's category field
         companyName: company.name
       }))
     );
@@ -54,12 +61,45 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
     return [...baseDocuments, ...companyDocuments];
   }, [companies]);
 
-  // Create checklist items with upload status
   const checklistItems = useMemo(() => {
+    const validDocuments = documents?.filter(doc => doc && typeof doc === 'object' && doc.file_name) || [];
+    
+    // Debug logging removed for production
+    
     return allDocumentTypes.map(docType => {
-      const uploadedDoc = documents?.find(doc => 
-        doc.file_name.toLowerCase().includes(docType.documentType.toLowerCase())
-      );
+      const expectedDocType = docType.documentType.toLowerCase().replace(/\s+/g, '_');
+      
+      const uploadedDoc = validDocuments.find(doc => {
+        if (!doc || !doc.file_name) {
+          return false;
+        }
+        
+        // First, check if the document has a document_type field (from optimistic update or server response)
+        const docTypeFromField = doc.document_type;
+        
+        if (docTypeFromField && docTypeFromField === expectedDocType) {
+          if (docType.category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
+            if (doc.document_category === docType.category) {
+              return true;
+            } else {
+              return false;
+            }
+          } else {
+            // For non-company documents, just check document type
+            return true;
+          }
+        }
+        
+        // Fallback to old matching logic for documents without document_type field
+        const fileName = doc.file_name.toLowerCase();
+        const docTypeName = docType.documentType.toLowerCase();
+        
+        if (fileName.includes(docTypeName)) {
+          return true;
+        }
+        
+        return false;
+      });
       
       return {
         category: docType.category,
@@ -72,9 +112,9 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
 
   // Filter items based on selected category
   const filteredItems = useMemo(() => {
-    if (selectedCategory.startsWith('company-')) {
-      const companyName = selectedCategory.replace('company-', '');
-      return checklistItems.filter(item => item.category === `${companyName} Documents`);
+    // Check if it's a company category (contains "Company Documents")
+    if (selectedCategory.includes('Company Documents')) {
+      return checklistItems.filter(item => item.category === selectedCategory);
     }
     
     switch (selectedCategory) {
@@ -92,9 +132,8 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
 
   // Get current company if a company category is selected
   const currentCompany = useMemo(() => {
-    if (selectedCategory.startsWith('company-')) {
-      const companyName = selectedCategory.replace('company-', '');
-      return companies.find(company => company.name === companyName);
+    if (selectedCategory.includes('Company Documents')) {
+      return companies.find(company => company.category === selectedCategory);
     }
     return null;
   }, [selectedCategory, companies]);
@@ -108,6 +147,15 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
   const handleUploadClick = (documentType: string, category: string) => {
     setSelectedDocumentType(documentType);
     setSelectedDocumentCategory(category);
+    
+    // Find the company if this is a company document
+    if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
+      const company = companies.find(c => c.category === category);
+      setSelectedCompany(company);
+    } else {
+      setSelectedCompany(undefined);
+    }
+    
     setIsModalOpen(true);
   };
 
@@ -115,7 +163,27 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
     setIsModalOpen(false);
     setSelectedDocumentType('');
     setSelectedDocumentCategory('');
+    setSelectedCompany(undefined);
   };
+
+  const handleViewDocuments = (documentType: string) => {
+    const expectedDocType = documentType.toLowerCase().replace(/\s+/g, '_');
+    
+    const matchingDocuments = documents?.filter(doc => {
+      if (doc.document_type && doc.document_type === expectedDocType) {
+        return true;
+      }
+      
+      const fileName = doc.file_name.toLowerCase();
+      const docTypeName = documentType.toLowerCase();
+      return fileName.includes(docTypeName);
+    }) || [];
+    
+    setSelectedDocumentsForView(matchingDocuments);
+    setSelectedDocumentTypeForView(documentType);
+    setIsDocumentListModalOpen(true);
+  };
+
 
   // Reset to first page when category changes
   React.useEffect(() => {
@@ -250,15 +318,28 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
                       )}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleUploadClick(item.documentType, item.category)}
-                        className="flex items-center gap-2"
-                      >
-                        <Upload className="h-4 w-4" />
-                        Upload
-                      </Button>
+                      <div className="flex items-center justify-end gap-2">
+                        {item.isUploaded && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleViewDocuments(item.documentType)}
+                            className="flex items-center gap-2"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View
+                          </Button>
+                        )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleUploadClick(item.documentType, item.category)}
+                          className="flex items-center gap-2"
+                        >
+                          <Upload className="h-4 w-4" />
+                          Upload
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))
@@ -285,8 +366,22 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
           applicationId={applicationId}
           selectedDocumentType={selectedDocumentType}
           selectedDocumentCategory={selectedDocumentCategory}
+          company={selectedCompany}
         />
       </Card>
+
+      {/* Document List Modal */}
+      <DocumentListModal
+        isOpen={isDocumentListModalOpen}
+        onClose={() => setIsDocumentListModalOpen(false)}
+        documentType={selectedDocumentTypeForView}
+        documents={selectedDocumentsForView}
+        applicationId={applicationId}
+        onDocumentDeleted={() => {
+          // Refresh the documents list after deletion
+          // This will be handled by the query invalidation in the mutation hook
+        }}
+      />
     </div>
   );
 }

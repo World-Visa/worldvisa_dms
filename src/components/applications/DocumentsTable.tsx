@@ -12,12 +12,14 @@ import {
 import { DeleteDocumentDialog } from './DeleteDocumentDialog';
 import { formatDate } from '@/utils/format';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
 import { useDeleteDocument } from '@/hooks/useMutationsDocuments';
 import { useApplicationDocumentsPaginated } from '@/hooks/useApplicationDocumentsPaginated';
 import { UploadDocumentsModal } from './UploadDocumentsModal';
 import { ApplicationsPagination } from './ApplicationsPagination';
 import { Trash2, Upload, FileText, CheckCircle, Clock, Eye, XCircle, AlertCircle } from 'lucide-react';
 import ViewDocumentSheet from './ViewDocumentSheet';
+import { Document as ApplicationDocument } from '@/types/applications';
 
 interface DocumentsTableProps {
     applicationId: string;
@@ -30,6 +32,8 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState<{ id: string; name: string } | null>(null);
+    const [viewSheetOpen, setViewSheetOpen] = useState(false);
+    const [selectedDocument, setSelectedDocument] = useState<ApplicationDocument | null>(null);
 
     const deleteDocumentMutation = useDeleteDocument();
     
@@ -44,23 +48,29 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
     const documents = documentsData?.data;
     const pagination = documentsData?.pagination;
 
-
     const handleDeleteDocument = (documentId: string, fileName: string) => {
         setDocumentToDelete({ id: documentId, name: fileName });
         setDeleteDialogOpen(true);
     };
 
+    const handleViewDocument = (document: ApplicationDocument) => {
+        setSelectedDocument(document);
+        setViewSheetOpen(true);
+    };
+
+    const handleCloseViewSheet = () => {
+        setViewSheetOpen(false);
+        setSelectedDocument(null);
+    };
+
     const confirmDelete = async () => {
         if (!documentToDelete) return;
-        
         try {
             await deleteDocumentMutation.mutateAsync(documentToDelete.id);
             setDeleteDialogOpen(false);
             setDocumentToDelete(null);
-            // Refetch documents after successful deletion
             refetch();
         } catch {
-            // Error is handled in the mutation hook
         }
     };
 
@@ -182,8 +192,9 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                             <TableRow>
                                 <TableHead>S.No</TableHead>
                                 <TableHead>Document Name</TableHead>
+                                <TableHead>Document Type</TableHead>
+                                <TableHead>Category</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead>Uploaded By</TableHead>
                                 <TableHead>Submitted At</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -195,10 +206,49 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                                     <TableCell>
                                         <div className="flex items-center space-x-2">
                                             <FileText className="h-4 w-4 text-muted-foreground" />
-                                            <span className="truncate max-w-[200px]" title={document.file_name}>
-                                                {document.file_name}
+                                            <span className="truncate max-w-[150px]" title={document.file_name}>
+                                                {document.file_name.length > 20 
+                                                    ? `${document.file_name.substring(0, 20)}...` 
+                                                    : document.file_name}
                                             </span>
                                         </div>
+                                    </TableCell>
+                                    <TableCell className='font-lexend '>
+                                        {document.document_type ? (
+                                            <Badge variant="secondary" className="text-xs max-w-[120px] font-medium truncate" title={document.document_type.replace(/_/g, ' ').replace(/\//g, '/')}>
+                                                {(() => {
+                                                    const formattedType = document.document_type.replace(/_/g, ' ').replace(/\//g, '/');
+                                                    return formattedType.length > 15 
+                                                        ? `${formattedType.substring(0, 15)}...` 
+                                                        : formattedType;
+                                                })()}
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                                                Not specified
+                                            </Badge>
+                                        )}
+                                    </TableCell>
+                                    <TableCell className='font-lexend'>
+                                        {document.document_category ? (
+                                            <Badge 
+                                                variant={document.document_category.includes('Company Documents') ? "default" : "outline"}
+                                                className={`text-xs max-w-[140px] font-medium  truncate ${
+                                                    document.document_category.includes('Company Documents') 
+                                                        ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' 
+                                                        : ''
+                                                }`}
+                                                title={document.document_category}
+                                            >
+                                                {document.document_category.length > 18 
+                                                    ? `${document.document_category.substring(0, 18)}...` 
+                                                    : document.document_category}
+                                            </Badge>
+                                        ) : (
+                                            <Badge variant="outline" className="text-xs text-muted-foreground">
+                                                Not specified
+                                            </Badge>
+                                        )}
                                     </TableCell>
                                     <TableCell>
                                         {(() => {
@@ -213,11 +263,17 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                                             );
                                         })()}
                                     </TableCell>
-                                    <TableCell>{document.uploaded_by}</TableCell>
                                     <TableCell>{formatDate(document.uploaded_at, 'time')}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end space-x-2 w-full">
-                                            <ViewDocumentSheet document={document} documents={documents} applicationId={applicationId} />
+                                            <Button
+                                                variant="link"
+                                                size="sm"
+                                                onClick={() => handleViewDocument(document)}
+                                                className='cursor-pointer'
+                                            >
+                                                view
+                                            </Button>
                                             <Button
                                                 variant="outline"
                                                 size="sm"
@@ -248,6 +304,7 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                     isOpen={isModalOpen}
                     onClose={() => setIsModalOpen(false)}
                     applicationId={applicationId}
+                    company={undefined}
                 />
             </Card>
 
@@ -259,6 +316,17 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                 documentName={documentToDelete?.name || ''}
                 isDeleting={deleteDocumentMutation.isPending}
             />
+
+            {/* View Document Sheet */}
+            {selectedDocument && (
+                <ViewDocumentSheet
+                    document={selectedDocument}
+                    documents={documents}
+                    applicationId={applicationId}
+                    isOpen={viewSheetOpen}
+                    onClose={handleCloseViewSheet}
+                />
+            )}
         </>
     );
 }

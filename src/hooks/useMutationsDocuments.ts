@@ -13,6 +13,22 @@ export function useAddDocument() {
       queryClient.invalidateQueries({
         queryKey: ['application-documents', variables.applicationId],
       });
+      
+      // Also invalidate paginated documents queries
+      queryClient.invalidateQueries({
+        queryKey: ['application-documents-paginated', variables.applicationId],
+      });
+      
+      // Invalidate application details to refresh document counts
+      queryClient.invalidateQueries({
+        queryKey: ['application-details', variables.applicationId],
+      });
+      
+      // Force refetch the documents immediately
+      queryClient.refetchQueries({
+        queryKey: ['application-documents', variables.applicationId],
+      });
+      
       toast.success('Document uploaded successfully');
     },
     onError: (error: Error) => {
@@ -31,9 +47,18 @@ export function useDeleteDocument() {
       queryClient.invalidateQueries({
         queryKey: ['application-documents'],
       });
+      // Also invalidate paginated documents queries
+      queryClient.invalidateQueries({
+        queryKey: ['application-documents-paginated'],
+      });
+      // Invalidate application details to refresh document counts
+      queryClient.invalidateQueries({
+        queryKey: ['application-details'],
+      });
       toast.success('Document deleted successfully');
     },
     onError: (error: Error) => {
+      console.error('Delete document error:', error);
       toast.error(`Failed to delete document: ${error.message}`);
     },
   });

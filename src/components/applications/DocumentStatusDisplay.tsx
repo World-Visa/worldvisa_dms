@@ -53,8 +53,8 @@ const DocumentStatusDisplay: React.FC<DocumentStatusDisplayProps> = ({ document 
     const lastStatusChange = document.history[document.history.length - 1];
 
     return (
-        <div className="bg-white rounded-lg border p-4 mt-4">
-            <div className="flex items-center justify-between">
+        <div className="bg-white rounded-lg border p-3 sm:p-4 mt-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center space-x-3">
                     <span className="text-sm font-medium text-gray-700">Status:</span>
                     <Badge 
@@ -67,7 +67,7 @@ const DocumentStatusDisplay: React.FC<DocumentStatusDisplayProps> = ({ document 
                 </div>
                 
                 {lastStatusChange && (
-                    <div className="text-right">
+                    <div className="text-left sm:text-right w-full sm:w-auto">
                         <div className="text-xs text-gray-500">
                             Last updated by <span className="font-medium">{lastStatusChange.changed_by}</span>
                         </div>

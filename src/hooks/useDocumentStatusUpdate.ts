@@ -4,6 +4,19 @@ import { Document } from '@/types/applications';
 import { toast } from 'sonner';
 import * as Sentry from '@sentry/nextjs';
 
+interface PaginationInfo {
+  currentPage: number;
+  totalPages: number;
+  totalRecords: number;
+  limit: number;
+}
+
+interface DocumentsResponse {
+  success: boolean;
+  data: Document[];
+  pagination?: PaginationInfo;
+}
+
 interface UseDocumentStatusUpdateProps {
   applicationId?: string;
   onSuccess?: (documentId: string, newStatus: string) => void;
@@ -81,12 +94,17 @@ export function useDocumentStatusUpdate({
         await queryClient.cancelQueries({
           queryKey: ['application-documents', applicationId]
         });
+        await queryClient.cancelQueries({
+          queryKey: ['application-documents-paginated', applicationId]
+        });
       }
 
       // Snapshot the previous values
       const previousDocument = queryClient.getQueryData<Document>(['document', documentId]);
       const previousDocumentsResponse = applicationId ? 
         queryClient.getQueryData<{ success: boolean; data: Document[] }>(['application-documents', applicationId]) : null;
+      const previousPaginatedResponse = applicationId ? 
+        queryClient.getQueryData<DocumentsResponse>(['application-documents-paginated', applicationId]) : null;
 
       // Optimistically update the document status
       queryClient.setQueryData<Document>(['document', documentId], (old) => {
@@ -135,7 +153,35 @@ export function useDocumentStatusUpdate({
         });
       }
 
-      return { previousDocument, previousDocumentsResponse, documentId, newStatus: status };
+      // Also update the paginated documents list if available
+      if (applicationId && previousPaginatedResponse) {
+        queryClient.setQueryData<DocumentsResponse>(['application-documents-paginated', applicationId], (old) => {
+          if (!old || !old.data || !Array.isArray(old.data)) return old;
+          
+          return {
+            ...old,
+            data: old.data.map(doc => 
+              doc._id === documentId 
+                ? { 
+                    ...doc, 
+                    status: status as Document['status'],
+                    history: [
+                      ...doc.history,
+                      {
+                        _id: `temp-${Date.now()}`,
+                        status,
+                        changed_by: 'Current User',
+                        changed_at: new Date().toISOString()
+                      }
+                    ]
+                  }
+                : doc
+            )
+          };
+        });
+      }
+
+      return { previousDocument, previousDocumentsResponse, previousPaginatedResponse, documentId, newStatus: status };
     },
 
     onError: (error, { documentId, status }, context) => {
@@ -147,6 +193,11 @@ export function useDocumentStatusUpdate({
       // Also rollback documents list if available
       if (applicationId && context?.previousDocumentsResponse) {
         queryClient.setQueryData(['application-documents', applicationId], context.previousDocumentsResponse);
+      }
+
+      // Also rollback paginated documents list if available
+      if (applicationId && context?.previousPaginatedResponse) {
+        queryClient.setQueryData(['application-documents-paginated', applicationId], context.previousPaginatedResponse);
       }
 
       // Show error toast
@@ -204,6 +255,32 @@ export function useDocumentStatusUpdate({
             )
           };
         });
+
+        // Also update the paginated documents list
+        queryClient.setQueryData<DocumentsResponse>(['application-documents-paginated', applicationId], (old) => {
+          if (!old || !old.data || !Array.isArray(old.data)) return old;
+          
+          return {
+            ...old,
+            data: old.data.map(doc => 
+              doc._id === data.documentId 
+                ? { 
+                    ...doc, 
+                    status: data.newStatus as Document['status'],
+                    history: [
+                      ...doc.history.filter(h => !h._id.startsWith('temp-')),
+                      ...(data.response ? [{
+                        _id: data.response._id,
+                        status: data.response.status,
+                        changed_by: data.response.changed_by,
+                        changed_at: data.response.changed_at
+                      }] : [])
+                    ]
+                  }
+                : doc
+            )
+          };
+        });
       }
 
       // Show success toast
@@ -231,6 +308,9 @@ export function useDocumentStatusUpdate({
       if (applicationId) {
         queryClient.invalidateQueries({
           queryKey: ['application-documents', applicationId]
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['application-documents-paginated', applicationId]
         });
       }
     }

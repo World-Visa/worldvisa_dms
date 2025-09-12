@@ -25,20 +25,21 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({ document }) => {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border h-[70%] overflow-hidden relative">
+        <div className="bg-white rounded-lg shadow-sm border h-[50%] lg:h-[70%] overflow-hidden relative">
             {document.document_link || document.download_url ? (
-                <div className="w-full h-full flex items-center justify-center">
+                <div className="w-full h-full flex items-center lg:py-0 py-4 justify-center">
                     <div className="text-center">
-                        <FileText className="h-16 w-16 mx-auto mb-4 text-gray-400" />
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">
+                        <FileText className="h-16 w-16 lg:block hidden mx-auto mb-4 text-gray-400" />
+                        <h3 className="text-sm lg:text-lg font-medium text-gray-900 mb-2">
                             {document.file_name}
                         </h3>
-                        <p className="text-sm text-gray-600 mb-4">
+                        <p className="text-xs lg:text-sm text-gray-600 mb-4">
                             Click the button below to view the document
                         </p>
                         <Button
                             onClick={handleViewDocument}
                             className="bg-[#222222] hover:bg-[#222222]/80 text-white cursor-pointer"
+                            size="sm"
                         >
                             <Eye className="h-4 w-4 mr-2" />
                             View Document

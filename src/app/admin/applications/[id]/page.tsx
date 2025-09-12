@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { ApplicantDetails } from '@/components/applications/ApplicantDetails';
 import { DocumentsTable } from '@/components/applications/DocumentsTable';
@@ -16,12 +16,24 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useState } from 'react';
 import { DocumentCategory, Company } from '@/types/documents';
+import { localStorageUtils } from '@/lib/localStorage';
 
 export default function ApplicationDetailsPage() {
   const params = useParams();
   const applicationId = params.id as string;
-  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>('submitted');
-  const [companies, setCompanies] = useState<Company[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(() => {
+    const savedCategory = localStorageUtils.loadCategory(applicationId, 'submitted') as DocumentCategory;
+    // Category restored from localStorage
+    return savedCategory;
+  });
+  
+  // Initialize companies from localStorage or empty array
+  const [companies, setCompanies] = useState<Company[]>(() => {
+    const savedCompanies = localStorageUtils.loadCompanies(applicationId, []);
+    // Companies restored from localStorage
+    return savedCompanies;
+  });
+  
   const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
   const [documentsPage, setDocumentsPage] = useState(1);
   const maxCompanies = 5;
@@ -42,11 +54,20 @@ export default function ApplicationDetailsPage() {
   const documents = documentsData?.data;
 
   const handleAddCompany = (company: Company) => {
-    setCompanies(prev => [...prev, company]);
+    // Add category field to the company
+    const companyWithCategory = {
+      ...company,
+      category: `${company.name} Company Documents`
+    };
+    const newCompanies = [...companies, companyWithCategory];
+    setCompanies(newCompanies);    
+    localStorageUtils.saveCompanies(applicationId, newCompanies);
   };
 
   const handleRemoveCompany = (companyName: string) => {
-    setCompanies(prev => prev.filter(company => company.name !== companyName));
+    const newCompanies = companies.filter(company => company.name !== companyName);
+    setCompanies(newCompanies);    
+    localStorageUtils.saveCompanies(applicationId, newCompanies);
     if (selectedCategory === `company-${companyName}`) {
       setSelectedCategory('all');
     }
@@ -64,10 +85,17 @@ export default function ApplicationDetailsPage() {
     setDocumentsPage(page);
   };
 
+  const handleCategoryChange = (category: DocumentCategory) => {
+    setSelectedCategory(category);    
+    localStorageUtils.saveCategory(applicationId, category);
+    // Category saved to localStorage
+  };
+
   // Reset documents page when category changes
-  React.useEffect(() => {
+  useEffect(() => {
     setDocumentsPage(1);
   }, [selectedCategory]);
+
 
   if (applicationError || documentsError) {
     return (
@@ -152,7 +180,7 @@ export default function ApplicationDetailsPage() {
             {/* Category Filter */}
             <DocumentCategoryFilter
               selectedCategory={selectedCategory}
-              onCategoryChange={setSelectedCategory}
+              onCategoryChange={handleCategoryChange}
               companies={companies}
               onAddCompany={handleOpenAddCompanyDialog}
               maxCompanies={maxCompanies}

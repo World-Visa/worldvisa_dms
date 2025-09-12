@@ -29,8 +29,8 @@ export function DocumentCategoryFilter({
 }: ExtendedDocumentCategoryFilterProps) {
   // Create company categories
   const companyCategories: DocumentCategoryInfo[] = companies.map(company => ({
-    id: `company-${company.name}` as DocumentCategory,
-    label: `${company.name} Documents`,
+    id: company.category as DocumentCategory,
+    label: company.category,
     count: 0
   }));
 

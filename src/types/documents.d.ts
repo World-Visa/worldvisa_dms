@@ -17,6 +17,7 @@ export interface Company {
   name: string;
   fromDate: string; // Format: "YYYY-MM"
   toDate: string;   // Format: "YYYY-MM"
+  category: string; // Format: "WorldVisa Company Documents"
 }
 
 export interface DocumentCategoryFilterProps {
@@ -42,6 +43,7 @@ export interface UploadDocumentsModalProps {
   applicationId: string;
   selectedDocumentType?: string;
   selectedDocumentCategory?: string;
+  company?: Company;
 }
 
 export interface UploadedFile {

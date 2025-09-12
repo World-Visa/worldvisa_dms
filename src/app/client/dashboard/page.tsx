@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 
 export default function ClientDashboard() {
   const { user, logout } = useAuth();
+  console.log("client>>>>>>>>>>>>",user)
   const router = useRouter();
 
   const handleLogout = () => {

@@ -1,10 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { X, Building2, Calendar } from 'lucide-react';
 import { Company } from '@/types/documents';
+import { RemoveCompanyDialog } from './RemoveCompanyDialog';
+import { calculateDuration, formatDateForDisplay, generateCompanyDescription } from '@/utils/dateCalculations';
 
 interface CompanyHeaderProps {
   company: Company;
@@ -12,36 +14,15 @@ interface CompanyHeaderProps {
 }
 
 export function CompanyHeader({ company, onRemove }: CompanyHeaderProps) {
-  const formatDate = (dateString: string) => {
-    const [year, month] = dateString.split('-');
-    const monthNames = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
-    ];
-    return `${monthNames[parseInt(month) - 1]} ${year}`;
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+
+  const handleRemoveClick = () => {
+    setShowRemoveDialog(true);
   };
 
-  const calculateDuration = (fromDate: string, toDate: string) => {
-    const from = new Date(fromDate + '-01');
-    const to = new Date(toDate + '-01');
-    
-    let years = to.getFullYear() - from.getFullYear();
-    let months = to.getMonth() - from.getMonth();
-    
-    if (months < 0) {
-      years--;
-      months += 12;
-    }
-    
-    if (years === 0) {
-      return months === 1 ? '1 month' : `${months} months`;
-    } else if (months === 0) {
-      return years === 1 ? '1 year' : `${years} years`;
-    } else {
-      const yearText = years === 1 ? '1 year' : `${years} years`;
-      const monthText = months === 1 ? '1 month' : `${months} months`;
-      return `${yearText} ${monthText}`;
-    }
+  const handleConfirmRemove = () => {
+    setShowRemoveDialog(false);
+    onRemove();
   };
 
   return (
@@ -59,12 +40,15 @@ export function CompanyHeader({ company, onRemove }: CompanyHeaderProps) {
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  <span>{formatDate(company.fromDate)} - {formatDate(company.toDate)}</span>
+                  <span>{formatDateForDisplay(company.fromDate)} - {formatDateForDisplay(company.toDate)}</span>
                 </div>
                 <div className="text-gray-400">•</div>
                 <span className="font-medium text-blue-600">
                   {calculateDuration(company.fromDate, company.toDate)}
                 </span>
+              </div>
+              <div className="mt-1 text-xs text-gray-500">
+                {generateCompanyDescription(company.fromDate, company.toDate)}
               </div>
             </div>
           </div>
@@ -72,13 +56,21 @@ export function CompanyHeader({ company, onRemove }: CompanyHeaderProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={onRemove}
+            onClick={handleRemoveClick}
             className="h-8 w-8 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50"
           >
             <X className="h-4 w-4" />
           </Button>
         </div>
       </CardContent>
+
+      {/* Remove Company Confirmation Dialog */}
+      <RemoveCompanyDialog
+        isOpen={showRemoveDialog}
+        onClose={() => setShowRemoveDialog(false)}
+        onConfirm={handleConfirmRemove}
+        company={company}
+      />
     </Card>
   );
 }

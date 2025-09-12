@@ -53,7 +53,7 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
     const isUpdating = statusUpdateMutation.isPending;
     const currentStatus = document.status;
     return (
-        <div className="absolute bottom-10 right-4 flex space-x-2">
+        <div className="absolute bottom-4 right-2 sm:bottom-1 sm:right-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <Button
                 variant="default"
                 size="sm"

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
     Sheet,
     SheetContent,
@@ -12,8 +12,8 @@ import CommentErrorBoundary from './CommentErrorBoundary'
 import DocumentPreview from './DocumentPreview'
 import DocumentStatusButtons from './DocumentStatusButtons'
 import DocumentStatusDisplay from './DocumentStatusDisplay'
+import { SendDocumentModal } from './SendDocumentModal'
 import { 
-    Send, 
     User, 
     Clock, 
     FileText
@@ -24,22 +24,54 @@ interface ViewDocumentSheetProps {
     document: Document;
     documents: Document[];
     applicationId: string;
+    isOpen?: boolean;
+    onClose?: () => void;
 }
 
 
 const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     document,
     documents,
-    applicationId
+    applicationId,
+    isOpen,
+    onClose
 }) => {
     const currentDocumentIndex = documents.findIndex(doc => doc._id === document._id);
     const [selectedIndex, setSelectedIndex] = useState(currentDocumentIndex >= 0 ? currentDocumentIndex : 0);
 
-    const currentDoc = documents[selectedIndex];
+    const currentDoc = documents[selectedIndex] || documents[0];
+    
+    // Update selectedIndex when documents array changes (e.g., when a document is deleted)
+    useEffect(() => {
+        const newIndex = documents.findIndex(doc => doc._id === document._id);
+        if (newIndex >= 0) {
+            setSelectedIndex(newIndex);
+        } else if (documents.length > 0) {
+            setSelectedIndex(0);
+        } else {
+            // If no documents left and this document was deleted, close the sheet
+            if (onClose) {
+                onClose();
+            }
+        }
+    }, [documents, document._id, onClose]);
+    
+    if (!currentDoc || documents.length === 0) {
+        return (
+            <Button
+                variant="link"
+                size="sm"
+                className='cursor-pointer'
+                disabled
+            >
+                view
+            </Button>
+        );
+    }
     
     return (
         <div className='w-full '>
-            <Sheet>
+            <Sheet open={isOpen} onOpenChange={onClose}>
                 <SheetTrigger asChild>
                     <Button
                         variant="link"
@@ -52,10 +84,10 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                 <SheetContent className='w-[95vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[1140px] !max-w-[1140px] p-0 rounded-l-3xl'>
                     <div className="flex flex-col h-full">
                         {/* Header Bar */}
-                        <SheetHeader className="p-4 border-b ">
+                        <SheetHeader className="p-4 border-b">
                             <SheetTitle className="sr-only">Document Review</SheetTitle>
-                            <div className="flex items-center justify-between mx-6">
-                                <div className="flex items-center space-x-4">
+                            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mx-2 sm:mx-6">
+                                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
                                     <div className="flex items-center space-x-2">
                                         <User className="h-4 w-4 text-gray-500" />
                                         <span className="text-sm text-gray-600">
@@ -70,28 +102,31 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                                         </span>
                                     </div>
                                 </div>
-                                <Button className="bg-blue-600 cursor-pointer hover:bg-blue-700">
-                                    <Send className="h-4 w-4 mr-2" />
-                                    Send to Kavitha Mam
-                                </Button>
+                                <SendDocumentModal
+                                    documents={documents}
+                                    selectedDocument={currentDoc}
+                                    onSend={(documentIds, notes) => {
+                                        console.log('Sending documents:', documentIds, 'with notes:', notes);
+                                    }}
+                                />
                             </div>
                         </SheetHeader>
 
                         {/* Document Selector Chips */}
-                        <div className="p-4 border-b bg-white">
-                            <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-2">
+                        <div className="p-2 sm:p-4 border-b bg-white">
+                            <div className="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide pb-2">
                                 {documents.map((doc, index) => (
                                     <button
                                         key={doc._id}
                                         onClick={() => setSelectedIndex(index)}
-                                        className={`px-3 py-2 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 cursor-pointer ${selectedIndex === index
+                                        className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 cursor-pointer ${selectedIndex === index
                                                 ? 'bg-[#222222] text-white'
                                                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                                             }`}
                                     >
-                                        <div className="flex items-center space-x-2">
-                                            <FileText className="h-4 w-4" />
-                                            <span>{doc.file_name}</span>
+                                        <div className="flex items-center space-x-1 sm:space-x-2">
+                                            <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                                            <span className="max-w-[120px] sm:max-w-none truncate">{doc.file_name}</span>
                                         </div>
                                     </button>
                                 ))}
@@ -99,9 +134,9 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                         </div>
 
                         {/* Main Content */}
-                        <div className="flex-1 flex overflow-hidden">
-                            {/* Left Section - Document Preview */}
-                            <div className="flex-1 p-4 relative">
+                        <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto">
+                            {/* Document Section - Top on mobile, Left on desktop */}
+                            <div className="flex-1 p-2 sm:p-4 relative order-1 lg:order-1">
                                 <DocumentPreview document={currentDoc} />
 
                                 {/* Status Display */}
@@ -117,12 +152,14 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                                 />
                             </div>
 
-                            {/* Right Section - Comments */}
-                            <CommentErrorBoundary>
-                                <DocumentComments
-                                    documentId={currentDoc._id}
-                                />
-                            </CommentErrorBoundary>
+                            {/* Comments Section - Bottom on mobile, Right on desktop */}
+                            <div className="w-full lg:flex-shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
+                                <CommentErrorBoundary>
+                                    <DocumentComments
+                                        documentId={currentDoc._id}
+                                    />
+                                </CommentErrorBoundary>
+                            </div>
                         </div>
                     </div>
                 </SheetContent>

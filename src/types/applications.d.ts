@@ -40,6 +40,11 @@ export interface Document {
     added_by: string;
     added_at: string;
   }>;
+  document_name?: string;
+  document_category?: string;
+  document_type?: string;
+  company_name?: string;
+  description?: string;
   __v: number;
 }
 
