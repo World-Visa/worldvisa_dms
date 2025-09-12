@@ -18,7 +18,12 @@ import { cn } from '@/lib/utils';
 import { UploadDocumentsModal } from './UploadDocumentsModal';
 import { TablePagination } from '@/components/common/TablePagination';
 import { CompanyHeader } from './CompanyHeader';
-import { IDENTITY_DOCUMENTS, EDUCATION_DOCUMENTS, OTHER_DOCUMENTS, COMPANY_DOCUMENTS } from '@/lib/documents/checklist';
+import { 
+  IDENTITY_DOCUMENTS, 
+  EDUCATION_DOCUMENTS, 
+  OTHER_DOCUMENTS, 
+  COMPANY_DOCUMENTS 
+} from '@/lib/documents/checklist';
 import { 
   Company,
   DocumentChecklistTableProps
@@ -34,7 +39,15 @@ interface ExtendedDocumentChecklistTableProps extends DocumentChecklistTableProp
   onRemoveCompany?: (companyName: string) => void;
 }
 
-export function DocumentChecklistTable({ documents, isLoading, error, applicationId, selectedCategory, companies, onRemoveCompany }: ExtendedDocumentChecklistTableProps) {
+export function DocumentChecklistTable({ 
+  documents, 
+  isLoading, 
+  error, 
+  applicationId, 
+  selectedCategory, 
+  companies, 
+  onRemoveCompany 
+}: ExtendedDocumentChecklistTableProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>('');
   const [selectedDocumentCategory, setSelectedDocumentCategory] = useState<string>('');
@@ -59,7 +72,7 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
     const companyDocuments = companies.flatMap(company => 
       COMPANY_DOCUMENTS.map(doc => ({
         ...doc,
-        category: company.category, // Use the company's category field
+        category: company.category,
         companyName: company.name
       }))
     );
@@ -68,9 +81,9 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
   }, [companies]);
 
   const checklistItems = useMemo(() => {
-    const validDocuments = documents?.filter(doc => doc && typeof doc === 'object' && doc.file_name) || [];
-    
-    // Debug logging removed for production
+    const validDocuments = documents?.filter(doc => 
+      doc && typeof doc === 'object' && doc.file_name
+    ) || [];
     
     return allDocumentTypes.map(docType => {
       const expectedDocType = docType.documentType.toLowerCase().replace(/\s+/g, '_');
@@ -80,11 +93,12 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
           return false;
         }
         
-        // First, check if the document has a document_type field (from optimistic update or server response)
+        // First, check if the document has a document_type field
         const docTypeFromField = doc.document_type;
         
         if (docTypeFromField && docTypeFromField === expectedDocType) {
-          if (docType.category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
+          if (docType.category.includes('Documents') && 
+              !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
             if (doc.document_category === docType.category) {
               return true;
             } else {
@@ -162,7 +176,8 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
     setSelectedDocumentCategory(category);
     
     // Find the company if this is a company document
-    if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
+    if (category.includes('Documents') && 
+        !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
       const company = companies.find(c => c.category === category);
       setSelectedCompany(company);
     } else {
@@ -195,9 +210,11 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
     });
   }, []);
 
-
   const getLatestDocuments = useCallback((fallbackDocuments: Document[]): Document[] => {
-    const latestDocumentsData = queryClient.getQueryData<{ success: boolean; data: Document[] }>(['application-documents', applicationId]);
+    const latestDocumentsData = queryClient.getQueryData<{ 
+      success: boolean; 
+      data: Document[] 
+    }>(['application-documents', applicationId]);
     return latestDocumentsData?.data || fallbackDocuments || [];
   }, [queryClient, applicationId]);
 
@@ -209,7 +226,6 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
     setSelectedDocumentTypeForView(documentType);
     setIsDocumentListModalOpen(true);
   };
-
 
   // Reset to first page when category or search changes
   useEffect(() => {
@@ -223,11 +239,20 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
       const matchingDocuments = filterDocumentsByType(latestDocuments, selectedDocumentTypeForView);
       setSelectedDocumentsForView(matchingDocuments);
     }
-  }, [documents, isDocumentListModalOpen, selectedDocumentTypeForView, applicationId, queryClient, getLatestDocuments, filterDocumentsByType]);
+  }, [
+    documents, 
+    isDocumentListModalOpen, 
+    selectedDocumentTypeForView, 
+    applicationId, 
+    queryClient, 
+    getLatestDocuments, 
+    filterDocumentsByType
+  ]);
 
   // Helper function to get category badge styling
   const getCategoryBadgeStyle = (category: string) => {
-    if (category.endsWith(' Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
+    if (category.endsWith(' Documents') && 
+        !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
       return 'bg-orange-500 hover:bg-orange-600'; // Company documents
     }
     
@@ -242,7 +267,6 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
         return 'bg-gray-500 hover:bg-gray-600';
     }
   };
-
 
   if (isLoading) {
     return (
@@ -289,16 +313,16 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
       )}
 
       <Card className="w-full">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <CardTitle>Document Checklist</CardTitle>
-            <div className="search-container">
+        <CardHeader className="pb-4">
+          <div className="flex flex-col gap-4">
+            <CardTitle className="text-lg sm:text-xl">Document Checklist</CardTitle>
+            <div className="w-full">
               <SearchBox
                 value={searchQuery}
                 onChange={setSearchQuery}
                 placeholder="Search documents..."
                 aria-label="Search document checklist"
-                className="w-full lg:w-[60%]"
+                className="w-full lg:w-[40%]"
               />
             </div>
           </div>
@@ -324,108 +348,149 @@ export function DocumentChecklistTable({ documents, isLoading, error, applicatio
                 )}
               </div>
             )}
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>S.No</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Document Name</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {paginatedItems.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
-                    <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                    <p className="text-muted-foreground">
-                      {selectedCategory === 'submitted' 
-                        ? 'No documents uploaded yet' 
-                        : 'No documents in this category'}
-                    </p>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                paginatedItems.map((item, index) => (
-                  <TableRow key={`${item.category}-${item.documentType}`}>
-                    <TableCell className="font-medium">
-                      {startIndex + index + 1}
-                    </TableCell>
-                    <TableCell>
-                      <Badge 
-                        variant="default" 
-                        className={cn(
-                          "text-xs py-1 text-white",
-                          getCategoryBadgeStyle(item.category)
-                        )}
-                      >
-                        {item.category}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                        <div className="truncate max-w-[200px]" title={item.documentType}>
-                          <HighlightText
-                            text={item.documentType}
-                            query={searchQuery}
-                            className="text-sm"
-                          />
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {item.isUploaded ? (
-                        <Badge variant="default" className="bg-green-100 text-green-800 hover:bg-green-200">
-                          Uploaded
-                        </Badge>
-                      ) : (
-                        <Badge variant="outline" className="text-muted-foreground">
-                          Not Uploaded
-                        </Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        {item.isUploaded && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleViewDocuments(item.documentType)}
-                            className="flex items-center gap-2"
-                          >
-                            <Eye className="h-4 w-4" />
-                            View
-                          </Button>
-                        )}
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleUploadClick(item.documentType, item.category)}
-                          className="flex items-center gap-2"
-                        >
-                          <Upload className="h-4 w-4" />
-                          Upload
-                        </Button>
-                      </div>
-                    </TableCell>
+            
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">S.No</TableHead>
+                    <TableHead className="hidden sm:table-cell">Category</TableHead>
+                    <TableHead>Document Name</TableHead>
+                    <TableHead className="hidden md:table-cell">Status</TableHead>
+                    <TableHead className="text-right w-24">Action</TableHead>
                   </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+                </TableHeader>
+                <TableBody>
+                  {paginatedItems.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8">
+                        <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                        <p className="text-muted-foreground">
+                          {selectedCategory === 'submitted' 
+                            ? 'No documents uploaded yet' 
+                            : 'No documents in this category'}
+                        </p>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    paginatedItems.map((item, index) => (
+                      <TableRow key={`${item.category}-${item.documentType}`}>
+                        <TableCell className="font-medium w-16">
+                          {startIndex + index + 1}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          <Badge 
+                            variant="default" 
+                            className={cn(
+                              "text-xs py-1 text-white",
+                              getCategoryBadgeStyle(item.category)
+                            )}
+                          >
+                            {item.category}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-col space-y-1">
+                            <div className="flex items-center space-x-2">
+                              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <div className="truncate" title={item.documentType}>
+                                <HighlightText
+                                  text={item.documentType}
+                                  query={searchQuery}
+                                  className="text-sm"
+                                />
+                              </div>
+                            </div>
+                            {/* Show category on mobile */}
+                            <div className="sm:hidden">
+                              <Badge 
+                                variant="default" 
+                                className={cn(
+                                  "text-xs py-0.5 text-white",
+                                  getCategoryBadgeStyle(item.category)
+                                )}
+                              >
+                                {item.category}
+                              </Badge>
+                            </div>
+                            {/* Show status on mobile */}
+                            <div className="md:hidden">
+                              {item.isUploaded ? (
+                                <Badge 
+                                  variant="default" 
+                                  className="bg-green-100 text-green-800 hover:bg-green-200 text-xs"
+                                >
+                                  Uploaded
+                                </Badge>
+                              ) : (
+                                <Badge 
+                                  variant="outline" 
+                                  className="text-muted-foreground text-xs"
+                                >
+                                  Not Uploaded
+                                </Badge>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {item.isUploaded ? (
+                            <Badge 
+                              variant="default" 
+                              className="bg-green-100 text-green-800 hover:bg-green-200"
+                            >
+                              Uploaded
+                            </Badge>
+                          ) : (
+                            <Badge 
+                              variant="outline" 
+                              className="text-muted-foreground"
+                            >
+                              Not Uploaded
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right w-24">
+                          <div className="flex items-center justify-end gap-1">
+                            {item.isUploaded && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleViewDocuments(item.documentType)}
+                                className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
+                              >
+                                <Eye className="h-3 w-3" />
+                                <span className="hidden sm:inline">View</span>
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleUploadClick(item.documentType, item.category)}
+                              className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
+                            >
+                              <Upload className="h-3 w-3" />
+                              <span className="hidden sm:inline">Upload</span>
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
 
-          {/* Pagination */}
-          <TablePagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            totalItems={filteredItems.length}
-            itemsPerPage={itemsPerPage}
-            startIndex={startIndex}
-            endIndex={endIndex}
-            onPageChange={setCurrentPage}
-          />
+            {/* Pagination */}
+            <TablePagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              totalItems={filteredItems.length}
+              itemsPerPage={itemsPerPage}
+              startIndex={startIndex}
+              endIndex={endIndex}
+              onPageChange={setCurrentPage}
+            />
           </div>
         </CardContent>
 

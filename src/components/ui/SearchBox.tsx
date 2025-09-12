@@ -71,7 +71,7 @@ export function SearchBox({
           aria-label={ariaLabel}
           aria-describedby={localValue ? 'search-results' : undefined}
           role="searchbox"
-          className="pl-10 pr-10 h-11 border border-gray-300 focus:ring-0 focus:outline-none"
+          className="pl-10 pr-10 h-11 border border-gray-300 focus:ring-0 focus:outline-none focus:border-primary text-base"
         />
         {showClearButton && localValue && (
           <Button
