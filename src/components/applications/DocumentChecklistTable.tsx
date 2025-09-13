@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -11,18 +11,15 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Upload, Eye, FileText } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { UploadDocumentsModal } from './UploadDocumentsModal';
 import { TablePagination } from '@/components/common/TablePagination';
 import { CompanyHeader } from './CompanyHeader';
-import { 
+import {
   IDENTITY_DOCUMENTS, 
   EDUCATION_DOCUMENTS, 
   OTHER_DOCUMENTS, 
-  COMPANY_DOCUMENTS 
+  COMPANY_DOCUMENTS
 } from '@/lib/documents/checklist';
 import { 
   Company,
@@ -32,22 +29,83 @@ import { Document } from '@/types/applications';
 import { DocumentListModal } from './DocumentListModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { SearchBox } from '@/components/ui/SearchBox';
-import { HighlightText } from '@/components/ui/HighlightText';
 import { useSearchMemo } from '@/lib/utils/search';
+import { ChecklistTabs } from './checklist/ChecklistTabs';
+import { ChecklistTableRow } from './checklist/ChecklistTableRow';
+import type { ChecklistState, ChecklistDocument, DocumentRequirement, ChecklistUpdateRequest, ChecklistItem } from '@/types/checklist';
+import { FileText } from 'lucide-react';
+
+interface DocumentType {
+  category: string;
+  documentType: string;
+  companyName?: string;
+}
+
+interface ChecklistTableItem {
+  category: string;
+  documentType: string;
+  isUploaded: boolean;
+  uploadedDocument?: Document | unknown;
+  requirement?: DocumentRequirement;
+  isSelected?: boolean;
+  company_name?: string;
+  checklist_id?: string;
+}
 
 interface ExtendedDocumentChecklistTableProps extends DocumentChecklistTableProps {
   onRemoveCompany?: (companyName: string) => void;
+  // Checklist props
+  checklistState?: ChecklistState;
+  filteredDocuments?: DocumentType[];
+  currentChecklistDocuments?: ChecklistDocument[];
+  availableDocumentsForEditing?: DocumentType[];
+  selectedDocuments?: ChecklistDocument[];
+  requirementMap?: Record<string, DocumentRequirement>;
+  onSelectDocument?: (document: ChecklistDocument) => void;
+  onUpdateDocumentRequirement?: (category: string, documentType: string, requirement: DocumentRequirement) => void;
+  onUpdateChecklist?: (itemsToUpdate: ChecklistUpdateRequest[], itemsToDelete: string[]) => Promise<void>;
+  isClientView?: boolean;
+  checklistData?: { success: boolean; data: ChecklistItem[] };
+  // Pending changes props
+  pendingAdditions?: ChecklistDocument[];
+  pendingDeletions?: string[];
+  onAddToPendingChanges?: (document: ChecklistDocument) => void;
+  onRemoveFromPendingChanges?: (document: ChecklistDocument) => void;
+  onAddToPendingDeletions?: (checklistId: string) => void;
+  onRemoveFromPendingDeletions?: (checklistId: string) => void;
+  onSavePendingChanges?: () => Promise<void>;
+  onClearPendingChanges?: () => void;
 }
 
-export function DocumentChecklistTable({ 
+const DocumentChecklistTableComponent = ({ 
   documents, 
   isLoading, 
   error, 
   applicationId, 
   selectedCategory, 
   companies, 
-  onRemoveCompany 
-}: ExtendedDocumentChecklistTableProps) {
+  onRemoveCompany,
+  checklistState = 'none',
+  filteredDocuments = [],
+  currentChecklistDocuments = [],
+  availableDocumentsForEditing = [],
+  selectedDocuments = [],
+  requirementMap = {},
+  onSelectDocument,
+  onUpdateDocumentRequirement,
+  onUpdateChecklist,
+  isClientView = false,
+  checklistData,
+  // Pending changes props
+  pendingAdditions = [],
+  pendingDeletions = [],
+  onAddToPendingChanges,
+  onRemoveFromPendingChanges,
+  onAddToPendingDeletions,
+  onRemoveFromPendingDeletions,
+  onSavePendingChanges,
+  onClearPendingChanges
+}: ExtendedDocumentChecklistTableProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>('');
   const [selectedDocumentCategory, setSelectedDocumentCategory] = useState<string>('');
@@ -57,11 +115,52 @@ export function DocumentChecklistTable({
   const [selectedDocumentsForView, setSelectedDocumentsForView] = useState<Document[]>([]);
   const [selectedDocumentTypeForView, setSelectedDocumentTypeForView] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [activeTab, setActiveTab] = useState<'current' | 'available'>('current');
+  
+  // Memoize tab change handler to prevent recreation
+  const handleTabChange = useCallback((tab: 'current' | 'available') => {
+    setActiveTab(tab);
+  }, []);
   const itemsPerPage = 10;
   const queryClient = useQueryClient();
 
   // Combine all document types from checklist
   const allDocumentTypes = useMemo(() => {
+    // For client view, use only the documents from the checklist
+    if (isClientView && checklistData?.data) {
+      const checklistDocuments = checklistData.data.map((item: {document_category: string; document_type: string; company_name?: string}) => {
+        // Map API category names to expected category names
+        let categoryLabel = item.document_category;
+        if (item.document_category === 'Identity') {
+          categoryLabel = 'Identity Documents';
+        } else if (item.document_category === 'Education') {
+          categoryLabel = 'Education Documents';
+        } else if (item.document_category === 'Other') {
+          categoryLabel = 'Other Documents';
+        } else if (item.document_category === 'Company') {
+          categoryLabel = 'Company Documents';
+        }
+        
+        return {
+          documentType: item.document_type,
+          category: categoryLabel,
+          companyName: item.company_name
+        };
+      });
+
+      // Add company documents for each added company
+      const companyDocuments = companies.flatMap(company => 
+        COMPANY_DOCUMENTS.map(doc => ({
+          ...doc,
+          category: company.category,
+          companyName: company.name
+        }))
+      );
+
+      return [...checklistDocuments, ...companyDocuments];
+    }
+
+    // For admin view, use all predefined document types
     const baseDocuments = [
       ...IDENTITY_DOCUMENTS,
       ...EDUCATION_DOCUMENTS,
@@ -78,47 +177,134 @@ export function DocumentChecklistTable({
     );
 
     return [...baseDocuments, ...companyDocuments];
-  }, [companies]);
+  }, [companies, isClientView, checklistData]);
 
-  const checklistItems = useMemo(() => {
+  // Memoize category mapping function to prevent recreation on every render
+  const mapCategoryLabel = useCallback((category: string) => {
+    if (category === 'Identity') return 'Identity Documents';
+    if (category === 'Education') return 'Education Documents';
+    if (category === 'Other') return 'Other Documents';
+    if (category === 'Company') return 'Company Documents';
+    return category;
+  }, []);
+
+  // Get checklist items based on state - split into separate memos for better performance
+  const creatingItems = useMemo((): ChecklistTableItem[] => {
+    if (checklistState !== 'creating') return [];
+    
+    return filteredDocuments.map((docType: DocumentType) => {
+      const key = `${docType.category}-${docType.documentType}`;
+      const requirement = requirementMap[key] || 'not_required';
+      const isSelected = selectedDocuments.some(doc => 
+        doc.category === docType.category && doc.documentType === docType.documentType
+      );
+      
+      return {
+        category: docType.category,
+        documentType: docType.documentType,
+        isUploaded: false,
+        uploadedDocument: undefined,
+        requirement,
+        isSelected,
+        company_name: docType.companyName
+      };
+    });
+  }, [checklistState, filteredDocuments, requirementMap, selectedDocuments]);
+
+  const editingCurrentItems = useMemo((): ChecklistTableItem[] => {
+    if (checklistState !== 'editing') return [];
+    
+    return currentChecklistDocuments.map((item: ChecklistDocument) => ({
+      ...item,
+      category: mapCategoryLabel(item.category)
+    }));
+  }, [checklistState, currentChecklistDocuments, mapCategoryLabel]);
+
+  const editingAvailableItems = useMemo((): ChecklistTableItem[] => {
+    if (checklistState !== 'editing') return [];
+    
+    return availableDocumentsForEditing.map((docType: DocumentType) => {
+      const key = `${docType.category}-${docType.documentType}`;
+      const requirement = requirementMap[key] || 'not_required';
+      
+      return {
+        category: docType.category,
+        documentType: docType.documentType,
+        isUploaded: false,
+        uploadedDocument: undefined,
+        requirement: requirement as DocumentRequirement,
+        isSelected: false,
+        company_name: docType.companyName
+      };
+    });
+  }, [checklistState, availableDocumentsForEditing, requirementMap]);
+
+  const savedItems = useMemo((): ChecklistTableItem[] => {
+    if (checklistState !== 'saved' || !checklistData?.data || !Array.isArray(checklistData.data)) {
+      return [];
+    }
+    
     const validDocuments = documents?.filter(doc => 
       doc && typeof doc === 'object' && doc.file_name
     ) || [];
     
-    return allDocumentTypes.map(docType => {
-      const expectedDocType = docType.documentType.toLowerCase().replace(/\s+/g, '_');
+    return checklistData.data.map((checklistItem: ChecklistItem) => {
+      const categoryLabel = mapCategoryLabel(checklistItem.document_category);
+      const expectedDocType = checklistItem.document_type.toLowerCase().replace(/\s+/g, '_');
       
       const uploadedDoc = validDocuments.find(doc => {
-        if (!doc || !doc.file_name) {
-          return false;
-        }
+        if (!doc || !doc.file_name) return false;
         
-        // First, check if the document has a document_type field
         const docTypeFromField = doc.document_type;
-        
         if (docTypeFromField && docTypeFromField === expectedDocType) {
-          if (docType.category.includes('Documents') && 
-              !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
-            if (doc.document_category === docType.category) {
-              return true;
-            } else {
-              return false;
-            }
-          } else {
-            // For non-company documents, just check document type
-            return true;
+          if (checklistItem.document_category === 'Company' && checklistItem.company_name) {
+            return doc.company_name === checklistItem.company_name;
           }
-        }
-        
-        // Fallback to old matching logic for documents without document_type field
-        const fileName = doc.file_name.toLowerCase();
-        const docTypeName = docType.documentType.toLowerCase();
-        
-        if (fileName.includes(docTypeName)) {
           return true;
         }
         
-        return false;
+        const fileName = doc.file_name.toLowerCase();
+        const docTypeName = checklistItem.document_type.toLowerCase();
+        return fileName.includes(docTypeName);
+      });
+      
+      return {
+        category: categoryLabel,
+        documentType: checklistItem.document_type,
+        isUploaded: !!uploadedDoc,
+        uploadedDocument: uploadedDoc,
+        requirement: (checklistItem.required ? 'mandatory' : 'optional') as DocumentRequirement,
+        checklist_id: checklistItem.checklist_id,
+        company_name: checklistItem.company_name
+      };
+    });
+  }, [checklistState, checklistData, documents, mapCategoryLabel]);
+
+  const defaultItems = useMemo((): ChecklistTableItem[] => {
+    if (checklistState !== 'none') return [];
+    
+    const validDocuments = documents?.filter(doc => 
+      doc && typeof doc === 'object' && doc.file_name
+    ) || [];
+    
+    return allDocumentTypes.map((docType: {documentType: string; category: string; companyName?: string}) => {
+      const expectedDocType = docType.documentType.toLowerCase().replace(/\s+/g, '_');
+      
+      const uploadedDoc = validDocuments.find(doc => {
+        if (!doc || !doc.file_name) return false;
+        
+        const docTypeFromField = doc.document_type;
+        if (docTypeFromField && docTypeFromField === expectedDocType) {
+          if (docType.category.includes('Documents') && 
+              !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
+            return doc.document_category === docType.category;
+          }
+          return true;
+        }
+        
+        const fileName = doc.file_name.toLowerCase();
+        const docTypeName = docType.documentType.toLowerCase();
+        return fileName.includes(docTypeName);
       });
       
       return {
@@ -128,10 +314,37 @@ export function DocumentChecklistTable({
         uploadedDocument: uploadedDoc,
       };
     });
-  }, [allDocumentTypes, documents]);
+  }, [checklistState, allDocumentTypes, documents]);
+
+  // Combine all checklist items based on state
+  const checklistItems = useMemo((): ChecklistTableItem[] => {
+    if (checklistState === 'creating') return creatingItems;
+    if (checklistState === 'editing') {
+      if (selectedCategory === 'all') return editingCurrentItems;
+      return activeTab === 'current' ? editingCurrentItems : editingAvailableItems;
+    }
+    if (checklistState === 'saved') return savedItems;
+    return defaultItems;
+  }, [
+    checklistState,
+    selectedCategory,
+    activeTab,
+    creatingItems,
+    editingCurrentItems,
+    editingAvailableItems,
+    savedItems,
+    defaultItems
+  ]);
+
 
   // Filter items based on selected category
   const categoryFilteredItems = useMemo(() => {
+    // Handle company documents
+    if (selectedCategory === 'company') {
+      return checklistItems.filter(item => item.category === 'Company');
+    }
+    
+    // Handle dynamic company documents (with company names)
     if (selectedCategory.includes('Company Documents')) {
       return checklistItems.filter(item => item.category === selectedCategory);
     }
@@ -149,6 +362,48 @@ export function DocumentChecklistTable({
     }
   }, [checklistItems, selectedCategory]);
 
+  // Memoize category filtering function
+  const matchesCategory = useCallback((itemCategory: string, targetCategory: string) => {
+    const categoryLabel = mapCategoryLabel(itemCategory);
+    
+    if (targetCategory === 'company') {
+      return categoryLabel === 'Company';
+    }
+    
+    if (targetCategory.includes('Company Documents')) {
+      return categoryLabel === targetCategory;
+    }
+    
+    switch (targetCategory) {
+      case 'identity':
+        return categoryLabel === 'Identity Documents';
+      case 'education':
+        return categoryLabel === 'Education Documents';
+      case 'other':
+        return categoryLabel === 'Other Documents';
+      case 'all':
+      default:
+        return true;
+    }
+  }, [mapCategoryLabel]);
+
+  // Calculate tab counts based on selected category - optimized
+  const tabCounts = useMemo(() => {
+    if (checklistState !== 'editing') {
+      return { currentCount: 0, availableCount: 0 };
+    }
+
+    const currentCount = currentChecklistDocuments.filter(item => 
+      matchesCategory(item.category, selectedCategory)
+    ).length;
+
+    const availableCount = availableDocumentsForEditing.filter(item => 
+      matchesCategory(item.category, selectedCategory)
+    ).length;
+
+    return { currentCount, availableCount };
+  }, [checklistState, currentChecklistDocuments, availableDocumentsForEditing, selectedCategory, matchesCategory]);
+
   // Apply search filtering with highlighting
   const filteredItems = useSearchMemo(
     categoryFilteredItems,
@@ -159,6 +414,10 @@ export function DocumentChecklistTable({
 
   // Get current company if a company category is selected
   const currentCompany = useMemo(() => {
+    if (selectedCategory === 'company') {
+      // For base company documents, no specific company
+      return null;
+    }
     if (selectedCategory.includes('Company Documents')) {
       return companies.find(company => company.category === selectedCategory);
     }
@@ -171,7 +430,7 @@ export function DocumentChecklistTable({
   const endIndex = startIndex + itemsPerPage;
   const paginatedItems = filteredItems.slice(startIndex, endIndex);
 
-  const handleUploadClick = (documentType: string, category: string) => {
+  const handleUploadClick = useCallback((documentType: string, category: string) => {
     setSelectedDocumentType(documentType);
     setSelectedDocumentCategory(category);
     
@@ -185,14 +444,14 @@ export function DocumentChecklistTable({
     }
     
     setIsModalOpen(true);
-  };
+  }, [companies]);
 
-  const handleModalClose = () => {
+  const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
     setSelectedDocumentType('');
     setSelectedDocumentCategory('');
     setSelectedCompany(undefined);
-  };
+  }, []);
 
   const filterDocumentsByType = useCallback((documents: Document[], documentType: string): Document[] => {
     const expectedDocType = documentType.toLowerCase().replace(/\s+/g, '_');
@@ -218,14 +477,14 @@ export function DocumentChecklistTable({
     return latestDocumentsData?.data || fallbackDocuments || [];
   }, [queryClient, applicationId]);
 
-  const handleViewDocuments = (documentType: string) => {
+  const handleViewDocuments = useCallback((documentType: string) => {
     const latestDocuments = getLatestDocuments(documents || []);
     const matchingDocuments = filterDocumentsByType(latestDocuments, documentType);
     
     setSelectedDocumentsForView(matchingDocuments);
     setSelectedDocumentTypeForView(documentType);
     setIsDocumentListModalOpen(true);
-  };
+  }, [documents, getLatestDocuments, filterDocumentsByType]);
 
   // Reset to first page when category or search changes
   useEffect(() => {
@@ -249,8 +508,8 @@ export function DocumentChecklistTable({
     filterDocumentsByType
   ]);
 
-  // Helper function to get category badge styling
-  const getCategoryBadgeStyle = (category: string) => {
+  // Helper function to get category badge styling - memoized
+  const getCategoryBadgeStyle = useCallback((category: string) => {
     if (category.endsWith(' Documents') && 
         !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
       return 'bg-orange-500 hover:bg-orange-600'; // Company documents
@@ -266,7 +525,7 @@ export function DocumentChecklistTable({
       default:
         return 'bg-gray-500 hover:bg-gray-600';
     }
-  };
+  }, []);
 
   if (isLoading) {
     return (
@@ -316,6 +575,55 @@ export function DocumentChecklistTable({
         <CardHeader className="pb-4">
           <div className="flex flex-col gap-4">
             <CardTitle className="text-lg sm:text-xl">Document Checklist</CardTitle>
+            
+            {/* Show tabs for editing mode when not on "All" category */}
+            {checklistState === 'editing' && selectedCategory !== 'all' && (
+              <ChecklistTabs
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
+                currentCount={tabCounts.currentCount}
+                availableCount={tabCounts.availableCount}
+              />
+            )}
+
+            {/* Show pending changes for editing mode */}
+            {checklistState === 'editing' && (pendingAdditions.length > 0 || pendingDeletions.length > 0) && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-sm font-medium text-blue-900">
+                      Pending Changes
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-blue-700">
+                      {pendingAdditions.length > 0 && `${pendingAdditions.length} to add`}
+                      {pendingAdditions.length > 0 && pendingDeletions.length > 0 && ', '}
+                      {pendingDeletions.length > 0 && `${pendingDeletions.length} to remove`}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={onClearPendingChanges}
+                        className="text-xs"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={onSavePendingChanges}
+                        className="text-xs bg-blue-600 hover:bg-blue-700"
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="w-full">
               <SearchBox
                 value={searchQuery}
@@ -374,107 +682,28 @@ export function DocumentChecklistTable({
                     </TableRow>
                   ) : (
                     paginatedItems.map((item, index) => (
-                      <TableRow key={`${item.category}-${item.documentType}`}>
-                        <TableCell className="font-medium w-16">
-                          {startIndex + index + 1}
-                        </TableCell>
-                        <TableCell className="hidden sm:table-cell">
-                          <Badge 
-                            variant="default" 
-                            className={cn(
-                              "text-xs py-1 text-white",
-                              getCategoryBadgeStyle(item.category)
-                            )}
-                          >
-                            {item.category}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col space-y-1">
-                            <div className="flex items-center space-x-2">
-                              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                              <div className="truncate" title={item.documentType}>
-                                <HighlightText
-                                  text={item.documentType}
-                                  query={searchQuery}
-                                  className="text-sm"
-                                />
-                              </div>
-                            </div>
-                            {/* Show category on mobile */}
-                            <div className="sm:hidden">
-                              <Badge 
-                                variant="default" 
-                                className={cn(
-                                  "text-xs py-0.5 text-white",
-                                  getCategoryBadgeStyle(item.category)
-                                )}
-                              >
-                                {item.category}
-                              </Badge>
-                            </div>
-                            {/* Show status on mobile */}
-                            <div className="md:hidden">
-                              {item.isUploaded ? (
-                                <Badge 
-                                  variant="default" 
-                                  className="bg-green-100 text-green-800 hover:bg-green-200 text-xs"
-                                >
-                                  Uploaded
-                                </Badge>
-                              ) : (
-                                <Badge 
-                                  variant="outline" 
-                                  className="text-muted-foreground text-xs"
-                                >
-                                  Not Uploaded
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell className="hidden md:table-cell">
-                          {item.isUploaded ? (
-                            <Badge 
-                              variant="default" 
-                              className="bg-green-100 text-green-800 hover:bg-green-200"
-                            >
-                              Uploaded
-                            </Badge>
-                          ) : (
-                            <Badge 
-                              variant="outline" 
-                              className="text-muted-foreground"
-                            >
-                              Not Uploaded
-                            </Badge>
-                          )}
-                        </TableCell>
-                        <TableCell className="text-right w-24">
-                          <div className="flex items-center justify-end gap-1">
-                            {item.isUploaded && (
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleViewDocuments(item.documentType)}
-                                className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
-                              >
-                                <Eye className="h-3 w-3" />
-                                <span className="hidden sm:inline">View</span>
-                              </Button>
-                            )}
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleUploadClick(item.documentType, item.category)}
-                              className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
-                            >
-                              <Upload className="h-3 w-3" />
-                              <span className="hidden sm:inline">Upload</span>
-                            </Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
+                      <ChecklistTableRow
+                        key={`${item.category}-${item.documentType}-${item.checklist_id || 'new'}-${index}`}
+                        item={item}
+                        index={index}
+                        startIndex={startIndex}
+                        searchQuery={searchQuery}
+                        checklistState={checklistState}
+                        activeTab={activeTab}
+                        selectedCategory={selectedCategory}
+                        onUpdateDocumentRequirement={onUpdateDocumentRequirement}
+                        onAddToPendingChanges={onAddToPendingChanges}
+                        onAddToPendingDeletions={onAddToPendingDeletions}
+                        onRemoveFromPendingChanges={onRemoveFromPendingChanges}
+                        onRemoveFromPendingDeletions={onRemoveFromPendingDeletions}
+                        onSavePendingChanges={onSavePendingChanges}
+                        onClearPendingChanges={onClearPendingChanges}
+                        pendingAdditions={pendingAdditions}
+                        pendingDeletions={pendingDeletions}
+                        handleViewDocuments={handleViewDocuments}
+                        handleUploadClick={handleUploadClick}
+                        getCategoryBadgeStyle={getCategoryBadgeStyle}
+                      />
                     ))
                   )}
                 </TableBody>
@@ -501,6 +730,7 @@ export function DocumentChecklistTable({
           selectedDocumentType={selectedDocumentType}
           selectedDocumentCategory={selectedDocumentCategory}
           company={selectedCompany}
+          isClientView={isClientView}
         />
       </Card>
 
@@ -523,4 +753,8 @@ export function DocumentChecklistTable({
       />
     </div>
   );
-}
+};
+
+// Export memoized component to prevent unnecessary re-renders
+export const DocumentChecklistTable = memo(DocumentChecklistTableComponent);
+DocumentChecklistTable.displayName = 'DocumentChecklistTable';

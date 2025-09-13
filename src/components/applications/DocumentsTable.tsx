@@ -20,15 +20,34 @@ import { ApplicationsPagination } from './ApplicationsPagination';
 import { Trash2, Upload, FileText, CheckCircle, Clock, Eye, XCircle, AlertCircle } from 'lucide-react';
 import ViewDocumentSheet from './ViewDocumentSheet';
 import { Document as ApplicationDocument } from '@/types/applications';
+import { ClientDocumentsResponse } from '@/types/client';
+import { useClientDeleteDocument } from '@/hooks/useClientDeleteDocument';
 
 interface DocumentsTableProps {
     applicationId: string;
     currentPage?: number;
-    limit?: number;
+    limit?: number; // Limit of documents per page
     onPageChange?: (page: number) => void;
+    // Client privilege props
+    isClientView?: boolean;
+    // Client-specific data (when isClientView is true)
+    clientDocumentsData?: ClientDocumentsResponse;
+    clientIsLoading?: boolean;
+    clientError?: Error | null;
+    onClientDeleteSuccess?: () => void;
 }
 
-export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onPageChange }: DocumentsTableProps) {
+export function DocumentsTable({ 
+    applicationId, 
+    currentPage = 1, 
+    limit = 10, 
+    onPageChange,
+    isClientView = false,
+    clientDocumentsData,
+    clientIsLoading = false,
+    clientError = null,
+    onClientDeleteSuccess
+}: DocumentsTableProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [documentToDelete, setDocumentToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -36,16 +55,23 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
     const [selectedDocument, setSelectedDocument] = useState<ApplicationDocument | null>(null);
 
     const deleteDocumentMutation = useDeleteDocument();
-    
-    // Fetch paginated documents
+    const clientDeleteDocumentMutation = useClientDeleteDocument();
+
     const {
-        data: documentsData,
-        isLoading,
-        error,
+        data: adminDocumentsData,
+        isLoading: adminIsLoading,
+        error: adminError,
         refetch
     } = useApplicationDocumentsPaginated(applicationId, currentPage, limit);
 
-    const documents = documentsData?.data;
+    // Use appropriate data based on view type
+    const documentsData = isClientView ? clientDocumentsData : adminDocumentsData;
+    const isLoading = isClientView ? clientIsLoading : adminIsLoading;
+    const error = isClientView ? clientError : adminError;
+
+    const documents = isClientView 
+        ? ((documentsData as ClientDocumentsResponse)?.data?.documents || [])
+        : (documentsData?.data || []);
     const pagination = documentsData?.pagination;
 
     const handleDeleteDocument = (documentId: string, fileName: string) => {
@@ -66,10 +92,17 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
     const confirmDelete = async () => {
         if (!documentToDelete) return;
         try {
-            await deleteDocumentMutation.mutateAsync(documentToDelete.id);
+            if (isClientView) {
+                await clientDeleteDocumentMutation.mutateAsync({
+                    documentId: documentToDelete.id
+                });
+                onClientDeleteSuccess?.();
+            } else {
+                await deleteDocumentMutation.mutateAsync(documentToDelete.id);
+                refetch();
+            }
             setDeleteDialogOpen(false);
             setDocumentToDelete(null);
-            refetch();
         } catch {
         }
     };
@@ -143,7 +176,7 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Documents</CardTitle>
+                    <CardTitle>Submitted Documents</CardTitle>
                 </CardHeader>
                 <CardContent>
                     <div className="text-center py-8">
@@ -155,7 +188,7 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
         );
     }
 
-    if (!documents || documents.length === 0) {
+    if (!documents || (documents as unknown[])?.length === 0) {
         return (
             <Card>
                 <CardHeader>
@@ -170,7 +203,7 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                             className="mt-4"
                         >
                             <Upload className="h-4 w-4 mr-2" />
-                            Upload Document
+                            Upload Documents
                         </Button>
                     </div>
                 </CardContent>
@@ -183,7 +216,7 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
             <Card className='w-full'>
                 <CardHeader>
                     <div className="flex items-center justify-between">
-                        <CardTitle>Documents</CardTitle>
+                        <CardTitle>Submitted Documents</CardTitle>
                     </div>
                 </CardHeader>
                 <CardContent>
@@ -200,15 +233,15 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {documents?.map((document, index) => (
+                            {(documents as ApplicationDocument[])?.map((document: ApplicationDocument, index: number) => (
                                 <TableRow key={document._id}>
                                     <TableCell className="font-medium">{(pagination?.currentPage ? (pagination.currentPage - 1) * pagination.limit : 0) + index + 1}</TableCell>
                                     <TableCell>
                                         <div className="flex items-center space-x-2">
                                             <FileText className="h-4 w-4 text-muted-foreground" />
                                             <span className="truncate max-w-[150px]" title={document.file_name}>
-                                                {document.file_name.length > 20 
-                                                    ? `${document.file_name.substring(0, 20)}...` 
+                                                {document.file_name.length > 20
+                                                    ? `${document.file_name.substring(0, 20)}...`
                                                     : document.file_name}
                                             </span>
                                         </div>
@@ -218,8 +251,8 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                                             <Badge variant="secondary" className="text-xs max-w-[120px] font-medium truncate" title={document.document_type.replace(/_/g, ' ').replace(/\//g, '/')}>
                                                 {(() => {
                                                     const formattedType = document.document_type.replace(/_/g, ' ').replace(/\//g, '/');
-                                                    return formattedType.length > 15 
-                                                        ? `${formattedType.substring(0, 15)}...` 
+                                                    return formattedType.length > 15
+                                                        ? `${formattedType.substring(0, 15)}...`
                                                         : formattedType;
                                                 })()}
                                             </Badge>
@@ -231,17 +264,16 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                                     </TableCell>
                                     <TableCell className='font-lexend'>
                                         {document.document_category ? (
-                                            <Badge 
+                                            <Badge
                                                 variant={document.document_category.includes('Company Documents') ? "default" : "outline"}
-                                                className={`text-xs max-w-[140px] font-medium  truncate ${
-                                                    document.document_category.includes('Company Documents') 
-                                                        ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' 
+                                                className={`text-xs max-w-[140px] font-medium  truncate ${document.document_category.includes('Company Documents')
+                                                        ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
                                                         : ''
-                                                }`}
+                                                    }`}
                                                 title={document.document_category}
                                             >
-                                                {document.document_category.length > 18 
-                                                    ? `${document.document_category.substring(0, 18)}...` 
+                                                {document.document_category.length > 18
+                                                    ? `${document.document_category.substring(0, 18)}...`
                                                     : document.document_category}
                                             </Badge>
                                         ) : (
@@ -296,7 +328,7 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                             currentPage={pagination.currentPage}
                             totalRecords={pagination.totalRecords}
                             limit={pagination.limit}
-                            onPageChange={onPageChange || (() => {})}
+                            onPageChange={onPageChange || (() => { })}
                         />
                     )}
                 </CardContent>
@@ -305,6 +337,7 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
                     onClose={() => setIsModalOpen(false)}
                     applicationId={applicationId}
                     company={undefined}
+                    isClientView={isClientView}
                 />
             </Card>
 
@@ -321,10 +354,11 @@ export function DocumentsTable({ applicationId, currentPage = 1, limit = 10, onP
             {selectedDocument && (
                 <ViewDocumentSheet
                     document={selectedDocument}
-                    documents={documents}
+                    documents={documents as ApplicationDocument[]}
                     applicationId={applicationId}
                     isOpen={viewSheetOpen}
                     onClose={handleCloseViewSheet}
+                    isClientView={isClientView}
                 />
             )}
         </>

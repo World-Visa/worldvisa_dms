@@ -35,6 +35,10 @@ export interface DocumentChecklistTableProps {
   applicationId: string;
   selectedCategory: DocumentCategory;
   companies: Company[];
+  isClientView?: boolean;
+  checklistData?: ChecklistResponse;
+  onAddCompany?: () => void;
+  onRemoveCompany?: (companyName: string) => void;
 }
 
 export interface UploadDocumentsModalProps {
@@ -44,6 +48,7 @@ export interface UploadDocumentsModalProps {
   selectedDocumentType?: string;
   selectedDocumentCategory?: string;
   company?: Company;
+  isClientView?: boolean;
 }
 
 export interface UploadedFile {

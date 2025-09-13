@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthGuard } from "@/components/auth/AuthGuard";
+import { ClientHeader } from "@/components/auth/ClientHeader";
 
 export const metadata: Metadata = {
   title: "WorldVisa DMS - Client Portal",
@@ -13,6 +14,7 @@ export default function ClientLayout({
 }>) {
   return (
     <AuthGuard requiredRole="client" redirectTo="/client-login">
+      <ClientHeader />
       {children}
     </AuthGuard>
   );

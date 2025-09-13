@@ -43,8 +43,9 @@ export function ClientLoginForm() {
   const onSubmit = async (data: ClientLoginFormData) => {
     try {
       await clientLoginMutation.mutateAsync(data);
-      // Redirect after successful login
-      router.push('/client/dashboard');
+      // Redirect to client applications page after successful login
+      // The application ID will be extracted from the user's lead_id
+      router.push('/client/applications');
     } catch (error) {
       setError('root', {
         message: error instanceof Error ? error.message : 'Login failed. Please try again.',

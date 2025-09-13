@@ -6,6 +6,19 @@ import { AuthState, AdminLoginRequest, ClientLoginRequest } from '@/types/auth';
 import { adminLogin, clientLogin } from '@/lib/zoho';
 import { tokenStorage, parseToken, isTokenExpired } from '@/lib/auth';
 
+// Type for client login response structure
+interface ClientLoginResponse {
+  status: 'success' | 'error';
+  token: string;
+  _id?: string;
+  id?: string;
+  username?: string;
+  name?: string;
+  email?: string;
+  lead_id?: string;
+  role?: 'admin' | 'client' | 'master_admin';
+}
+
 interface AuthStore extends AuthState {
   login: (credentials: AdminLoginRequest | ClientLoginRequest, type: 'admin' | 'client') => Promise<void>;
   logout: () => void;
@@ -32,14 +45,30 @@ export const useAuth = create<AuthStore>()(
 
           if (response.status === 'success') {
             const token = response.token;
-            const userData = response.data.user;             
+            
+            // Handle different response structures for admin vs client login
+            let userData;
+            if (response.data && response.data.user) {
+              // Admin login response structure
+              userData = response.data.user;
+            } else {
+              // Client login response structure - user data is directly in response
+              const clientResponse = response as ClientLoginResponse; // Type assertion for client response
+              userData = {
+                _id: clientResponse._id || clientResponse.id,
+                username: clientResponse.username || clientResponse.name,
+                email: clientResponse.email,
+                lead_id: clientResponse.lead_id,
+                role: clientResponse.role,
+              };
+            }
           
             const user = {
-              _id: userData._id,
+              _id: userData._id || '',
               username: userData.username,
               email: userData.email,
               lead_id: userData.lead_id,
-              role: userData?.role,
+              role: userData?.role || 'client',
             };            
             // Store token, role, and user data
             tokenStorage.set(token);

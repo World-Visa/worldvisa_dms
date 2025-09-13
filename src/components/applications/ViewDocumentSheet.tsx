@@ -26,6 +26,7 @@ interface ViewDocumentSheetProps {
     applicationId: string;
     isOpen?: boolean;
     onClose?: () => void;
+    isClientView?: boolean; // New prop to hide admin-specific features
 }
 
 
@@ -34,7 +35,8 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     documents,
     applicationId,
     isOpen,
-    onClose
+    onClose,
+    isClientView = false
 }) => {
     const currentDocumentIndex = documents.findIndex(doc => doc._id === document._id);
     const [selectedIndex, setSelectedIndex] = useState(currentDocumentIndex >= 0 ? currentDocumentIndex : 0);
@@ -102,13 +104,15 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                                         </span>
                                     </div>
                                 </div>
-                                <SendDocumentModal
-                                    documents={documents}
-                                    selectedDocument={currentDoc}
-                                    onSend={(documentIds, notes) => {
-                                        console.log('Sending documents:', documentIds, 'with notes:', notes);
-                                    }}
-                                />
+                                {!isClientView && (
+                                    <SendDocumentModal
+                                        documents={documents}
+                                        selectedDocument={currentDoc}
+                                        onSend={(documentIds, notes) => {
+                                            console.log('Sending documents:', documentIds, 'with notes:', notes);
+                                        }}
+                                    />
+                                )}
                             </div>
                         </SheetHeader>
 
@@ -142,24 +146,28 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                                 {/* Status Display */}
                                 <DocumentStatusDisplay document={currentDoc} />
 
-                                {/* Status Buttons - Bottom Right */}
-                                <DocumentStatusButtons
-                                    document={currentDoc}
-                                    applicationId={applicationId}
-                                    onStatusChange={(documentId, newStatus) => {
-                                        console.log(`Document ${documentId} status changed to: ${newStatus}`);
-                                    }}
-                                />
+                                {/* Status Buttons - Bottom Right (Admin only) */}
+                                {!isClientView && (
+                                    <DocumentStatusButtons
+                                        document={currentDoc}
+                                        applicationId={applicationId}
+                                        onStatusChange={(documentId, newStatus) => {
+                                            console.log(`Document ${documentId} status changed to: ${newStatus}`);
+                                        }}
+                                    />
+                                )}
                             </div>
 
-                            {/* Comments Section - Bottom on mobile, Right on desktop */}
-                            <div className="w-full lg:flex-shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
-                                <CommentErrorBoundary>
-                                    <DocumentComments
-                                        documentId={currentDoc._id}
-                                    />
-                                </CommentErrorBoundary>
-                            </div>
+                            {/* Comments Section - Bottom on mobile, Right on desktop (Admin only) */}
+                            {!isClientView && (
+                                <div className="w-full lg:flex-shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
+                                    <CommentErrorBoundary>
+                                        <DocumentComments
+                                            documentId={currentDoc._id}
+                                        />
+                                    </CommentErrorBoundary>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </SheetContent>

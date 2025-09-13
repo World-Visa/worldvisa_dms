@@ -9,9 +9,17 @@ export interface User {
 export interface AuthResponse {
   status: 'success' | 'error';
   token: string;
-  data: {
+  data?: {
     user: User;
   };
+  // Client login response fields (when data.user is not present)
+  _id?: string;
+  id?: string;
+  username?: string;
+  name?: string;
+  email?: string;
+  lead_id?: string;
+  role?: 'admin' | 'client' | 'master_admin';
 }
 
 export interface AdminLoginRequest {

@@ -21,7 +21,15 @@ import { Textarea } from '@/components/ui/textarea';
 import { generateCompanyDescription } from '@/utils/dateCalculations';
 
 
-export function UploadDocumentsModal({ isOpen, onClose, applicationId, selectedDocumentType: propSelectedDocumentType, selectedDocumentCategory: propSelectedDocumentCategory, company }: UploadDocumentsModalProps) {
+export function UploadDocumentsModal({ 
+  isOpen, 
+  onClose, 
+  applicationId, 
+  selectedDocumentType: propSelectedDocumentType, 
+  selectedDocumentCategory: propSelectedDocumentCategory, 
+  company,
+  isClientView = false
+}: UploadDocumentsModalProps) {
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>(propSelectedDocumentType || '');
   const [selectedDocumentCategory, setSelectedDocumentCategory] = useState<string>(propSelectedDocumentCategory || '');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -281,8 +289,8 @@ export function UploadDocumentsModal({ isOpen, onClose, applicationId, selectedD
             </div>
           )}
 
-          {/* Description Input - only show for non-company documents */}
-          {selectedDocumentType && !getCompanyDescription(selectedDocumentCategory) && (
+          {/* Description Input - only show for non-company documents and not for clients */}
+          {!isClientView && selectedDocumentType && !getCompanyDescription(selectedDocumentCategory) && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Description (Optional)</label>
               <Textarea

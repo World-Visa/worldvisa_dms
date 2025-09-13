@@ -48,8 +48,9 @@ export const localStorageUtils = {
   clearApplicationData: (applicationId: string): boolean => {
     try {
       if (typeof window !== 'undefined') {
-        localStorage.removeItem(`companies-${applicationId}`);
-        localStorage.removeItem(`selectedCategory-${applicationId}`);
+        localStorage.removeItem(localStorageUtils.getCompaniesKey(applicationId));
+        localStorage.removeItem(localStorageUtils.getCategoryKey(applicationId));
+        localStorage.removeItem(localStorageUtils.getChecklistStateKey(applicationId));
         return true;
       }
       return false;
@@ -62,6 +63,7 @@ export const localStorageUtils = {
   // Application-specific storage keys
   getCompaniesKey: (applicationId: string) => `worldvisa-companies-${applicationId}`,
   getCategoryKey: (applicationId: string) => `worldvisa-category-${applicationId}`,
+  getChecklistStateKey: (applicationId: string) => `worldvisa-checklist-state-${applicationId}`,
 
   // Save companies data with application-specific key
   saveCompanies: (applicationId: string, companies: unknown[]): boolean => {
@@ -81,6 +83,16 @@ export const localStorageUtils = {
   // Load selected category with application-specific key
   loadCategory: (applicationId: string, defaultValue: string): string => {
     return localStorageUtils.getItem(localStorageUtils.getCategoryKey(applicationId), defaultValue);
+  },
+
+  // Save checklist state with application-specific key
+  saveChecklistState: (applicationId: string, state: unknown): boolean => {
+    return localStorageUtils.setItem(localStorageUtils.getChecklistStateKey(applicationId), state);
+  },
+
+  // Load checklist state with application-specific key
+  loadChecklistState: <T>(applicationId: string, defaultValue: T): T => {
+    return localStorageUtils.getItem(localStorageUtils.getChecklistStateKey(applicationId), defaultValue);
   },
 
 };

@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
+import { useAuth } from '@/hooks/useAuth';
 import { ApplicantDetails } from '@/components/applications/ApplicantDetails';
 import { DocumentsTable } from '@/components/applications/DocumentsTable';
 import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
@@ -17,13 +18,21 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { DocumentCategory, Company } from '@/types/documents';
 import { localStorageUtils } from '@/lib/localStorage';
+import { useChecklistState } from '@/hooks/useChecklistState';
+import { useChecklistURLState } from '@/lib/urlState';
 
 export default function ApplicationDetailsPage() {
   const params = useParams();
+  const router = useRouter();
   const applicationId = params.id as string;
+  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  
+  // URL state management
+  const { category: urlCategory, setCategory: setURLCategory } = useChecklistURLState(applicationId);
+  
   const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(() => {
-    const savedCategory = localStorageUtils.loadCategory(applicationId, 'submitted') as DocumentCategory;
-    // Category restored from localStorage
+    // Use URL state first, then fallback to localStorage
+    const savedCategory = localStorageUtils.loadCategory(applicationId, urlCategory) as DocumentCategory;
     return savedCategory;
   });
   
@@ -37,6 +46,14 @@ export default function ApplicationDetailsPage() {
   const [documentsPage, setDocumentsPage] = useState(1);
   const maxCompanies = 5;
 
+  // Check authentication
+  useEffect(() => {
+    if (!isAuthLoading && (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'master_admin'))) {
+      router.push('/admin-login');
+    }
+  }, [isAuthenticated, isAuthLoading, user?.role, router]);
+
+ 
   const {
     data: applicationData,
     isLoading: isApplicationLoading,
@@ -51,6 +68,13 @@ export default function ApplicationDetailsPage() {
 
   const application = applicationData?.data;
   const documents = documentsData?.data;
+
+   const checklistState = useChecklistState({
+    applicationId,
+    documents,
+    companies
+  });
+
 
   const handleAddCompany = (company: Company) => {
     const companyWithCategory = {
@@ -83,11 +107,39 @@ export default function ApplicationDetailsPage() {
     setDocumentsPage(page);
   };
 
-  const handleCategoryChange = (category: DocumentCategory) => {
-    setSelectedCategory(category);    
-    localStorageUtils.saveCategory(applicationId, category);
-    // Category saved to localStorage
+
+  // Enhanced cancel function that also resets category
+  const handleCancelChecklist = () => {
+    checklistState.cancelChecklistOperation();
+    // Reset to submitted documents when canceling
+    setSelectedCategory('submitted');
+    setURLCategory('submitted');
+    localStorageUtils.saveCategory(applicationId, 'submitted');
   };
+
+  // Enhanced category change handler that also updates checklist state
+  const handleCategoryChangeWithChecklist = (category: DocumentCategory) => {
+    setSelectedCategory(category);
+    setURLCategory(category);
+    localStorageUtils.saveCategory(applicationId, category);
+  };
+
+  // Enhanced start creating checklist function
+  const handleStartCreatingChecklist = () => {
+    checklistState.startCreatingChecklist();
+    // Set the category to 'all' to show all documents
+    setSelectedCategory('all');
+    setURLCategory('all');
+    localStorageUtils.saveCategory(applicationId, 'all');
+  };
+
+  // Sync URL state with local state on mount
+  useEffect(() => {
+    if (urlCategory && urlCategory !== selectedCategory) {
+      setSelectedCategory(urlCategory as DocumentCategory);
+      localStorageUtils.saveCategory(applicationId, urlCategory);
+    }
+  }, [urlCategory, selectedCategory, applicationId]);
 
   // Reset documents page when category changes
   useEffect(() => {
@@ -139,7 +191,7 @@ export default function ApplicationDetailsPage() {
       </div>
 
       {/* Loading State */}
-      {isApplicationLoading && isDocumentsLoading ? (
+      {(isAuthLoading || isApplicationLoading || isDocumentsLoading) ? (
         <div className="space-y-6">
           <div className="flex justify-between w-full gap-8 items-end">
             <div className="space-y-4 w-full">
@@ -161,7 +213,7 @@ export default function ApplicationDetailsPage() {
           </div>
           <Skeleton className="h-96 w-full rounded-xl" />
         </div>
-      ) : (
+      ) : !isAuthLoading && isAuthenticated && (user?.role === 'admin' || user?.role === 'master_admin') ? (
         <div className="space-y-6">
           {/* Applicant Details */}
           <ApplicantDetails
@@ -178,10 +230,19 @@ export default function ApplicationDetailsPage() {
             {/* Category Filter */}
             <DocumentCategoryFilter
               selectedCategory={selectedCategory}
-              onCategoryChange={handleCategoryChange}
+              onCategoryChange={handleCategoryChangeWithChecklist}
               companies={companies}
               onAddCompany={handleOpenAddCompanyDialog}
               maxCompanies={maxCompanies}
+              // Checklist props
+              checklistState={checklistState.state}
+              checklistCategories={checklistState.checklistCategories}
+              hasCompanyDocuments={checklistState.hasCompanyDocuments}
+              onStartCreatingChecklist={handleStartCreatingChecklist}
+              onStartEditingChecklist={checklistState.startEditingChecklist}
+              onSaveChecklist={checklistState.saveChecklist}
+              onCancelChecklist={handleCancelChecklist}
+              isSavingChecklist={checklistState.isBatchSaving}
             />
 
             {/* Conditional Rendering */}
@@ -201,9 +262,34 @@ export default function ApplicationDetailsPage() {
                 selectedCategory={selectedCategory}
                 companies={companies}
                 onRemoveCompany={handleRemoveCompany}
+                // Checklist props
+                checklistState={checklistState.state}
+                filteredDocuments={checklistState.filteredDocuments}
+                currentChecklistDocuments={checklistState.currentChecklistDocuments}
+                availableDocumentsForEditing={checklistState.availableDocumentsForEditing}
+                selectedDocuments={checklistState.selectedDocuments}
+                requirementMap={checklistState.requirementMap}
+                onSelectDocument={checklistState.selectDocument}
+                onUpdateDocumentRequirement={checklistState.updateDocumentRequirement}
+                onUpdateChecklist={checklistState.updateChecklist}
+                checklistData={checklistState.checklistData}
+                // Pending changes props
+                pendingAdditions={checklistState.pendingAdditions}
+                pendingDeletions={checklistState.pendingDeletions}
+                onAddToPendingChanges={checklistState.addToPendingChanges}
+                onRemoveFromPendingChanges={checklistState.removeFromPendingChanges}
+                onAddToPendingDeletions={checklistState.addToPendingDeletions}
+                onRemoveFromPendingDeletions={checklistState.removeFromPendingDeletions}
+                onSavePendingChanges={checklistState.savePendingChanges}
+                onClearPendingChanges={checklistState.clearPendingChanges}
               />
             )}
           </div>
+        </div>
+      ) : (
+        <div className="text-center py-8">
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don&apos;t have permission to access this page.</p>
         </div>
       )}
 

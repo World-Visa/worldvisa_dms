@@ -1,0 +1,446 @@
+/**
+ * Checklist State Management Hook
+ * 
+ * This hook manages the complex state for the dynamic checklist system,
+ * including creation, editing, and persistence of checklist data.
+ */
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useChecklist, useChecklistMutations } from './useChecklist';
+import { localStorageUtils } from '@/lib/localStorage';
+import type {
+  ChecklistState,
+  ChecklistStateData,
+  ChecklistDocument,
+  DocumentRequirement,
+  ChecklistUpdateRequest,
+} from '@/types/checklist';
+import type { Document } from '@/types/applications';
+import type { Company } from '@/types/documents';
+import {
+  getAllDocumentTypes,
+  markSubmittedDocumentsAsMandatory,
+  generateChecklistCategories,
+  hasCompanyDocumentsInChecklist,
+  getAvailableDocumentsForEditing,
+  createChecklistItemsFromDocuments,
+  validateChecklist,
+  sortCategoriesForDisplay
+} from '@/lib/checklist/utils';
+
+interface UseChecklistStateProps {
+  applicationId: string;
+  documents: Document[] | undefined;
+  companies: Company[];
+}
+
+export function useChecklistState({
+  applicationId,
+  documents,
+  companies
+}: UseChecklistStateProps) {
+  // Core state
+  const [state, setState] = useState<ChecklistState>('none');
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [selectedDocuments, setSelectedDocuments] = useState<ChecklistDocument[]>([]);
+  const [requirementMap, setRequirementMap] = useState<Record<string, DocumentRequirement>>({});
+  
+  // Pending changes for editing mode
+  const [pendingAdditions, setPendingAdditions] = useState<ChecklistDocument[]>([]);
+  const [pendingDeletions, setPendingDeletions] = useState<string[]>([]);
+
+  // API hooks
+  const { data: checklistData, isLoading: isChecklistLoading } = useChecklist(applicationId);
+  const { batchSave, batchUpdate, batchDelete, isBatchSaving } = useChecklistMutations(applicationId);
+
+  // Get all available document types
+  const allDocumentTypes = useMemo(() => getAllDocumentTypes(companies), [companies]);
+
+  // Get checklist items from API
+  const checklistItems = useMemo(() => {
+    const data = checklistData?.data;
+    if (Array.isArray(data)) {
+      return data;
+    }
+    console.warn('useChecklistState: checklistData.data is not an array', data);
+    return [];
+  }, [checklistData]);
+
+  // Check if checklist exists
+  const hasChecklist = useMemo(() => 
+    checklistItems.length > 0, 
+    [checklistItems]
+  );
+
+  // Check if company documents are in checklist
+  const hasCompanyDocuments = useMemo(() => 
+    hasCompanyDocumentsInChecklist(checklistItems), 
+    [checklistItems]
+  );
+
+  // Generate categories for saved checklist
+  const checklistCategories = useMemo(() => 
+    sortCategoriesForDisplay(generateChecklistCategories(checklistItems)), 
+    [checklistItems]
+  );
+
+  // Get available documents for editing
+  const availableDocumentsForEditing = useMemo(() => 
+    getAvailableDocumentsForEditing(allDocumentTypes, checklistItems), 
+    [allDocumentTypes, checklistItems]
+  );
+
+  // Load state from localStorage on mount
+  useEffect(() => {
+    if (!applicationId) return;
+    
+    // If we have checklist data from API, set state to 'saved'
+    if (hasChecklist) {
+      setState('saved');
+      setSelectedCategories([]);
+      setSelectedDocuments([]);
+      setRequirementMap({});
+      // Clear any temporary localStorage state when we have saved checklist
+      localStorageUtils.saveChecklistState(applicationId, {
+        state: 'saved',
+        selectedCategories: [],
+        selectedDocuments: [],
+        companyDocumentsSelected: false,
+        lastSavedAt: new Date().toISOString()
+      });
+      return;
+    }
+    
+    // Otherwise, load from localStorage
+    const savedState = localStorageUtils.loadChecklistState(applicationId, {}) as ChecklistStateData;
+    if (savedState && typeof savedState === 'object' && 'state' in savedState) {
+      setState(savedState.state);
+      setSelectedCategories(savedState.selectedCategories || []);
+      setSelectedDocuments(savedState.selectedDocuments || []);
+      setRequirementMap((savedState as unknown as ChecklistStateData).requirementMap || {});
+    }
+  }, [applicationId, hasChecklist, checklistData, checklistItems.length]);
+
+  // Auto-mark submitted documents as mandatory when creating checklist
+  useEffect(() => {
+    if (state === 'creating' && documents && allDocumentTypes.length > 0) {
+      const autoRequirements = markSubmittedDocumentsAsMandatory(documents, allDocumentTypes);
+      setRequirementMap(prev => ({ ...prev, ...autoRequirements }));
+      
+      // Also add submitted documents to selectedDocuments
+      const submittedDocuments: ChecklistDocument[] = [];
+      Object.entries(autoRequirements).forEach(([key, requirement]) => {
+        if (requirement === 'mandatory') {
+          const [category, documentType] = key.split('-');
+          submittedDocuments.push({
+            category,
+            documentType,
+            isUploaded: true, 
+            company_name: category.includes('Company Documents') ? 
+              companies.find(c => c.category === category)?.name : undefined
+          });
+        }
+      });
+      
+      setSelectedDocuments(prev => {
+        // Merge with existing selected documents, avoiding duplicates
+        const existingKeys = new Set(prev.map(doc => `${doc.category}-${doc.documentType}`));
+        const newDocuments = submittedDocuments.filter(doc => 
+          !existingKeys.has(`${doc.category}-${doc.documentType}`)
+        );
+        return [...prev, ...newDocuments];
+      });
+    }
+  }, [state, documents, allDocumentTypes, companies]);
+
+  // Save state to localStorage whenever it changes
+  useEffect(() => {
+    if (!applicationId) return;
+    
+    const stateData: ChecklistStateData = {
+      state,
+      selectedCategories,
+      selectedDocuments,
+      companyDocumentsSelected: selectedCategories.includes('company'),
+      lastSavedAt: new Date().toISOString()
+    };
+    
+    localStorageUtils.saveChecklistState(applicationId, stateData);
+  }, [applicationId, state, selectedCategories, selectedDocuments]);
+
+  // Actions
+  const startCreatingChecklist = useCallback(() => {
+    setState('creating');
+    setSelectedCategories(['all']); // Start with 'all' selected to show all documents
+    setSelectedDocuments([]);
+    setRequirementMap({});
+  }, []);
+
+  const startEditingChecklist = useCallback(() => {
+    setState('editing');
+    setSelectedCategories([]);
+    setSelectedDocuments([]);
+    setRequirementMap({});
+  }, []);
+
+  const cancelChecklistOperation = useCallback(() => {
+    if (hasChecklist) {
+      setState('saved');
+    } else {
+      setState('none');
+    }
+    setSelectedCategories([]);
+    setSelectedDocuments([]);
+    setRequirementMap({});
+  }, [hasChecklist]);
+
+  const selectCategory = useCallback((categoryId: string) => {
+    setSelectedCategories(prev => {
+      if (prev.includes(categoryId)) {
+        return prev.filter(id => id !== categoryId);
+      } else {
+        return [...prev, categoryId];
+      }
+    });
+  }, []);
+
+  const selectDocument = useCallback((document: ChecklistDocument) => {
+    setSelectedDocuments(prev => {
+      const exists = prev.some(doc => 
+        doc.category === document.category && doc.documentType === document.documentType
+      );
+      
+      if (exists) {
+        return prev.filter(doc => 
+          !(doc.category === document.category && doc.documentType === document.documentType)
+        );
+      } else {
+        return [...prev, document];
+      }
+    });
+  }, []);
+
+  // Add document to pending additions (for editing mode)
+  const addToPendingChanges = useCallback((document: ChecklistDocument) => {
+    setPendingAdditions(prev => {
+      const exists = prev.some(doc => 
+        doc.category === document.category && doc.documentType === document.documentType
+      );
+      
+      if (!exists) {
+        return [...prev, document];
+      }
+      return prev;
+    });
+  }, []);
+
+  // Remove document from pending additions
+  const removeFromPendingChanges = useCallback((document: ChecklistDocument) => {
+    setPendingAdditions(prev => 
+      prev.filter(doc => 
+        !(doc.category === document.category && doc.documentType === document.documentType)
+      )
+    );
+  }, []);
+
+  // Add document to pending deletions
+  const addToPendingDeletions = useCallback((checklistId: string) => {
+    setPendingDeletions(prev => {
+      if (!prev.includes(checklistId)) {
+        return [...prev, checklistId];
+      }
+      return prev;
+    });
+  }, []);
+
+  // Remove document from pending deletions
+  const removeFromPendingDeletions = useCallback((checklistId: string) => {
+    setPendingDeletions(prev => prev.filter(id => id !== checklistId));
+  }, []);
+
+  // Clear all pending changes
+  const clearPendingChanges = useCallback(() => {
+    setPendingAdditions([]);
+    setPendingDeletions([]);
+  }, []);
+
+  const updateDocumentRequirement = useCallback((
+    category: string,
+    documentType: string,
+    requirement: DocumentRequirement
+  ) => {
+    const key = `${category}-${documentType}`;
+    
+    // Update requirement map
+    setRequirementMap(prev => ({
+      ...prev,
+      [key]: requirement
+    }));
+    
+    // Update selected documents based on requirement
+    setSelectedDocuments(prev => {
+      const documentExists = prev.some(doc => 
+        doc.category === category && doc.documentType === documentType
+      );
+      
+      if (requirement === 'not_required') {
+        // Remove from selected documents if marked as not required
+        return prev.filter(doc => 
+          !(doc.category === category && doc.documentType === documentType)
+        );
+      } else {
+        // Add to selected documents if marked as mandatory or optional
+        if (!documentExists) {
+          const newDocument: ChecklistDocument = {
+            category,
+            documentType,
+            isUploaded: false, // New documents are not uploaded yet
+            company_name: category.includes('Company Documents') ? 
+              companies.find(c => c.category === category)?.name : undefined
+          };
+          return [...prev, newDocument];
+        }
+        return prev;
+      }
+    });
+  }, [companies]);
+
+  const saveChecklist = useCallback(async () => {
+    const validation = validateChecklist(selectedDocuments);
+    if (!validation.isValid) {
+      throw new Error(validation.errors.join(', '));
+    }
+
+    const checklistItems = createChecklistItemsFromDocuments(selectedDocuments, requirementMap);
+    await batchSave.mutateAsync(checklistItems);
+    
+    setState('saved');
+    setSelectedCategories([]);
+    setSelectedDocuments([]);
+    setRequirementMap({});
+  }, [selectedDocuments, requirementMap, batchSave]);
+
+  const updateChecklist = useCallback(async (
+    itemsToUpdate: ChecklistUpdateRequest[],
+    itemsToDelete: string[]
+  ) => {
+    const promises = [];
+    
+    if (itemsToUpdate.length > 0) {
+      promises.push(batchUpdate.mutateAsync(itemsToUpdate));
+    }
+    
+    if (itemsToDelete.length > 0) {
+      promises.push(batchDelete.mutateAsync(itemsToDelete));
+    }
+    
+    await Promise.all(promises);
+    
+    setState('saved');
+    setSelectedCategories([]);
+    setSelectedDocuments([]);
+    setRequirementMap({});
+  }, [batchUpdate, batchDelete]);
+
+  // Save pending changes (for editing mode)
+  const savePendingChanges = useCallback(async () => {
+    if (state !== 'editing') return;
+    
+    try {
+      // Convert pending additions to update requests
+      const itemsToAdd = pendingAdditions.map(doc => ({
+        document_type: doc.documentType,
+        document_category: doc.category,
+        required: doc.requirement === 'mandatory',
+        company_name: doc.company_name
+      }));
+
+      // Save additions
+      if (itemsToAdd.length > 0) {
+        await batchSave.mutateAsync(itemsToAdd);
+      }
+
+      // Save deletions
+      if (pendingDeletions.length > 0) {
+        await batchDelete.mutateAsync(pendingDeletions);
+      }
+
+      // Clear pending changes and return to saved state
+      clearPendingChanges();
+      setState('saved');
+    } catch (error) {
+      console.error('Failed to save pending changes:', error);
+      throw error;
+    }
+  }, [state, pendingAdditions, pendingDeletions, batchSave, batchDelete, clearPendingChanges]);
+
+  // Get filtered documents based on selected categories
+  const filteredDocuments = useMemo(() => {
+    if (state === 'creating') {
+      // In creating mode, return all document types
+      // The DocumentChecklistTable will handle filtering based on selectedCategory
+      return allDocumentTypes;
+    } else if (state === 'editing') {
+      return availableDocumentsForEditing;
+    }
+    return [];
+  }, [state, allDocumentTypes, availableDocumentsForEditing]);
+
+  // Get current checklist documents for editing
+  const currentChecklistDocuments = useMemo(() => {
+    if (state !== 'editing') return [];
+    
+    return checklistItems.map(item => ({
+      category: item.document_category,
+      documentType: item.document_type,
+      isUploaded: false, // This would need to be determined from documents
+      uploadedDocument: undefined,
+      requirement: item.required ? 'mandatory' : 'optional' as DocumentRequirement,
+      checklist_id: item.checklist_id,
+      company_name: item.company_name
+    }));
+  }, [state, checklistItems]);
+
+  return {
+    // State
+    state,
+    selectedCategories,
+    selectedDocuments,
+    requirementMap,
+    hasChecklist,
+    hasCompanyDocuments,
+    checklistCategories,
+    filteredDocuments,
+    currentChecklistDocuments,
+    availableDocumentsForEditing,
+    checklistData,
+    
+    // Pending changes
+    pendingAdditions,
+    pendingDeletions,
+    
+    // Loading states
+    isChecklistLoading,
+    isBatchSaving,
+    
+    // Actions
+    startCreatingChecklist,
+    startEditingChecklist,
+    cancelChecklistOperation,
+    selectCategory,
+    selectDocument,
+    updateDocumentRequirement,
+    saveChecklist,
+    updateChecklist,
+    
+    // Pending changes actions
+    addToPendingChanges,
+    removeFromPendingChanges,
+    addToPendingDeletions,
+    removeFromPendingDeletions,
+    clearPendingChanges,
+    savePendingChanges,
+    
+    // Utilities
+    validateChecklist: () => validateChecklist(selectedDocuments)
+  };
+}

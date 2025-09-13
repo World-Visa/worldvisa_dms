@@ -1,4 +1,4 @@
-import { Comment, CommentEvent, RealtimeConnectionState } from '@/types/comments';
+import { CommentEvent, RealtimeConnectionState } from '@/types/comments';
 import { tokenStorage } from './auth';
 import * as Sentry from '@sentry/nextjs';
 
@@ -70,6 +70,10 @@ export class RealtimeManager {
   }
 
   private connect(): void {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     if (this.isConnecting || this.isConnected()) {
       return;
     }
@@ -140,12 +144,17 @@ export class RealtimeManager {
       };
 
       eventSource.onerror = (error) => {
-        console.error('Realtime connection error:', error);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Realtime connection error:', error);
+        }
         this.handleConnectionError('Connection error occurred');
       };
 
     } catch (error) {
-      console.error('Failed to create realtime connection:', error);
+      // Only log detailed errors in development
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Failed to create realtime connection:', error);
+      }
       this.handleConnectionError('Failed to establish connection');
     }
   }

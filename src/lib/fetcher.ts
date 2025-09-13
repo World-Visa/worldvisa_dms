@@ -15,7 +15,6 @@ export async function fetcher<T>(
   if (token) {
     headers.Authorization = `Bearer ${token}`;
     
-    // Add user role information from localStorage if available
     if (typeof window !== 'undefined') {
       const userData = localStorage.getItem('user_data');
       if (userData) {
@@ -31,6 +30,7 @@ export async function fetcher<T>(
     }
   }
 
+
   const response = await fetch(url, {
     ...options,
     headers,
@@ -38,6 +38,42 @@ export async function fetcher<T>(
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    
+    // Handle authentication errors - only redirect if it's a clear auth failure
+    if (response.status === 401 || response.status === 403) {
+      if (token) {
+        const isClientEndpoint = url.includes('/clients/');
+        const isChecklistEndpoint = url.includes('/visa_applications/checklist/');
+        
+        if (isClientEndpoint || isChecklistEndpoint) {
+          console.log('Client/Checklist endpoint failed:', url, 'Status:', response.status, 'Letting hook handle the error');
+        } else {
+          // For other endpoints, redirect if authentication fails  
+          tokenStorage.remove();
+          if (typeof window !== 'undefined') {
+            const userData = localStorage.getItem('user_data');
+            let redirectPath = '/portal'; 
+            
+            if (userData) {
+              try {
+                const user = JSON.parse(userData);
+                if (user.role === 'client') {
+                  redirectPath = '/client-login';
+                } else if (user.role === 'admin' || user.role === 'master_admin') {
+                  redirectPath = '/admin-login';
+                }
+              } catch (error) {
+                console.warn('Failed to parse user data for redirect:', error);
+              }
+            }
+            
+            localStorage.removeItem('user_data');
+            window.location.href = redirectPath;
+          }
+        }
+      }
+    }
+    
     throw new Error(
       errorData.message || 
       errorData.error || 
