@@ -130,15 +130,7 @@ export function DocumentCategoryFilter({
           { id: 'identity', label: 'Identity Documents', count: 0 },
           { id: 'education', label: 'Education Documents', count: 0 },
           { id: 'other', label: 'Other Documents', count: 0 },
-          { id: 'company', label: 'Company Documents', count: 0 },
-          // Add individual company categories
-          ...checklistCategories
-            .filter(cat => cat.type === 'company')
-            .map(cat => ({
-              id: cat.id,
-              label: cat.label,
-              count: cat.count
-            }))
+          { id: 'company', label: 'Company Documents', count: 0 }
         ];
 
       default:
