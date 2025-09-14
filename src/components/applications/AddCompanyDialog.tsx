@@ -79,7 +79,8 @@ export function AddCompanyDialog({
       const newCompany: Company = {
         name: companyName.trim(),
         fromDate,
-        toDate
+        toDate,
+        category: `${companyName.trim()} Company Documents`
       };
       
       await onAddCompany(newCompany);

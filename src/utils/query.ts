@@ -1,9 +1,9 @@
-import { parse, stringify } from 'query-string';
+import parse from 'query-string';
 import { FilterParams } from '@/types/common';
 
 // Parse query string to object
 export function parseQueryString(queryString: string): FilterParams {
-  return parse(queryString, {
+  return parse.parse(queryString, {
     parseNumbers: true,
     parseBooleans: true,
   }) as FilterParams;
@@ -11,7 +11,7 @@ export function parseQueryString(queryString: string): FilterParams {
 
 // Convert object to query string
 export function stringifyQueryString(params: FilterParams): string {
-  return stringify(params, {
+  return parse.stringify(params, {
     skipNull: true,
     skipEmptyString: true,
   });

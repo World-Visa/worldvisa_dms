@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ClientDocument } from '@/types/client';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCircle, Clock, AlertCircle, FileUp } from 'lucide-react';
+import { CheckCircle, Clock, AlertCircle } from 'lucide-react';
 
 interface ClientDocumentsSummaryProps {
     documents: ClientDocument[] | undefined;
@@ -52,9 +52,7 @@ export function ClientDocumentsSummary({ documents, isLoading, error }: ClientDo
     // Calculate counts by status
     const pendingCount = documents?.filter(doc => doc.status === 'pending').length;
     const approvedCount = documents?.filter(doc => doc.status === 'approved').length;
-    const reviewCount = documents?.filter(doc => doc.status === 'reviewed').length;
-    const requestReviewCount = documents?.filter(doc => doc.status === 'request_review').length;
-    const rejectedReviewCount = documents?.filter(doc => doc.status === 'rejected').length;
+    const rejectedCount = documents?.filter(doc => doc.status === 'rejected').length;
     const totalCount = documents?.length;
 
     const summaryCards = [
@@ -73,22 +71,8 @@ export function ClientDocumentsSummary({ documents, isLoading, error }: ClientDo
             bgColor: 'bg-green-50',
         },
         {
-            title: 'Reviewed',
-            count: reviewCount,
-            icon: AlertCircle,
-            color: 'text-blue-600',
-            bgColor: 'bg-blue-50',
-        },
-        {
-            title: "Requested",
-            count: requestReviewCount,
-            icon: FileUp,
-            color: 'text-red-600',
-            bgColor: 'bg-red-50',
-        },
-        {
             title: "Rejected",
-            count: rejectedReviewCount,
+            count: rejectedCount,
             icon: AlertCircle,
             color: 'text-red-600',
             bgColor: 'bg-red-50',

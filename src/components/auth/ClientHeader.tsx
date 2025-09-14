@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
+import { useCallback, useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import Logo from "../../../public/logos/world-visa-logo.webp";
 import Image from 'next/image';
@@ -126,7 +126,7 @@ export function ClientHeader() {
                     {/* Desktop User Info */}
                     <div className="hidden md:flex items-center space-x-4">
                         <span className="text-sm text-gray-600 font-lexend">
-                            Welcome, {user?.username || user?.name || 'Client'}
+                            Welcome, {user?.username || user?.username || 'Client'}
                         </span>
                         <Button
                             variant="outline"
@@ -179,7 +179,7 @@ export function ClientHeader() {
                         >
                             <div className="px-3 py-2">
                                 <p className="text-sm text-gray-600 font-lexend">
-                                    Welcome, {user?.username || user?.name || 'Client'}
+                                    Welcome, {user?.username || user?.username || 'Client'}
                                 </p>
                             </div>
                             <Button

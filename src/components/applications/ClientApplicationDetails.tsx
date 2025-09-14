@@ -1,12 +1,9 @@
 'use client';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Mail, Phone, Calendar, FileText, UserCheck } from 'lucide-react';
 import { ClientApplicationResponse, ClientDocument } from '@/types/client';
-import { format } from 'date-fns';
 import { ClientDocumentsSummary } from './ClientDocumentsSummary';
 
 interface ClientApplicationDetailsProps {
@@ -82,8 +79,8 @@ export function ClientApplicationDetails({ data, documents, isDocumentsLoading, 
         {/* Documents Summary */}
         <ClientDocumentsSummary
           documents={documents}
-          isLoading={isDocumentsLoading}
-          error={documentsError}
+          isLoading={isDocumentsLoading ?? false}
+          error={documentsError ?? null}
         />
       </div>
       

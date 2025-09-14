@@ -20,7 +20,7 @@ export function useURLState(config: URLStateConfig = {}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  const { defaultValues = {}, persistKeys = [] } = config;
+  const { defaultValues = {} } = config;
 
   // Get current URL state
   const urlState = useMemo(() => {
@@ -85,7 +85,7 @@ export function useURLState(config: URLStateConfig = {}) {
  * Hook specifically for checklist state management
  */
 export function useChecklistURLState(applicationId: string) {
-  const { urlState, setParam, getParam } = useURLState({
+  const { urlState, setParam} = useURLState({
     defaultValues: {
       category: 'submitted',
       checklistState: 'none'

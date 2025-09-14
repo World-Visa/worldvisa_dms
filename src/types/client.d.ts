@@ -1,5 +1,7 @@
 // Client API Response Types
 
+import { Comment } from "./comments";
+
 export interface ClientApplicationResponse {
   data: {
     Email: string;
@@ -31,9 +33,9 @@ export interface ClientDocument {
   download_url: string;
   document_link: string;
   uploaded_at: string;
-  comments: any[];
+  comments: Comment[];
   __v: number;
-  requested_reviews: any[];
+  requested_reviews: unknown[];
 }
 
 export interface ClientDocumentsResponse {

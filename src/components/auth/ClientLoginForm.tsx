@@ -12,8 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, ArrowLeft, Loader2, Mail } from 'lucide-react';
-import Link from 'next/link';
+import { User, Loader2, Mail } from 'lucide-react';
 import Image from 'next/image';
 
 export function ClientLoginForm() {

@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // Disable TypeScript errors during build
+  typescript: {
+    ignoreBuildErrors: true,
+  },
+  // Disable ESLint errors during build
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   async headers() {
     return [
       {

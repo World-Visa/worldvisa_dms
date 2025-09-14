@@ -12,9 +12,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Eye, EyeOff, ArrowLeft, Loader2 } from 'lucide-react';
+import { Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
 import { useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 
 export function AdminLoginForm() {

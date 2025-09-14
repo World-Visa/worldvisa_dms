@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { getApplicationDocumentsPaginated, GetPaginatedDocumentsRequest } from '@/lib/api/getApplicationDocumentsPaginated';
+import { getApplicationDocumentsPaginated } from '@/lib/api/getApplicationDocumentsPaginated';
 
 export function useApplicationDocumentsPaginated(
   applicationId: string,

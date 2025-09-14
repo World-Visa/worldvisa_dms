@@ -17,7 +17,6 @@ import { toast } from 'sonner';
 import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
 import { UploadDocumentsModalProps, UploadedFile, ApiDocument } from '@/types/documents';
-import { Textarea } from '@/components/ui/textarea';
 import { generateCompanyDescription } from '@/utils/dateCalculations';
 
 
@@ -29,7 +28,6 @@ export function UploadDocumentsModal({
   selectedDocumentCategory: propSelectedDocumentCategory, 
   company,
   documents,
-  isClientView = false
 }: UploadDocumentsModalProps) {
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>(propSelectedDocumentType || '');
   const [selectedDocumentCategory, setSelectedDocumentCategory] = useState<string>(propSelectedDocumentCategory || '');
