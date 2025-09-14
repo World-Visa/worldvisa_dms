@@ -5,7 +5,7 @@
  * allowing users to switch between current checklist and available documents.
  */
 
-import React from 'react';
+import React, { memo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Plus } from 'lucide-react';
@@ -21,7 +21,7 @@ interface ChecklistTabsProps {
   className?: string;
 }
 
-export function ChecklistTabs({
+export const ChecklistTabs = memo(function ChecklistTabs({
   activeTab,
   onTabChange,
   currentCount,
@@ -81,4 +81,4 @@ export function ChecklistTabs({
       })}
     </div>
   );
-}
+});

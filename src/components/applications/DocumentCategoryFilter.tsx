@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
-import { cn } from '@/lib/utils';
+import React, { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Plus, ChevronDown, Check } from 'lucide-react';
+import { ChevronDown, Check } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -11,9 +10,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { DocumentCategoryInfo, DocumentCategoryFilterProps, Company } from '@/types/documents';
-import { CreateChecklistButton } from './checklist/CreateChecklistButton';
-import { EditChecklistButton } from './checklist/EditChecklistButton';
-import { SaveChecklistButton } from './checklist/SaveChecklistButton';
+import { CategoryButton } from './filter/CategoryButton';
+import { AddCompanyButton } from './filter/AddCompanyButton';
+import { ActionButtons } from './filter/ActionButtons';
 import type { ChecklistState, ChecklistCategory } from '@/types/checklist';
 
 const baseCategories: DocumentCategoryInfo[] = [
@@ -27,6 +26,7 @@ const baseCategories: DocumentCategoryInfo[] = [
 interface ExtendedDocumentCategoryFilterProps extends DocumentCategoryFilterProps {
   companies?: Company[];
   onAddCompany?: () => void;
+  onRemoveCompany?: (companyName: string) => void;
   maxCompanies?: number;
   // Client privilege props
   isClientView?: boolean;
@@ -39,13 +39,16 @@ interface ExtendedDocumentCategoryFilterProps extends DocumentCategoryFilterProp
   onSaveChecklist?: () => void;
   onCancelChecklist?: () => void;
   isSavingChecklist?: boolean;
+  // Loading state
+  isCategoryChanging?: boolean;
 }
 
-export function DocumentCategoryFilter({ 
-  selectedCategory, 
-  onCategoryChange, 
-  companies = [], 
-  onAddCompany, 
+export function DocumentCategoryFilter({
+  selectedCategory,
+  onCategoryChange,
+  companies = [],
+  onAddCompany,
+  onRemoveCompany,
   maxCompanies = 3,
   // Client privilege props
   isClientView = false,
@@ -58,30 +61,39 @@ export function DocumentCategoryFilter({
   onStartEditingChecklist,
   onSaveChecklist,
   onCancelChecklist,
-  isSavingChecklist = false
+  isSavingChecklist = false,
+  // Loading state
+  isCategoryChanging = false
 }: ExtendedDocumentCategoryFilterProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Get categories based on checklist state or client view
-  const getCategoriesForState = (): DocumentCategoryInfo[] => {
-    // Client view: Show submitted + dynamic checklist categories (if any)
+  const categories = useMemo((): DocumentCategoryInfo[] => {
     if (isClientView) {
       if (!checklistCategories || checklistCategories.length === 0) {
-        // No checklist: Only show submitted documents
-        return [
-          { id: 'submitted', label: 'Submitted Documents', count: submittedDocumentsCount }
-        ];
+        // Only show submitted documents chip if there are actually submitted documents
+        if (submittedDocumentsCount > 0) {
+          return [
+            { id: 'submitted', label: 'Submitted Documents', count: submittedDocumentsCount }
+          ];
+        }
+        // No submitted documents and no checklist - return empty array
+        return [];
       }
-      
-      // Has checklist: Show submitted + dynamic checklist categories
-      const categories = [
-        { id: 'submitted', label: 'Submitted Documents', count: submittedDocumentsCount },
-        ...checklistCategories.map(cat => ({
-          id: cat.id,
-          label: cat.label,
-          count: cat.count
-        }))
-      ];
+
+      const categories = [];
+
+      // Only add submitted documents chip if there are actually submitted documents
+      if (submittedDocumentsCount > 0) {
+        categories.push({ id: 'submitted', label: 'Submitted Documents', count: submittedDocumentsCount });
+      }
+
+      // Add checklist categories
+      categories.push(...checklistCategories.map(cat => ({
+        id: cat.id,
+        label: cat.label,
+        count: cat.count
+      })));
+
       return categories;
     }
 
@@ -90,7 +102,7 @@ export function DocumentCategoryFilter({
       case 'none':
         // Default state: Only show submitted documents + create checklist button
         return [{ id: 'submitted', label: 'Submitted Documents', count: 0 }];
-        
+
       case 'creating':
         return [
           { id: 'all', label: 'All Documents', count: 0 },
@@ -99,7 +111,7 @@ export function DocumentCategoryFilter({
           { id: 'other', label: 'Other Documents', count: 0 },
           { id: 'company', label: 'Company Documents', count: 0 }
         ];
-        
+
       case 'saved':
         return [
           { id: 'submitted', label: 'Submitted Documents', count: 0 },
@@ -109,7 +121,7 @@ export function DocumentCategoryFilter({
             count: cat.count
           }))
         ];
-        
+
       case 'editing':
         return [
           { id: 'submitted', label: 'Submitted Documents', count: 0 },
@@ -118,146 +130,81 @@ export function DocumentCategoryFilter({
           { id: 'identity', label: 'Identity Documents', count: 0 },
           { id: 'education', label: 'Education Documents', count: 0 },
           { id: 'other', label: 'Other Documents', count: 0 },
-          { id: 'company', label: 'Company Documents', count: 0 }
+          { id: 'company', label: 'Company Documents', count: 0 },
+          // Add individual company categories
+          ...checklistCategories
+            .filter(cat => cat.type === 'company')
+            .map(cat => ({
+              id: cat.id,
+              label: cat.label,
+              count: cat.count
+            }))
         ];
-        
+
       default:
         return baseCategories;
     }
-  };
+  }, [isClientView, checklistCategories, submittedDocumentsCount, checklistState]);
 
-  const categories = getCategoriesForState();
-  const selectedCategoryInfo = categories.find(cat => cat.id === selectedCategory);
-
-  // Button component for individual categories
-  const CategoryButton = ({ category }: { category: DocumentCategoryInfo }) => (
-    <button
-      key={category.id}
-      className={cn(
-        'relative cursor-pointer inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
-        'border-2 focus:outline-none focus:ring-0',
-        'hover:shadow-md transform hover:-translate-y-0.5',
-        selectedCategory === category.id
-          ? 'bg-black text-white border-black shadow-lg focus:ring-black/20'
-          : 'bg-white text-gray-700 border-gray-200 hover:border-gray-300 hover:bg-gray-50 focus:ring-gray-200'
-      )}
-      onClick={() => onCategoryChange(category.id)}
-    >
-      <span className="whitespace-nowrap">{category.label}</span>
-      {category.count > 0 && (
-        <span className={cn(
-          'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold rounded-full',
-          selectedCategory === category.id
-            ? 'bg-white/20 text-white'
-            : 'bg-gray-100 text-gray-600'
-        )}>
-          {category.count}
-        </span>
-      )}
-    </button>
+  const selectedCategoryInfo = useMemo(() =>
+    categories.find(cat => cat.id === selectedCategory),
+    [categories, selectedCategory]
   );
 
-  // Add Company Button component - only show in saved state if company documents exist (admin only)
-  const AddCompanyButton = () => {
-    if (isClientView) return null; // Hide for clients
-    
-    const shouldShow = checklistState === 'saved' && hasCompanyDocuments && companies.length < maxCompanies;
-    
-    if (!shouldShow) return null;
-    
-    return (
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={onAddCompany}
-        className={cn(
-          'cursor-pointer inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
-          'border-2 border-dashed border-gray-300 hover:border-gray-400 hover:bg-gray-50',
-          'focus:outline-none focus:ring-0',
-          'w-full md:w-auto'
-        )}
-      >
-        <Plus className="h-4 w-4" />
-        <span>Add Company</span>
-      </Button>
-    );
-  };
 
-  // Action buttons based on state (admin only)
-  const ActionButtons = () => {
-    if (isClientView) return null; // Hide for clients
-    
-    switch (checklistState) {
-      case 'none':
-        return onStartCreatingChecklist ? (
-          <CreateChecklistButton onClick={onStartCreatingChecklist} />
-        ) : null;
-        
-      case 'creating':
-        return (
-          <div className="flex items-center gap-2">
-            {onCancelChecklist && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onCancelChecklist}
-                className="px-4 py-3 rounded-full text-sm"
-              >
-                Cancel
-              </Button>
-            )}
-            {onSaveChecklist && (
-              <SaveChecklistButton
-                onClick={onSaveChecklist}
-                mode="creating"
-                isLoading={isSavingChecklist}
-              />
-            )}
-          </div>
-        );
-        
-      case 'saved':
-        return onStartEditingChecklist ? (
-          <EditChecklistButton onClick={onStartEditingChecklist} />
-        ) : null;
-        
-      case 'editing':
-        return (
-          <div className="flex items-center gap-2">
-            {onCancelChecklist && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={onCancelChecklist}
-                className="px-4 py-3 rounded-full text-sm"
-              >
-                Cancel
-              </Button>
-            )}
-            {onSaveChecklist && (
-              <SaveChecklistButton
-                onClick={onSaveChecklist}
-                mode="editing"
-                isLoading={isSavingChecklist}
-              />
-            )}
-          </div>
-        );
-        
-      default:
-        return null;
-    }
-  };
+  // Show "No checklist" message when there are no categories and it's client view
+  if (isClientView && categories.length === 0) {
+    return (
+      <div className="text-center py-8 mb-6">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-yellow-800 mb-2">No Checklist Generated</h3>
+          <p className="text-yellow-700">
+            No checklist has been generated. Contact your application handling processing executive.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mb-6">
       {/* Desktop View - Show all buttons */}
-      <div className="hidden md:flex flex-wrap items-center gap-3">
+      <div className="hidden md:flex flex-wrap items-center gap-3 relative">
+        {isCategoryChanging && (
+          <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 rounded-lg flex items-center justify-center">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+              Loading...
+            </div>
+          </div>
+        )}
         {categories.map((category) => (
-          <CategoryButton key={category.id} category={category} />
+          <CategoryButton 
+            key={category.id} 
+            category={category}
+            selectedCategory={selectedCategory}
+            onCategoryChange={onCategoryChange}
+            onRemoveCompany={onRemoveCompany}
+            disabled={isCategoryChanging}
+          />
         ))}
-        <AddCompanyButton />
-        <ActionButtons />
+        <AddCompanyButton 
+          checklistState={checklistState}
+          isClientView={isClientView}
+          hasCompanyDocuments={hasCompanyDocuments}
+          companies={companies}
+          maxCompanies={maxCompanies}
+          onAddCompany={onAddCompany}
+        />
+        <ActionButtons 
+          isClientView={isClientView}
+          checklistState={checklistState}
+          onStartCreatingChecklist={onStartCreatingChecklist}
+          onStartEditingChecklist={onStartEditingChecklist}
+          onSaveChecklist={onSaveChecklist}
+          onCancelChecklist={onCancelChecklist}
+          isSavingChecklist={isSavingChecklist}
+        />
       </div>
 
       {/* Mobile/Tablet View - Show dropdown */}
@@ -267,12 +214,17 @@ export function DocumentCategoryFilter({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
+                disabled={isCategoryChanging}
                 className="flex items-center gap-2 px-4 py-3 h-auto w-full justify-between text-left"
               >
                 <span className="truncate text-sm">
-                  {selectedCategoryInfo?.label || 'Select Category'}
+                  {isCategoryChanging ? 'Loading...' : (selectedCategoryInfo?.label || 'Select Category')}
                 </span>
-                <ChevronDown className="h-4 w-4 shrink-0" />
+                {isCategoryChanging ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                ) : (
+                  <ChevronDown className="h-4 w-4 shrink-0" />
+                )}
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-[calc(100vw-2rem)] max-w-[320px]" align="start">
@@ -300,10 +252,25 @@ export function DocumentCategoryFilter({
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
-          
-          <div className="w-full flex flex-col gap-2">
-            <AddCompanyButton />
-            <ActionButtons />
+
+          <div className="w-full flex flex-col gap-2">  
+            <AddCompanyButton 
+              checklistState={checklistState}
+              isClientView={isClientView}
+              hasCompanyDocuments={hasCompanyDocuments}
+              companies={companies}
+              maxCompanies={maxCompanies}
+              onAddCompany={onAddCompany}
+            />
+            <ActionButtons 
+              isClientView={isClientView}
+              checklistState={checklistState}
+              onStartCreatingChecklist={onStartCreatingChecklist}
+              onStartEditingChecklist={onStartEditingChecklist}
+              onSaveChecklist={onSaveChecklist}
+              onCancelChecklist={onCancelChecklist}
+              isSavingChecklist={isSavingChecklist}
+            />
           </div>
         </div>
       </div>

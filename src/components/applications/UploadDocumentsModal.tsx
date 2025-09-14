@@ -16,7 +16,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Upload, X } from 'lucide-react';
 import Image from 'next/image';
-import { UploadDocumentsModalProps, UploadedFile } from '@/types/documents';
+import { UploadDocumentsModalProps, UploadedFile, ApiDocument } from '@/types/documents';
 import { Textarea } from '@/components/ui/textarea';
 import { generateCompanyDescription } from '@/utils/dateCalculations';
 
@@ -28,6 +28,7 @@ export function UploadDocumentsModal({
   selectedDocumentType: propSelectedDocumentType, 
   selectedDocumentCategory: propSelectedDocumentCategory, 
   company,
+  documents,
   isClientView = false
 }: UploadDocumentsModalProps) {
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>(propSelectedDocumentType || '');
@@ -39,6 +40,36 @@ export function UploadDocumentsModal({
   const addDocumentMutation = useAddDocument();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+
+  // Auto-set description when modal opens or category changes
+  useEffect(() => {
+    if (isOpen && selectedDocumentCategory) {
+      // First, try to get description from existing documents for this category
+      let autoDescription = '';
+      
+      if (documents && documents.length > 0) {
+        const existingDoc = documents.find((doc: ApiDocument) => 
+          doc.document_category === selectedDocumentCategory && doc.description
+        );
+        if (existingDoc && existingDoc.description) {
+          autoDescription = existingDoc.description;
+          console.log('Auto-set description from existing document:', autoDescription);
+        }
+      }
+      
+      // Fallback to generating from company data (for first time)
+      if (!autoDescription && selectedDocumentCategory.includes('Documents') && 
+          !['Identity Documents', 'Education Documents', 'Other Documents'].includes(selectedDocumentCategory) && 
+          company) {
+        autoDescription = generateCompanyDescription(company.fromDate, company.toDate);
+        console.log('Auto-set description from company data (first time):', autoDescription);
+      }
+      
+      if (autoDescription) {
+        setDescription(autoDescription);
+      }
+    }
+  }, [isOpen, selectedDocumentCategory, company, documents]);
 
   // Update selectedDocumentType and category when props change
   useEffect(() => {
@@ -166,14 +197,24 @@ export function UploadDocumentsModal({
       try {
         // Get description - use company description for company documents, otherwise use user input
         const finalDescription = getCompanyDescription(selectedDocumentCategory) || description;
+        const finalCategory = getDocumentCategory(selectedDocumentType, selectedDocumentCategory);
 
+        // Debug logging
+        console.log('Upload Debug Info:', {
+          selectedDocumentType,
+          selectedDocumentCategory,
+          company,
+          finalCategory,
+          finalDescription,
+          isCompanyDocument: selectedDocumentCategory.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(selectedDocumentCategory)
+        });
       
         // Upload all files at once with the new API
         const uploadResult = await addDocumentMutation.mutateAsync({
           applicationId,
           files: uploadedFiles.map(uf => uf.file),
           document_name: selectedDocumentType,
-          document_category: getDocumentCategory(selectedDocumentType, selectedDocumentCategory),
+          document_category: finalCategory,
           uploaded_by: user.username,
           description: finalDescription,
           document_type: selectedDocumentType.toLowerCase().replace(/\s+/g, '_'), 
@@ -238,26 +279,42 @@ export function UploadDocumentsModal({
   const getDocumentCategory = (documentType: string, category: string): string => {
     // Check if it's a company document (contains company name pattern)
     if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
-      // Use the category directly as company-specific category
-      // e.g., "WorldVisa Documents" -> "WorldVisa Documents"
       return category;
     }
     
     // Map categories to API categories
     const categoryMap: Record<string, string> = {
-      'Identity Documents': 'identity',
-      'Education Documents': 'education',
-      'Other Documents': 'other',
+      'Identity Documents': 'Identity',
+      'Education Documents': 'Education', 
+      'Other Documents': 'Other',
     };
     
-    return categoryMap[category] || 'other';
+    return categoryMap[category] || 'Other';
   };
 
-  // Helper function to get company description based on company data
+  // Helper function to get company description based on company data or existing documents
   const getCompanyDescription = (category: string): string => {
-    if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category) && company) {
-      return generateCompanyDescription(company.fromDate, company.toDate);
+    console.log('getCompanyDescription called with:', { category, company, documents });
+    
+    // First, try to get description from existing documents for this category
+    if (documents && documents.length > 0) {
+      const existingDoc = documents.find((doc: ApiDocument) => 
+        doc.document_category === category && doc.description
+      );
+      if (existingDoc && existingDoc.description) {
+        console.log('Using description from existing document:', existingDoc.description);
+        return existingDoc.description;
+      }
     }
+    
+    // Fallback to generating from company data (for first time)
+    if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category) && company) {
+      const description = generateCompanyDescription(company.fromDate, company.toDate);
+      console.log('Generated company description (first time):', description);
+      return description;
+    }
+    
+    console.log('No company description generated');
     return '';
   };
 
@@ -289,32 +346,6 @@ export function UploadDocumentsModal({
             </div>
           )}
 
-          {/* Description Input - only show for non-company documents and not for clients */}
-          {!isClientView && selectedDocumentType && !getCompanyDescription(selectedDocumentCategory) && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description (Optional)</label>
-              <Textarea
-                placeholder="Enter document description..."
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                className="min-h-[80px]"
-                maxLength={500}
-              />
-              <p className="text-xs text-muted-foreground">
-                {description.length}/500 characters
-              </p>
-            </div>
-          )}
-
-          {/* Company Description Display - only show for company documents */}
-          {selectedDocumentType && getCompanyDescription(selectedDocumentCategory) && (
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Description</label>
-              <div className="p-3 bg-muted rounded-lg">
-                <p className="text-sm font-medium">{getCompanyDescription(selectedDocumentCategory)}</p>
-              </div>
-            </div>
-          )}
 
           {/* File Upload */}
           <div className="space-y-3">

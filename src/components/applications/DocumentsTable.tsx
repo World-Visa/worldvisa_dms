@@ -17,7 +17,7 @@ import { useDeleteDocument } from '@/hooks/useMutationsDocuments';
 import { useApplicationDocumentsPaginated } from '@/hooks/useApplicationDocumentsPaginated';
 import { UploadDocumentsModal } from './UploadDocumentsModal';
 import { ApplicationsPagination } from './ApplicationsPagination';
-import { Trash2, Upload, FileText, CheckCircle, Clock, Eye, XCircle, AlertCircle } from 'lucide-react';
+import { Trash2, FileText, CheckCircle, Clock, Eye, XCircle, AlertCircle } from 'lucide-react';
 import ViewDocumentSheet from './ViewDocumentSheet';
 import { Document as ApplicationDocument } from '@/types/applications';
 import { ClientDocumentsResponse } from '@/types/client';
@@ -198,13 +198,6 @@ export function DocumentsTable({
                     <div className="text-center py-8">
                         <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                         <p className="text-muted-foreground">No documents uploaded yet</p>
-                        <Button
-                            onClick={() => setIsModalOpen(true)}
-                            className="mt-4"
-                        >
-                            <Upload className="h-4 w-4 mr-2" />
-                            Upload Documents
-                        </Button>
                     </div>
                 </CardContent>
             </Card>

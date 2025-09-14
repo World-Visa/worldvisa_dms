@@ -47,6 +47,7 @@ export function useChecklistState({
   // Pending changes for editing mode
   const [pendingAdditions, setPendingAdditions] = useState<ChecklistDocument[]>([]);
   const [pendingDeletions, setPendingDeletions] = useState<string[]>([]);
+  const [pendingUpdates, setPendingUpdates] = useState<Array<{checklistId: string, required: boolean, documentType: string, documentCategory: string}>>([]);
 
   // API hooks
   const { data: checklistData, isLoading: isChecklistLoading } = useChecklist(applicationId);
@@ -79,8 +80,8 @@ export function useChecklistState({
 
   // Generate categories for saved checklist
   const checklistCategories = useMemo(() => 
-    sortCategoriesForDisplay(generateChecklistCategories(checklistItems)), 
-    [checklistItems]
+    sortCategoriesForDisplay(generateChecklistCategories(checklistItems, companies, documents || [])), 
+    [checklistItems, companies, documents]
   );
 
   // Get available documents for editing
@@ -261,6 +262,7 @@ export function useChecklistState({
   const clearPendingChanges = useCallback(() => {
     setPendingAdditions([]);
     setPendingDeletions([]);
+    setPendingUpdates([]);
   }, []);
 
   const updateDocumentRequirement = useCallback((
@@ -276,33 +278,106 @@ export function useChecklistState({
       [key]: requirement
     }));
     
-    // Update selected documents based on requirement
-    setSelectedDocuments(prev => {
-      const documentExists = prev.some(doc => 
-        doc.category === category && doc.documentType === documentType
-      );
-      
+    if (state === 'creating') {
+      // Creation mode: Update selected documents
+      setSelectedDocuments(prev => {
+        const documentExists = prev.some(doc => 
+          doc.category === category && doc.documentType === documentType
+        );
+        
+        if (requirement === 'not_required') {
+          // Remove from selected documents if marked as not required
+          return prev.filter(doc => 
+            !(doc.category === category && doc.documentType === documentType)
+          );
+        } else {
+          // Add to selected documents if marked as mandatory or optional
+          if (!documentExists) {
+            const newDocument: ChecklistDocument = {
+              category,
+              documentType,
+              isUploaded: false, // New documents are not uploaded yet
+              company_name: category.includes('Company Documents') ? 
+                companies.find(c => c.category === category)?.name : undefined
+            };
+            return [...prev, newDocument];
+          }
+          return prev;
+        }
+      });
+    } else if (state === 'editing') {
+      // Editing mode: Handle requirement changes for existing or new documents
       if (requirement === 'not_required') {
-        // Remove from selected documents if marked as not required
-        return prev.filter(doc => 
-          !(doc.category === category && doc.documentType === documentType)
+        // Remove from pending additions if it was there
+        setPendingAdditions(prev => 
+          prev.filter(doc => 
+            !(doc.category === category && doc.documentType === documentType)
+          )
         );
       } else {
-        // Add to selected documents if marked as mandatory or optional
-        if (!documentExists) {
+        // Check if document exists in current checklist
+        const existsInChecklist = checklistItems.some(item => 
+          item.document_category === category && item.document_type === documentType
+        );
+        
+        if (!existsInChecklist) {
+          // Document doesn't exist in checklist, add to pending additions
           const newDocument: ChecklistDocument = {
             category,
             documentType,
-            isUploaded: false, // New documents are not uploaded yet
+            requirement,
+            isUploaded: false,
             company_name: category.includes('Company Documents') ? 
               companies.find(c => c.category === category)?.name : undefined
           };
-          return [...prev, newDocument];
+          
+          setPendingAdditions(prev => {
+            const existsInPending = prev.some(doc => 
+              doc.category === category && doc.documentType === documentType
+            );
+            
+            if (!existsInPending) {
+              return [...prev, newDocument];
+            } else {
+              // Update existing pending addition with new requirement
+              return prev.map(doc => 
+                doc.category === category && doc.documentType === documentType
+                  ? { ...doc, requirement }
+                  : doc
+              );
+            }
+          });
+        } else {
+          // Document exists in checklist, add to pending updates
+          const existingItem = checklistItems.find(item => 
+            item.document_category === category && item.document_type === documentType
+          );
+          
+          if (existingItem && existingItem.checklist_id) {
+            const required = requirement === 'mandatory';
+            const checklistId = existingItem.checklist_id;
+            const documentType = existingItem.document_type;
+            const documentCategory = existingItem.document_category;
+            
+            setPendingUpdates(prev => {
+              const existsInUpdates = prev.some(update => update.checklistId === checklistId);
+              
+              if (!existsInUpdates) {
+                return [...prev, { checklistId, required, documentType, documentCategory }];
+              } else {
+                // Update existing pending update
+                return prev.map(update => 
+                  update.checklistId === checklistId
+                    ? { ...update, required }
+                    : update
+                );
+              }
+            });
+          }
         }
-        return prev;
       }
-    });
-  }, [companies]);
+    }
+  }, [companies, state, checklistItems]);
 
   const saveChecklist = useCallback(async () => {
     const validation = validateChecklist(selectedDocuments);
@@ -354,9 +429,22 @@ export function useChecklistState({
         company_name: doc.company_name
       }));
 
+      // Convert pending updates to update requests
+      const itemsToUpdate = pendingUpdates.map(update => ({
+        checklist_id: update.checklistId,
+        document_type: update.documentType,
+        document_category: update.documentCategory,
+        required: update.required
+      }));
+
       // Save additions
       if (itemsToAdd.length > 0) {
         await batchSave.mutateAsync(itemsToAdd);
+      }
+
+      // Save updates
+      if (itemsToUpdate.length > 0) {
+        await batchUpdate.mutateAsync(itemsToUpdate);
       }
 
       // Save deletions
@@ -371,7 +459,7 @@ export function useChecklistState({
       console.error('Failed to save pending changes:', error);
       throw error;
     }
-  }, [state, pendingAdditions, pendingDeletions, batchSave, batchDelete, clearPendingChanges]);
+  }, [state, pendingAdditions, pendingUpdates, pendingDeletions, batchSave, batchUpdate, batchDelete, clearPendingChanges]);
 
   // Get filtered documents based on selected categories
   const filteredDocuments = useMemo(() => {
@@ -417,6 +505,7 @@ export function useChecklistState({
     // Pending changes
     pendingAdditions,
     pendingDeletions,
+    pendingUpdates,
     
     // Loading states
     isChecklistLoading,

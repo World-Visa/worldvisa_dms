@@ -74,8 +74,7 @@ export async function addDocument(data: AddDocumentRequest): Promise<AddDocument
 
   // Don't set Content-Type for FormData - let the browser set it with boundary
   const url = `${ZOHO_BASE_URL}/visa_applications/${data.applicationId}/documents`;
-  
-  
+    
   const response = await fetch(url, {
     method: 'POST',
     body: formData,

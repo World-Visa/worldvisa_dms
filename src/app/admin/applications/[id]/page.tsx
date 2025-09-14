@@ -36,6 +36,8 @@ export default function ApplicationDetailsPage() {
     return savedCategory;
   });
   
+  const [isCategoryChanging, setIsCategoryChanging] = useState(false);
+  
   // Initialize companies from localStorage or empty array
   const [companies, setCompanies] = useState<Company[]>(() => {
     const savedCompanies = localStorageUtils.loadCompanies(applicationId, []);
@@ -109,28 +111,83 @@ export default function ApplicationDetailsPage() {
 
 
   // Enhanced cancel function that also resets category
-  const handleCancelChecklist = () => {
-    checklistState.cancelChecklistOperation();
-    // Reset to submitted documents when canceling
-    setSelectedCategory('submitted');
-    setURLCategory('submitted');
-    localStorageUtils.saveCategory(applicationId, 'submitted');
+  const handleCancelChecklist = async () => {
+    setIsCategoryChanging(true);
+    try {
+      checklistState.cancelChecklistOperation();
+      // Reset to submitted documents when canceling
+      setSelectedCategory('submitted');
+      setURLCategory('submitted');
+      localStorageUtils.saveCategory(applicationId, 'submitted');
+      
+      // Add a small delay to show the loading state
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } finally {
+      setIsCategoryChanging(false);
+    }
   };
 
   // Enhanced category change handler that also updates checklist state
-  const handleCategoryChangeWithChecklist = (category: DocumentCategory) => {
-    setSelectedCategory(category);
-    setURLCategory(category);
-    localStorageUtils.saveCategory(applicationId, category);
+  const handleCategoryChangeWithChecklist = async (category: DocumentCategory) => {
+    setIsCategoryChanging(true);
+    try {
+      setSelectedCategory(category);
+      setURLCategory(category);
+      localStorageUtils.saveCategory(applicationId, category);
+      
+      // Add a small delay to show the loading state
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } finally {
+      setIsCategoryChanging(false);
+    }
   };
 
   // Enhanced start creating checklist function
-  const handleStartCreatingChecklist = () => {
-    checklistState.startCreatingChecklist();
-    // Set the category to 'all' to show all documents
-    setSelectedCategory('all');
-    setURLCategory('all');
-    localStorageUtils.saveCategory(applicationId, 'all');
+  const handleStartCreatingChecklist = async () => {
+    setIsCategoryChanging(true);
+    try {
+      checklistState.startCreatingChecklist();
+      // Set the category to 'all' to show all documents
+      setSelectedCategory('all');
+      setURLCategory('all');
+      localStorageUtils.saveCategory(applicationId, 'all');
+      
+      // Add a small delay to show the loading state
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } finally {
+      setIsCategoryChanging(false);
+    }
+  };
+
+  // Enhanced start editing checklist function
+  const handleStartEditingChecklist = async () => {
+    setIsCategoryChanging(true);
+    try {
+      checklistState.startEditingChecklist();
+      
+      // Determine the correct category to switch to based on current selection
+      let targetCategory: DocumentCategory = 'checklist';
+      
+      // If we're on a company-specific category, maintain it
+      if (selectedCategory.includes('_company_documents')) {
+        targetCategory = selectedCategory as DocumentCategory;
+      } else if (selectedCategory === 'submitted') {
+        // If on submitted, switch to the first available checklist category
+        const firstCategory = checklistState.checklistCategories[0];
+        if (firstCategory) {
+          targetCategory = firstCategory.id as DocumentCategory;
+        }
+      }
+      
+      setSelectedCategory(targetCategory);
+      setURLCategory(targetCategory);
+      localStorageUtils.saveCategory(applicationId, targetCategory);
+      
+      // Add a small delay to show the loading state
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } finally {
+      setIsCategoryChanging(false);
+    }
   };
 
   // Sync URL state with local state on mount
@@ -233,16 +290,19 @@ export default function ApplicationDetailsPage() {
               onCategoryChange={handleCategoryChangeWithChecklist}
               companies={companies}
               onAddCompany={handleOpenAddCompanyDialog}
+              onRemoveCompany={handleRemoveCompany}
               maxCompanies={maxCompanies}
               // Checklist props
               checklistState={checklistState.state}
               checklistCategories={checklistState.checklistCategories}
               hasCompanyDocuments={checklistState.hasCompanyDocuments}
               onStartCreatingChecklist={handleStartCreatingChecklist}
-              onStartEditingChecklist={checklistState.startEditingChecklist}
-              onSaveChecklist={checklistState.saveChecklist}
+              onStartEditingChecklist={handleStartEditingChecklist}
+              onSaveChecklist={checklistState.state === 'editing' ? checklistState.savePendingChanges : checklistState.saveChecklist}
               onCancelChecklist={handleCancelChecklist}
               isSavingChecklist={checklistState.isBatchSaving}
+              // Loading state
+              isCategoryChanging={isCategoryChanging}
             />
 
             {/* Conditional Rendering */}
@@ -276,6 +336,7 @@ export default function ApplicationDetailsPage() {
                 // Pending changes props
                 pendingAdditions={checklistState.pendingAdditions}
                 pendingDeletions={checklistState.pendingDeletions}
+                pendingUpdates={checklistState.pendingUpdates}
                 onAddToPendingChanges={checklistState.addToPendingChanges}
                 onRemoveFromPendingChanges={checklistState.removeFromPendingChanges}
                 onAddToPendingDeletions={checklistState.addToPendingDeletions}

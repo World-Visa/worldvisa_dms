@@ -41,6 +41,21 @@ export interface DocumentChecklistTableProps {
   onRemoveCompany?: (companyName: string) => void;
 }
 
+export interface ApiDocument {
+  _id: string;
+  record_id: string;
+  file_name: string;
+  document_name: string;
+  document_type: string;
+  document_category: string;
+  description?: string;
+  uploaded_by: string;
+  status: string;
+  uploaded_at: string;
+  download_url: string;
+  document_link: string;
+}
+
 export interface UploadDocumentsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -48,6 +63,7 @@ export interface UploadDocumentsModalProps {
   selectedDocumentType?: string;
   selectedDocumentCategory?: string;
   company?: Company;
+  documents?: ApiDocument[];
   isClientView?: boolean;
 }
 

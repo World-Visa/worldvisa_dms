@@ -4,7 +4,7 @@ import React, { memo } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Eye, Upload, Plus } from 'lucide-react';
+import { FileText, Eye, Upload, Plus, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HighlightText } from '@/components/ui/HighlightText';
 import { RequirementSelector } from './RequirementSelector';
@@ -19,6 +19,12 @@ interface ChecklistTableItem {
   requirement?: DocumentRequirement;
   isSelected?: boolean;
   company_name?: string;
+  company?: {
+    name: string;
+    fromDate: string;
+    toDate: string;
+    category: string;
+  };
   checklist_id?: string;
 }
 
@@ -39,9 +45,15 @@ interface ChecklistTableRowProps {
   onClearPendingChanges?: () => void;
   pendingAdditions: ChecklistDocument[];
   pendingDeletions: string[];
-  handleViewDocuments: (documentType: string) => void;
+  handleViewDocuments: (documentType: string, companyCategory?: string) => void;
   handleUploadClick: (documentType: string, category: string) => void;
   getCategoryBadgeStyle: (category: string) => string;
+  // Loading states
+  isAddingDocument?: boolean;
+  addingDocumentId?: string;
+  // Success states
+  isDocumentAdded?: boolean;
+  addedDocumentId?: string;
 }
 
 export const ChecklistTableRow = memo(function ChecklistTableRow({
@@ -51,19 +63,18 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   searchQuery,
   checklistState,
   activeTab,
-  selectedCategory,
   onUpdateDocumentRequirement,
   onAddToPendingChanges,
   onAddToPendingDeletions,
-  onRemoveFromPendingChanges,
-  onRemoveFromPendingDeletions,
-  onSavePendingChanges,
-  onClearPendingChanges,
-  pendingAdditions,
-  pendingDeletions,
   handleViewDocuments,
   handleUploadClick,
-  getCategoryBadgeStyle
+  getCategoryBadgeStyle,
+  // Loading states
+  isAddingDocument = false,
+  addingDocumentId,
+  // Success states
+  isDocumentAdded = false,
+  addedDocumentId
 }: ChecklistTableRowProps) {
   return (
     <TableRow key={`${item.category}-${item.documentType}-${item.checklist_id || 'new'}-${index}`}>
@@ -216,12 +227,29 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
               <Button
                 variant="outline"
                 size="sm"
-                  onClick={() => onAddToPendingChanges?.(item)}
-                className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
-                  disabled={item.requirement === 'not_required'}
+                onClick={() => onAddToPendingChanges?.(item)}
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 h-7 text-xs",
+                  isDocumentAdded && addedDocumentId === `${item.category}-${item.documentType}` && "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                )}
+                disabled={item.requirement === 'not_required' || isAddingDocument || (isDocumentAdded && addedDocumentId === `${item.category}-${item.documentType}`)}
               >
-                <Plus className="h-3 w-3" />
-                <span className="hidden sm:inline">Add</span>
+                {isAddingDocument && addingDocumentId === `${item.category}-${item.documentType}` ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
+                    <span className="hidden sm:inline">Adding...</span>
+                  </>
+                ) : isDocumentAdded && addedDocumentId === `${item.category}-${item.documentType}` ? (
+                  <>
+                    <Check className="h-3 w-3" />
+                    <span className="hidden sm:inline">Added</span>
+                  </>
+                ) : (
+                  <>
+                    <Plus className="h-3 w-3" />
+                    <span className="hidden sm:inline">Add</span>
+                  </>
+                )}
               </Button>
               </div>
             )
@@ -232,7 +260,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleViewDocuments(item.documentType)}
+                  onClick={() => handleViewDocuments(item.documentType, item.category)}
                   className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
                 >
                   <Eye className="h-3 w-3" />

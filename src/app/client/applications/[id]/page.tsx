@@ -27,6 +27,7 @@ export default function ClientApplicationDetailsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>('submitted');
   const [documentsPage, setDocumentsPage] = useState(1);
   const documentsLimit = 10;
+  const [isCategoryChanging, setIsCategoryChanging] = useState(false);
   
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
@@ -55,13 +56,46 @@ export default function ClientApplicationDetailsPage() {
     error: checklistError,
   } = useClientChecklist(applicationId);
 
+  // Extract companies from documents API response (same as admin side)
+  const extractedCompanies = React.useMemo(() => {
+    if (!documentsData?.data?.documents || documentsData.data.documents.length === 0) return [];
+    
+    const companyCategories = new Set<string>();
+    documentsData.data.documents.forEach((doc: { document_category?: string }) => {
+      if (doc.document_category && doc.document_category.includes('Company Documents')) {
+        companyCategories.add(doc.document_category);
+      }
+    });
+    
+    return Array.from(companyCategories).map(category => {
+      // Extract company name from category (e.g., "worldvisa Company Documents" -> "worldvisa")
+      const companyName = category.split(' ')[0].toLowerCase();
+      return {
+        name: companyName,
+        category: category,
+        fromDate: "2024-01", // Default values since we don't have this info from documents
+        toDate: "2025-12"
+      };
+    });
+  }, [documentsData?.data?.documents]);
+  
+  // Use extracted companies instead of localStorage-based companies
+  const finalCompanies = extractedCompanies.length > 0 ? extractedCompanies : companies;
+
   const handleDocumentsPageChange = (page: number) => {
     setDocumentsPage(page);
   };
 
-  const handleCategoryChange = (category: string) => {
-    setSelectedCategory(category);
-    setDocumentsPage(1);
+  const handleCategoryChange = async (category: string) => {
+    setIsCategoryChanging(true);
+    try {
+      setSelectedCategory(category);
+      setDocumentsPage(1);
+      
+      await new Promise(resolve => setTimeout(resolve, 300));
+    } finally {
+      setIsCategoryChanging(false);
+    }
   };
 
   const handleUploadSuccess = () => {
@@ -70,7 +104,11 @@ export default function ClientApplicationDetailsPage() {
 
   // Company management functions
   const handleAddCompany = (company: Company) => {
-    setCompanies(prev => [...prev, company]);
+    const companyWithCategory = {
+      ...company,
+      category: `${company.name} Company Documents`
+    };
+    setCompanies(prev => [...prev, companyWithCategory]);
     setIsAddCompanyDialogOpen(false);
   };
 
@@ -81,17 +119,6 @@ export default function ClientApplicationDetailsPage() {
   // Check if checklist has company documents
   const hasCompanyDocuments = checklistData?.data?.some(item => item.document_category === 'Company') || false;
 
-  // Debug: Log checklist data
-  console.log('Checklist data:', checklistData);
-  console.log('Checklist categories being passed:', Array.isArray(checklistData?.data) ? checklistData.data.map(item => ({
-    id: item.document_category.toLowerCase().replace(/\s+/g, '_'),
-    label: item.document_category === 'Identity' ? 'Identity Documents' : item.document_category,
-    count: 0,
-    type: 'base',
-    company_name: item.company_name,
-    is_selected: true
-  })) : []);
-  
 
   if (applicationError && !applicationData) {
     return (
@@ -115,13 +142,8 @@ export default function ClientApplicationDetailsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-start">
         <div className="flex items-center space-x-4">
-          <Link href="/client/applications" className='items-center flex'>
-            <Button variant="outline" className='rounded-full w-8 h-8 cursor-pointer ' size="sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
           <div>
             <h1 className="text-xl sm:text-2xl font-lexend font-bold">My Application</h1>
             <div className="text-muted-foreground ">
@@ -139,7 +161,7 @@ export default function ClientApplicationDetailsPage() {
         <div className="space-y-6">
           <div className="flex justify-between w-full gap-8 items-end">
             <div className="space-y-4 w-full">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-start">
                 <Skeleton className="h-6 w-40" />
                 <Skeleton className="h-5 w-24" />
               </div>
@@ -175,62 +197,189 @@ export default function ClientApplicationDetailsPage() {
             <DocumentCategoryFilter
               selectedCategory={selectedCategory}
               onCategoryChange={handleCategoryChange}
-              companies={companies}
+              companies={finalCompanies}
               onAddCompany={() => setIsAddCompanyDialogOpen(true)}
+              onRemoveCompany={handleRemoveCompany}
               maxCompanies={3}
               isClientView={true}
               submittedDocumentsCount={documentsData?.data?.documents?.length || 0}
-              checklistCategories={Array.isArray(checklistData?.data) ? checklistData.data.map(item => {
-                let categoryLabel = item.document_category;
-                if (item.document_category === 'identity') {
-                  categoryLabel = 'Identity Documents';
-                } else if (item.document_category === 'Education') {
-                  categoryLabel = 'Education Documents';
-                } else if (item.document_category === 'Other') {
-                  categoryLabel = 'Other Documents';
-                } else if (item.document_category === 'Company') {
-                  categoryLabel = 'Company Documents';
+              checklistCategories={Array.isArray(checklistData?.data) ? (() => {
+                const categoryMap = new Map();
+                
+                checklistData.data.forEach(item => {
+                  const categoryKey = item.document_category;
+                  
+                  // Skip company documents - they will be handled separately
+                  if (categoryKey === 'Company' || categoryKey === 'Company Documents') {
+                    return;
+                  }
+                  
+                  if (!categoryMap.has(categoryKey)) {
+                    let displayLabel = categoryKey;
+                    if (categoryKey === 'Identity') {
+                      displayLabel = 'Identity Documents';
+                    } else if (categoryKey === 'Education') {
+                      displayLabel = 'Education Documents';
+                    } else if (categoryKey === 'Other') {
+                      displayLabel = 'Other Documents';
+                    }
+                    
+                    categoryMap.set(categoryKey, {
+                      id: categoryKey.toLowerCase().replace(/\s+/g, '_'),
+                      label: displayLabel,
+                      count: 0,
+                      type: 'base',
+                      is_selected: true
+                    });
+                  }
+                  
+                  const category = categoryMap.get(categoryKey);
+                  category.count++;
+                });
+                
+                // Extract company categories from uploaded documents
+                // This ensures company chips persist across logout/login
+                const companyCategories = new Set<string>();
+                
+                // Get company categories from uploaded documents
+                if (documentsData?.data?.documents) {
+                  documentsData.data.documents.forEach((doc: { document_category?: string }) => {
+                    if (doc.document_category && doc.document_category.includes('Company Documents')) {
+                      companyCategories.add(doc.document_category);
+                    }
+                  });
                 }
                 
-                return {
-                  id: categoryLabel.toLowerCase().replace(/\s+/g, '_'),
-                  label: categoryLabel,
-                  count: 0,
-                  type: 'base',
-                  company_name: item.company_name,
-                  is_selected: true
-                };
-              }) : []}
+                // Add company-specific categories from uploaded documents
+                companyCategories.forEach(companyCategory => {
+                  const companyName = companyCategory.replace(' Company Documents', '');
+                  
+                  // Count items for this specific company
+                  // First try to match by company_name if it exists
+                  let companyItems = checklistData.data.filter(item => 
+                    item.document_category === 'Company' && 
+                    item.company_name === companyName
+                  );
+                  
+                  // If no items found by company_name, fall back to counting all company items
+                  if (companyItems.length === 0) {
+                    companyItems = checklistData.data.filter(item => item.document_category === 'Company');
+                  }
+                  
+                  if (companyItems.length > 0) {
+                    categoryMap.set(companyCategory, {
+                      id: companyCategory.toLowerCase().replace(/\s+/g, '_'),
+                      label: companyCategory,
+                      count: companyItems.length,
+                      type: 'company',
+                      company_name: companyName,
+                      is_selected: true
+                    });
+                  }
+                });
+                
+                finalCompanies.forEach(company => {
+                  const companyCategoryKey = company.category; // e.g., "WorldVisa Company Documents"
+                  
+                  // Count items for this specific company
+                  // First try to match by company_name if it exists
+                  let companyItems = checklistData.data.filter(item => 
+                    item.document_category === 'Company' && 
+                    item.company_name === company.name
+                  );
+                  
+                  // If no items found by company_name, fall back to counting all company items
+                  if (companyItems.length === 0) {
+                    companyItems = checklistData.data.filter(item => item.document_category === 'Company');
+                  }
+                  
+                  if (companyItems.length > 0 && !categoryMap.has(companyCategoryKey)) {
+                    categoryMap.set(companyCategoryKey, {
+                      id: companyCategoryKey.toLowerCase().replace(/\s+/g, '_'),
+                      label: companyCategoryKey,
+                      count: companyItems.length,
+                      type: 'company',
+                      company_name: company.name,
+                      is_selected: true
+                    });
+                  }
+                });
+                
+                return Array.from(categoryMap.values());
+              })() : []}
               hasCompanyDocuments={hasCompanyDocuments}
+              // Loading state
+              isCategoryChanging={isCategoryChanging}
             />
 
             {/* Conditional Rendering */}
-            {selectedCategory === 'submitted' ? (
-              <DocumentsTable
-                applicationId={applicationId}
-                currentPage={documentsPage}
-                limit={documentsLimit}
-                onPageChange={handleDocumentsPageChange}
-                isClientView={true}
-                clientDocumentsData={documentsData}
-                clientIsLoading={isDocumentsLoading}
-                clientError={documentsError}
-                onClientDeleteSuccess={handleUploadSuccess}
-              />
-            ) : (
-              <DocumentChecklistTable
-                documents={documentsData?.data?.documents}
-                isLoading={isChecklistLoading}
-                error={checklistError}
-                applicationId={applicationId}
-                selectedCategory={selectedCategory as DocumentCategory}
-                companies={companies}
-                isClientView={true}
-                checklistData={checklistData}
-                onAddCompany={() => setIsAddCompanyDialogOpen(true)}
-                onRemoveCompany={handleRemoveCompany}
-              />
-            )}
+            {(() => {
+              const hasChecklist = checklistData?.data && Array.isArray(checklistData.data) && checklistData.data.length > 0;
+              const hasSubmittedDocuments = (documentsData?.data?.documents?.length || 0) > 0;
+              
+              // If no checklist and no submitted documents, show the no checklist message
+              if (!hasChecklist && !hasSubmittedDocuments) {
+                return (
+                  <div className="text-center py-12">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 max-w-md mx-auto">
+                      <h3 className="text-lg font-semibold text-yellow-800 mb-2">No Checklist Generated</h3>
+                      <p className="text-yellow-700">
+                        No checklist has been generated. Contact your application handling processing executive.
+                      </p>
+                    </div>
+                  </div>
+                );
+              }
+              
+              // If no checklist but has submitted documents, show submitted documents
+              if (!hasChecklist && hasSubmittedDocuments) {
+                return (
+                  <DocumentsTable
+                    applicationId={applicationId}
+                    currentPage={documentsPage}
+                    limit={documentsLimit}
+                    onPageChange={handleDocumentsPageChange}
+                    isClientView={true}
+                    clientDocumentsData={documentsData}
+                    clientIsLoading={isDocumentsLoading}
+                    clientError={documentsError}
+                    onClientDeleteSuccess={handleUploadSuccess}
+                  />
+                );
+              }
+              
+              // Normal rendering based on selected category
+              if (selectedCategory === 'submitted') {
+                return (
+                  <DocumentsTable
+                    applicationId={applicationId}
+                    currentPage={documentsPage}
+                    limit={documentsLimit}
+                    onPageChange={handleDocumentsPageChange}
+                    isClientView={true}
+                    clientDocumentsData={documentsData}
+                    clientIsLoading={isDocumentsLoading}
+                    clientError={documentsError}
+                    onClientDeleteSuccess={handleUploadSuccess}
+                  />
+                );
+              } else {
+                return (
+                  <DocumentChecklistTable
+                    documents={documentsData?.data?.documents}
+                    isLoading={isChecklistLoading}
+                    error={checklistError}
+                    applicationId={applicationId}
+                    selectedCategory={selectedCategory as DocumentCategory}
+                    companies={finalCompanies}
+                    isClientView={true}
+                    checklistData={checklistData}
+                    onAddCompany={() => setIsAddCompanyDialogOpen(true)}
+                    onRemoveCompany={handleRemoveCompany}
+                  />
+                );
+              }
+            })()}
           </div>
         </div>
       ) : (
@@ -245,7 +394,7 @@ export default function ClientApplicationDetailsPage() {
         isOpen={isAddCompanyDialogOpen}
         onClose={() => setIsAddCompanyDialogOpen(false)}
         onAddCompany={handleAddCompany}
-        existingCompanies={companies}
+        existingCompanies={finalCompanies}
         maxCompanies={3}
       />
     </div>

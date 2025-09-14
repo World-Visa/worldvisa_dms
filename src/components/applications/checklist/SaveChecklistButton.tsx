@@ -25,7 +25,7 @@ export function SaveChecklistButton({
   mode,
   className 
 }: SaveChecklistButtonProps) {
-  const buttonText = mode === 'creating' ? 'Save Checklist' : 'Save Changes';
+  const buttonText = mode === 'creating' ? 'Save Checklist' : 'Save Checklist Changes';
   const buttonColor = mode === 'creating' ? 'green' : 'blue';
   
   return (
