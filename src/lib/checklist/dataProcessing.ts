@@ -6,6 +6,7 @@ import {
 } from '@/lib/documents/checklist';
 import { Document } from '@/types/applications';
 import { Company } from '@/types/documents';
+
 import type { 
   ChecklistState, 
   ChecklistDocument, 
