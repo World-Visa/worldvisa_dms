@@ -13,6 +13,7 @@ import { useClientApplication } from '@/hooks/useClientApplication';
 import { useClientDocuments } from '@/hooks/useClientDocuments';
 import { useClientChecklist } from '@/hooks/useClientChecklist';
 import { useAuth } from '@/hooks/useAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft } from 'lucide-react';
@@ -28,6 +29,7 @@ export default function ClientApplicationDetailsPage() {
   const router = useRouter();
   const applicationId = params.id as string;
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const queryClient = useQueryClient();
   
   const [selectedCategory, setSelectedCategory] = useState<string>('submitted');
   const [documentsPage, setDocumentsPage] = useState(1);
@@ -69,8 +71,7 @@ export default function ClientApplicationDetailsPage() {
     error: checklistError,
   } = useClientChecklist(applicationId);
 
-    // Populate companies state from existing documents with company information
-    // Prioritize API data (documentsData) over locally generated data
+  // Prioritize API data (documentsData) over locally generated data
   useEffect(() => {
     if (documentsData?.data?.documents && documentsData.data.documents.length > 0) {
       const companyMap = new Map<string, Company>();
@@ -211,8 +212,11 @@ export default function ClientApplicationDetailsPage() {
     }
   };
 
-  const handleUploadSuccess = () => {
-    window.location.reload();
+
+  const handleDeleteSuccess = () => {
+    // Just invalidate queries to refresh the data without page reload
+    queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+    queryClient.invalidateQueries({ queryKey: ['client-checklist'] });
   };
 
   // Company management functions
@@ -374,7 +378,7 @@ export default function ClientApplicationDetailsPage() {
                     clientDocumentsData={documentsData}
                     clientIsLoading={isDocumentsLoading}
                     clientError={documentsError}
-                    onClientDeleteSuccess={handleUploadSuccess}
+                    onClientDeleteSuccess={handleDeleteSuccess}
                     onReuploadDocument={handleReuploadDocument}
                   />
                 );
@@ -392,7 +396,7 @@ export default function ClientApplicationDetailsPage() {
                     clientDocumentsData={documentsData}
                     clientIsLoading={isDocumentsLoading}
                     clientError={documentsError}
-                    onClientDeleteSuccess={handleUploadSuccess}
+                    onClientDeleteSuccess={handleDeleteSuccess}
                     onReuploadDocument={handleReuploadDocument}
                   />
                 );

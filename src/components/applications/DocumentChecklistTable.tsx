@@ -19,7 +19,8 @@ import {
   generateDefaultItems,
   generateSavedItems,
   filterItemsByCategory,
-  getCategoryBadgeStyle
+  getCategoryBadgeStyle,
+  mapCategoryLabel
 } from '@/lib/checklist/dataProcessing';
 import {
   ApiDocument,
@@ -311,9 +312,16 @@ const DocumentChecklistTableComponent = ({
 
     return documents.filter(doc => {
       let typeMatches = false;
-      if (doc.document_type && doc.document_type === expectedDocType) {
+      
+      if (doc.document_name && doc.document_name.toLowerCase() === expectedDocType) {
         typeMatches = true;
-      } else {
+      }
+      // Fallback: try to match by document_type field
+      else if (doc.document_type && doc.document_type === expectedDocType) {
+        typeMatches = true;
+      }
+      // Fallback: try to match by filename
+      else {
         const fileName = doc.file_name.toLowerCase();
         const docTypeName = documentType.toLowerCase();
         typeMatches = fileName.includes(docTypeName);
@@ -324,7 +332,9 @@ const DocumentChecklistTableComponent = ({
       }
 
       if (typeMatches && doc.document_category) {
-        return doc.document_category === companyCategory;
+        // Map API category to display category for comparison
+        const mappedDocCategory = mapCategoryLabel(doc.document_category);
+        return mappedDocCategory === companyCategory;
       }
 
       return false;
@@ -366,6 +376,19 @@ const DocumentChecklistTableComponent = ({
     getLatestDocuments,
     filterDocumentsByType
   ]);
+
+  // Force re-computation of checklist items when documents change
+  useEffect(() => {
+    if (documents && documents.length > 0) {
+      const timeoutId = setTimeout(() => {
+        queryClient.invalidateQueries({
+          queryKey: ['application-documents', applicationId],
+        });
+      }, 50);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [documents, applicationId, queryClient]);
 
   if (isLoading) {
     return (

@@ -17,8 +17,7 @@ import {
     User, 
     Clock, 
     FileText,
-    Upload,
-    AlertCircle
+    Upload
 } from 'lucide-react'
 import { Document } from '@/types/applications'
 
@@ -46,6 +45,9 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     documentType,
     category
 }) => {
+    // Ensure document type and category are not empty - use fallback if needed
+    const finalDocumentType = documentType || document.document_type || 'Document';
+    const finalCategory = category || document.document_category || 'Other Documents';
     const currentDocumentIndex = documents.findIndex(doc => doc._id === document._id);
     const [selectedIndex, setSelectedIndex] = useState(currentDocumentIndex >= 0 ? currentDocumentIndex : 0);
 
@@ -155,10 +157,10 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                                 <DocumentStatusDisplay document={currentDoc} />
 
                                 {/* Reupload Button for Rejected Documents */}
-                                {currentDoc.status === 'rejected' && onReuploadDocument && documentType && category && (
+                                {currentDoc.status === 'rejected' && onReuploadDocument && (
                                     <div className="mt-4">
                                         <Button
-                                            onClick={() => onReuploadDocument(currentDoc._id, documentType, category)}
+                                            onClick={() => onReuploadDocument(currentDoc._id, finalDocumentType, finalCategory)}
                                             className="bg-orange-600 hover:bg-orange-700 text-white"
                                             size="sm"
                                         >

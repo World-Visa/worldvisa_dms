@@ -210,7 +210,9 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                 onReadMore={() => {
                   const uploadedDoc = item.uploadedDocument as Document;
                   if (uploadedDoc) {
-                    handleViewRejectionDetails(uploadedDoc, item.documentType, item.category);
+                    const documentType = item.documentType || uploadedDoc.document_type || 'Document';
+                    const category = item.category || uploadedDoc.document_category || 'Other Documents';
+                    handleViewRejectionDetails(uploadedDoc, documentType, category);
                   }
                 }}
                 showReadMoreButton={item.rejectedRemark.length > 80}
@@ -296,7 +298,12 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => handleViewDocuments(item.documentType, item.category)}
+                  onClick={() => {
+                    const uploadedDoc = item.uploadedDocument as Document;
+                    const documentType = item.documentType || uploadedDoc?.document_type || 'Document';
+                    const category = item.category || uploadedDoc?.document_category || 'Other Documents';
+                    handleViewDocuments(documentType, category);
+                  }}
                   className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
                 >
                   <Eye className="h-3 w-3" />
@@ -308,7 +315,12 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleViewDocuments(item.documentType, item.category)}
+                    onClick={() => {
+                      const uploadedDoc = item.uploadedDocument as Document;
+                      const documentType = item.documentType || uploadedDoc?.document_type || 'Document';
+                      const category = item.category || uploadedDoc?.document_category || 'Other Documents';
+                      handleViewDocuments(documentType, category);
+                    }}
                     className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
                   >
                     <Eye className="h-3 w-3" />
@@ -320,7 +332,9 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                     onClick={() => {
                       const uploadedDoc = item.uploadedDocument as Document;
                       if (uploadedDoc?._id) {
-                        handleReuploadClick(uploadedDoc._id, item.documentType, item.category);
+                        const documentType = item.documentType || uploadedDoc.document_type || 'Document';
+                        const category = item.category || uploadedDoc.document_category || 'Other Documents';
+                        handleReuploadClick(uploadedDoc._id, documentType, category);
                       }
                     }}
                     className="flex items-center gap-1 px-2 py-1 h-7 text-xs text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"

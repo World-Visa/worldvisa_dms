@@ -17,7 +17,15 @@ async function fetchWithErrorHandling<T>(
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      let errorData: { message?: string; error?: string } = {};
+      try {
+        const text = await response.text();
+        if (text.trim()) {
+          errorData = JSON.parse(text);
+        }
+      } catch {
+        errorData = {};
+      }
       throw new Error(
         errorData.message || 
         errorData.error || 
@@ -25,8 +33,18 @@ async function fetchWithErrorHandling<T>(
       );
     }
 
-    const data = await response.json();
-    return data;
+    // Handle empty responses (common for DELETE requests)
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      return {} as T;
+    }
+    
+    const text = await response.text();
+    if (!text.trim()) {
+      return {} as T;
+    }
+    
+    return JSON.parse(text);
   } catch (error) {
     if (error instanceof Error) {
       throw error;

@@ -34,6 +34,10 @@ export function RejectionDetailsSheet({
 }: RejectionDetailsSheetProps) {
   if (!document) return null;
 
+  // Ensure document type and category are not empty - use fallback if needed
+  const finalDocumentType = documentType || document.document_type || 'Document';
+  const finalCategory = category || document.document_category || 'Other Documents';
+
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="w-full sm:max-w-md">
@@ -55,7 +59,7 @@ export function RejectionDetailsSheet({
               <span className="font-medium">Document Type:</span>
             </div>
             <Badge variant="outline" className="text-sm">
-              {documentType}
+              {finalDocumentType}
             </Badge>
           </div>
 
@@ -64,7 +68,7 @@ export function RejectionDetailsSheet({
               <span className="font-medium">Category:</span>
             </div>
             <Badge variant="outline" className="text-sm">
-              {category}
+              {finalCategory}
             </Badge>
           </div>
 
@@ -128,7 +132,7 @@ export function RejectionDetailsSheet({
           {/* Action Buttons */}
           <div className="flex flex-col gap-3 pt-4 border-t">
             <Button
-              onClick={() => onReupload(document._id, documentType, category)}
+              onClick={() => onReupload(document._id, finalDocumentType, finalCategory)}
               disabled={isReuploading}
               className="w-full bg-orange-600 hover:bg-orange-700 text-white"
             >

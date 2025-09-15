@@ -37,7 +37,15 @@ export async function fetcher<T>(
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+    let errorData: { message?: string; error?: string } = {};
+    try {
+      const text = await response.text();
+      if (text.trim()) {
+        errorData = JSON.parse(text);
+      }
+    } catch {
+      errorData = {};
+    }
     
     // Handle authentication errors - only redirect if it's a clear auth failure
     if (response.status === 401 || response.status === 403) {
@@ -81,7 +89,18 @@ export async function fetcher<T>(
     );
   }
 
-  return response.json();
+  // Handle empty responses (common for DELETE requests)
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    return {} as T;
+  }
+  
+  const text = await response.text();
+  if (!text.trim()) {
+    return {} as T;
+  }
+  
+  return JSON.parse(text);
 }
 
 // Fetch wrapper for public endpoints (no token required)
@@ -98,7 +117,16 @@ export async function publicFetcher<T>(
   });
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
+    let errorData: { message?: string; error?: string } = {};
+    try {
+      const text = await response.text();
+      if (text.trim()) {
+        errorData = JSON.parse(text);
+      }
+    } catch {
+      // If JSON parsing fails, use empty object
+      errorData = {};
+    }
     throw new Error(
       errorData.message || 
       errorData.error || 
@@ -106,5 +134,16 @@ export async function publicFetcher<T>(
     );
   }
 
-  return response.json();
+  // Handle empty responses (common for DELETE requests)
+  const contentType = response.headers.get('content-type');
+  if (!contentType || !contentType.includes('application/json')) {
+    return {} as T;
+  }
+  
+  const text = await response.text();
+  if (!text.trim()) {
+    return {} as T;
+  }
+  
+  return JSON.parse(text);
 }

@@ -39,6 +39,8 @@ export function ReuploadDocumentModal({
   documentType,
   category
 }: ReuploadDocumentModalProps) {
+  const finalDocumentType = documentType || document?.document_type || 'Document';
+  const finalCategory = category || document?.document_category || 'Other Documents';
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -151,8 +153,8 @@ export function ReuploadDocumentModal({
           applicationId,
           documentId: document._id,
           file: uploadedFile.file,
-          document_name: documentType,
-          document_category: category,
+          document_name: finalDocumentType,
+          document_category: finalCategory,
           uploaded_by: user.username,
         });
 
@@ -197,10 +199,10 @@ export function ReuploadDocumentModal({
               <strong>Replacing:</strong> {document.file_name}
             </div>
             <div className="text-sm text-gray-600">
-              <strong>Document Type:</strong> {documentType}
+              <strong>Document Type:</strong> {finalDocumentType}
             </div>
             <div className="text-sm text-gray-600">
-              <strong>Category:</strong> {category}
+              <strong>Category:</strong> {finalCategory}
             </div>
             {document.reject_message && (
               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">

@@ -218,6 +218,9 @@ export function UploadDocumentsModal({
 
         // Optimistically update the documents cache to immediately reflect the upload
         if (uploadResult?.data) {
+          const apiCategory = getDocumentCategory(selectedDocumentType, selectedDocumentCategory);
+          const displayCategory = getDisplayCategory(apiCategory);
+          
           const newDocuments = uploadResult.data.map((doc: { id: string; name: string; size: number; type: string; uploaded_at: string }) => ({
             _id: doc.id, // Use _id to match Document interface
             record_id: applicationId,
@@ -232,7 +235,7 @@ export function UploadDocumentsModal({
             __v: 0,
             // Store document type and category for matching
             document_type: selectedDocumentType.toLowerCase().replace(/\s+/g, '_'),
-            document_category: getDocumentCategory(selectedDocumentType, selectedDocumentCategory),
+            document_category: displayCategory, // Use display category for UI matching
             description: finalDescription,
           }));
 
@@ -256,6 +259,16 @@ export function UploadDocumentsModal({
               }
             };
           });
+
+          // Force immediate refetch to ensure UI updates
+          setTimeout(() => {
+            queryClient.invalidateQueries({
+              queryKey: ['application-documents', applicationId],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ['client-documents'],
+            });
+          }, 100);
         }
       } catch (error) {
         clearInterval(progressInterval);
@@ -291,6 +304,17 @@ export function UploadDocumentsModal({
     };
     
     return categoryMap[category] || 'Other';
+  };
+
+  // Helper function to get the display category for UI matching
+  const getDisplayCategory = (apiCategory: string): string => {
+    const reverseMap: Record<string, string> = {
+      'Identity': 'Identity Documents',
+      'Education': 'Education Documents',
+      'Other': 'Other Documents',
+    };
+    
+    return reverseMap[apiCategory] || apiCategory;
   };
 
   // Helper function to get company description based on company data or existing documents

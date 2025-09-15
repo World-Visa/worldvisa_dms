@@ -38,10 +38,10 @@ interface DocumentsTableProps {
     onReuploadDocument?: (documentId: string, documentType: string, category: string) => void;
 }
 
-export function DocumentsTable({ 
-    applicationId, 
-    currentPage = 1, 
-    limit = 10, 
+export function DocumentsTable({
+    applicationId,
+    currentPage = 1,
+    limit = 10,
     onPageChange,
     isClientView = false,
     clientDocumentsData,
@@ -71,7 +71,7 @@ export function DocumentsTable({
     const isLoading = isClientView ? clientIsLoading : adminIsLoading;
     const error = isClientView ? clientError : adminError;
 
-    const documents = isClientView 
+    const documents = isClientView
         ? ((documentsData as ClientDocumentsResponse)?.data?.documents || [])
         : (documentsData?.data || []);
     const pagination = documentsData?.pagination;
@@ -255,40 +255,87 @@ export function DocumentsTable({
                                         </div>
                                     </TableCell>
                                     <TableCell className='font-lexend '>
-                                        {document.document_type ? (
-                                            <Badge variant="secondary" className="text-xs max-w-[120px] font-medium truncate" title={document.document_type.replace(/_/g, ' ').replace(/\//g, '/')}>
-                                                {(() => {
-                                                    const formattedType = document.document_type.replace(/_/g, ' ').replace(/\//g, '/');
-                                                    return formattedType.length > 15
-                                                        ? `${formattedType.substring(0, 15)}...`
-                                                        : formattedType;
-                                                })()}
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="text-xs text-muted-foreground">
-                                                Not specified
-                                            </Badge>
-                                        )}
+                                        {(() => {
+                                            // Get document type from API response - use document_name field
+                                            const documentType = document.document_name;
+                                            
+                                            if (documentType) {
+                                                const formattedType = documentType.replace(/_/g, ' ').replace(/\//g, '/');
+                                                return (
+                                                    <Badge variant="secondary" className="text-xs max-w-[120px] font-medium truncate" title={formattedType}>
+                                                        {formattedType.length > 15
+                                                            ? `${formattedType.substring(0, 15)}...`
+                                                            : formattedType}
+                                                    </Badge>
+                                                );
+                                            } else {
+                                                return (
+                                                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                                                        Not specified
+                                                    </Badge>
+                                                );
+                                            }
+                                        })()}
                                     </TableCell>
                                     <TableCell className='font-lexend'>
-                                        {document.document_category ? (
-                                            <Badge
-                                                variant={document.document_category.includes('Company Documents') ? "default" : "outline"}
-                                                className={`text-xs max-w-[140px] font-medium  truncate ${document.document_category.includes('Company Documents')
-                                                        ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                                                        : ''
-                                                    }`}
-                                                title={document.document_category}
-                                            >
-                                                {document.document_category.length > 18
-                                                    ? `${document.document_category.substring(0, 18)}...`
-                                                    : document.document_category}
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="text-xs text-muted-foreground">
-                                                Not specified
-                                            </Badge>
-                                        )}
+                                        {(() => {
+                                            // Try to determine document category with fallback logic
+                                            let documentCategory = document.document_category;
+                                            
+                                            // If no document_category field, try to infer from filename or document type
+                                            if (!documentCategory && document.file_name) {
+                                                const fileName = document.file_name.toLowerCase();
+                                                
+                                                // Check for company-related documents
+                                                if (fileName.includes('payslip') || fileName.includes('salary') || 
+                                                    fileName.includes('experience') || fileName.includes('work') ||
+                                                    fileName.includes('company') || fileName.includes('employment')) {
+                                                    documentCategory = 'Company Documents';
+                                                }
+                                                // Check for identity documents
+                                                else if (fileName.includes('passport') || fileName.includes('aadhaar') || 
+                                                         fileName.includes('aadhar') || fileName.includes('visa') ||
+                                                         fileName.includes('birth') || fileName.includes('marriage')) {
+                                                    documentCategory = 'Identity Documents';
+                                                }
+                                                // Check for education documents
+                                                else if (fileName.includes('degree') || fileName.includes('certificate') ||
+                                                         fileName.includes('10th') || fileName.includes('12th') ||
+                                                         fileName.includes('bachelor') || fileName.includes('master') ||
+                                                         fileName.includes('diploma') || fileName.includes('ielts') ||
+                                                         fileName.includes('pte') || fileName.includes('toefl')) {
+                                                    documentCategory = 'Education Documents';
+                                                }
+                                                // Default to Other Documents
+                                                else {
+                                                    documentCategory = 'Other Documents';
+                                                }
+                                            }
+                                            
+                                            if (documentCategory) {
+                                                const isCompanyDoc = documentCategory.includes('Company Documents');
+                                                return (
+                                                    <Badge
+                                                        variant={isCompanyDoc ? "default" : "outline"}
+                                                        className={`text-xs max-w-[140px] font-medium truncate ${isCompanyDoc
+                                                                ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                                                : ''
+                                                            }`}
+                                                        title={documentCategory}
+                                                    >
+                                                        {documentCategory.length > 18
+                                                            ? `${documentCategory.substring(0, 18)}...`
+                                                            : documentCategory}
+                                                    </Badge>
+                                                );
+                                            } else {
+                                                return (
+                                                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                                                        Not specified
+                                                    </Badge>
+                                                );
+                                            }
+                                        })()}
                                     </TableCell>
                                     <TableCell>
                                         {(() => {
@@ -318,7 +365,7 @@ export function DocumentsTable({
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => handleDeleteDocument(document._id, document.file_name)}
-                                                disabled={deleteDocumentMutation.isPending}
+                                                disabled={isClientView ? clientDeleteDocumentMutation.isPending : deleteDocumentMutation.isPending}
                                                 className='cursor-pointer'
                                             >
                                                 <Trash2 className="h-4 w-4" />
@@ -355,7 +402,7 @@ export function DocumentsTable({
                 onClose={cancelDelete}
                 onConfirm={confirmDelete}
                 documentName={documentToDelete?.name || ''}
-                isDeleting={deleteDocumentMutation.isPending}
+                isDeleting={isClientView ? clientDeleteDocumentMutation.isPending : deleteDocumentMutation.isPending}
             />
 
             {/* View Document Sheet */}
@@ -367,8 +414,8 @@ export function DocumentsTable({
                     isOpen={viewSheetOpen}
                     onClose={handleCloseViewSheet}
                     onReuploadDocument={onReuploadDocument}
-                    documentType={selectedDocument.document_type || ''}
-                    category={selectedDocument.document_category || ''}
+                    documentType={selectedDocument.document_name || 'Document'}
+                    category={selectedDocument.document_category || 'Other Documents'}
                     isClientView={isClientView}
                 />
             )}

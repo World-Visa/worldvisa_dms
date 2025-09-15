@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetcher } from '@/lib/fetcher';
+import { toast } from 'sonner';
 
 interface DeleteDocumentResponse {
   success: boolean;
@@ -23,9 +24,13 @@ export function useClientDeleteDocument() {
     onSuccess: () => {
       // Invalidate and refetch client documents
       queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['client-checklist'] });
+      
+      toast.success('Document deleted successfully');
     },
     onError: (error) => {
       console.error('Failed to delete document:', error);
+      toast.error(`Failed to delete document: ${error.message}`);
     },
   });
 }
