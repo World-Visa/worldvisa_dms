@@ -1,10 +1,14 @@
 'use client';
 
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ClientApplicationResponse, ClientDocument } from '@/types/client';
 import { ClientDocumentsSummary } from './ClientDocumentsSummary';
+import { ApplicationDetailsModal } from './ApplicationDetailsModal';
+import { Eye } from 'lucide-react';
 
 interface ClientApplicationDetailsProps {
   data?: ClientApplicationResponse;
@@ -16,6 +20,7 @@ interface ClientApplicationDetailsProps {
 }
 
 export function ClientApplicationDetails({ data, documents, isDocumentsLoading, documentsError, isLoading, error }: ClientApplicationDetailsProps) {
+  const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -88,7 +93,18 @@ export function ClientApplicationDetails({ data, documents, isDocumentsLoading, 
       {/* Application Details Card */}
       <Card className='w-full lg:max-w-xs lg:w-full'>
         <CardHeader>
-          <CardTitle>Application Details</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Application Details</CardTitle>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsDetailsModalOpen(true)}
+              className="flex items-center text-sm cursor-pointer gap-1"
+            >
+              <Eye className="h-3 w-3" />
+              View More
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-4">
@@ -107,6 +123,13 @@ export function ClientApplicationDetails({ data, documents, isDocumentsLoading, 
           </div>
         </CardContent>
       </Card>
+      
+      {/* Application Details Modal */}
+      <ApplicationDetailsModal
+        application={application}
+        isOpen={isDetailsModalOpen}
+        onClose={() => setIsDetailsModalOpen(false)}
+      />
     </div>
   );
 }

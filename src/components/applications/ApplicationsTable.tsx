@@ -138,7 +138,7 @@ export function ApplicationsTable({
                       {application.Created_Time ? formatDate(application.Created_Time, 'time') : 'N/A'}
                     </TableCell>
                     <TableCell className="text-center">
-                      <Badge variant="secondary" className='bg-green-600 text-white'>
+                      <Badge variant="secondary" className='bg-green-600 hover:bg-green-400 text-white'>
                         {application.AttachmentCount}
                       </Badge>
                     </TableCell>

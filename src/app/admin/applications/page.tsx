@@ -76,6 +76,8 @@ export default function AllApplicationsPage() {
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
+    // Scroll to top when page changes
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
   const handleLimitChange = useCallback((newLimit: number) => {

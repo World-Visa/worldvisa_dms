@@ -15,6 +15,11 @@ export interface Application {
   Created_Time: string;
   Application_Handled_By: string;
   AttachmentCount: number;
+  // Optional visa-related properties
+  Qualified_Country?: string;
+  Service_Finalized?: string;
+  Suggested_Anzsco?: string;
+  Send_Check_List?: string;
 }
 
 export interface Document {

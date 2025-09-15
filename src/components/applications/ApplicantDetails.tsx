@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Application, Document } from '@/types/applications';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DocumentsSummary } from './DocumentsSummary';
+import { ApplicationDetailsModal } from './ApplicationDetailsModal';
+import { Eye } from 'lucide-react';
 
 interface ApplicantDetailsProps {
     application: Application | undefined;
@@ -14,6 +17,8 @@ interface ApplicantDetailsProps {
 }
 
 export function ApplicantDetails({ application, isLoading, error, documents, isDocumentsLoading, documentsError }: ApplicantDetailsProps) {
+    const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false);
+
     if (isLoading) {
         return (
             <div className='flex flex-col lg:flex-row justify-between w-full gap-6 lg:gap-8 lg:items-end'>
@@ -89,7 +94,18 @@ export function ApplicantDetails({ application, isLoading, error, documents, isD
             />
             <Card className='w-full lg:max-w-xs lg:w-full'>
                 <CardHeader>
-                    <CardTitle className='font-lexend text'>Applicant Details</CardTitle>
+                    <div className="flex items-center justify-between">
+                        <CardTitle className='font-lexend text'>Applicant Details</CardTitle>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setIsDetailsModalOpen(true)}
+                            className="flex items-center text-sm cursor-pointer gap-1"
+                        >
+                            <Eye className="h-3 w-3" />
+                            View More
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-4 lg:gap-6">
@@ -108,6 +124,13 @@ export function ApplicantDetails({ application, isLoading, error, documents, isD
                     </div>
                 </CardContent>
             </Card>
+            
+            {/* Application Details Modal */}
+            <ApplicationDetailsModal
+                application={application}
+                isOpen={isDetailsModalOpen}
+                onClose={() => setIsDetailsModalOpen(false)}
+            />
         </div>
     );
 }
