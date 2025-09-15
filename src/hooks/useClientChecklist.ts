@@ -2,18 +2,16 @@ import { useQuery } from '@tanstack/react-query';
 import { fetcher } from '@/lib/fetcher';
 import { ChecklistResponse } from '@/types/checklist';
 
-interface ChecklistItem {
-  document_category: string;
-  document_type: string;
-  required: boolean;
-  _id: string;
-  company_name?: string;
-}
-
 interface ChecklistApiResponse {
   status: string;
   data: {
-    checklist: ChecklistItem[];
+    checklist: Array<{
+      _id: string;
+      document_category: string;
+      document_type: string;
+      required: boolean;
+      company_name?: string;
+    }>;
   };
 }
 
@@ -24,8 +22,8 @@ export function useClientChecklist(applicationId: string) {
     queryKey: ['client-checklist', applicationId],
     queryFn: async (): Promise<ChecklistResponse> => {
       try {
-        // Use the main checklist endpoint (same as admin)
-        const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
+        // Use the client checklist endpoint with applicationId as query parameter
+        const url = `${API_BASE_URL}/api/zoho_dms/clients/checklist/`;
         const params = new URLSearchParams({ record_id: applicationId });
         
         const response = await fetcher<ChecklistApiResponse>(`${url}?${params.toString()}`);
@@ -35,13 +33,12 @@ export function useClientChecklist(applicationId: string) {
           return {
             success: true,
             data: response.data.checklist.map((item) => ({
+              checklist_id: item._id,
               document_category: item.document_category,
               document_type: item.document_type,
               required: item.required,
-              _id: item._id,
               company_name: item.company_name
             }))
-            
           };
         }
         

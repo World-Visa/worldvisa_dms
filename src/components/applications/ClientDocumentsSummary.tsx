@@ -14,7 +14,7 @@ interface ClientDocumentsSummaryProps {
 export function ClientDocumentsSummary({ documents, isLoading, error }: ClientDocumentsSummaryProps) {
     if (isLoading) {
         return (
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 w-full">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full">
                 {[1, 2, 3, 4, 5].map((i) => (
                     <Card key={i}>
                         <CardContent className="p-3 sm:p-4">
@@ -88,7 +88,7 @@ export function ClientDocumentsSummary({ documents, isLoading, error }: ClientDo
                 </Badge>
             </div>
 
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 w-full">
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 w-full">
                 {summaryCards.map((card) => {
                     const Icon = card.icon;
                     return (

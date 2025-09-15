@@ -19,6 +19,11 @@ export function useAddDocument() {
         queryKey: ['application-documents-paginated', variables.applicationId],
       });
       
+      // Invalidate client documents cache to ensure client UI reflects the upload
+      queryClient.invalidateQueries({
+        queryKey: ['client-documents'],
+      });
+      
       // Invalidate application details to refresh document counts
       queryClient.invalidateQueries({
         queryKey: ['application-details', variables.applicationId],
@@ -50,6 +55,10 @@ export function useDeleteDocument() {
       // Also invalidate paginated documents queries
       queryClient.invalidateQueries({
         queryKey: ['application-documents-paginated'],
+      });
+      // Invalidate client documents cache to ensure client UI reflects the deletion
+      queryClient.invalidateQueries({
+        queryKey: ['client-documents'],
       });
       // Invalidate application details to refresh document counts
       queryClient.invalidateQueries({

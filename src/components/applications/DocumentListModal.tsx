@@ -19,6 +19,7 @@ interface DocumentListModalProps {
   documents: Document[];
   applicationId: string;
   onDocumentDeleted?: () => void;
+  isClientView?: boolean;
 }
 
 export function DocumentListModal({
@@ -27,7 +28,8 @@ export function DocumentListModal({
   documentType,
   documents,
   applicationId,
-  onDocumentDeleted
+  onDocumentDeleted,
+  isClientView = false
 }: DocumentListModalProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -159,6 +161,7 @@ export function DocumentListModal({
           applicationId={applicationId}
           isOpen={viewSheetOpen}
           onClose={handleCloseViewSheet}
+          isClientView={isClientView}
         />
       )}
     </Dialog>

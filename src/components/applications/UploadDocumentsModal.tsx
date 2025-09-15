@@ -197,16 +197,6 @@ export function UploadDocumentsModal({
         const finalDescription = getCompanyDescription(selectedDocumentCategory) || description;
         const finalCategory = getDocumentCategory(selectedDocumentType, selectedDocumentCategory);
 
-        // Debug logging
-        console.log('Upload Debug Info:', {
-          selectedDocumentType,
-          selectedDocumentCategory,
-          company,
-          finalCategory,
-          finalDescription,
-          isCompanyDocument: selectedDocumentCategory.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(selectedDocumentCategory)
-        });
-      
         // Upload all files at once with the new API
         const uploadResult = await addDocumentMutation.mutateAsync({
           applicationId,
@@ -227,30 +217,42 @@ export function UploadDocumentsModal({
 
         // Optimistically update the documents cache to immediately reflect the upload
         if (uploadResult?.data) {
+          const newDocuments = uploadResult.data.map((doc: { id: string; name: string; size: number; type: string; uploaded_at: string }) => ({
+            _id: doc.id, // Use _id to match Document interface
+            record_id: applicationId,
+            workdrive_file_id: doc.id,
+            workdrive_parent_id: '',
+            file_name: doc.name, // This is the correct property name
+            uploaded_by: user.username,
+            status: 'pending' as const, // Default status for new uploads
+            history: [],
+            uploaded_at: doc.uploaded_at,
+            comments: [],
+            __v: 0,
+            // Store document type and category for matching
+            document_type: selectedDocumentType.toLowerCase().replace(/\s+/g, '_'),
+            document_category: getDocumentCategory(selectedDocumentType, selectedDocumentCategory),
+            description: finalDescription,
+          }));
+
+          // Update application documents cache
           queryClient.setQueryData(['application-documents', applicationId], (oldData: { data?: unknown[] } | undefined) => {
             if (!oldData?.data) return oldData;
-            
-            // Add the new documents to the existing data
-            const newDocuments = uploadResult.data.map((doc: { id: string; name: string; size: number; type: string; uploaded_at: string }) => ({
-              _id: doc.id, // Use _id to match Document interface
-              record_id: applicationId,
-              workdrive_file_id: doc.id,
-              workdrive_parent_id: '',
-              file_name: doc.name, // This is the correct property name
-              uploaded_by: user.username,
-              status: 'pending' as const, // Default status for new uploads
-              history: [],
-              uploaded_at: doc.uploaded_at,
-              comments: [],
-              __v: 0,
-              // Store document type and category for matching
-              document_type: selectedDocumentType.toLowerCase().replace(/\s+/g, '_'),
-              document_category: getDocumentCategory(selectedDocumentType, selectedDocumentCategory),
-            }));
-            
             return {
               ...oldData,
               data: [...oldData.data, ...newDocuments]
+            };
+          });
+
+          // Also update client documents cache for immediate UI reflection
+          queryClient.setQueryData(['client-documents'], (oldData: { data?: { documents?: unknown[] } } | undefined) => {
+            if (!oldData?.data?.documents) return oldData;
+            return {
+              ...oldData,
+              data: {
+                ...oldData.data,
+                documents: [...oldData.data.documents, ...newDocuments]
+              }
             };
           });
         }
@@ -292,27 +294,27 @@ export function UploadDocumentsModal({
 
   // Helper function to get company description based on company data or existing documents
   const getCompanyDescription = (category: string): string => {
-    console.log('getCompanyDescription called with:', { category, company, documents });
-    
     // First, try to get description from existing documents for this category
     if (documents && documents.length > 0) {
       const existingDoc = documents.find((doc: ApiDocument) => 
         doc.document_category === category && doc.description
       );
       if (existingDoc && existingDoc.description) {
-        console.log('Using description from existing document:', existingDoc.description);
         return existingDoc.description;
       }
     }
     
-    // Fallback to generating from company data (for first time)
+    // Use company description if available (new format with experience details)
     if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category) && company) {
+      if (company.description) {
+        return company.description;
+      }
+      
+      // Fallback to generating from company data (for backward compatibility)
       const description = generateCompanyDescription(company.fromDate, company.toDate);
-      console.log('Generated company description (first time):', description);
       return description;
     }
     
-    console.log('No company description generated');
     return '';
   };
 

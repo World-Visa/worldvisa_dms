@@ -67,22 +67,24 @@ export async function GET(
       );
     }
 
-    // Verify admin role for comment access
+    // Verify user role for comment access (allow both admin and client)
     const role = getUserRole(token);
     const headerRole = request.headers.get("x-user-role");
 
-    // Check role from JWT token or custom header
-    const isAdmin =
+    // Check role from JWT token or custom header - allow admin, master_admin, and client
+    const isAuthorized =
       role === "admin" ||
       role === "master_admin" ||
+      role === "client" ||
       headerRole === "admin" ||
-      headerRole === "master_admin";
+      headerRole === "master_admin" ||
+      headerRole === "client";
 
-    if (!isAdmin) {
+    if (!isAuthorized) {
       return NextResponse.json(
         {
           status: "error",
-          message: "Admin access required",
+          message: "Access denied - valid user role required",
         },
         { status: 403 }
       );
@@ -226,22 +228,24 @@ export async function POST(
       );
     }
 
-    // Verify admin role for comment creation
+    // Verify user role for comment creation (allow both admin and client)
     const role = getUserRole(token);
     const headerRole = request.headers.get("x-user-role");
 
-    // Check role from JWT token or custom header
-    const isAdmin =
+    // Check role from JWT token or custom header - allow admin, master_admin, and client
+    const isAuthorized =
       role === "admin" ||
       role === "master_admin" ||
+      role === "client" ||
       headerRole === "admin" ||
-      headerRole === "master_admin";
+      headerRole === "master_admin" ||
+      headerRole === "client";
 
-    if (!isAdmin) {
+    if (!isAuthorized) {
       return NextResponse.json(
         {
           status: "error",
-          message: "Admin access required",
+          message: "Access denied - valid user role required",
         },
         { status: 403 }
       );
@@ -455,22 +459,24 @@ export async function DELETE(
       );
     }
 
-    // Verify admin role for comment deletion
+    // Verify user role for comment deletion
     const role = getUserRole(token);
     const headerRole = request.headers.get("x-user-role");
 
-    // Check role from JWT token or custom header
-    const isAdmin =
+    // Check role from JWT token or custom header - allow admin, master_admin, and client
+    const isAuthorized =
       role === "admin" ||
       role === "master_admin" ||
+      role === "client" ||
       headerRole === "admin" ||
-      headerRole === "master_admin";
+      headerRole === "master_admin" ||
+      headerRole === "client";
 
-    if (!isAdmin) {
+    if (!isAuthorized) {
       return NextResponse.json(
         {
           status: "error",
-          message: "Admin access required",
+          message: "Access denied - valid user role required",
         },
         { status: 403 }
       );
@@ -478,7 +484,7 @@ export async function DELETE(
 
     // Parse request body
     const body = await request.json();
-    const { commentId } = body as { commentId: string };
+    const { commentId, addedBy } = body as { commentId: string; addedBy?: string };
 
     // Validate required fields
     if (!commentId) {
@@ -489,6 +495,31 @@ export async function DELETE(
         },
         { status: 400 }
       );
+    }
+
+    // For client users, verify they can only delete their own comments
+    if (role === "client" || headerRole === "client") {
+      if (!addedBy) {
+        return NextResponse.json(
+          {
+            status: "error",
+            message: "Comment author information is required for client deletion",
+          },
+          { status: 400 }
+        );
+      }
+
+      // Get current user info from token payload
+      const currentUser = payload.username;
+      if (addedBy !== currentUser) {
+        return NextResponse.json(
+          {
+            status: "error",
+            message: "You can only delete your own comments",
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Delete comment via Zoho API

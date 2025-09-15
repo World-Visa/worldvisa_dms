@@ -34,7 +34,7 @@ export function DocumentCategoryFilter({
   companies = [],
   onAddCompany,
   onRemoveCompany,
-  maxCompanies = 3,
+  maxCompanies = 5,
   // Client privilege props
   isClientView = false,
   submittedDocumentsCount = 0,

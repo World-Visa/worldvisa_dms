@@ -90,7 +90,7 @@ export function ClientApplicationDetails({ data, documents, isDocumentsLoading, 
           <CardTitle>Application Details</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-4 lg:gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-4">
             <div className="space-y-2">
               <p className="text-sm text-muted-foreground">Full Name</p>
               <p className="font-medium">{application.Name}</p>

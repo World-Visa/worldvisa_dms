@@ -158,16 +158,15 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                                 )}
                             </div>
 
-                            {/* Comments Section - Bottom on mobile, Right on desktop (Admin only) */}
-                            {!isClientView && (
-                                <div className="w-full lg:flex-shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
-                                    <CommentErrorBoundary>
-                                        <DocumentComments
-                                            documentId={currentDoc._id}
-                                        />
-                                    </CommentErrorBoundary>
-                                </div>
-                            )}
+                            {/* Comments Section - Bottom on mobile, Right on desktop */}
+                            <div className="w-full lg:flex-shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
+                                <CommentErrorBoundary>
+                                    <DocumentComments
+                                        documentId={currentDoc._id}
+                                        isClientView={isClientView}
+                                    />
+                                </CommentErrorBoundary>
+                            </div>
                         </div>
                     </div>
                 </SheetContent>

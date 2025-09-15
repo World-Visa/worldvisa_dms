@@ -15,15 +15,24 @@ import CommentItem from './CommentItem'
 interface DocumentCommentsProps {
     documentId: string;
     className?: string;
+    isClientView?: boolean;
 }
 
 const DocumentComments: React.FC<DocumentCommentsProps> = ({
     documentId,
-    className = ''
+    className = '',
+    isClientView = false
 }) => {
     const { comments, isLoading, error, refetch } = useDocumentComments(documentId);
     const connectionState = useRealtimeConnection();
     const deleteCommentMutation = useDeleteComment(documentId);
+
+    // Filter comments for client view - hide "kavitha mam" comments
+    const filteredComments = isClientView 
+        ? comments.filter(comment => 
+            !comment.added_by.toLowerCase().includes('kavitha')
+          )
+        : comments;
 
     const handleCommentAdded = () => {
         console.log('Comment added successfully');
@@ -111,14 +120,24 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
                                     </Card>
                                 ))}
                             </div>
-                        ) : comments.length === 0 ? (
+                        ) : filteredComments.length === 0 ? (
                             <div className="text-center py-8">
                                 <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                                <p className="text-gray-500 text-sm">No comments yet</p>
-                                <p className="text-gray-400 text-xs">Be the first to add a comment</p>
+                                <p className="text-gray-500 text-sm">
+                                    {isClientView && comments.length > 0 
+                                        ? "No visible comments" 
+                                        : "No comments yet"
+                                    }
+                                </p>
+                                <p className="text-gray-400 text-xs">
+                                    {isClientView && comments.length > 0
+                                        ? "Comments from admin are not visible to clients"
+                                        : "Be the first to add a comment"
+                                    }
+                                </p>
                             </div>
                         ) : (
-                            comments.map((comment) => (
+                            filteredComments.map((comment) => (
                                 <CommentItem
                                     key={comment._id}
                                     comment={comment}

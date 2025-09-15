@@ -43,7 +43,7 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
         <div className="text-sm">
           <div className="font-medium text-gray-900">{displayCompany.name}</div>
           <div className="text-xs text-gray-600">
-            {generateCompanyDescription(displayCompany.fromDate, displayCompany.toDate)}
+            {displayCompany.description || generateCompanyDescription(displayCompany.fromDate, displayCompany.toDate)}
           </div>
         </div>
       </div>

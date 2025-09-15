@@ -1,7 +1,8 @@
 
 export const calculateDuration = (fromDate: string, toDate: string): string => {
-  const from = new Date(fromDate + '-01');
-  const to = new Date(toDate + '-01');
+  // Handle both YYYY-MM and YYYY-MM-DD formats
+  const from = new Date(fromDate.includes('-') && fromDate.split('-').length === 2 ? fromDate + '-01' : fromDate);
+  const to = new Date(toDate.includes('-') && toDate.split('-').length === 2 ? toDate + '-01' : toDate);
   
   let years = to.getFullYear() - from.getFullYear();
   let months = to.getMonth() - from.getMonth();
@@ -23,33 +24,45 @@ export const calculateDuration = (fromDate: string, toDate: string): string => {
 };
 
 /**
- * Calculate the number of years between two dates in YYYY-MM format
+ * Calculate the number of years between two dates in YYYY-MM or YYYY-MM-DD format
  * Returns a number representing the total years (rounded up)
  */
 export const calculateYearsBetween = (fromDate: string, toDate: string): number => {
-  const from = new Date(fromDate + '-01');
-  const to = new Date(toDate + '-01');
+  // Handle both YYYY-MM and YYYY-MM-DD formats
+  const from = new Date(fromDate.includes('-') && fromDate.split('-').length === 2 ? fromDate + '-01' : fromDate);
+  const to = new Date(toDate.includes('-') && toDate.split('-').length === 2 ? toDate + '-01' : toDate);
   const diffTime = Math.abs(to.getTime() - from.getTime());
   const diffYears = Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 365));
   return diffYears;
 };
 
 /**
- * Format a date string (YYYY-MM) to a readable format (Month Year)
- * Example: "2023-01" -> "Jan 2023"
+ * Format a date string (YYYY-MM or YYYY-MM-DD) to a readable format (Month Year or Month Day, Year)
+ * Example: "2023-01" -> "Jan 2023", "2023-01-15" -> "Jan 15, 2023"
  */
 export const formatDateForDisplay = (dateString: string): string => {
-  const [year, month] = dateString.split('-');
+  const parts = dateString.split('-');
+  const year = parts[0];
+  const month = parts[1];
+  const day = parts[2];
+  
   const monthNames = [
     'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
     'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
   ];
-  return `${monthNames[parseInt(month) - 1]} ${year}`;
+  
+  if (day) {
+    // YYYY-MM-DD format
+    return `${monthNames[parseInt(month) - 1]} ${parseInt(day)}, ${year}`;
+  } else {
+    // YYYY-MM format
+    return `${monthNames[parseInt(month) - 1]} ${year}`;
+  }
 };
 
 /**
  * Generate a company description with consistent formatting
- * Example: "From Jan 2023 to Dec 2025 (2 years 11 months)"
+ * Example: "From Jan 15, 2023 to Dec 20, 2025 (2 years 11 months)"
  */
 export const generateCompanyDescription = (fromDate: string, toDate: string): string => {
   const fromDateFormatted = formatDateForDisplay(fromDate);

@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { ClientApplicationDetails } from '@/components/applications/ClientApplicationDetails';
 import { DocumentsTable } from '@/components/applications/DocumentsTable';
 import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
 import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
 import { DocumentCategory, Company } from '@/types/documents';
+import { Document } from '@/types/applications';
 import { useClientApplication } from '@/hooks/useClientApplication';
 import { useClientDocuments } from '@/hooks/useClientDocuments';
 import { useClientChecklist } from '@/hooks/useClientChecklist';
@@ -56,31 +57,51 @@ export default function ClientApplicationDetailsPage() {
     error: checklistError,
   } = useClientChecklist(applicationId);
 
-  // Extract companies from documents API response (same as admin side)
-  const extractedCompanies = React.useMemo(() => {
-    if (!documentsData?.data?.documents || documentsData.data.documents.length === 0) return [];
-    
+  // Extract companies from documents API response, but prioritize actual company data
+  const extractedCompanies = useMemo(() => {
+    // Get company categories from documents (if any exist)
     const companyCategories = new Set<string>();
-    documentsData.data.documents.forEach((doc: { document_category?: string }) => {
-      if (doc.document_category && doc.document_category.includes('Company Documents')) {
-        companyCategories.add(doc.document_category);
-      }
-    });
+    if (documentsData?.data?.documents && documentsData.data.documents.length > 0) {
+      documentsData.data.documents.forEach((doc: { document_category?: string }) => {
+        if (doc.document_category && doc.document_category.includes('Company Documents')) {
+          companyCategories.add(doc.document_category);
+        }
+      });
+    }
     
-    return Array.from(companyCategories).map(category => {
-      // Extract company name from category (e.g., "worldvisa Company Documents" -> "worldvisa")
-      const companyName = category.split(' ')[0].toLowerCase();
-      return {
-        name: companyName,
-        category: category,
-        fromDate: "2024-01", // Default values since we don't have this info from documents
-        toDate: "2025-12"
-      };
-    });
-  }, [documentsData?.data?.documents]);
+    // Always include companies from the companies state (which have correct dates and descriptions)
+    const existingCompanies = companies || [];
+    
+    // If we have documents, filter companies to only include those with documents
+    if (companyCategories.size > 0) {
+      const companiesFromState = existingCompanies.filter(company => 
+        companyCategories.has(company.category)
+      );
+      
+      // If we have companies from state that match document categories, use them
+      if (companiesFromState.length > 0) {
+        return companiesFromState;
+      }
+      
+      // Fallback: generate companies from document categories (for backward compatibility)
+      return Array.from(companyCategories).map(category => {
+        // Extract company name from category (e.g., "worldvisa Company Documents" -> "worldvisa")
+        const companyName = category.split(' ')[0].toLowerCase();
+        return {
+          name: companyName,
+          category: category,
+          fromDate: "2024-01", // Default values since we don't have this info from documents
+          toDate: "2025-12"
+        };
+      });
+    }
+    
+    // If no documents exist yet, return all companies from state
+    return existingCompanies;
+  }, [documentsData?.data?.documents, companies]);
   
-  // Use extracted companies instead of localStorage-based companies
-  const finalCompanies = extractedCompanies.length > 0 ? extractedCompanies : companies;
+  // Use extracted companies (which now prioritizes actual company data)
+  const finalCompanies = extractedCompanies;
 
   const handleDocumentsPageChange = (page: number) => {
     setDocumentsPage(page);
@@ -200,7 +221,7 @@ export default function ClientApplicationDetailsPage() {
               companies={finalCompanies}
               onAddCompany={() => setIsAddCompanyDialogOpen(true)}
               onRemoveCompany={handleRemoveCompany}
-              maxCompanies={3}
+              maxCompanies={5}
               isClientView={true}
               submittedDocumentsCount={documentsData?.data?.documents?.length || 0}
               checklistCategories={Array.isArray(checklistData?.data) ? (() => {
@@ -366,7 +387,7 @@ export default function ClientApplicationDetailsPage() {
               } else {
                 return (
                   <DocumentChecklistTable
-                    documents={documentsData?.data?.documents}
+                    documents={documentsData?.data?.documents as unknown as Document[]}
                     isLoading={isChecklistLoading}
                     error={checklistError}
                     applicationId={applicationId}
@@ -374,6 +395,7 @@ export default function ClientApplicationDetailsPage() {
                     companies={finalCompanies}
                     isClientView={true}
                     checklistData={checklistData}
+                    checklistState={checklistData?.data && checklistData.data.length > 0 ? 'saved' : 'none'}
                     onAddCompany={() => setIsAddCompanyDialogOpen(true)}
                     onRemoveCompany={handleRemoveCompany}
                   />
@@ -395,7 +417,7 @@ export default function ClientApplicationDetailsPage() {
         onClose={() => setIsAddCompanyDialogOpen(false)}
         onAddCompany={handleAddCompany}
         existingCompanies={finalCompanies}
-        maxCompanies={3}
+        maxCompanies={5}
       />
     </div>
   );

@@ -223,12 +223,10 @@ const DocumentChecklistTableComponent = ({
       
       if (!company && currentCompany && category.includes('Company Documents')) {
         company = currentCompany;
-        setSelectedDocumentCategory(company.category);
-        setSelectedCompany(company);
-      } else {
-        setSelectedDocumentCategory(category);
-        setSelectedCompany(company);
       }
+      
+      setSelectedDocumentCategory(category);
+      setSelectedCompany(company);
     } else {
       setSelectedDocumentCategory(category);
       setSelectedCompany(undefined);
@@ -342,10 +340,10 @@ const DocumentChecklistTableComponent = ({
           onSearchChange={setSearchQuery}
           checklistState={checklistState}
           selectedCategory={selectedCategory}
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-          currentCount={tabCounts.currentCount}
-          availableCount={tabCounts.availableCount}
+                activeTab={activeTab}
+                onTabChange={handleTabChange}
+                currentCount={tabCounts.currentCount}
+                availableCount={tabCounts.availableCount}
           pendingAdditions={pendingAdditions}
           pendingDeletions={pendingDeletions}
           pendingUpdates={pendingUpdates}
@@ -361,24 +359,24 @@ const DocumentChecklistTableComponent = ({
           currentPage={currentPage}
           totalPages={totalPages}
           itemsPerPage={itemsPerPage}
-          startIndex={startIndex}
+                        startIndex={startIndex}
           endIndex={endIndex}
           onPageChange={setCurrentPage}
-          checklistState={checklistState}
-          activeTab={activeTab}
-          selectedCategory={selectedCategory}
-          onUpdateDocumentRequirement={onUpdateDocumentRequirement}
+                        checklistState={checklistState}
+                        activeTab={activeTab}
+                        selectedCategory={selectedCategory}
+                        onUpdateDocumentRequirement={onUpdateDocumentRequirement}
           onAddToPendingChanges={handleAddToPendingChanges}
-          onAddToPendingDeletions={onAddToPendingDeletions}
-          onRemoveFromPendingChanges={onRemoveFromPendingChanges}
-          onRemoveFromPendingDeletions={onRemoveFromPendingDeletions}
-          onSavePendingChanges={onSavePendingChanges}
-          onClearPendingChanges={onClearPendingChanges}
-          pendingAdditions={pendingAdditions}
-          pendingDeletions={pendingDeletions}
-          handleViewDocuments={handleViewDocuments}
-          handleUploadClick={handleUploadClick}
-          getCategoryBadgeStyle={getCategoryBadgeStyle}
+                        onAddToPendingDeletions={onAddToPendingDeletions}
+                        onRemoveFromPendingChanges={onRemoveFromPendingChanges}
+                        onRemoveFromPendingDeletions={onRemoveFromPendingDeletions}
+                        onSavePendingChanges={onSavePendingChanges}
+                        onClearPendingChanges={onClearPendingChanges}
+                        pendingAdditions={pendingAdditions}
+                        pendingDeletions={pendingDeletions}
+                        handleViewDocuments={handleViewDocuments}
+                        handleUploadClick={handleUploadClick}
+                        getCategoryBadgeStyle={getCategoryBadgeStyle}
           isAddingDocument={isAddingDocument}
           addingDocumentId={addingDocumentId}
           isDocumentAdded={isDocumentAdded}
@@ -403,6 +401,7 @@ const DocumentChecklistTableComponent = ({
         documentType={selectedDocumentTypeForView}
         documents={selectedDocumentsForView}
         applicationId={applicationId}
+        isClientView={isClientView}
         onDocumentDeleted={() => {
           queryClient.refetchQueries({ 
             queryKey: ['application-documents', applicationId] 

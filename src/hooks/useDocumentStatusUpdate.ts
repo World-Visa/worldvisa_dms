@@ -312,6 +312,10 @@ export function useDocumentStatusUpdate({
         queryClient.invalidateQueries({
           queryKey: ['application-documents-paginated', applicationId]
         });
+        // Invalidate client documents cache to ensure client UI reflects status changes
+        queryClient.invalidateQueries({
+          queryKey: ['client-documents']
+        });
       }
     }
   });

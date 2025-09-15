@@ -11,9 +11,17 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Calendar } from '@/components/ui/calendar';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Building2 } from 'lucide-react';
+import { Building2, CalendarIcon } from 'lucide-react';
 import { Company } from '@/types/documents';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 interface AddCompanyDialogProps {
   isOpen: boolean;
@@ -31,9 +39,29 @@ export function AddCompanyDialog({
   maxCompanies 
 }: AddCompanyDialogProps) {
   const [companyName, setCompanyName] = useState('');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
+  const [toDate, setToDate] = useState<Date | undefined>(undefined);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Function to calculate experience duration
+  const calculateExperience = (from: Date, to: Date): string => {
+    const diffInMonths = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+    const years = Math.floor(diffInMonths / 12);
+    const months = diffInMonths % 12;
+    
+    if (years > 0 && months > 0) {
+      return `${years} year${years > 1 ? 's' : ''} ${months} month${months > 1 ? 's' : ''}`;
+    } else if (years > 0) {
+      return `${years} year${years > 1 ? 's' : ''}`;
+    } else {
+      return `${months} month${months > 1 ? 's' : ''}`;
+    }
+  };
+
+  // Function to format date for API
+  const formatDateForAPI = (date: Date): string => {
+    return format(date, 'yyyy-MM-dd');
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +86,8 @@ export function AddCompanyDialog({
       return;
     }
 
-    if (fromDate > toDate) {
-      toast.error('Start date cannot be after end date');
+    if (fromDate >= toDate) {
+      toast.error('Start date must be before end date');
       return;
     }
 
@@ -76,17 +104,22 @@ export function AddCompanyDialog({
     setIsSubmitting(true);
     
     try {
+      const experienceDuration = calculateExperience(fromDate, toDate);
+      const fromDateStr = formatDateForAPI(fromDate);
+      const toDateStr = formatDateForAPI(toDate);
+      
       const newCompany: Company = {
         name: companyName.trim(),
-        fromDate,
-        toDate,
-        category: `${companyName.trim()} Company Documents`
+        fromDate: fromDateStr,
+        toDate: toDateStr,
+        category: `${companyName.trim()} Company Documents`,
+        description: `Worked at ${companyName.trim()} from ${format(fromDate, 'MMM dd, yyyy')} to ${format(toDate, 'MMM dd, yyyy')} (${experienceDuration})`
       };
       
       await onAddCompany(newCompany);
       setCompanyName('');
-      setFromDate('');
-      setToDate('');
+      setFromDate(undefined);
+      setToDate(undefined);
       onClose();
       toast.success(`Company "${companyName.trim()}" added successfully!`);
     } catch {
@@ -99,8 +132,8 @@ export function AddCompanyDialog({
   const handleClose = () => {
     if (!isSubmitting) {
       setCompanyName('');
-      setFromDate('');
-      setToDate('');
+      setFromDate(undefined);
+      setToDate(undefined);
       onClose();
     }
   };
@@ -132,28 +165,80 @@ export function AddCompanyDialog({
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-3">
-              <Label htmlFor="fromDate">From (Month/Year)</Label>
-              <Input
-                id="fromDate"
-                type="month"
-                value={fromDate}
-                onChange={(e) => setFromDate(e.target.value)}
-                disabled={isSubmitting}
-                className="w-full border h-11 border-gray-200 rounded-lg"
-              />
+              <Label>Start Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal h-11 border-gray-200",
+                      !fromDate && "text-muted-foreground"
+                    )}
+                    disabled={isSubmitting}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {fromDate ? format(fromDate, "MMM dd, yyyy") : "Select start date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={fromDate}
+                    onSelect={setFromDate}
+                    defaultMonth={fromDate || new Date()}
+                    disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                    initialFocus
+                    captionLayout='dropdown'
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
             <div className="space-y-3">
-              <Label htmlFor="toDate">To (Month/Year)</Label>
-              <Input
-                id="toDate"
-                type="month"
-                value={toDate}
-                onChange={(e) => setToDate(e.target.value)}
-                disabled={isSubmitting}
-                className="w-full border h-11 border-gray-200 rounded-lg"
-              />
+              <Label>End Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal h-11 border-gray-200",
+                      !toDate && "text-muted-foreground"
+                    )}
+                    disabled={isSubmitting}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {toDate ? format(toDate, "MMM dd, yyyy") : "Select end date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={toDate}
+                    onSelect={setToDate}
+                    defaultMonth={toDate || fromDate || new Date()}
+                    disabled={(date) => 
+                      date > new Date() || 
+                      date < new Date("1900-01-01") ||
+                      (fromDate ? date <= fromDate : false)
+                    }
+                    initialFocus
+                    captionLayout='dropdown'
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
+
+          {/* Experience Summary */}
+          {fromDate && toDate && (
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-800">
+                <strong>Experience:</strong> {calculateExperience(fromDate, toDate)}
+              </p>
+              <p className="text-xs text-blue-600 mt-1">
+                {format(fromDate, "MMM dd, yyyy")} - {format(toDate, "MMM dd, yyyy")}
+              </p>
+            </div>
+          )}
 
           <p className="text-xs text-muted-foreground">
             {existingCompanies.length}/{maxCompanies} companies added
@@ -191,3 +276,4 @@ export function AddCompanyDialog({
     </Dialog>
   );
 }
+

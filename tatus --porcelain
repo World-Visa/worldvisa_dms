@@ -1,0 +1,70 @@
+[1mdiff --git a/src/components/applications/DocumentChecklistTable.tsx b/src/components/applications/DocumentChecklistTable.tsx[m
+[1mindex 5bb34a5..1b89f2a 100644[m
+[1m--- a/src/components/applications/DocumentChecklistTable.tsx[m
+[1m+++ b/src/components/applications/DocumentChecklistTable.tsx[m
+[36m@@ -224,8 +224,8 @@[m [mconst DocumentChecklistTableComponent = ({[m
+       if (!company && currentCompany && category.includes('Company Documents')) {[m
+         company = currentCompany;[m
+         setSelectedDocumentCategory(company.category);[m
+[31m-        setSelectedCompany(company);[m
+[31m-      } else {[m
+[32m+[m[32m      setSelectedCompany(company);[m
+[32m+[m[32m    } else {[m
+         setSelectedDocumentCategory(category);[m
+         setSelectedCompany(company);[m
+       }[m
+[36m@@ -342,10 +342,10 @@[m [mconst DocumentChecklistTableComponent = ({[m
+           onSearchChange={setSearchQuery}[m
+           checklistState={checklistState}[m
+           selectedCategory={selectedCategory}[m
+[31m-          activeTab={activeTab}[m
+[31m-          onTabChange={handleTabChange}[m
+[31m-          currentCount={tabCounts.currentCount}[m
+[31m-          availableCount={tabCounts.availableCount}[m
+[32m+[m[32m                activeTab={activeTab}[m
+[32m+[m[32m                onTabChange={handleTabChange}[m
+[32m+[m[32m                currentCount={tabCounts.currentCount}[m
+[32m+[m[32m                availableCount={tabCounts.availableCount}[m
+           pendingAdditions={pendingAdditions}[m
+           pendingDeletions={pendingDeletions}[m
+           pendingUpdates={pendingUpdates}[m
+[36m@@ -361,24 +361,24 @@[m [mconst DocumentChecklistTableComponent = ({[m
+           currentPage={currentPage}[m
+           totalPages={totalPages}[m
+           itemsPerPage={itemsPerPage}[m
+[31m-          startIndex={startIndex}[m
+[32m+[m[32m                        startIndex={startIndex}[m
+           endIndex={endIndex}[m
+           onPageChange={setCurrentPage}[m
+[31m-          checklistState={checklistState}[m
+[31m-          activeTab={activeTab}[m
+[31m-          selectedCategory={selectedCategory}[m
+[31m-          onUpdateDocumentRequirement={onUpdateDocumentRequirement}[m
+[32m+[m[32m                        checklistState={checklistState}[m
+[32m+[m[32m                        activeTab={activeTab}[m
+[32m+[m[32m                        selectedCategory={selectedCategory}[m
+[32m+[m[32m                        onUpdateDocumentRequirement={onUpdateDocumentRequirement}[m
+           onAddToPendingChanges={handleAddToPendingChanges}[m
+[31m-          onAddToPendingDeletions={onAddToPendingDeletions}[m
+[31m-          onRemoveFromPendingChanges={onRemoveFromPendingChanges}[m
+[31m-          onRemoveFromPendingDeletions={onRemoveFromPendingDeletions}[m
+[31m-          onSavePendingChanges={onSavePendingChanges}[m
+[31m-          onClearPendingChanges={onClearPendingChanges}[m
+[31m-          pendingAdditions={pendingAdditions}[m
+[31m-          pendingDeletions={pendingDeletions}[m
+[31m-          handleViewDocuments={handleViewDocuments}[m
+[31m-          handleUploadClick={handleUploadClick}[m
+[31m-          getCategoryBadgeStyle={getCategoryBadgeStyle}[m
+[32m+[m[32m                        onAddToPendingDeletions={onAddToPendingDeletions}[m
+[32m+[m[32m                        onRemoveFromPendingChanges={onRemoveFromPendingChanges}[m
+[32m+[m[32m                        onRemoveFromPendingDeletions={onRemoveFromPendingDeletions}[m
+[32m+[m[32m                        onSavePendingChanges={onSavePendingChanges}[m
+[32m+[m[32m                        onClearPendingChanges={onClearPendingChanges}[m
+[32m+[m[32m                        pendingAdditions={pendingAdditions}[m
+[32m+[m[32m                        pendingDeletions={pendingDeletions}[m
+[32m+[m[32m                        handleViewDocuments={handleViewDocuments}[m
+[32m+[m[32m                        handleUploadClick={handleUploadClick}[m
+[32m+[m[32m                        getCategoryBadgeStyle={getCategoryBadgeStyle}[m
+           isAddingDocument={isAddingDocument}[m
+           addingDocumentId={addingDocumentId}[m
+           isDocumentAdded={isDocumentAdded}[m

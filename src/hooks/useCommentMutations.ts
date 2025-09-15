@@ -199,11 +199,45 @@ export function useDeleteComment(documentId: string) {
       const startTime = Date.now();
       
       try {
+        // Get current user info for authorization
+        let currentUser = 'Unknown User';
+        
+        // First try localStorage (more reliable)
+        if (typeof window !== 'undefined') {
+          const userData = localStorage.getItem('user_data');
+          if (userData) {
+            try {
+              const user = JSON.parse(userData);
+              if (user.username) {
+                currentUser = user.username;
+              }
+            } catch (error) {
+              console.warn('Failed to parse user data from localStorage:', error);
+            }
+          }
+        }
+        
+        // Fallback to JWT token
+        if (currentUser === 'Unknown User') {
+          const token = tokenStorage.get();
+          if (token) {
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1]));
+              currentUser = payload.username || payload.email || payload.name || 'Unknown User';
+            } catch (error) {
+              console.warn('Failed to parse user from token:', error);
+            }
+          }
+        }
+
         const response = await fetcher<DeleteCommentResponse>(
           `/api/zoho_dms/visa_applications/documents/${documentId}/comments`,
           {
             method: 'DELETE',
-            body: JSON.stringify(data)
+            body: JSON.stringify({
+              ...data,
+              addedBy: currentUser
+            })
           }
         );
 

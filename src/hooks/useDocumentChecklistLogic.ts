@@ -150,9 +150,9 @@ export function useDocumentChecklistLogic({
     return [...baseDocuments, ...companyDocuments];
   }, [companies, isClientView, checklistData]);
 
-  // Extract companies from documents API response
+  // Extract companies from documents API response, but use actual company data when available
   const extractedCompanies = useMemo(() => {
-    if (!documents || documents.length === 0) return [];
+    if (!documents || documents.length === 0) return companies || [];
     
     const companyCategories = new Set<string>();
     documents.forEach(doc => {
@@ -161,6 +161,18 @@ export function useDocumentChecklistLogic({
       }
     });
     
+    // First, try to use companies from the companies prop (which have correct dates and descriptions)
+    const existingCompanies = companies || [];
+    const companiesFromProps = existingCompanies.filter(company => 
+      companyCategories.has(company.category)
+    );
+    
+    // If we have companies from props, use them
+    if (companiesFromProps.length > 0) {
+      return companiesFromProps;
+    }
+    
+    // Fallback: generate companies from document categories (for backward compatibility)
     return Array.from(companyCategories).map(category => {
       const companyName = category.split(' ')[0].toLowerCase();
       return {
@@ -170,7 +182,7 @@ export function useDocumentChecklistLogic({
         toDate: "2025-12"
       };
     });
-  }, [documents]);
+  }, [documents, companies]);
 
   // Get current company if a company category is selected
   const currentCompany = useMemo(() => {

@@ -22,19 +22,22 @@ export async function GET(request: NextRequest) {
       return new Response("Token expired", { status: 401 });
     }
 
-    // Verify admin role
+    // Verify user role (allow both admin and client for real-time updates)
     const jwtRole = getUserRole(token);
     const headerRole = request.headers.get("x-user-role");
-    // Check role from JWT token, URL parameter, or custom header
-    const isAdmin =
+    // Check role from JWT token, URL parameter, or custom header - allow admin, master_admin, and client
+    const isAuthorized =
       jwtRole === "admin" ||
       jwtRole === "master_admin" ||
+      jwtRole === "client" ||
       role === "admin" ||
       role === "master_admin" ||
+      role === "client" ||
       headerRole === "admin" ||
-      headerRole === "master_admin";
+      headerRole === "master_admin" ||
+      headerRole === "client";
 
-    if (!isAdmin) {
+    if (!isAuthorized) {
       return new Response("Forbidden", { status: 403 });
     }
 

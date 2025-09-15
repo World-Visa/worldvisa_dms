@@ -15,9 +15,10 @@ export interface DocumentChecklistItem {
 
 export interface Company {
   name: string;
-  fromDate: string; // Format: "YYYY-MM"
-  toDate: string;   // Format: "YYYY-MM"
+  fromDate: string; // Format: "YYYY-MM-DD"
+  toDate: string;   // Format: "YYYY-MM-DD"
   category: string; // Format: "WorldVisa Company Documents"
+  description?: string; // Experience description with dates
 }
 
 export interface DocumentCategoryFilterProps {
