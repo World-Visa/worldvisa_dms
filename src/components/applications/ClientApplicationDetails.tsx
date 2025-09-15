@@ -16,6 +16,7 @@ interface ClientApplicationDetailsProps {
 }
 
 export function ClientApplicationDetails({ data, documents, isDocumentsLoading, documentsError, isLoading, error }: ClientApplicationDetailsProps) {
+
   if (isLoading) {
     return (
       <div className='flex flex-col lg:flex-row justify-between w-full gap-6 lg:gap-8 lg:items-end'>

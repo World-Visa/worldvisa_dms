@@ -7,6 +7,7 @@ import { DocumentsTable } from '@/components/applications/DocumentsTable';
 import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
 import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
 import { DocumentCategory, Company } from '@/types/documents';
+import { ClientDocument } from '@/types/client';
 import { Document } from '@/types/applications';
 import { useClientApplication } from '@/hooks/useClientApplication';
 import { useClientDocuments } from '@/hooks/useClientDocuments';
@@ -39,6 +40,7 @@ export default function ClientApplicationDetailsPage() {
     }
   }, [isAuthenticated, isAuthLoading, user?.role, router]);
 
+
   const {
     data: applicationData,
     isLoading: isApplicationLoading,
@@ -57,6 +59,50 @@ export default function ClientApplicationDetailsPage() {
     error: checklistError,
   } = useClientChecklist(applicationId);
 
+    // Populate companies state from existing documents with company information
+  useEffect(() => {
+    if (documentsData?.data?.documents && documentsData.data.documents.length > 0) {
+      const companyCategories = new Set<string>();
+      const companyMap = new Map<string, Company>();
+      
+      documentsData.data.documents.forEach((doc: ClientDocument) => {
+        if (doc.document_category && doc.document_category.includes('Company Documents')) {
+          companyCategories.add(doc.document_category);
+          
+          const companyName = doc.document_category.split(' ')[0];
+          
+          // If we have description in the document, use it to create company with proper dates
+          if (doc.description && !companyMap.has(companyName)) {
+            // Try to extract dates from description (e.g., "Worked at worldvisa from Aug 06, 2024 to Jul 24, 2025 (11 months)")
+            const dateMatch = doc.description.match(/from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i);
+            if (dateMatch) {
+              const fromDateStr = dateMatch[1]; // "Aug 06, 2024"
+              const toDateStr = dateMatch[2];   // "Jul 24, 2025"
+              
+              // Convert to YYYY-MM-DD format
+              const fromDate = new Date(fromDateStr).toISOString().split('T')[0];
+              const toDate = new Date(toDateStr).toISOString().split('T')[0];
+              
+              companyMap.set(companyName, {
+                name: companyName,
+                category: doc.document_category,
+                fromDate: fromDate,
+                toDate: toDate,
+                description: doc.description
+              });
+            }
+          }
+        }
+      });
+      
+      // Update companies state with extracted company information
+      if (companyMap.size > 0) {
+        setCompanies(Array.from(companyMap.values()));
+      }
+    }
+  }, [documentsData?.data?.documents]);
+
+
   // Extract companies from documents API response, but prioritize actual company data
   const extractedCompanies = useMemo(() => {
     // Get company categories from documents (if any exist)
@@ -72,32 +118,58 @@ export default function ClientApplicationDetailsPage() {
     // Always include companies from the companies state (which have correct dates and descriptions)
     const existingCompanies = companies || [];
     
-    // If we have documents, filter companies to only include those with documents
+    // If we have companies from state, use them (regardless of whether they have documents)
+    if (existingCompanies.length > 0) {
+      return existingCompanies;
+    }
+    
+    // Fallback: generate companies from document categories (for backward compatibility)
     if (companyCategories.size > 0) {
-      const companiesFromState = existingCompanies.filter(company => 
-        companyCategories.has(company.category)
-      );
-      
-      // If we have companies from state that match document categories, use them
-      if (companiesFromState.length > 0) {
-        return companiesFromState;
-      }
-      
-      // Fallback: generate companies from document categories (for backward compatibility)
       return Array.from(companyCategories).map(category => {
         // Extract company name from category (e.g., "worldvisa Company Documents" -> "worldvisa")
         const companyName = category.split(' ')[0].toLowerCase();
+        
+        // Try to find a document with description for this company to extract dates
+        let description = '';
+        let fromDate = "2024-01-01"; // Default fallback dates
+        let toDate = "2025-12-31";
+        
+        if (documentsData?.data?.documents && documentsData.data.documents.length > 0) {
+          const companyDoc = documentsData.data.documents.find((doc: ClientDocument) => 
+            doc.document_category === category && doc.description
+          );
+          
+          if (companyDoc && companyDoc.description) {
+            description = companyDoc.description;
+            
+            // Try to extract dates from description
+            const dateMatch = companyDoc.description.match(/from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i);
+            if (dateMatch) {
+              const fromDateStr = dateMatch[1];
+              const toDateStr = dateMatch[2];
+              
+              try {
+                fromDate = new Date(fromDateStr).toISOString().split('T')[0];
+                toDate = new Date(toDateStr).toISOString().split('T')[0];
+              } catch {
+                // Failed to parse dates, using defaults
+              }
+            }
+          }
+        }
+        
         return {
           name: companyName,
           category: category,
-          fromDate: "2024-01", // Default values since we don't have this info from documents
-          toDate: "2025-12"
+          fromDate: fromDate,
+          toDate: toDate,
+          description: description
         };
       });
     }
     
-    // If no documents exist yet, return all companies from state
-    return existingCompanies;
+    // If no companies and no documents, return empty array
+    return [];
   }, [documentsData?.data?.documents, companies]);
   
   // Use extracted companies (which now prioritizes actual company data)

@@ -152,36 +152,70 @@ export function useDocumentChecklistLogic({
 
   // Extract companies from documents API response, but use actual company data when available
   const extractedCompanies = useMemo(() => {
-    if (!documents || documents.length === 0) return companies || [];
-    
+    // Get company categories from documents (if any exist)
     const companyCategories = new Set<string>();
-    documents.forEach(doc => {
-      if (doc.document_category && doc.document_category.includes('Company Documents')) {
-        companyCategories.add(doc.document_category);
-      }
-    });
+    if (documents && documents.length > 0) {
+      documents.forEach(doc => {
+        if (doc.document_category && doc.document_category.includes('Company Documents')) {
+          companyCategories.add(doc.document_category);
+        }
+      });
+    }
     
-    // First, try to use companies from the companies prop (which have correct dates and descriptions)
+    // Always include companies from the companies prop (which have correct dates and descriptions)
     const existingCompanies = companies || [];
-    const companiesFromProps = existingCompanies.filter(company => 
-      companyCategories.has(company.category)
-    );
     
-    // If we have companies from props, use them
-    if (companiesFromProps.length > 0) {
-      return companiesFromProps;
+    // If we have companies from props, use them (regardless of whether they have documents)
+    if (existingCompanies.length > 0) {
+      return existingCompanies;
     }
     
     // Fallback: generate companies from document categories (for backward compatibility)
-    return Array.from(companyCategories).map(category => {
-      const companyName = category.split(' ')[0].toLowerCase();
-      return {
-        name: companyName,
-        category: category,
-        fromDate: "2024-01",
-        toDate: "2025-12"
-      };
-    });
+    if (companyCategories.size > 0) {
+      return Array.from(companyCategories).map(category => {
+        const companyName = category.split(' ')[0].toLowerCase();
+        
+        // Try to find a document with description for this company to extract dates
+        let description = '';
+        let fromDate = "2024-01-01"; // Default fallback dates
+        let toDate = "2025-12-31";
+        
+        if (documents && documents.length > 0) {
+          const companyDoc = documents.find(doc => 
+            doc.document_category === category && doc.description
+          );
+          
+          if (companyDoc && companyDoc.description) {
+            description = companyDoc.description;
+            
+            // Try to extract dates from description
+            const dateMatch = companyDoc.description.match(/from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i);
+            if (dateMatch) {
+              const fromDateStr = dateMatch[1];
+              const toDateStr = dateMatch[2];
+              
+              try {
+                fromDate = new Date(fromDateStr).toISOString().split('T')[0];
+                toDate = new Date(toDateStr).toISOString().split('T')[0];
+              } catch {
+                // Failed to parse dates, using defaults
+              }
+            }
+          }
+        }
+        
+        return {
+          name: companyName,
+          category: category,
+          fromDate: fromDate,
+          toDate: toDate,
+          description: description
+        };
+      });
+    }
+    
+    // If no companies and no documents, return empty array
+    return [];
   }, [documents, companies]);
 
   // Get current company if a company category is selected

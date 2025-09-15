@@ -196,6 +196,7 @@ export function UploadDocumentsModal({
         // Get description - use company description for company documents, otherwise use user input
         const finalDescription = getCompanyDescription(selectedDocumentCategory) || description;
         const finalCategory = getDocumentCategory(selectedDocumentType, selectedDocumentCategory);
+        
 
         // Upload all files at once with the new API
         const uploadResult = await addDocumentMutation.mutateAsync({

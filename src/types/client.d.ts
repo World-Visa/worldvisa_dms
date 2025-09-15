@@ -22,6 +22,7 @@ export interface ClientDocument {
   file_name: string;
   document_name: string;
   document_category: string;
+  description?: string;
   uploaded_by: string;
   status: 'pending' | 'approved' | 'rejected';
   history: Array<{

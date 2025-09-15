@@ -15,19 +15,71 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
   extractedCompanies
 }: CompanyInfoDisplayProps) {
   const displayCompany = useMemo(() => {
-    if (!selectedCategory.includes('company_documents')) {
+    // Check if this is a company documents category (either with underscores or spaces)
+    if (!selectedCategory.includes('company_documents') && !selectedCategory.includes('Company Documents')) {
       return null;
     }
 
-    const categoryLabel = selectedCategory
-      .split('_')
-      .map((word, index) => {
-        if (index === 0) return word.toLowerCase();
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      })
-      .join(' ');
+    // Create a flexible matching function that works for all company names
+    const findMatchingCompany = (category: string): Company | null => {
+      // First, try exact category match
+      let foundCompany = extractedCompanies.find(company => company.category === category);
+      if (foundCompany) return foundCompany;
+
+      // If no exact match, try to extract company name and match flexibly
+      let companyName: string;
+      
+      if (category.includes('_')) {
+        // Handle underscore format: "company_name_company_documents"
+        const parts = category.split('_');
+        companyName = parts[0]; // First part is the company name
+      } else {
+        // Handle space format: "Company Name Company Documents"
+        const parts = category.split(' ');
+        // Remove "Company Documents" from the end
+        const companyParts = parts.filter(part => 
+          !part.toLowerCase().includes('company') && 
+          !part.toLowerCase().includes('documents')
+        );
+        companyName = companyParts.join(' ');
+      }
+
+      // Try multiple matching strategies
+      const matchingStrategies = [
+        // 1. Exact name match (case-insensitive)
+        (company: Company) => company.name.toLowerCase() === companyName.toLowerCase(),
+        
+        // 2. Partial name match (case-insensitive) - for names with special characters
+        (company: Company) => company.name.toLowerCase().includes(companyName.toLowerCase()) || 
+                              companyName.toLowerCase().includes(company.name.toLowerCase()),
+        
+        // 3. Category contains the company name (case-insensitive)
+        (company: Company) => company.category.toLowerCase().includes(companyName.toLowerCase()),
+        
+        // 4. Company name contains category company name (case-insensitive)
+        (company: Company) => companyName.toLowerCase().includes(company.name.toLowerCase()),
+        
+        // 5. Fuzzy match - remove special characters and compare
+        (company: Company) => {
+          const normalize = (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '');
+          return normalize(company.name) === normalize(companyName);
+        }
+      ];
+
+      // Try each strategy
+      for (const strategy of matchingStrategies) {
+        foundCompany = extractedCompanies.find(strategy);
+        if (foundCompany) {
+          return foundCompany;
+        }
+      }
+
+      return null;
+    };
+
+    const foundCompany = findMatchingCompany(selectedCategory);
     
-    return extractedCompanies.find(company => company.category === categoryLabel);
+    return foundCompany;
   }, [selectedCategory, extractedCompanies]);
 
   if (!displayCompany) {
