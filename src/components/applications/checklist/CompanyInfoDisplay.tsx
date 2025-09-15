@@ -26,6 +26,13 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
       let foundCompany = extractedCompanies.find(company => company.category === category);
       if (foundCompany) return foundCompany;
 
+      // Try to convert underscore format to space format for matching
+      if (category.includes('_')) {
+        const spaceFormat = category.replace(/_/g, ' ');
+        foundCompany = extractedCompanies.find(company => company.category === spaceFormat);
+        if (foundCompany) return foundCompany;
+      }
+
       // If no exact match, try to extract company name and match flexibly
       let companyName: string;
       

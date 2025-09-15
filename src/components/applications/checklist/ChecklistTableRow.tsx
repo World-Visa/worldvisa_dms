@@ -8,7 +8,9 @@ import { FileText, Eye, Upload, Plus, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HighlightText } from '@/components/ui/HighlightText';
 import { RequirementSelector } from './RequirementSelector';
+import { RejectionMessageDisplay } from '../RejectionMessageDisplay';
 import type { ChecklistState, ChecklistDocument, DocumentRequirement } from '@/types/checklist';
+import { Document } from '@/types/applications';
 
 interface ChecklistTableItem {
   category: string;
@@ -26,6 +28,8 @@ interface ChecklistTableItem {
     category: string;
   };
   checklist_id?: string;
+  rejectedRemark?: string;
+  documentStatus?: string;
 }
 
 interface ChecklistTableRowProps {
@@ -47,6 +51,8 @@ interface ChecklistTableRowProps {
   pendingDeletions: string[];
   handleViewDocuments: (documentType: string, companyCategory?: string) => void;
   handleUploadClick: (documentType: string, category: string) => void;
+  handleReuploadClick: (documentId: string, documentType: string, category: string) => void;
+  handleViewRejectionDetails: (document: Document, documentType: string, category: string) => void;
   getCategoryBadgeStyle: (category: string) => string;
   // Loading states
   isAddingDocument?: boolean;
@@ -68,6 +74,8 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   onAddToPendingDeletions,
   handleViewDocuments,
   handleUploadClick,
+  handleReuploadClick,
+  handleViewRejectionDetails,
   getCategoryBadgeStyle,
   // Loading states
   isAddingDocument = false,
@@ -121,9 +129,14 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
             {item.isUploaded ? (
               <Badge 
                 variant="default" 
-                className="bg-green-100 text-green-800 hover:bg-green-200 text-xs px-1.5 py-0.5 w-fit"
+                className={cn(
+                  "text-xs px-1.5 py-0.5 w-fit",
+                  item.documentStatus === 'rejected' 
+                    ? "bg-red-100 text-red-800 hover:bg-red-200"
+                    : "bg-green-100 text-green-800 hover:bg-green-200"
+                )}
               >
-                Uploaded
+                {item.documentStatus === 'rejected' ? 'Rejected' : 'Uploaded'}
               </Badge>
             ) : (
               <Badge 
@@ -151,35 +164,58 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
         </div>
       </TableCell>
       <TableCell className="hidden md:table-cell">
-        <div className="flex flex-wrap gap-1">
-        {item.isUploaded ? (
-          <Badge 
-            variant="default" 
-              className="bg-green-100 text-green-800 hover:bg-green-200 text-xs px-1.5 py-0.5 w-fit"
-          >
-            Uploaded
-          </Badge>
-        ) : (
-          <Badge 
-            variant="outline" 
-              className="text-muted-foreground text-xs px-1.5 py-0.5 w-fit"
-          >
-            Not Uploaded
-          </Badge>
-        )}
-          {/* Show requirement status */}
-          {item.requirement && item.requirement !== 'not_required' && (
-            <Badge 
-              variant="default" 
-              className={cn(
-                "text-xs px-1.5 py-0.5 w-fit",
-                item.requirement === 'mandatory' 
-                  ? "bg-red-100 text-red-800 hover:bg-red-200" 
-                  : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
-              )}
-            >
-              {item.requirement === 'mandatory' ? 'Mandatory' : 'Optional'}
-            </Badge>
+        <div className="flex flex-col gap-2">
+          <div className="flex flex-wrap gap-1">
+            {item.isUploaded ? (
+              <Badge 
+                variant="default" 
+                className={cn(
+                  "text-xs px-1.5 py-0.5 w-fit",
+                  item.documentStatus === 'rejected' 
+                    ? "bg-red-100 text-red-800 hover:bg-red-200"
+                    : "bg-green-100 text-green-800 hover:bg-green-200"
+                )}
+              >
+                {item.documentStatus === 'rejected' ? 'Rejected' : 'Uploaded'}
+              </Badge>
+            ) : (
+              <Badge 
+                variant="outline" 
+                className="text-muted-foreground text-xs px-1.5 py-0.5 w-fit"
+              >
+                Not Uploaded
+              </Badge>
+            )}
+            {/* Show requirement status */}
+            {item.requirement && item.requirement !== 'not_required' && (
+              <Badge 
+                variant="default" 
+                className={cn(
+                  "text-xs px-1.5 py-0.5 w-fit",
+                  item.requirement === 'mandatory' 
+                    ? "bg-red-100 text-red-800 hover:bg-red-200" 
+                    : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                )}
+              >
+                {item.requirement === 'mandatory' ? 'Mandatory' : 'Optional'}
+              </Badge>
+            )}
+          </div>
+          {/* Show rejected remark on desktop */}
+          {item.documentStatus === 'rejected' && item.rejectedRemark && (
+            <div className="max-w-xs">
+              <RejectionMessageDisplay
+                message={item.rejectedRemark}
+                maxLength={80}
+                onReadMore={() => {
+                  const uploadedDoc = item.uploadedDocument as Document;
+                  if (uploadedDoc) {
+                    handleViewRejectionDetails(uploadedDoc, item.documentType, item.category);
+                  }
+                }}
+                showReadMoreButton={item.rejectedRemark.length > 80}
+              />
+            </div>
           )}
         </div>
       </TableCell>
@@ -254,9 +290,9 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
               </div>
             )
           ) : (
-            // Default mode: Show upload/view buttons
+            // Default mode: Show upload/view/reupload buttons
             <>
-              {item.isUploaded && (
+              {item.isUploaded && item.documentStatus !== 'rejected' && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -267,15 +303,44 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   <span className="hidden sm:inline">View</span>
                 </Button>
               )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => handleUploadClick(item.documentType, item.category)}
-                className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
-              >
-                <Upload className="h-3 w-3" />
-                <span className="hidden sm:inline">Upload</span>
-              </Button>
+              {item.isUploaded && item.documentStatus === 'rejected' && (
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleViewDocuments(item.documentType, item.category)}
+                    className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
+                  >
+                    <Eye className="h-3 w-3" />
+                    <span className="hidden sm:inline">View</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const uploadedDoc = item.uploadedDocument as Document;
+                      if (uploadedDoc?._id) {
+                        handleReuploadClick(uploadedDoc._id, item.documentType, item.category);
+                      }
+                    }}
+                    className="flex items-center gap-1 px-2 py-1 h-7 text-xs text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
+                  >
+                    <Upload className="h-3 w-3" />
+                    <span className="hidden sm:inline">Reupload</span>
+                  </Button>
+                </div>
+              )}
+              {!item.isUploaded && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleUploadClick(item.documentType, item.category)}
+                  className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
+                >
+                  <Upload className="h-3 w-3" />
+                  <span className="hidden sm:inline">Upload</span>
+                </Button>
+              )}
             </>
           )}
         </div>

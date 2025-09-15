@@ -4,6 +4,7 @@ import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import { DocumentCategoryInfo } from '@/types/documents';
+import { formatDateRange } from '@/utils/dateFormat';
 
 interface CategoryButtonProps {
   category: DocumentCategoryInfo;
@@ -41,7 +42,7 @@ export const CategoryButton = memo(function CategoryButton({
         key={category.id}
         disabled={disabled}
         className={cn(
-          'relative inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
+          'relative inline-flex flex-col items-center gap-1 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
           'border-2 focus:outline-none focus:ring-0',
           disabled 
             ? 'cursor-not-allowed opacity-50'
@@ -52,16 +53,29 @@ export const CategoryButton = memo(function CategoryButton({
         )}
         onClick={() => !disabled && onCategoryChange(category.id)}
       >
-        <span className="whitespace-nowrap">{category.label}</span>
-        {category.count > 0 && (
-          <span className={cn(
-            'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold rounded-full',
+        <div className="flex items-center gap-2">
+          <span className="whitespace-nowrap">{category.label}</span>
+          {category.count > 0 && (
+            <span className={cn(
+              'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold rounded-full',
+              selectedCategory === category.id
+                ? 'bg-white/20 text-white'
+                : 'bg-gray-100 text-gray-600'
+            )}>
+              {category.count}
+            </span>
+          )}
+        </div>
+        {/* Show date range for company chips */}
+        {isCompanyChip && category.fromDate && category.toDate && (
+          <div className={cn(
+            'text-xs font-normal',
             selectedCategory === category.id
-              ? 'bg-white/20 text-white'
-              : 'bg-gray-100 text-gray-600'
+              ? 'text-white/80'
+              : 'text-gray-500'
           )}>
-            {category.count}
-          </span>
+            {formatDateRange(category.fromDate, category.toDate)}
+          </div>
         )}
       </button>
 

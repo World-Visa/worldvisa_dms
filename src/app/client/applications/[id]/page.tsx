@@ -19,6 +19,9 @@ import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { AddCompanyDialog } from '@/components/applications/AddCompanyDialog';
+import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
+import { useReuploadDocument } from '@/hooks/useReuploadDocument';
+import { generateChecklistCategories } from '@/lib/checklist/categoryUtils';
 
 export default function ClientApplicationDetailsPage() {
   const params = useParams();
@@ -33,6 +36,13 @@ export default function ClientApplicationDetailsPage() {
   
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
+  const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
+  const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
+  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
+  const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
+
+  // Reupload mutation
+  const reuploadMutation = useReuploadDocument();
 
   useEffect(() => {
     if (!isAuthLoading && (!isAuthenticated || user?.role !== 'client')) {
@@ -60,42 +70,49 @@ export default function ClientApplicationDetailsPage() {
   } = useClientChecklist(applicationId);
 
     // Populate companies state from existing documents with company information
+    // Prioritize API data (documentsData) over locally generated data
   useEffect(() => {
     if (documentsData?.data?.documents && documentsData.data.documents.length > 0) {
-      const companyCategories = new Set<string>();
       const companyMap = new Map<string, Company>();
       
       documentsData.data.documents.forEach((doc: ClientDocument) => {
         if (doc.document_category && doc.document_category.includes('Company Documents')) {
-          companyCategories.add(doc.document_category);
+          // Extract company name from category (e.g., "Microsoft Company Documents" -> "Microsoft")
+          const companyName = doc.document_category.replace(' Company Documents', '');
           
-          const companyName = doc.document_category.split(' ')[0];
-          
-          // If we have description in the document, use it to create company with proper dates
-          if (doc.description && !companyMap.has(companyName)) {
+          // Always prioritize API data if description is available
+          if (doc.description) {
             // Try to extract dates from description (e.g., "Worked at worldvisa from Aug 06, 2024 to Jul 24, 2025 (11 months)")
             const dateMatch = doc.description.match(/from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i);
             if (dateMatch) {
               const fromDateStr = dateMatch[1]; // "Aug 06, 2024"
               const toDateStr = dateMatch[2];   // "Jul 24, 2025"
               
-              // Convert to YYYY-MM-DD format
-              const fromDate = new Date(fromDateStr).toISOString().split('T')[0];
-              const toDate = new Date(toDateStr).toISOString().split('T')[0];
-              
-              companyMap.set(companyName, {
-                name: companyName,
-                category: doc.document_category,
-                fromDate: fromDate,
-                toDate: toDate,
-                description: doc.description
-              });
+              try {
+                // Convert to YYYY-MM-DD format without timezone issues
+                const fromDateObj = new Date(fromDateStr);
+                const toDateObj = new Date(toDateStr);
+                
+                // Format as YYYY-MM-DD without timezone conversion
+                const fromDate = `${fromDateObj.getFullYear()}-${String(fromDateObj.getMonth() + 1).padStart(2, '0')}-${String(fromDateObj.getDate()).padStart(2, '0')}`;
+                const toDate = `${toDateObj.getFullYear()}-${String(toDateObj.getMonth() + 1).padStart(2, '0')}-${String(toDateObj.getDate()).padStart(2, '0')}`;
+                
+                companyMap.set(companyName, {
+                  name: companyName,
+                  category: doc.document_category,
+                  fromDate: fromDate,
+                  toDate: toDate,
+                  description: doc.description
+                });
+              } catch (error) {
+                console.error('Error parsing dates from API description:', error);
+              }
             }
           }
         }
       });
       
-      // Update companies state with extracted company information
+      // Update companies state with API data if available
       if (companyMap.size > 0) {
         setCompanies(Array.from(companyMap.values()));
       }
@@ -149,8 +166,11 @@ export default function ClientApplicationDetailsPage() {
               const toDateStr = dateMatch[2];
               
               try {
-                fromDate = new Date(fromDateStr).toISOString().split('T')[0];
-                toDate = new Date(toDateStr).toISOString().split('T')[0];
+                const fromDateObj = new Date(fromDateStr);
+                const toDateObj = new Date(toDateStr);
+                
+                fromDate = `${fromDateObj.getFullYear()}-${String(fromDateObj.getMonth() + 1).padStart(2, '0')}-${String(fromDateObj.getDate()).padStart(2, '0')}`;
+                toDate = `${toDateObj.getFullYear()}-${String(toDateObj.getMonth() + 1).padStart(2, '0')}-${String(toDateObj.getDate()).padStart(2, '0')}`;
               } catch {
                 // Failed to parse dates, using defaults
               }
@@ -207,6 +227,27 @@ export default function ClientApplicationDetailsPage() {
 
   const handleRemoveCompany = (companyName: string) => {
     setCompanies(prev => prev.filter(company => company.name !== companyName));
+  };
+
+  const handleReuploadDocument = (documentId: string, documentType: string, category: string) => {
+    // Find the document to reupload
+    const documentToReupload = documentsData?.data?.documents?.find(doc => doc._id === documentId);
+    if (!documentToReupload) {
+      console.error('Document not found for reupload:', documentId);
+      return;
+    }
+
+    setSelectedReuploadDocument(documentToReupload as unknown as Document);
+    setSelectedReuploadDocumentType(documentType);
+    setSelectedReuploadDocumentCategory(category);
+    setIsReuploadModalOpen(true);
+  };
+
+  const handleReuploadModalClose = () => {
+    setIsReuploadModalOpen(false);
+    setSelectedReuploadDocument(null);
+    setSelectedReuploadDocumentType('');
+    setSelectedReuploadDocumentCategory('');
   };
 
   // Check if checklist has company documents
@@ -296,110 +337,7 @@ export default function ClientApplicationDetailsPage() {
               maxCompanies={5}
               isClientView={true}
               submittedDocumentsCount={documentsData?.data?.documents?.length || 0}
-              checklistCategories={Array.isArray(checklistData?.data) ? (() => {
-                const categoryMap = new Map();
-                
-                checklistData.data.forEach(item => {
-                  const categoryKey = item.document_category;
-                  
-                  // Skip company documents - they will be handled separately
-                  if (categoryKey === 'Company' || categoryKey === 'Company Documents') {
-                    return;
-                  }
-                  
-                  if (!categoryMap.has(categoryKey)) {
-                    let displayLabel = categoryKey;
-                    if (categoryKey === 'Identity') {
-                      displayLabel = 'Identity Documents';
-                    } else if (categoryKey === 'Education') {
-                      displayLabel = 'Education Documents';
-                    } else if (categoryKey === 'Other') {
-                      displayLabel = 'Other Documents';
-                    }
-                    
-                    categoryMap.set(categoryKey, {
-                      id: categoryKey.toLowerCase().replace(/\s+/g, '_'),
-                      label: displayLabel,
-                      count: 0,
-                      type: 'base',
-                      is_selected: true
-                    });
-                  }
-                  
-                  const category = categoryMap.get(categoryKey);
-                  category.count++;
-                });
-                
-                // Extract company categories from uploaded documents
-                // This ensures company chips persist across logout/login
-                const companyCategories = new Set<string>();
-                
-                // Get company categories from uploaded documents
-                if (documentsData?.data?.documents) {
-                  documentsData.data.documents.forEach((doc: { document_category?: string }) => {
-                    if (doc.document_category && doc.document_category.includes('Company Documents')) {
-                      companyCategories.add(doc.document_category);
-                    }
-                  });
-                }
-                
-                // Add company-specific categories from uploaded documents
-                companyCategories.forEach(companyCategory => {
-                  const companyName = companyCategory.replace(' Company Documents', '');
-                  
-                  // Count items for this specific company
-                  // First try to match by company_name if it exists
-                  let companyItems = checklistData.data.filter(item => 
-                    item.document_category === 'Company' && 
-                    item.company_name === companyName
-                  );
-                  
-                  // If no items found by company_name, fall back to counting all company items
-                  if (companyItems.length === 0) {
-                    companyItems = checklistData.data.filter(item => item.document_category === 'Company');
-                  }
-                  
-                  if (companyItems.length > 0) {
-                    categoryMap.set(companyCategory, {
-                      id: companyCategory.toLowerCase().replace(/\s+/g, '_'),
-                      label: companyCategory,
-                      count: companyItems.length,
-                      type: 'company',
-                      company_name: companyName,
-                      is_selected: true
-                    });
-                  }
-                });
-                
-                finalCompanies.forEach(company => {
-                  const companyCategoryKey = company.category; // e.g., "WorldVisa Company Documents"
-                  
-                  // Count items for this specific company
-                  // First try to match by company_name if it exists
-                  let companyItems = checklistData.data.filter(item => 
-                    item.document_category === 'Company' && 
-                    item.company_name === company.name
-                  );
-                  
-                  // If no items found by company_name, fall back to counting all company items
-                  if (companyItems.length === 0) {
-                    companyItems = checklistData.data.filter(item => item.document_category === 'Company');
-                  }
-                  
-                  if (companyItems.length > 0 && !categoryMap.has(companyCategoryKey)) {
-                    categoryMap.set(companyCategoryKey, {
-                      id: companyCategoryKey.toLowerCase().replace(/\s+/g, '_'),
-                      label: companyCategoryKey,
-                      count: companyItems.length,
-                      type: 'company',
-                      company_name: company.name,
-                      is_selected: true
-                    });
-                  }
-                });
-                
-                return Array.from(categoryMap.values());
-              })() : []}
+              checklistCategories={generateChecklistCategories(checklistData, documentsData, finalCompanies)}
               hasCompanyDocuments={hasCompanyDocuments}
               // Loading state
               isCategoryChanging={isCategoryChanging}
@@ -437,6 +375,7 @@ export default function ClientApplicationDetailsPage() {
                     clientIsLoading={isDocumentsLoading}
                     clientError={documentsError}
                     onClientDeleteSuccess={handleUploadSuccess}
+                    onReuploadDocument={handleReuploadDocument}
                   />
                 );
               }
@@ -454,6 +393,7 @@ export default function ClientApplicationDetailsPage() {
                     clientIsLoading={isDocumentsLoading}
                     clientError={documentsError}
                     onClientDeleteSuccess={handleUploadSuccess}
+                    onReuploadDocument={handleReuploadDocument}
                   />
                 );
               } else {
@@ -490,6 +430,16 @@ export default function ClientApplicationDetailsPage() {
         onAddCompany={handleAddCompany}
         existingCompanies={finalCompanies}
         maxCompanies={5}
+      />
+
+      {/* Reupload Document Modal */}
+      <ReuploadDocumentModal
+        isOpen={isReuploadModalOpen}
+        onClose={handleReuploadModalClose}
+        applicationId={applicationId}
+        document={selectedReuploadDocument}
+        documentType={selectedReuploadDocumentType}
+        category={selectedReuploadDocumentCategory}
       />
     </div>
   );

@@ -29,6 +29,8 @@ interface ChecklistTableItem {
   isSelected?: boolean;
   company_name?: string;
   checklist_id?: string;
+  rejectedRemark?: string;
+  documentStatus?: string;
 }
 
 export function generateAllDocumentTypes(
@@ -233,6 +235,8 @@ export function generateDefaultItems(
       documentType: docType.documentType,
       isUploaded: !!uploadedDoc,
       uploadedDocument: uploadedDoc,
+      rejectedRemark: uploadedDoc?.reject_message,
+      documentStatus: uploadedDoc?.status,
     };
   });
 }
@@ -307,7 +311,9 @@ export function generateSavedItems(
       isUploaded: !!uploadedDoc,
       uploadedDocument: uploadedDoc,
       requirement: (checklistItem.required ? 'mandatory' : 'optional') as DocumentRequirement,
-      checklist_id: checklistItem.checklist_id
+      checklist_id: checklistItem.checklist_id,
+      rejectedRemark: uploadedDoc?.reject_message,
+      documentStatus: uploadedDoc?.status,
     };
   });
 }

@@ -48,7 +48,9 @@ function generateClientCategories(
   categories.push(...checklistCategories.map(cat => ({
     id: cat.id,
     label: cat.label,
-    count: cat.count
+    count: cat.count,
+    fromDate: cat.fromDate,
+    toDate: cat.toDate
   })));
 
   return categories;
@@ -77,7 +79,9 @@ function generateAdminCategories(
         ...checklistCategories.map(cat => ({
           id: cat.id,
           label: cat.label,
-          count: cat.count
+          count: cat.count,
+          fromDate: cat.fromDate,
+          toDate: cat.toDate
         }))
       ];
 

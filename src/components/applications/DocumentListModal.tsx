@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Trash2 } from 'lucide-react';
+import { FileText, Trash2, Upload, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import ViewDocumentSheet from './ViewDocumentSheet';
@@ -19,6 +19,8 @@ interface DocumentListModalProps {
   documents: Document[];
   applicationId: string;
   onDocumentDeleted?: () => void;
+  onReuploadDocument?: (documentId: string, documentType: string, category: string) => void;
+  category?: string;
   isClientView?: boolean;
 }
 
@@ -29,6 +31,8 @@ export function DocumentListModal({
   documents,
   applicationId,
   onDocumentDeleted,
+  onReuploadDocument,
+  category,
   isClientView = false
 }: DocumentListModalProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -46,6 +50,12 @@ export function DocumentListModal({
   const handleViewDocument = (document: Document) => {
     setSelectedDocument(document);
     setViewSheetOpen(true);
+  };
+
+  const handleReuploadDocument = (documentId: string) => {
+    if (onReuploadDocument && category) {
+      onReuploadDocument(documentId, documentType, category);
+    }
   };
 
   const handleCloseViewSheet = () => {
@@ -98,11 +108,12 @@ export function DocumentListModal({
                       height={20}
                       className="flex-shrink-0"
                     />
-                    <div>
+                    <div className="flex-1">
                       <p className="font-medium text-sm">{document.file_name}</p>
                       <p className="text-xs text-muted-foreground">
                         Uploaded by {document.uploaded_by} • {new Date(document.uploaded_at).toLocaleDateString()}
                       </p>
+                     
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -127,6 +138,17 @@ export function DocumentListModal({
                     >
                       view
                     </Button>
+                    {/* Show reupload button for rejected documents */}
+                    {document.status === 'rejected' && onReuploadDocument && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleReuploadDocument(document._id)}
+                        className="cursor-pointer text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
+                      >
+                        <Upload className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="outline"
                       size="sm"
@@ -161,6 +183,9 @@ export function DocumentListModal({
           applicationId={applicationId}
           isOpen={viewSheetOpen}
           onClose={handleCloseViewSheet}
+          onReuploadDocument={onReuploadDocument}
+          documentType={documentType}
+          category={category}
           isClientView={isClientView}
         />
       )}

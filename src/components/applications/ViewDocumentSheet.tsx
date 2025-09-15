@@ -16,7 +16,9 @@ import { SendDocumentModal } from './SendDocumentModal'
 import { 
     User, 
     Clock, 
-    FileText
+    FileText,
+    Upload,
+    AlertCircle
 } from 'lucide-react'
 import { Document } from '@/types/applications'
 
@@ -27,6 +29,9 @@ interface ViewDocumentSheetProps {
     isOpen?: boolean;
     onClose?: () => void;
     isClientView?: boolean; // New prop to hide admin-specific features
+    onReuploadDocument?: (documentId: string, documentType: string, category: string) => void;
+    documentType?: string;
+    category?: string;
 }
 
 
@@ -36,7 +41,10 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     applicationId,
     isOpen,
     onClose,
-    isClientView = false
+    isClientView = false,
+    onReuploadDocument,
+    documentType,
+    category
 }) => {
     const currentDocumentIndex = documents.findIndex(doc => doc._id === document._id);
     const [selectedIndex, setSelectedIndex] = useState(currentDocumentIndex >= 0 ? currentDocumentIndex : 0);
@@ -145,6 +153,20 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
 
                                 {/* Status Display */}
                                 <DocumentStatusDisplay document={currentDoc} />
+
+                                {/* Reupload Button for Rejected Documents */}
+                                {currentDoc.status === 'rejected' && onReuploadDocument && documentType && category && (
+                                    <div className="mt-4">
+                                        <Button
+                                            onClick={() => onReuploadDocument(currentDoc._id, documentType, category)}
+                                            className="bg-orange-600 hover:bg-orange-700 text-white"
+                                            size="sm"
+                                        >
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            Reupload Document
+                                        </Button>
+                                    </div>
+                                )}
 
                                 {/* Status Buttons - Bottom Right (Admin only) */}
                                 {!isClientView && (

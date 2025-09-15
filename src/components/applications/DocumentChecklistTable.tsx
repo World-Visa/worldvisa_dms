@@ -5,10 +5,13 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { UploadDocumentsModal } from './UploadDocumentsModal';
 import { DocumentListModal } from './DocumentListModal';
+import { RejectionDetailsSheet } from './RejectionDetailsSheet';
+import { ReuploadDocumentModal } from './ReuploadDocumentModal';
 import { useSearchMemo } from '@/lib/utils/search';
 import { ChecklistTableHeader } from './checklist/ChecklistTableHeader';
 import { ChecklistTableBody } from './checklist/ChecklistTableBody';
 import { useDocumentChecklistLogic } from '@/hooks/useDocumentChecklistLogic';
+import { useReuploadDocument } from '@/hooks/useReuploadDocument';
 import {
   generateCreatingItems,
   generateEditingCurrentItems,
@@ -18,7 +21,7 @@ import {
   filterItemsByCategory,
   getCategoryBadgeStyle
 } from '@/lib/checklist/dataProcessing';
-import { 
+import {
   ApiDocument,
   Company,
   DocumentChecklistTableProps
@@ -59,7 +62,7 @@ interface ExtendedDocumentChecklistTableProps extends DocumentChecklistTableProp
   // Pending changes props
   pendingAdditions?: ChecklistDocument[];
   pendingDeletions?: string[];
-  pendingUpdates?: Array<{checklistId: string, required: boolean, documentType: string, documentCategory: string}>;
+  pendingUpdates?: Array<{ checklistId: string, required: boolean, documentType: string, documentCategory: string }>;
   onAddToPendingChanges?: (document: ChecklistDocument) => void;
   onRemoveFromPendingChanges?: (document: ChecklistDocument) => void;
   onAddToPendingDeletions?: (checklistId: string) => void;
@@ -68,13 +71,13 @@ interface ExtendedDocumentChecklistTableProps extends DocumentChecklistTableProp
   onClearPendingChanges?: () => void;
 }
 
-const DocumentChecklistTableComponent = ({ 
-  documents, 
-  isLoading, 
-  error, 
-  applicationId, 
-  selectedCategory, 
-  companies, 
+const DocumentChecklistTableComponent = ({
+  documents,
+  isLoading,
+  error,
+  applicationId,
+  selectedCategory,
+  companies,
   checklistState = 'none',
   filteredDocuments = [],
   currentChecklistDocuments = [],
@@ -103,6 +106,17 @@ const DocumentChecklistTableComponent = ({
   const [selectedDocumentsForView, setSelectedDocumentsForView] = useState<Document[]>([]);
   const [selectedDocumentTypeForView, setSelectedDocumentTypeForView] = useState<string>('');
   const [selectedCompanyCategoryForView, setSelectedCompanyCategoryForView] = useState<string | undefined>(undefined);
+  const [isRejectionDetailsOpen, setIsRejectionDetailsOpen] = useState(false);
+  const [selectedRejectedDocument, setSelectedRejectedDocument] = useState<Document | null>(null);
+  const [selectedRejectedDocumentType, setSelectedRejectedDocumentType] = useState<string>('');
+  const [selectedRejectedDocumentCategory, setSelectedRejectedDocumentCategory] = useState<string>('');
+  const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
+  const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
+  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
+  const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
+
+  // Reupload mutation
+  const reuploadMutation = useReuploadDocument();
 
   // Use the custom hook for complex logic
   const {
@@ -150,27 +164,27 @@ const DocumentChecklistTableComponent = ({
   });
 
   // Generate checklist items using utility functions
-  const creatingItems = useMemo(() => 
+  const creatingItems = useMemo(() =>
     generateCreatingItems(checklistState, filteredDocuments, requirementMap, selectedDocuments),
     [checklistState, filteredDocuments, requirementMap, selectedDocuments]
   );
 
-  const editingCurrentItems = useMemo(() => 
+  const editingCurrentItems = useMemo(() =>
     generateEditingCurrentItems(checklistState, currentChecklistDocuments),
     [checklistState, currentChecklistDocuments]
   );
 
-  const editingAvailableItems = useMemo(() => 
+  const editingAvailableItems = useMemo(() =>
     generateEditingAvailableItems(checklistState, availableDocumentsForEditing, requirementMap, pendingAdditions),
     [checklistState, availableDocumentsForEditing, requirementMap, pendingAdditions]
   );
 
-  const defaultItems = useMemo(() => 
+  const defaultItems = useMemo(() =>
     generateDefaultItems(checklistState, allDocumentTypes, documents || []),
     [checklistState, allDocumentTypes, documents]
   );
 
-  const savedItems = useMemo(() => 
+  const savedItems = useMemo(() =>
     generateSavedItems(checklistState, checklistData, documents || [], selectedCategory, extractedCompanies),
     [checklistState, checklistData, documents, selectedCategory, extractedCompanies]
   );
@@ -196,7 +210,7 @@ const DocumentChecklistTableComponent = ({
   ]);
 
   // Filter items based on selected category
-  const categoryFilteredItems = useMemo(() => 
+  const categoryFilteredItems = useMemo(() =>
     filterItemsByCategory(checklistItems, selectedCategory),
     [checklistItems, selectedCategory]
   );
@@ -216,24 +230,67 @@ const DocumentChecklistTableComponent = ({
 
   const handleUploadClick = useCallback((documentType: string, category: string) => {
     setSelectedDocumentType(documentType);
-    
-    if (category.includes('Documents') && 
-        !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
+
+    if (category.includes('Documents') &&
+      !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
       let company = extractedCompanies.find(c => c.category === category);
-      
+
       if (!company && currentCompany && category.includes('Company Documents')) {
         company = currentCompany;
       }
-      
+
       setSelectedDocumentCategory(category);
       setSelectedCompany(company);
     } else {
       setSelectedDocumentCategory(category);
       setSelectedCompany(undefined);
     }
-    
+
     setIsModalOpen(true);
   }, [extractedCompanies, currentCompany]);
+
+  const handleReuploadClick = useCallback((documentId: string, documentType: string, category: string) => {
+    // Find the document to reupload
+    const documentToReupload = documents?.find(doc => doc._id === documentId);
+    if (!documentToReupload) {
+      console.error('Document not found for reupload:', documentId);
+      return;
+    }
+
+    setSelectedReuploadDocument(documentToReupload);
+    setSelectedReuploadDocumentType(documentType);
+    setSelectedReuploadDocumentCategory(category);
+    setIsReuploadModalOpen(true);
+  }, [documents]);
+
+  const handleViewRejectionDetails = useCallback((document: Document, documentType: string, category: string) => {
+    setSelectedRejectedDocument(document);
+    setSelectedRejectedDocumentType(documentType);
+    setSelectedRejectedDocumentCategory(category);
+    setIsRejectionDetailsOpen(true);
+  }, []);
+
+  const handleRejectionDetailsClose = useCallback(() => {
+    setIsRejectionDetailsOpen(false);
+    setSelectedRejectedDocument(null);
+    setSelectedRejectedDocumentType('');
+    setSelectedRejectedDocumentCategory('');
+  }, []);
+
+  const handleReuploadFromDetails = useCallback(async (documentId: string, documentType: string, category: string) => {
+    // Find the document to reupload
+    const documentToReupload = documents?.find(doc => doc._id === documentId);
+    if (!documentToReupload) {
+      console.error('Document not found for reupload:', documentId);
+      return;
+    }
+
+    setSelectedReuploadDocument(documentToReupload);
+    setSelectedReuploadDocumentType(documentType);
+    setSelectedReuploadDocumentCategory(category);
+    setIsRejectionDetailsOpen(false);
+    setIsReuploadModalOpen(true);
+  }, [documents]);
 
   const handleModalClose = useCallback(() => {
     setIsModalOpen(false);
@@ -242,9 +299,16 @@ const DocumentChecklistTableComponent = ({
     setSelectedCompany(undefined);
   }, []);
 
+  const handleReuploadModalClose = useCallback(() => {
+    setIsReuploadModalOpen(false);
+    setSelectedReuploadDocument(null);
+    setSelectedReuploadDocumentType('');
+    setSelectedReuploadDocumentCategory('');
+  }, []);
+
   const filterDocumentsByType = useCallback((documents: Document[], documentType: string, companyCategory?: string): Document[] => {
     const expectedDocType = documentType.toLowerCase().replace(/\s+/g, '_');
-    
+
     return documents.filter(doc => {
       let typeMatches = false;
       if (doc.document_type && doc.document_type === expectedDocType) {
@@ -254,23 +318,23 @@ const DocumentChecklistTableComponent = ({
         const docTypeName = documentType.toLowerCase();
         typeMatches = fileName.includes(docTypeName);
       }
-      
+
       if (!companyCategory) {
         return typeMatches;
       }
-      
+
       if (typeMatches && doc.document_category) {
         return doc.document_category === companyCategory;
       }
-      
+
       return false;
     });
   }, []);
 
   const getLatestDocuments = useCallback((fallbackDocuments: Document[]): Document[] => {
-    const latestDocumentsData = queryClient.getQueryData<{ 
-      success: boolean; 
-      data: Document[] 
+    const latestDocumentsData = queryClient.getQueryData<{
+      success: boolean;
+      data: Document[]
     }>(['application-documents', applicationId]);
     return latestDocumentsData?.data || fallbackDocuments || [];
   }, [queryClient, applicationId]);
@@ -278,7 +342,7 @@ const DocumentChecklistTableComponent = ({
   const handleViewDocuments = useCallback((documentType: string, companyCategory?: string) => {
     const latestDocuments = getLatestDocuments(documents || []);
     const matchingDocuments = filterDocumentsByType(latestDocuments, documentType, companyCategory);
-    
+
     setSelectedDocumentsForView(matchingDocuments);
     setSelectedDocumentTypeForView(documentType);
     setSelectedCompanyCategoryForView(companyCategory);
@@ -293,13 +357,13 @@ const DocumentChecklistTableComponent = ({
       setSelectedDocumentsForView(matchingDocuments);
     }
   }, [
-    documents, 
-    isDocumentListModalOpen, 
-    selectedDocumentTypeForView, 
+    documents,
+    isDocumentListModalOpen,
+    selectedDocumentTypeForView,
     selectedCompanyCategoryForView,
-    applicationId, 
-    queryClient, 
-    getLatestDocuments, 
+    applicationId,
+    queryClient,
+    getLatestDocuments,
     filterDocumentsByType
   ]);
 
@@ -340,10 +404,10 @@ const DocumentChecklistTableComponent = ({
           onSearchChange={setSearchQuery}
           checklistState={checklistState}
           selectedCategory={selectedCategory}
-                activeTab={activeTab}
-                onTabChange={handleTabChange}
-                currentCount={tabCounts.currentCount}
-                availableCount={tabCounts.availableCount}
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          currentCount={tabCounts.currentCount}
+          availableCount={tabCounts.availableCount}
           pendingAdditions={pendingAdditions}
           pendingDeletions={pendingDeletions}
           pendingUpdates={pendingUpdates}
@@ -359,24 +423,26 @@ const DocumentChecklistTableComponent = ({
           currentPage={currentPage}
           totalPages={totalPages}
           itemsPerPage={itemsPerPage}
-                        startIndex={startIndex}
+          startIndex={startIndex}
           endIndex={endIndex}
           onPageChange={setCurrentPage}
-                        checklistState={checklistState}
-                        activeTab={activeTab}
-                        selectedCategory={selectedCategory}
-                        onUpdateDocumentRequirement={onUpdateDocumentRequirement}
+          checklistState={checklistState}
+          activeTab={activeTab}
+          selectedCategory={selectedCategory}
+          onUpdateDocumentRequirement={onUpdateDocumentRequirement}
           onAddToPendingChanges={handleAddToPendingChanges}
-                        onAddToPendingDeletions={onAddToPendingDeletions}
-                        onRemoveFromPendingChanges={onRemoveFromPendingChanges}
-                        onRemoveFromPendingDeletions={onRemoveFromPendingDeletions}
-                        onSavePendingChanges={onSavePendingChanges}
-                        onClearPendingChanges={onClearPendingChanges}
-                        pendingAdditions={pendingAdditions}
-                        pendingDeletions={pendingDeletions}
-                        handleViewDocuments={handleViewDocuments}
-                        handleUploadClick={handleUploadClick}
-                        getCategoryBadgeStyle={getCategoryBadgeStyle}
+          onAddToPendingDeletions={onAddToPendingDeletions}
+          onRemoveFromPendingChanges={onRemoveFromPendingChanges}
+          onRemoveFromPendingDeletions={onRemoveFromPendingDeletions}
+          onSavePendingChanges={onSavePendingChanges}
+          onClearPendingChanges={onClearPendingChanges}
+          pendingAdditions={pendingAdditions}
+          pendingDeletions={pendingDeletions}
+          handleViewDocuments={handleViewDocuments}
+          handleUploadClick={handleUploadClick}
+          handleReuploadClick={handleReuploadClick}
+          handleViewRejectionDetails={handleViewRejectionDetails}
+          getCategoryBadgeStyle={getCategoryBadgeStyle}
           isAddingDocument={isAddingDocument}
           addingDocumentId={addingDocumentId}
           isDocumentAdded={isDocumentAdded}
@@ -401,6 +467,8 @@ const DocumentChecklistTableComponent = ({
         documentType={selectedDocumentTypeForView}
         documents={selectedDocumentsForView}
         applicationId={applicationId}
+        category={selectedCompanyCategoryForView}
+        onReuploadDocument={handleReuploadClick}
         isClientView={isClientView}
         onDocumentDeleted={() => {
           queryClient.refetchQueries({ 
@@ -411,6 +479,25 @@ const DocumentChecklistTableComponent = ({
             setSelectedDocumentsForView(matchingDocuments);
           });
         }}
+      />
+
+      <RejectionDetailsSheet
+        isOpen={isRejectionDetailsOpen}
+        onClose={handleRejectionDetailsClose}
+        document={selectedRejectedDocument}
+        documentType={selectedRejectedDocumentType}
+        category={selectedRejectedDocumentCategory}
+        onReupload={handleReuploadFromDetails}
+        isReuploading={reuploadMutation.isPending}
+      />
+
+      <ReuploadDocumentModal
+        isOpen={isReuploadModalOpen}
+        onClose={handleReuploadModalClose}
+        applicationId={applicationId}
+        document={selectedReuploadDocument}
+        documentType={selectedReuploadDocumentType}
+        category={selectedReuploadDocumentCategory}
       />
     </div>
   );

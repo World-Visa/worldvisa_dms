@@ -1,7 +1,7 @@
 import React from 'react'
 import { Document } from '@/types/applications'
 import { Badge } from '../ui/badge'
-import { CheckCircle, XCircle, Eye, Clock, AlertCircle } from 'lucide-react'
+import { CheckCircle, XCircle, Eye, Clock, AlertCircle, MessageSquare } from 'lucide-react'
 
 interface DocumentStatusDisplayProps {
     document: Document;
@@ -78,6 +78,23 @@ const DocumentStatusDisplay: React.FC<DocumentStatusDisplayProps> = ({ document 
                     </div>
                 )}
             </div>
+            
+            {/* Show reject message if document is rejected */}
+            {document.status === 'rejected' && document.reject_message && (
+                <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <div className="flex items-start space-x-2">
+                        <MessageSquare className="h-4 w-4 text-red-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                            <div className="text-sm font-medium text-red-800 mb-1">
+                                Reason for rejection:
+                            </div>
+                            <div className="text-sm text-red-700">
+                                {document.reject_message}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

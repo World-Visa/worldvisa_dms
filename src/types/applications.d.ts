@@ -25,6 +25,7 @@ export interface Document {
   file_name: string;
   uploaded_by: string;
   status: "pending" | "approved" | "reviewed" | "request_review" | "rejected";
+  reject_message?: string;
   history: Array<{
     status: string;
     changed_by: string;

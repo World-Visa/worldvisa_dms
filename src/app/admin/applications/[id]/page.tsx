@@ -17,9 +17,13 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { useState } from 'react';
 import { DocumentCategory, Company } from '@/types/documents';
+import { Document } from '@/types/applications';
 import { localStorageUtils } from '@/lib/localStorage';
 import { useChecklistState } from '@/hooks/useChecklistState';
 import { useChecklistURLState } from '@/lib/urlState';
+import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
+import { useReuploadDocument } from '@/hooks/useReuploadDocument';
+import { generateChecklistCategories } from '@/lib/checklist/categoryUtils';
 
 export default function ApplicationDetailsPage() {
   const params = useParams();
@@ -45,6 +49,10 @@ export default function ApplicationDetailsPage() {
   });
   
   const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
+  const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
+  const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
+  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
+  const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
   const [documentsPage, setDocumentsPage] = useState(1);
   const maxCompanies = 5;
 
@@ -55,7 +63,7 @@ export default function ApplicationDetailsPage() {
     }
   }, [isAuthenticated, isAuthLoading, user?.role, router]);
 
- 
+
   const {
     data: applicationData,
     isLoading: isApplicationLoading,
@@ -77,6 +85,61 @@ export default function ApplicationDetailsPage() {
     companies
   });
 
+  // Reupload mutation
+  const reuploadMutation = useReuploadDocument();
+
+
+    // Populate companies state from existing documents with company information
+  // Prioritize API data (documentsData) over locally generated data
+  useEffect(() => {
+    if (documents && documents.length > 0) {
+      const companyMap = new Map<string, Company>();
+      
+      documents.forEach((doc: Document) => {
+        if (doc.document_category && doc.document_category.includes('Company Documents')) {
+          // Extract company name from category (e.g., "Google Company Documents" -> "Google")
+          const companyName = doc.document_category.replace(' Company Documents', '');
+          
+          // Always prioritize API data if description is available
+          if (doc.description) {
+            // Try to extract dates from description (e.g., "Worked at google from Jul 04, 2023 to Aug 26, 2025 (2 years 1 month)")
+            const dateMatch = doc.description.match(/from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i);
+            if (dateMatch) {
+              const fromDateStr = dateMatch[1]; // "Jul 04, 2023"
+              const toDateStr = dateMatch[2];   // "Aug 26, 2025"
+              
+              try {
+                // Convert to YYYY-MM-DD format without timezone issues
+                const fromDateObj = new Date(fromDateStr);
+                const toDateObj = new Date(toDateStr);
+                
+                // Format as YYYY-MM-DD without timezone conversion
+                const fromDate = `${fromDateObj.getFullYear()}-${String(fromDateObj.getMonth() + 1).padStart(2, '0')}-${String(fromDateObj.getDate()).padStart(2, '0')}`;
+                const toDate = `${toDateObj.getFullYear()}-${String(toDateObj.getMonth() + 1).padStart(2, '0')}-${String(toDateObj.getDate()).padStart(2, '0')}`;
+                
+                companyMap.set(companyName, {
+                  name: companyName,
+                  category: doc.document_category,
+                  fromDate: fromDate,
+                  toDate: toDate,
+                  description: doc.description
+                });
+              } catch (error) {
+                console.error('Error parsing dates from API description:', error);
+              }
+            }
+          }
+        }
+      });
+      
+      // Update companies state with API data if available
+      if (companyMap.size > 0) {
+        setCompanies(Array.from(companyMap.values()));
+      }
+    }
+  }, [documents]);
+
+ 
 
   const handleAddCompany = (company: Company) => {
     const companyWithCategory = {
@@ -107,6 +170,27 @@ export default function ApplicationDetailsPage() {
 
   const handleDocumentsPageChange = (page: number) => {
     setDocumentsPage(page);
+  };
+
+  const handleReuploadDocument = (documentId: string, documentType: string, category: string) => {
+    // Find the document to reupload
+    const documentToReupload = documents?.find(doc => doc._id === documentId);
+    if (!documentToReupload) {
+      console.error('Document not found for reupload:', documentId);
+      return;
+    }
+
+    setSelectedReuploadDocument(documentToReupload);
+    setSelectedReuploadDocumentType(documentType);
+    setSelectedReuploadDocumentCategory(category);
+    setIsReuploadModalOpen(true);
+  };
+
+  const handleReuploadModalClose = () => {
+    setIsReuploadModalOpen(false);
+    setSelectedReuploadDocument(null);
+    setSelectedReuploadDocumentType('');
+    setSelectedReuploadDocumentCategory('');
   };
 
 
@@ -294,7 +378,7 @@ export default function ApplicationDetailsPage() {
               maxCompanies={maxCompanies}
               // Checklist props
               checklistState={checklistState.state}
-              checklistCategories={checklistState.checklistCategories}
+              checklistCategories={generateChecklistCategories(checklistState.checklistData, undefined, companies)}
               hasCompanyDocuments={checklistState.hasCompanyDocuments}
               onStartCreatingChecklist={handleStartCreatingChecklist}
               onStartEditingChecklist={handleStartEditingChecklist}
@@ -312,6 +396,7 @@ export default function ApplicationDetailsPage() {
                 currentPage={documentsPage}
                 limit={10}
                 onPageChange={handleDocumentsPageChange}
+                onReuploadDocument={handleReuploadDocument}
               />
             ) : (
               <DocumentChecklistTable
@@ -361,6 +446,16 @@ export default function ApplicationDetailsPage() {
         onAddCompany={handleAddCompany}
         existingCompanies={companies}
         maxCompanies={maxCompanies}
+      />
+
+      {/* Reupload Document Modal */}
+      <ReuploadDocumentModal
+        isOpen={isReuploadModalOpen}
+        onClose={handleReuploadModalClose}
+        applicationId={applicationId}
+        document={selectedReuploadDocument }
+        documentType={selectedReuploadDocumentType}
+        category={selectedReuploadDocumentCategory}
       />
     </div>
   );

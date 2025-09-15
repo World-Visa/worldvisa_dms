@@ -5,6 +5,7 @@ const ZOHO_BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com/api/zoh
 export interface UpdateDocumentStatusRequest {
   status: 'pending' | 'reviewed' | 'request_review' | 'approved' | 'rejected';
   changed_by: string;
+  reject_message?: string;
 }
 
 export interface UpdateDocumentStatusResponse {

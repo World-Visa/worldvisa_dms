@@ -121,7 +121,23 @@ export function useDocumentChecklistLogic({
         } else if (item.document_category === 'Other') {
           categoryLabel = 'Other Documents';
         } else if (item.document_category === 'Company') {
-          categoryLabel = 'Company Documents';
+          // For company documents, try to find the actual company category from documents
+          if (documents && documents.length > 0) {
+            const companyDoc = documents.find(doc => 
+              doc.document_category && 
+              doc.document_category.includes('Company Documents') &&
+              doc.company_name === (item as unknown as ChecklistItem).company_name
+
+            );
+            if (companyDoc && companyDoc.document_category) {
+              categoryLabel = companyDoc.document_category;
+            } else {
+              categoryLabel = 'Company Documents';
+              
+            }
+          } else {
+            categoryLabel = 'Company Documents';
+          }
         }
         
         return {

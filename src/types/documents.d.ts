@@ -4,6 +4,8 @@ export interface DocumentCategoryInfo {
   id: DocumentCategory;
   label: string;
   count: number;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface DocumentChecklistItem {

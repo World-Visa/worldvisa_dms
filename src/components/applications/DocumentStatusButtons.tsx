@@ -3,6 +3,7 @@ import { Button } from '../ui/button'
 import { Document } from '@/types/applications'
 import { useDocumentStatusUpdate } from '@/hooks/useDocumentStatusUpdate'
 import { useAuth } from '@/hooks/useAuth'
+import { RejectDocumentDialog } from './RejectDocumentDialog'
 
 interface DocumentStatusButtonsProps {
     document: Document;
@@ -19,6 +20,7 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
 }) => {
     const { user } = useAuth();
     const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
+    const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
     
     const statusUpdateMutation = useDocumentStatusUpdate({
         applicationId,
@@ -32,7 +34,7 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
         }
     });
 
-    const handleStatusUpdate = (status: 'approved' | 'rejected' | 'reviewed') => {
+    const handleStatusUpdate = (status: 'approved' | 'rejected' | 'reviewed', rejectMessage?: string) => {
         if (!user?.username) {
             console.error('User not authenticated');
             return;
@@ -42,18 +44,25 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
         statusUpdateMutation.mutate({
             documentId: document._id,
             status,
-            changedBy: user.username
+            changedBy: user.username,
+            rejectMessage
         });
     };
 
     const handleApprove = () => handleStatusUpdate('approved');
-    const handleReject = () => handleStatusUpdate('rejected');
+    const handleReject = () => setIsRejectDialogOpen(true);
     const handleReviewed = () => handleStatusUpdate('reviewed');
+
+    const handleRejectConfirm = (reason: string) => {
+        handleStatusUpdate('rejected', reason);
+        setIsRejectDialogOpen(false);
+    };
 
     const isUpdating = statusUpdateMutation.isPending;
     const currentStatus = document.status;
     return (
-        <div className="absolute bottom-4 right-2 sm:bottom-1 sm:right-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+        <>
+            <div className="absolute bottom-4 right-2 sm:bottom-1 sm:right-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <Button
                 variant="default"
                 size="sm"
@@ -93,7 +102,16 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
             >
                 {updatingStatus === 'reviewed' ? 'Updating...' : currentStatus === 'reviewed' ? 'Reviewed' : 'Review'}
             </Button>
-        </div>
+            </div>
+
+            <RejectDocumentDialog
+                isOpen={isRejectDialogOpen}
+                onClose={() => setIsRejectDialogOpen(false)}
+                onConfirm={handleRejectConfirm}
+                documentName={document.file_name}
+                isLoading={updatingStatus === 'rejected'}
+            />
+        </>
     );
 };
 

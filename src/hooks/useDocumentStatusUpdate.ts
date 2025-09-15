@@ -34,18 +34,21 @@ export function useDocumentStatusUpdate({
     mutationFn: async ({ 
       documentId, 
       status, 
-      changedBy 
+      changedBy,
+      rejectMessage 
     }: { 
       documentId: string; 
       status: UpdateDocumentStatusRequest['status']; 
-      changedBy: string; 
+      changedBy: string;
+      rejectMessage?: string;
     }) => {
       const startTime = Date.now();
       
       try {
         const response = await updateDocumentStatus(documentId, {
           status,
-          changed_by: changedBy
+          changed_by: changedBy,
+          reject_message: rejectMessage
         });
 
         const responseTime = Date.now() - startTime;
@@ -62,6 +65,7 @@ export function useDocumentStatusUpdate({
         return {
           documentId,
           newStatus: status,
+          rejectMessage,
           response: response.data
         };
       } catch (error) {
@@ -84,7 +88,7 @@ export function useDocumentStatusUpdate({
       }
     },
 
-    onMutate: async ({ documentId, status }) => {
+    onMutate: async ({ documentId, status, rejectMessage }) => {
       // Cancel any outgoing refetches for this document
       await queryClient.cancelQueries({
         queryKey: ['document', documentId]
@@ -113,6 +117,7 @@ export function useDocumentStatusUpdate({
         return { 
           ...old, 
           status: status as Document['status'],
+          reject_message: status === 'rejected' ? rejectMessage : old.reject_message,
           history: [
             ...old.history,
             {
@@ -137,6 +142,7 @@ export function useDocumentStatusUpdate({
                 ? { 
                     ...doc, 
                     status: status as Document['status'],
+                    reject_message: status === 'rejected' ? rejectMessage : doc.reject_message,
                     history: [
                       ...doc.history,
                       {
@@ -165,6 +171,7 @@ export function useDocumentStatusUpdate({
                 ? { 
                     ...doc, 
                     status: status as Document['status'],
+                    reject_message: status === 'rejected' ? rejectMessage : doc.reject_message,
                     history: [
                       ...doc.history,
                       {
@@ -217,6 +224,7 @@ export function useDocumentStatusUpdate({
         return { 
           ...old, 
           status: data.newStatus as Document['status'],
+          reject_message: data.newStatus === 'rejected' ? data.rejectMessage : old.reject_message,
           history: [
             ...old.history.filter(h => !h._id.startsWith('temp-')),
             ...(data.response ? [{
@@ -241,6 +249,7 @@ export function useDocumentStatusUpdate({
                 ? { 
                     ...doc, 
                     status: data.newStatus as Document['status'],
+                    reject_message: data.newStatus === 'rejected' ? data.rejectMessage : doc.reject_message,
                     history: [
                       ...doc.history.filter(h => !h._id.startsWith('temp-')),
                       ...(data.response ? [{
@@ -267,6 +276,7 @@ export function useDocumentStatusUpdate({
                 ? { 
                     ...doc, 
                     status: data.newStatus as Document['status'],
+                    reject_message: data.newStatus === 'rejected' ? data.rejectMessage : doc.reject_message,
                     history: [
                       ...doc.history.filter(h => !h._id.startsWith('temp-')),
                       ...(data.response ? [{

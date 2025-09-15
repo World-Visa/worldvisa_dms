@@ -25,7 +25,7 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({ document }) => {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border h-[50%] lg:h-[70%] overflow-hidden relative">
+        <div className="bg-white rounded-lg shadow-sm border h-[50%] lg:h-[60%] overflow-hidden relative">
             {document.document_link || document.download_url ? (
                 <div className="w-full h-full flex items-center lg:py-0 py-4 justify-center">
                     <div className="text-center">

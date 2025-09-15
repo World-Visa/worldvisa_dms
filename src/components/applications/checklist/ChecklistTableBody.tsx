@@ -13,7 +13,7 @@ import {
 import { TablePagination } from '@/components/common/TablePagination';
 import { ChecklistTableRow } from './ChecklistTableRow';
 import { FileText } from 'lucide-react';
-import { ChecklistState } from '@/types/checklist';
+import { ChecklistDocument, ChecklistState, DocumentRequirement } from '@/types/checklist';
 import { Document } from '@/types/applications';
 
 interface ChecklistTableItem {
@@ -21,7 +21,7 @@ interface ChecklistTableItem {
   documentType: string;
   isUploaded: boolean;
   uploadedDocument?: Document | unknown;
-  requirement?: any;
+  requirement?: DocumentRequirement;
   isSelected?: boolean;
   company_name?: string;
   checklist_id?: string;
@@ -40,17 +40,19 @@ interface ChecklistTableBodyProps {
   checklistState: ChecklistState;
   activeTab: 'current' | 'available';
   selectedCategory: string;
-  onUpdateDocumentRequirement?: (category: string, documentType: string, requirement: any) => void;
-  onAddToPendingChanges: (document: any) => Promise<void>;
+  onUpdateDocumentRequirement?: (category: string, documentType: string, requirement: DocumentRequirement) => void;
+  onAddToPendingChanges: (document: ChecklistDocument) => Promise<void>;
   onAddToPendingDeletions?: (checklistId: string) => void;
-  onRemoveFromPendingChanges?: (document: any) => void;
+  onRemoveFromPendingChanges?: (document: ChecklistDocument) => void;
   onRemoveFromPendingDeletions?: (checklistId: string) => void;
   onSavePendingChanges?: () => Promise<void>;
   onClearPendingChanges?: () => void;
-  pendingAdditions: any[];
+  pendingAdditions: ChecklistDocument[];
   pendingDeletions: string[];
   handleViewDocuments: (documentType: string, companyCategory?: string) => void;
   handleUploadClick: (documentType: string, category: string) => void;
+  handleReuploadClick: (documentId: string, documentType: string, category: string) => void;
+  handleViewRejectionDetails: (document: Document, documentType: string, category: string) => void;
   getCategoryBadgeStyle: (category: string) => string;
   isAddingDocument: boolean;
   addingDocumentId?: string;
@@ -82,6 +84,8 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
   pendingDeletions,
   handleViewDocuments,
   handleUploadClick,
+  handleReuploadClick,
+  handleViewRejectionDetails,
   getCategoryBadgeStyle,
   isAddingDocument,
   addingDocumentId,
@@ -158,6 +162,8 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                     pendingDeletions={pendingDeletions}
                     handleViewDocuments={handleViewDocuments}
                     handleUploadClick={handleUploadClick}
+                    handleReuploadClick={handleReuploadClick}
+                    handleViewRejectionDetails={handleViewRejectionDetails}
                     getCategoryBadgeStyle={getCategoryBadgeStyle}
                     isAddingDocument={isAddingDocument}
                     addingDocumentId={addingDocumentId}

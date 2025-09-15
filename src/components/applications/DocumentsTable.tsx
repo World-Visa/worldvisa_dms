@@ -35,6 +35,7 @@ interface DocumentsTableProps {
     clientIsLoading?: boolean;
     clientError?: Error | null;
     onClientDeleteSuccess?: () => void;
+    onReuploadDocument?: (documentId: string, documentType: string, category: string) => void;
 }
 
 export function DocumentsTable({ 
@@ -46,7 +47,8 @@ export function DocumentsTable({
     clientDocumentsData,
     clientIsLoading = false,
     clientError = null,
-    onClientDeleteSuccess
+    onClientDeleteSuccess,
+    onReuploadDocument
 }: DocumentsTableProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -230,13 +232,26 @@ export function DocumentsTable({
                                 <TableRow key={document._id}>
                                     <TableCell className="font-medium">{(pagination?.currentPage ? (pagination.currentPage - 1) * pagination.limit : 0) + index + 1}</TableCell>
                                     <TableCell>
-                                        <div className="flex items-center space-x-2">
-                                            <FileText className="h-4 w-4 text-muted-foreground" />
-                                            <span className="truncate max-w-[150px]" title={document.file_name}>
-                                                {document.file_name.length > 20
-                                                    ? `${document.file_name.substring(0, 20)}...`
-                                                    : document.file_name}
-                                            </span>
+                                        <div className="flex flex-col space-y-1">
+                                            <div className="flex items-center space-x-2">
+                                                <FileText className="h-4 w-4 text-muted-foreground" />
+                                                <span className="truncate max-w-[150px]" title={document.file_name}>
+                                                    {document.file_name.length > 20
+                                                        ? `${document.file_name.substring(0, 20)}...`
+                                                        : document.file_name}
+                                                </span>
+                                            </div>
+                                            {/* Show rejection message for rejected documents */}
+                                            {document.status === 'rejected' && document.reject_message && (
+                                                <div className="mt-1 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 max-w-[200px]">
+                                                    <div className="flex items-start gap-1">
+                                                        <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
+                                                        <div>
+                                                            <strong>Rejection Reason:</strong> {document.reject_message}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            )}
                                         </div>
                                     </TableCell>
                                     <TableCell className='font-lexend '>
@@ -351,6 +366,9 @@ export function DocumentsTable({
                     applicationId={applicationId}
                     isOpen={viewSheetOpen}
                     onClose={handleCloseViewSheet}
+                    onReuploadDocument={onReuploadDocument}
+                    documentType={selectedDocument.document_type || ''}
+                    category={selectedDocument.document_category || ''}
                     isClientView={isClientView}
                 />
             )}
