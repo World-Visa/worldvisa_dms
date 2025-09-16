@@ -51,20 +51,20 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
         companyName = companyParts.join(' ');
       }
 
-      // Try multiple matching strategies
+      // Try multiple matching strategies (all case-insensitive since company names are now stored in lowercase)
       const matchingStrategies = [
-        // 1. Exact name match (case-insensitive)
-        (company: Company) => company.name.toLowerCase() === companyName.toLowerCase(),
+        // 1. Exact name match (both are lowercase now)
+        (company: Company) => company.name === companyName.toLowerCase(),
         
-        // 2. Partial name match (case-insensitive) - for names with special characters
-        (company: Company) => company.name.toLowerCase().includes(companyName.toLowerCase()) || 
-                              companyName.toLowerCase().includes(company.name.toLowerCase()),
+        // 2. Partial name match - for names with special characters
+        (company: Company) => company.name.includes(companyName.toLowerCase()) || 
+                              companyName.toLowerCase().includes(company.name),
         
         // 3. Category contains the company name (case-insensitive)
         (company: Company) => company.category.toLowerCase().includes(companyName.toLowerCase()),
         
         // 4. Company name contains category company name (case-insensitive)
-        (company: Company) => companyName.toLowerCase().includes(company.name.toLowerCase()),
+        (company: Company) => companyName.toLowerCase().includes(company.name),
         
         // 5. Fuzzy match - remove special characters and compare
         (company: Company) => {
@@ -93,6 +93,19 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
     return null;
   }
 
+  // Extract original case company name from description
+  const getDisplayCompanyName = (company: Company): string => {
+    if (company.description) {
+      // Extract company name from description: "Worked at COMPANY_NAME from..."
+      const match = company.description.match(/Worked at ([^ ]+) from/);
+      if (match && match[1]) {
+        return match[1];
+      }
+    }
+    // Fallback to stored name (which is now lowercase)
+    return company.name;
+  };
+
   return (
     <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2 border">
       <div className="flex items-center gap-2">
@@ -100,7 +113,7 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
           <Building2 className="h-3 w-3 text-gray-600" />
         </div>
         <div className="text-sm">
-          <div className="font-medium text-gray-900">{displayCompany.name}</div>
+          <div className="font-medium text-gray-900">{getDisplayCompanyName(displayCompany)}</div>
           <div className="text-xs text-gray-600">
             {displayCompany.description || generateCompanyDescription(displayCompany.fromDate, displayCompany.toDate)}
           </div>

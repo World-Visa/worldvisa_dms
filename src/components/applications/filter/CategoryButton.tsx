@@ -26,7 +26,7 @@ export const CategoryButton = memo(function CategoryButton({
     category.label !== 'Company Documents' &&
     onRemoveCompany;
 
-  // Extract company name from the category label
+  // Extract company name from the category label (this will be lowercase for matching)
   const companyName = isCompanyChip ? category.label.replace(' Company Documents', '') : null;
 
   const handleDeleteClick = (e: React.MouseEvent) => {

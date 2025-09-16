@@ -11,10 +11,8 @@ export default function ClientApplicationsPage() {
 
   useEffect(() => {
     if (!isLoading && isAuthenticated && user?.lead_id) {
-      // Redirect to the specific application page using the user's lead_id
       router.push(`/client/applications/${user.lead_id}`);
     } else if (!isLoading && !isAuthenticated) {
-      // Redirect to login if not authenticated
       router.push('/client-login');
     }
   }, [user, isAuthenticated, isLoading, router]);

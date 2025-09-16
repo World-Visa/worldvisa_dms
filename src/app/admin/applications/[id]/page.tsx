@@ -124,7 +124,6 @@ export default function ApplicationDetailsPage() {
 
 
     // Populate companies state from existing documents with company information
-  // Prioritize API data (documentsData) over locally generated data
   useEffect(() => {
     if (documents && documents.length > 0) {
       const companyMap = new Map<string, Company>();
@@ -132,7 +131,7 @@ export default function ApplicationDetailsPage() {
       documents.forEach((doc: Document) => {
         if (doc.document_category && doc.document_category.includes('Company Documents')) {
           // Extract company name from category (e.g., "Google Company Documents" -> "Google")
-          const companyName = doc.document_category.replace(' Company Documents', '');
+          const companyName = doc.document_category.replace(' Company Documents', '').toLowerCase();
           
           // Always prioritize API data if description is available
           if (doc.description) {

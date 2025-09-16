@@ -48,6 +48,7 @@ export async function GET(request: NextRequest) {
     const limit = searchParams.get('limit') || '20';
     const startDate = searchParams.get('startDate');
     const endDate = searchParams.get('endDate');
+    const search = searchParams.get('search');
 
     // Build query string for Zoho API
     const queryParams = new URLSearchParams({
@@ -57,6 +58,7 @@ export async function GET(request: NextRequest) {
 
     if (startDate) queryParams.append('startDate', startDate);
     if (endDate) queryParams.append('endDate', endDate);
+    if (search) queryParams.append('search', search);
 
     // Use the existing authenticatedFetch from zoho.ts
     const zohoUrl = `${ZOHO_BASE_URL}/visa_applications?${queryParams.toString()}`;

@@ -91,7 +91,7 @@ export function AddCompanyDialog({
       return;
     }
 
-    if (existingCompanies.some(company => company.name === companyName.trim())) {
+    if (existingCompanies.some(company => company.name.toLowerCase() === companyName.trim().toLowerCase())) {
       toast.error('Company with this name already exists');
       return;
     }
@@ -108,12 +108,16 @@ export function AddCompanyDialog({
       const fromDateStr = formatDateForAPI(fromDate);
       const toDateStr = formatDateForAPI(toDate);
       
+      // Normalize company name to lowercase for consistent matching
+      const normalizedCompanyName = companyName.trim().toLowerCase();
+      const displayCompanyName = companyName.trim(); // Keep original case for display
+      
       const newCompany: Company = {
-        name: companyName.trim(),
+        name: normalizedCompanyName, // Store as lowercase for consistent matching
         fromDate: fromDateStr,
         toDate: toDateStr,
-        category: `${companyName.trim()} Company Documents`,
-        description: `Worked at ${companyName.trim()} from ${format(fromDate, 'MMM dd, yyyy')} to ${format(toDate, 'MMM dd, yyyy')} (${experienceDuration})`
+        category: `${normalizedCompanyName} Company Documents`, // Use lowercase for category
+        description: `Worked at ${displayCompanyName} from ${format(fromDate, 'MMM dd, yyyy')} to ${format(toDate, 'MMM dd, yyyy')} (${experienceDuration})` // Keep original case in description
       };
       
       await onAddCompany(newCompany);
@@ -121,7 +125,7 @@ export function AddCompanyDialog({
       setFromDate(undefined);
       setToDate(undefined);
       onClose();
-      toast.success(`Company "${companyName.trim()}" added successfully!`);
+      toast.success(`Company "${displayCompanyName}" added successfully!`);
     } catch {
       toast.error('Failed to add company. Please try again.');
     } finally {
