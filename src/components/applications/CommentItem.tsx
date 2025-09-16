@@ -48,7 +48,6 @@ const CommentItem: React.FC<CommentItemProps> = ({
     const canDelete = user && (
         // Admin can delete any comment
         (user.role === 'admin' || user.role === 'team_leader' || user.role === 'master_admin') ||
-        // Client can only delete their own comments
         (user.role === 'client' && comment.added_by === user.username)
     );
     
