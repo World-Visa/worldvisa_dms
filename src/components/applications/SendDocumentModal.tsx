@@ -1,27 +1,57 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2, FileText } from 'lucide-react';
+import { Send, Loader2, FileText, Users, AlertCircle } from 'lucide-react';
 import { Document } from '@/types/applications';
+import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
+import { useAdminUsers } from '@/hooks/useAdminUsers';
+import { useReviewRequest } from '@/hooks/useReviewRequest';
+import { useAuth } from '@/hooks/useAuth';
 
 interface SendDocumentModalProps {
   documents: Document[];
   selectedDocument: Document;
-  onSend?: (documentIds: string[], notes: string) => void;
+  onSend?: (documentIds: string[], notes: string, sendToUsers: string[]) => void;
+  applicationId?: string; // Add applicationId for review requests
 }
 
 export function SendDocumentModal({
   documents,
   selectedDocument,
-  onSend
+  onSend,
 }: SendDocumentModalProps) {
+  const { user } = useAuth();
+  const { data: adminUsers, isLoading: isLoadingAdmins, error: adminError } = useAdminUsers();
+  
+  // Review request mutation
+  const reviewRequestMutation = useReviewRequest({
+    onSuccess: (documentIds, requestedTo) => {
+      // Call the original onSend callback if provided
+      onSend?.(documentIds, notes, requestedTo);
+    },
+    onError: (error) => {
+      console.error('Review request failed:', error);
+    }
+  });
+  
   const [isOpen, setIsOpen] = useState(false);
   const [notes, setNotes] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([selectedDocument._id]);
+  const [selectedAdmins, setSelectedAdmins] = useState<string[]>([]);
+
+  // Memoize admin options for performance
+  const adminOptions: MultiSelectOption[] = useMemo(() => {
+    if (!adminUsers) return [];
+    
+    return adminUsers.map(admin => ({
+      value: admin.username,
+      label: admin.username,
+      role: admin.role
+    }));
+  }, [adminUsers]);
 
   const handleDocumentToggle = (documentId: string) => {
     setSelectedDocuments(prev => 
@@ -32,41 +62,46 @@ export function SendDocumentModal({
   };
 
   const handleSend = async () => {
-    if (selectedDocuments.length === 0) return;
+    if (selectedDocuments.length === 0 || selectedAdmins.length === 0 || !user?.username) return;
     
-    setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Use the review request mutation
+      await reviewRequestMutation.mutateAsync({
+        documentIds: selectedDocuments,
+        requestedTo: selectedAdmins,
+        message: notes || 'Please review these documents for verification.',
+        requestedBy: user.username
+      });
       
-      onSend?.(selectedDocuments, notes);
+      // Reset form state
       setIsOpen(false);
       setNotes('');
       setSelectedDocuments([selectedDocument._id]);
+      setSelectedAdmins([]);
     } catch (error) {
-      console.error('Failed to send documents:', error);
-    } finally {
-      setIsLoading(false);
+      // Error handling is done in the mutation hook
+      console.error('Failed to send review requests:', error);
     }
   };
 
   const selectedCount = selectedDocuments.length;
-  const canSend = selectedCount > 0 && !isLoading;
+  const isSubmitting = reviewRequestMutation.isPending;
+  const canSend = selectedCount > 0 && selectedAdmins.length > 0 && !isSubmitting && !!user?.username;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button className="bg-blue-600 cursor-pointer hover:bg-blue-700 w-full sm:w-auto">
           <Send className="h-4 w-4 mr-2" />
-          Send to Kavitha Mam
+          Send for verification
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] mx-4">
-        <DialogHeader className="pb-4">
-          <DialogTitle className="text-lg font-semibold">Send Documents to Kavitha Mam</DialogTitle>
+      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] mx-4 flex flex-col">
+        <DialogHeader className="pb-4 flex-shrink-0">
+          <DialogTitle className="text-lg font-semibold">Send Documents for Verification</DialogTitle>
         </DialogHeader>
         
-        <div className="space-y-4 max-h-[calc(90vh-120px)] overflow-y-auto pr-2">
+        <div className="space-y-4 flex-1 overflow-y-auto pr-2">
           {/* Document Selection */}
           <div className="space-y-3">
             <h3 className="text-sm font-medium text-gray-900">
@@ -81,13 +116,14 @@ export function SendDocumentModal({
                       ? 'bg-blue-50 border-blue-200'
                       : 'bg-white border-gray-200 hover:bg-gray-50'
                   }`}
-                  onClick={() => handleDocumentToggle(document._id)}
+                  onClick={() => !isSubmitting && handleDocumentToggle(document._id)}
                 >
                   <input
                     type="checkbox"
                     checked={selectedDocuments.includes(document._id)}
                     onChange={() => handleDocumentToggle(document._id)}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0"
+                    disabled={isSubmitting}
+                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0 disabled:opacity-50"
                   />
                   <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
@@ -108,6 +144,56 @@ export function SendDocumentModal({
             </div>
           </div>
 
+          {/* Send To Section */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Users className="h-4 w-4 text-gray-600" />
+              <h3 className="text-sm font-medium text-gray-900">
+                Send to Admins *
+              </h3>
+            </div>
+            
+            {!user?.username ? (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <div className="text-sm text-red-700">
+                  You must be logged in to send review requests.
+                </div>
+              </div>
+            ) : adminError ? (
+              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
+                <div className="text-sm text-red-700">
+                  Failed to load admin users. Please refresh and try again.
+                </div>
+              </div>
+            ) : adminOptions.length === 0 && !isLoadingAdmins ? (
+              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <AlertCircle className="h-4 w-4 text-yellow-500 flex-shrink-0" />
+                <div className="text-sm text-yellow-700">
+                  No admin users available. Please contact support.
+                </div>
+              </div>
+            ) : (
+              <MultiSelect
+                options={adminOptions}
+                value={selectedAdmins}
+                onChange={setSelectedAdmins}
+                placeholder="Select admins to send documents to..."
+                loading={isLoadingAdmins}
+                disabled={isLoadingAdmins || isSubmitting}
+                maxSelections={10}
+                className="w-full"
+              />
+            )}
+            
+            {selectedAdmins.length > 0 && (
+              <div className="text-xs text-gray-500">
+                {selectedAdmins.length} admin{selectedAdmins.length !== 1 ? 's' : ''} selected
+              </div>
+            )}
+          </div>
+
           {/* Notes Section */}
           <div className="space-y-4">
             <label htmlFor="notes" className="text-sm font-medium text-gray-900">
@@ -115,30 +201,36 @@ export function SendDocumentModal({
             </label>
             <Textarea
               id="notes"
-              placeholder="Add any notes or instructions for Kavitha Mam..."
+              placeholder="Add any notes or instructions for verification..."
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              className="mt-1 min-h-[80px] sm:min-h-[100px] border border-gray-300 resize-none text-sm"
+              disabled={isSubmitting}
+              className="mt-1 min-h-[80px] sm:min-h-[100px] border border-gray-300 resize-none text-sm disabled:opacity-50"
               maxLength={500}
             />
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
               <span className="text-xs text-gray-500">
                 {notes.length}/500 characters
               </span>
-              <span className="text-xs text-gray-500">
-                {selectedCount} document{selectedCount !== 1 ? 's' : ''} selected
-              </span>
+              <div className="flex flex-col sm:flex-row gap-2 text-xs text-gray-500">
+                <span>
+                  {selectedCount} document{selectedCount !== 1 ? 's' : ''} selected
+                </span>
+                <span>
+                  {selectedAdmins.length} admin{selectedAdmins.length !== 1 ? 's' : ''} selected
+                </span>
+              </div>
             </div>
           </div>
 
         </div>
 
         {/* Action Buttons - Fixed at bottom */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t bg-white">
+        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t bg-white flex-shrink-0">
           <Button
             variant="outline"
             onClick={() => setIsOpen(false)}
-            disabled={isLoading}
+            disabled={isSubmitting}
             className="w-full sm:w-auto"
           >
             Cancel
@@ -146,17 +238,17 @@ export function SendDocumentModal({
           <Button
             onClick={handleSend}
             disabled={!canSend}
-            className="cursor-pointer bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+            className="cursor-pointer bg-blue-600 hover:bg-blue-700 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isLoading ? (
+            {isSubmitting ? (
               <>
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Sending...
+                Sending Review Requests...
               </>
             ) : (
               <>
                 <Send className="h-4 w-4 mr-2" />
-                Send {selectedCount} Document{selectedCount !== 1 ? 's' : ''}
+                Send {selectedCount} Document{selectedCount !== 1 ? 's' : ''} to {selectedAdmins.length} Admin{selectedAdmins.length !== 1 ? 's' : ''}
               </>
             )}
           </Button>

@@ -28,12 +28,27 @@ export interface AddDocumentResponse {
 export async function addDocument(data: AddDocumentRequest): Promise<AddDocumentResponse> {
   // Validate files on client side before sending
   data.files.forEach(file => {
-    if (file.type !== 'application/pdf') {
-      throw new Error(`File "${file.name}" is not a PDF file. Only PDF files are allowed.`);
+    const fileName = file.name.toLowerCase();
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+    
+    // Check file extension
+    const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+    if (!hasValidExtension) {
+      throw new Error(`File "${file.name}" has an unsupported extension. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
     }
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      throw new Error(`File "${file.name}" does not have a PDF extension. Only PDF files are allowed.`);
+    
+    // Check MIME type
+    const hasValidMimeType = allowedMimeTypes.includes(file.type);
+    if (!hasValidMimeType) {
+      throw new Error(`File "${file.name}" has an unsupported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
     }
+    
     if (file.size === 0) {
       throw new Error(`File "${file.name}" is empty. Please select a valid file.`);
     }

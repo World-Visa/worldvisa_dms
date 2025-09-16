@@ -26,12 +26,27 @@ export interface ReuploadDocumentResponse {
 
 export async function reuploadDocument(data: ReuploadDocumentRequest): Promise<ReuploadDocumentResponse> {
   // Validate file on client side before sending
-  if (data.file.type !== 'application/pdf') {
-    throw new Error(`File "${data.file.name}" is not a PDF file. Only PDF files are allowed.`);
+  const fileName = data.file.name.toLowerCase();
+  const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
+  const allowedMimeTypes = [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'text/plain'
+  ];
+  
+  // Check file extension
+  const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+  if (!hasValidExtension) {
+    throw new Error(`File "${data.file.name}" has an unsupported extension. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
   }
-  if (!data.file.name.toLowerCase().endsWith('.pdf')) {
-    throw new Error(`File "${data.file.name}" does not have a PDF extension. Only PDF files are allowed.`);
+  
+  // Check MIME type
+  const hasValidMimeType = allowedMimeTypes.includes(data.file.type);
+  if (!hasValidMimeType) {
+    throw new Error(`File "${data.file.name}" has an unsupported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
   }
+  
   if (data.file.size === 0) {
     throw new Error(`File "${data.file.name}" is empty. Please select a valid file.`);
   }

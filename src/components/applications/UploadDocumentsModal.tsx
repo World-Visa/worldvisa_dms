@@ -14,7 +14,7 @@ import { useAddDocument } from '@/hooks/useMutationsDocuments';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Upload, X } from 'lucide-react';
+import { Upload, X, FileText, File } from 'lucide-react';
 import Image from 'next/image';
 import { UploadDocumentsModalProps, UploadedFile, ApiDocument } from '@/types/documents';
 import { generateCompanyDescription } from '@/utils/dateCalculations';
@@ -86,14 +86,24 @@ export function UploadDocumentsModal({
     const validFiles = files.filter(file => {
       // Check file extension
       const fileName = file.name.toLowerCase();
-      if (!fileName.endsWith('.pdf')) {
-        toast.error(`${file.name} is not a PDF file. Only PDF files are allowed.`);
+      const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
+      const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+      
+      if (!hasValidExtension) {
+        toast.error(`${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
         return false;
       }
       
       // Check MIME type
-      if (file.type !== 'application/pdf') {
-        toast.error(`${file.name} is not a PDF file. Only PDF files are allowed.`);
+      const allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain'
+      ];
+      
+      if (!allowedMimeTypes.includes(file.type)) {
+        toast.error(`${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
         return false;
       }
       
@@ -394,17 +404,17 @@ export function UploadDocumentsModal({
               />
               <p className="text-sm text-muted-foreground mb-2">
                 {selectedDocumentType
-                  ? 'Drop your PDF files here, or click to browse'
+                  ? 'Drop your files (PDF, Word (.doc, .docx), and text (.txt)) here, or click to browse'
                   : 'Please select a document type first'}
               </p>
               <p className="text-xs text-muted-foreground">
-                <strong>PDF files only</strong> • Max file size 5MB per file
+                <strong>PDF, Word (.doc, .docx), and text (.txt) files</strong> • Max file size 5MB per file
               </p>
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,application/pdf"
+                accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                 onChange={handleFileSelect}
                 className="hidden"
                 disabled={!selectedDocumentType}
@@ -422,13 +432,25 @@ export function UploadDocumentsModal({
                     key={uploadedFile.id}
                     className="flex items-center gap-3 p-3 border rounded-lg"
                   >
-                    <Image
-                      src="/icons/pdf_small.svg"
-                      alt="PDF Icon"
-                      width={20}
-                      height={20}
-                      className="flex-shrink-0"
-                    />
+                    {(() => {
+                      const fileName = uploadedFile.file.name.toLowerCase();
+                      
+                      if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+                        return <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />;
+                      } else if (fileName.endsWith('.txt')) {
+                        return <File className="h-5 w-5 text-gray-600 flex-shrink-0" />;
+                      } else {
+                        return (
+                          <Image
+                            src="/icons/pdf_small.svg"
+                            alt="PDF Icon"
+                            width={20}
+                            height={20}
+                            className="flex-shrink-0"
+                          />
+                        );
+                      }
+                    })()}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
                         {uploadedFile.file.name}

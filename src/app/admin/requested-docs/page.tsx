@@ -1,10 +1,88 @@
 'use client';
 
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { FileText, Download, Eye, Clock } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { FileText, Eye, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { useRequestedDocumentsToMePaginated, useMyRequestedDocumentsPaginated } from '@/hooks/useRequestedDocuments';
+import { RequestedDocumentsTable } from '@/components/requested-documents/RequestedDocumentsTable';
+import { RequestedDocumentsFilters, RequestedDocumentsFilters as FiltersType } from '@/components/requested-documents/RequestedDocumentsFilters';
+import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
+import { RequestedDocument } from '@/lib/api/requestedDocuments';
 
 export default function RequestedDocsPage() {
+    const [activeTab, setActiveTab] = useState<'requested-to-me' | 'my-requests'>('requested-to-me');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [limit] = useState(10); // Fixed limit like ApplicationsTable
+    const [filters, setFilters] = useState<FiltersType>({
+        search: '',
+        status: '',
+        priority: '',
+        requestedBy: '',
+        requestedTo: ''
+    });
+
+    // Fetch data for both tabs with pagination
+    const { 
+        data: requestedToMeData, 
+        isLoading: isLoadingRequestedToMe, 
+        refetch: refetchRequestedToMe
+    } = useRequestedDocumentsToMePaginated(currentPage, limit, filters);
+
+    const { 
+        data: myRequestsData, 
+        isLoading: isLoadingMyRequests, 
+        refetch: refetchMyRequests
+    } = useMyRequestedDocumentsPaginated(currentPage, limit, filters);
+
+    // Get documents and pagination data (server-side filtering)
+    const requestedToMeDocuments = useMemo(() => requestedToMeData?.data || [], [requestedToMeData?.data]);
+    const myRequestsDocuments = useMemo(() => myRequestsData?.data || [], [myRequestsData?.data]);
+    const requestedToMePagination = requestedToMeData?.pagination;
+    const myRequestsPagination = myRequestsData?.pagination;
+
+    // Calculate stats from current page data
+    const stats = useMemo(() => {
+        return {
+            pendingRequests: requestedToMeDocuments.filter(doc => doc.requested_review.status === 'pending').length,
+            inProgress: requestedToMeDocuments.filter(doc => doc.status === 'reviewed').length,
+            completed: requestedToMeDocuments.filter(doc => doc.requested_review.status === 'approved').length,
+            overdue: requestedToMeDocuments.filter(doc => doc.isOverdue).length,
+            myPendingRequests: myRequestsDocuments.filter(doc => doc.requested_review.status === 'pending').length,
+            myCompletedRequests: myRequestsDocuments.filter(doc => doc.requested_review.status === 'approved').length
+        };
+    }, [requestedToMeDocuments, myRequestsDocuments]);
+
+    const handleViewDocument = (document: RequestedDocument) => {
+        if (document.document_link) {
+            window.open(document.document_link, '_blank');
+        }
+    };
+
+    const handleDownloadDocument = (document: RequestedDocument) => {
+        if (document.download_url) {
+            window.open(document.download_url, '_blank');
+        }
+    };
+
+    const handleRefresh = () => {
+        if (activeTab === 'requested-to-me') {
+            refetchRequestedToMe();
+        } else {
+            refetchMyRequests();
+        }
+    };
+
+    const handlePageChange = (page: number) => {
+        setCurrentPage(page);
+    };
+
+    const handleFiltersChange = (newFilters: FiltersType) => {
+        setFilters(newFilters);
+        setCurrentPage(1); 
+    };
+
+
     return (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
@@ -12,7 +90,7 @@ export default function RequestedDocsPage() {
                     Requested Documents
                 </h2>
                 <p className="text-gray-600">
-                    Manage and track document requests from clients.
+                    Manage and track document review requests.
                 </p>
             </div>
 
@@ -24,7 +102,7 @@ export default function RequestedDocsPage() {
                         <Clock className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">24</div>
+                        <div className="text-2xl font-bold">{stats.pendingRequests}</div>
                         <p className="text-xs text-muted-foreground">
                             Awaiting review
                         </p>
@@ -37,9 +115,9 @@ export default function RequestedDocsPage() {
                         <FileText className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">12</div>
+                        <div className="text-2xl font-bold">{stats.inProgress}</div>
                         <p className="text-xs text-muted-foreground">
-                            Being processed
+                            Being reviewed
                         </p>
                     </CardContent>
                 </Card>
@@ -47,12 +125,12 @@ export default function RequestedDocsPage() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                        <Download className="h-4 w-4 text-muted-foreground" />
+                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">156</div>
+                        <div className="text-2xl font-bold">{stats.completed}</div>
                         <p className="text-xs text-muted-foreground">
-                            This month
+                            Approved
                         </p>
                     </CardContent>
                 </Card>
@@ -60,10 +138,10 @@ export default function RequestedDocsPage() {
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-                        <Clock className="h-4 w-4 text-red-500" />
+                        <AlertTriangle className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-red-600">3</div>
+                        <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
                         <p className="text-xs text-muted-foreground">
                             Need attention
                         </p>
@@ -71,51 +149,85 @@ export default function RequestedDocsPage() {
                 </Card>
             </div>
 
-            {/* Document Requests Table */}
+            {/* Main Content */}
             <Card>
                 <CardHeader>
-                    <CardTitle>Recent Document Requests</CardTitle>
+                    <CardTitle>Document Review Requests</CardTitle>
                     <CardDescription>
-                        Latest document requests from clients
+                        Manage documents requested for review
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <div className="space-y-4">
-                        {/* Sample request items */}
-                        {[
-                            { id: 1, client: 'John Doe', document: 'Passport Copy', status: 'Pending', date: '2024-01-15' },
-                            { id: 2, client: 'Jane Smith', document: 'Visa Application', status: 'In Progress', date: '2024-01-14' },
-                            { id: 3, client: 'Mike Johnson', document: 'Travel Insurance', status: 'Completed', date: '2024-01-13' },
-                        ].map((request) => (
-                            <div key={request.id} className="flex items-center justify-between p-4 border rounded-lg">
-                                <div className="flex items-center space-x-4">
-                                    <FileText className="h-5 w-5 text-gray-400" />
-                                    <div>
-                                        <p className="font-medium">{request.document}</p>
-                                        <p className="text-sm text-gray-500">{request.client}</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center space-x-4">
-                                    <span className={`px-2 py-1 text-xs rounded-full ${
-                                        request.status === 'Completed' ? 'bg-green-100 text-green-800' :
-                                        request.status === 'In Progress' ? 'bg-blue-100 text-blue-800' :
-                                        'bg-yellow-100 text-yellow-800'
-                                    }`}>
-                                        {request.status}
-                                    </span>
-                                    <span className="text-sm text-gray-500">{request.date}</span>
-                                    <div className="flex space-x-2">
-                                        <Button variant="outline" size="sm">
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="outline" size="sm">
-                                            <Download className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+                        <TabsList className="grid w-full grid-cols-2 mb-6">
+                            <TabsTrigger value="requested-to-me" className="flex items-center gap-2">
+                                <Eye className="h-4 w-4" />
+                                Requested to Me ({requestedToMePagination?.totalItems || 0})
+                            </TabsTrigger>
+                            <TabsTrigger value="my-requests" className="flex items-center gap-2">
+                                <FileText className="h-4 w-4" />
+                                My Requests ({myRequestsPagination?.totalItems || 0})
+                            </TabsTrigger>
+                        </TabsList>
+
+                        <TabsContent value="requested-to-me" className="space-y-4">
+                            <RequestedDocumentsFilters
+                                filters={filters}
+                                onFiltersChange={handleFiltersChange}
+                                onRefresh={handleRefresh}
+                                isRefreshing={isLoadingRequestedToMe}
+                                totalCount={requestedToMePagination?.totalItems || 0}
+                                filteredCount={requestedToMeDocuments.length}
+                            />
+                            
+                            <RequestedDocumentsTable
+                                documents={requestedToMeDocuments}
+                                isLoading={isLoadingRequestedToMe}
+                                type="requested-to-me"
+                                onViewDocument={handleViewDocument}
+                                onDownloadDocument={handleDownloadDocument}
+                            />
+
+                            {/* Pagination */}
+                            {requestedToMePagination && (
+                                <ApplicationsPagination
+                                    currentPage={requestedToMePagination.currentPage}
+                                    totalRecords={requestedToMePagination.totalItems}
+                                    limit={limit}
+                                    onPageChange={handlePageChange}
+                                />
+                            )}
+                        </TabsContent>
+
+                        <TabsContent value="my-requests" className="space-y-4">
+                            <RequestedDocumentsFilters
+                                filters={filters}
+                                onFiltersChange={handleFiltersChange}
+                                onRefresh={handleRefresh}
+                                isRefreshing={isLoadingMyRequests}
+                                totalCount={myRequestsPagination?.totalItems || 0}
+                                filteredCount={myRequestsDocuments.length}
+                            />
+                            
+                            <RequestedDocumentsTable
+                                documents={myRequestsDocuments}
+                                isLoading={isLoadingMyRequests}
+                                type="my-requests"
+                                onViewDocument={handleViewDocument}
+                                onDownloadDocument={handleDownloadDocument}
+                            />
+
+                            {/* Pagination */}
+                            {myRequestsPagination && (
+                                <ApplicationsPagination
+                                    currentPage={myRequestsPagination.currentPage}
+                                    totalRecords={myRequestsPagination.totalItems}
+                                    limit={limit}
+                                    onPageChange={handlePageChange}
+                                />
+                            )}
+                        </TabsContent>
+                    </Tabs>
                 </CardContent>
             </Card>
         </main>

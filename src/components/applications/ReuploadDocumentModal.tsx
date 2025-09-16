@@ -13,7 +13,7 @@ import { Progress } from '@/components/ui/progress';
 import { useReuploadDocument } from '@/hooks/useReuploadDocument';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Upload, X, AlertCircle } from 'lucide-react';
+import { Upload, X, AlertCircle, FileText, File } from 'lucide-react';
 import { Document } from '@/types/applications';
 
 interface ReuploadDocumentModalProps {
@@ -64,15 +64,21 @@ export function ReuploadDocumentModal({
 
     const file = files[0];
 
-    // Validate file type
-    if (file.type !== 'application/pdf') {
-      toast.error(`${file.name} is not a PDF file. Only PDF files are allowed.`);
-      return;
-    }
-
-    // Validate file extension
-    if (!file.name.toLowerCase().endsWith('.pdf')) {
-      toast.error(`${file.name} does not have a PDF extension. Only PDF files are allowed.`);
+    // Validate file type and extension
+    const fileName = file.name.toLowerCase();
+    const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
+    const allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+    
+    const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
+    const hasValidMimeType = allowedMimeTypes.includes(file.type);
+    
+    if (!hasValidExtension || !hasValidMimeType) {
+      toast.error(`${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
       return;
     }
 
@@ -216,14 +222,19 @@ export function ReuploadDocumentModal({
             <div className="text-sm font-medium">Select new file to replace the rejected document:</div>
             
             <div
-              className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-gray-400 transition-colors"
+              className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                isUploading
+                  ? 'border-muted-foreground/25 bg-muted/25 cursor-not-allowed'
+                  : 'border-primary bg-primary/5 hover:bg-primary/10 cursor-pointer'
+              }`}
+              onClick={() => !isUploading && fileInputRef.current?.click()}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
             >
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf"
+                accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
                 onChange={handleFileSelect}
                 className="hidden"
                 disabled={isUploading}
@@ -231,59 +242,64 @@ export function ReuploadDocumentModal({
               
               <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-sm text-gray-600 mb-2">
-                Drag and drop a PDF file here, or{' '}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="text-blue-600 hover:text-blue-500 underline"
-                  disabled={isUploading}
-                >
-                  browse
-                </button>
+                {isUploading
+                  ? 'Uploading file...'
+                  : 'Drop your file here, or click to browse'}
               </p>
               <p className="text-xs text-gray-500">
-                Maximum file size: 5MB
+                <strong>PDF, Word (.doc, .docx), and text (.txt) files</strong> • Max file size 5MB
               </p>
             </div>
 
             {/* Uploaded File Display */}
             {uploadedFile && (
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-red-100 rounded flex items-center justify-center">
-                      <span className="text-xs text-red-600 font-medium">PDF</span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">
+              <div className="space-y-3">
+                <label className="text-sm font-medium">File to Upload</label>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-3 p-3 border rounded-lg">
+                    {(() => {
+                      const fileName = uploadedFile.file.name.toLowerCase();
+                      
+                      if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+                        return <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />;
+                      } else if (fileName.endsWith('.txt')) {
+                        return <File className="h-5 w-5 text-gray-600 flex-shrink-0" />;
+                      } else {
+                        return (
+                          <div className="w-5 h-5 bg-red-100 rounded flex items-center justify-center">
+                            <span className="text-xs text-red-600 font-medium">PDF</span>
+                          </div>
+                        );
+                      }
+                    })()}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium truncate">
                         {uploadedFile.file.name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
+                      {isUploading && (
+                        <div className="mt-2">
+                          <Progress value={uploadedFile.progress} className="h-2" />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {uploadedFile.progress}%
+                          </p>
+                        </div>
+                      )}
                     </div>
+                    {!isUploading && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={removeFile}
+                        className="h-8 w-8 p-0"
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={removeFile}
-                    disabled={isUploading}
-                    className="h-8 w-8 p-0 text-gray-400 hover:text-gray-600"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
-
-                {/* Progress Bar */}
-                {isUploading && (
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span>Uploading...</span>
-                      <span>{uploadedFile.progress}%</span>
-                    </div>
-                    <Progress value={uploadedFile.progress} className="w-full" />
-                  </div>
-                )}
               </div>
             )}
           </div>
