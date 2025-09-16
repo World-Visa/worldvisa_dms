@@ -300,38 +300,57 @@ const DocumentChecklistTableComponent = ({
     setSelectedCompany(undefined);
   }, []);
 
-  const handleReuploadModalClose = useCallback(() => {
-    setIsReuploadModalOpen(false);
-    setSelectedReuploadDocument(null);
-    setSelectedReuploadDocumentType('');
-    setSelectedReuploadDocumentCategory('');
-  }, []);
 
   const filterDocumentsByType = useCallback((documents: Document[], documentType: string, companyCategory?: string): Document[] => {
     const expectedDocType = documentType.toLowerCase().replace(/\s+/g, '_');
 
     return documents.filter(doc => {
+      if (!doc || !doc.file_name) return false;
+      
       let typeMatches = false;
       
-      if (doc.document_name && doc.document_name.toLowerCase() === expectedDocType) {
-        typeMatches = true;
+      // First, try to match by document_name field (API field) - same logic as dataProcessing.ts
+      const docTypeFromName = doc.document_name;
+      if (docTypeFromName) {
+        const normalizedDocName = docTypeFromName.toLowerCase().replace(/\s+/g, '_');
+        const normalizedExpectedType = expectedDocType.toLowerCase();
+        
+        // Exact match
+        if (normalizedDocName === normalizedExpectedType) {
+          typeMatches = true;
+        }
+        // Partial match - check if the document name contains the expected type
+        else if (normalizedDocName.includes(normalizedExpectedType) || normalizedExpectedType.includes(normalizedDocName)) {
+          typeMatches = true;
+        }
       }
+      
       // Fallback: try to match by document_type field
-      else if (doc.document_type && doc.document_type === expectedDocType) {
-        typeMatches = true;
+      if (!typeMatches && doc.document_type) {
+        const docTypeFromField = doc.document_type;
+        if (docTypeFromField && docTypeFromField === expectedDocType) {
+          typeMatches = true;
+        }
       }
+      
       // Fallback: try to match by filename
-      else {
+      if (!typeMatches) {
         const fileName = doc.file_name.toLowerCase();
         const docTypeName = documentType.toLowerCase();
         typeMatches = fileName.includes(docTypeName);
       }
 
-      if (!companyCategory) {
-        return typeMatches;
+      if (!typeMatches) {
+        return false;
       }
 
-      if (typeMatches && doc.document_category) {
+      // If no company category specified, return all matching documents
+      if (!companyCategory) {
+        return true;
+      }
+
+      // For company documents, check category match
+      if (doc.document_category) {
         // Map API category to display category for comparison
         const mappedDocCategory = mapCategoryLabel(doc.document_category);
         return mappedDocCategory === companyCategory;
@@ -349,7 +368,22 @@ const DocumentChecklistTableComponent = ({
     return latestDocumentsData?.data || fallbackDocuments || [];
   }, [queryClient, applicationId]);
 
+  const handleReuploadModalClose = useCallback(() => {
+    setIsReuploadModalOpen(false);
+    setSelectedReuploadDocument(null);
+    setSelectedReuploadDocumentType('');
+    setSelectedReuploadDocumentCategory('');
+    
+    // Refresh the document list modal if it's open to show the reuploaded document
+    if (isDocumentListModalOpen && selectedDocumentTypeForView) {
+      const latestDocuments = getLatestDocuments(documents || []);
+      const matchingDocuments = filterDocumentsByType(latestDocuments, selectedDocumentTypeForView, selectedCompanyCategoryForView);
+      setSelectedDocumentsForView(matchingDocuments);
+    }
+  }, [isDocumentListModalOpen, selectedDocumentTypeForView, selectedCompanyCategoryForView, getLatestDocuments, filterDocumentsByType, documents]);
+
   const handleViewDocuments = useCallback((documentType: string, companyCategory?: string) => {
+    // Always get the latest documents from the query cache to ensure we have reuploaded documents
     const latestDocuments = getLatestDocuments(documents || []);
     const matchingDocuments = filterDocumentsByType(latestDocuments, documentType, companyCategory);
 

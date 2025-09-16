@@ -69,6 +69,7 @@ export function AdminHeader() {
             case 'master_admin':
                 return allNavigationTabs;
             case 'admin':
+            case 'team_leader':
                 return adminNavigationTabs;
             default:
                 return adminNavigationTabs;
@@ -190,7 +191,8 @@ export function AdminHeader() {
                         </div>
                         <h1 className="text-sm sm:text-base font-semibold text-gray-900 hidden sm:block">
                             {
-                                user?.role === 'master_admin' ? '- Master Admin Portal' : '- Admin Portal'
+                                user?.role === 'master_admin' ? '- Master Admin Portal' : 
+                                user?.role === 'team_leader' ? '- Team Leader Portal' : '- Admin Portal'
                             }
                         </h1>
                     </div>

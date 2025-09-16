@@ -216,20 +216,36 @@ export function generateDefaultItems(
     const uploadedDoc = validDocuments.find(doc => {
       if (!doc || !doc.file_name) return false;
       
+      
       // First, try to match by document_name field (API field)
       const docTypeFromName = doc.document_name;
-      if (docTypeFromName && docTypeFromName.toLowerCase() === expectedDocType) {
-        // For company documents, also check category match
-        if (docType.category.includes('Documents') && 
-            !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
-          return doc.document_category === docType.category;
+      if (docTypeFromName) {
+        const normalizedDocName = docTypeFromName.toLowerCase().replace(/\s+/g, '_');
+        const normalizedExpectedType = expectedDocType.toLowerCase();
+        
+        // Exact match
+        if (normalizedDocName === normalizedExpectedType) {
+          // For company documents, also check category match
+          if (docType.category.includes('Documents') && 
+              !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
+            return doc.document_category === docType.category;
+          }
+          const docCategory = doc.document_category;
+          if (docCategory) {
+            const mappedCategory = mapCategoryLabel(docCategory);
+            return mappedCategory === docType.category;
+          }
+          return true;
         }
-        const docCategory = doc.document_category;
-        if (docCategory) {
-          const mappedCategory = mapCategoryLabel(docCategory);
-          return mappedCategory === docType.category;
+        
+        // Partial match - check if the document name contains the expected type
+        if (normalizedDocName.includes(normalizedExpectedType) || normalizedExpectedType.includes(normalizedDocName)) {
+          const docCategory = doc.document_category;
+          if (docCategory) {
+            const mappedCategory = mapCategoryLabel(docCategory);
+            return mappedCategory === docType.category;
+          }
         }
-        return true;
       }
       
       // Fallback: try to match by document_type field
@@ -334,7 +350,7 @@ export function generateSavedItems(
       
       // First, try to match by document_name field (API field)
       const docTypeFromName = doc.document_name;
-      if (docTypeFromName && docTypeFromName.toLowerCase() === expectedDocType) {
+      if (docTypeFromName && docTypeFromName.toLowerCase().replace(/\s+/g, '_') === expectedDocType) {
         // Check category match with mapping
         const docCategory = doc.document_category;
         if (docCategory) {

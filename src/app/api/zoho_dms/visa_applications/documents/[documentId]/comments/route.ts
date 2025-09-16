@@ -71,12 +71,14 @@ export async function GET(
     const role = getUserRole(token);
     const headerRole = request.headers.get("x-user-role");
 
-    // Check role from JWT token or custom header - allow admin, master_admin, and client
+    // Check role from JWT token or custom header - allow admin, team_leader, master_admin, and client
     const isAuthorized =
       role === "admin" ||
+      role === "team_leader" ||
       role === "master_admin" ||
       role === "client" ||
       headerRole === "admin" ||
+      headerRole === "team_leader" ||
       headerRole === "master_admin" ||
       headerRole === "client";
 
@@ -232,12 +234,14 @@ export async function POST(
     const role = getUserRole(token);
     const headerRole = request.headers.get("x-user-role");
 
-    // Check role from JWT token or custom header - allow admin, master_admin, and client
+    // Check role from JWT token or custom header - allow admin, team_leader, master_admin, and client
     const isAuthorized =
       role === "admin" ||
+      role === "team_leader" ||
       role === "master_admin" ||
       role === "client" ||
       headerRole === "admin" ||
+      headerRole === "team_leader" ||
       headerRole === "master_admin" ||
       headerRole === "client";
 
@@ -463,12 +467,14 @@ export async function DELETE(
     const role = getUserRole(token);
     const headerRole = request.headers.get("x-user-role");
 
-    // Check role from JWT token or custom header - allow admin, master_admin, and client
+    // Check role from JWT token or custom header - allow admin, team_leader, master_admin, and client
     const isAuthorized =
       role === "admin" ||
+      role === "team_leader" ||
       role === "master_admin" ||
       role === "client" ||
       headerRole === "admin" ||
+      headerRole === "team_leader" ||
       headerRole === "master_admin" ||
       headerRole === "client";
 

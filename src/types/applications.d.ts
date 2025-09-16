@@ -20,6 +20,7 @@ export interface Application {
   Service_Finalized?: string;
   Suggested_Anzsco?: string;
   Send_Check_List?: string;
+  Assessing_Authority?:string;
 }
 
 export interface Document {

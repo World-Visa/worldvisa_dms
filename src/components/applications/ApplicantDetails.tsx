@@ -175,12 +175,19 @@ export function ApplicantDetails({ application, isLoading, error, documents, isD
                                 </label>
                                 <p className="text-sm">{formatValue(application.Suggested_Anzsco || '')}</p>
                             </div>
-                            <div className="space-y-1">
+                            {/* <div className="space-y-1">
                                 <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                                     <FileText className="h-3 w-3" />
                                     Assessment Service
                                 </label>
                                 <p className="text-xs">{formatValue(application.Send_Check_List || '')}</p>
+                            </div> */}
+                            <div className='space-y-1'>
+                                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                                    <FileText className="h-3 w-3" />
+                                    Assessing Authority
+                                </label>
+                                <p className="text-xs">{formatValue(application.Assessing_Authority || '')}</p>
                             </div>
                         </div>
                     </div>
@@ -220,10 +227,10 @@ export function ApplicantDetails({ application, isLoading, error, documents, isD
             </Card>
 
             {/* Documents Summary */}
-            <DocumentsSummary 
-                documents={documents} 
-                isLoading={isDocumentsLoading} 
-                error={documentsError} 
+            <DocumentsSummary
+                documents={documents}
+                isLoading={isDocumentsLoading}
+                error={documentsError}
             />
         </div>
     );

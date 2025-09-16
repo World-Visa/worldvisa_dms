@@ -9,32 +9,47 @@ export function useAddDocument() {
   return useMutation({
     mutationFn: (data: AddDocumentRequest) => addDocument(data),
     onSuccess: (data, variables) => {
-      // Invalidate and refetch documents for this application
-      queryClient.invalidateQueries({
-        queryKey: ['application-documents', variables.applicationId],
+      // Invalidate all relevant queries to ensure UI updates properly
+      Promise.all([
+        // Admin view queries
+        queryClient.invalidateQueries({
+          queryKey: ['application-documents', variables.applicationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['application-documents-paginated', variables.applicationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['application-documents'],
+        }),
+        
+        // Client view queries
+        queryClient.invalidateQueries({
+          queryKey: ['client-documents'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['client-checklist', variables.applicationId],
+        }),
+        
+        // Application details
+        queryClient.invalidateQueries({
+          queryKey: ['application-details', variables.applicationId],
+        }),
+        
+        // Document comment counts
+        queryClient.invalidateQueries({
+          queryKey: ['document-comment-counts'],
+        }),
+        
+        // Checklist queries
+        queryClient.invalidateQueries({
+          queryKey: ['checklist', variables.applicationId],
+        }),
+      ]).then(() => {
+        toast.success('Document uploaded successfully');
+      }).catch((error) => {
+        console.error('Error invalidating queries after upload:', error);
+        toast.success('Document uploaded successfully');
       });
-      
-      // Also invalidate paginated documents queries
-      queryClient.invalidateQueries({
-        queryKey: ['application-documents-paginated', variables.applicationId],
-      });
-      
-      // Invalidate client documents cache to ensure client UI reflects the upload
-      queryClient.invalidateQueries({
-        queryKey: ['client-documents'],
-      });
-      
-      // Invalidate application details to refresh document counts
-      queryClient.invalidateQueries({
-        queryKey: ['application-details', variables.applicationId],
-      });
-      
-      // Force refetch the documents immediately
-      queryClient.refetchQueries({
-        queryKey: ['application-documents', variables.applicationId],
-      });
-      
-      toast.success('Document uploaded successfully');
     },
     onError: (error: Error) => {
       toast.error(`Failed to upload document: ${error.message}`);
@@ -48,29 +63,44 @@ export function useDeleteDocument() {
   return useMutation({
     mutationFn: (documentId: string) => deleteDocument(documentId),
     onSuccess: () => {
-      // Invalidate all application documents queries
-      queryClient.invalidateQueries({
-        queryKey: ['application-documents'],
+      // Invalidate all relevant queries to ensure UI updates properly
+      Promise.all([
+        // Admin view queries
+        queryClient.invalidateQueries({
+          queryKey: ['application-documents'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['application-documents-paginated'],
+        }),
+        
+        // Client view queries
+        queryClient.invalidateQueries({
+          queryKey: ['client-documents'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['client-checklist'],
+        }),
+        
+        // Application details
+        queryClient.invalidateQueries({
+          queryKey: ['application-details'],
+        }),
+        
+        // Document comment counts
+        queryClient.invalidateQueries({
+          queryKey: ['document-comment-counts'],
+        }),
+        
+        // Checklist queries
+        queryClient.invalidateQueries({
+          queryKey: ['checklist'],
+        }),
+      ]).then(() => {
+        toast.success('Document deleted successfully');
+      }).catch((error) => {
+        console.error('Error invalidating queries after deletion:', error);
+        toast.success('Document deleted successfully');
       });
-      // Also invalidate paginated documents queries
-      queryClient.invalidateQueries({
-        queryKey: ['application-documents-paginated'],
-      });
-      // Invalidate client documents cache to ensure client UI reflects the deletion
-      queryClient.invalidateQueries({
-        queryKey: ['client-documents'],
-      });
-      // Invalidate application details to refresh document counts
-      queryClient.invalidateQueries({
-        queryKey: ['application-details'],
-      });
-      
-      // Force refetch all application documents to ensure immediate update
-      queryClient.refetchQueries({
-        queryKey: ['application-documents'],
-      });
-      
-      toast.success('Document deleted successfully');
     },
     onError: (error: Error) => {
       console.error('Delete document error:', error);

@@ -67,7 +67,7 @@ export async function fetcher<T>(
                 const user = JSON.parse(userData);
                 if (user.role === 'client') {
                   redirectPath = '/client-login';
-                } else if (user.role === 'admin' || user.role === 'master_admin') {
+                } else if (user.role === 'admin' || user.role === 'team_leader' || user.role === 'master_admin') {
                   redirectPath = '/admin-login';
                 }
               } catch (error) {
