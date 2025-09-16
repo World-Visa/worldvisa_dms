@@ -61,7 +61,7 @@ export default function ApplicationDetailsPage() {
 
   // Check authentication
   useEffect(() => {
-    if (!isAuthLoading && (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'master_admin'))) {
+    if (!isAuthLoading && (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'team_leader' && user?.role !== 'master_admin'))) {
       router.push('/admin-login');
     }
   }, [isAuthenticated, isAuthLoading, user?.role, router]);
