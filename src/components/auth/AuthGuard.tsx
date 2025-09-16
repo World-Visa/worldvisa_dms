@@ -7,7 +7,7 @@ import { Loader2 } from 'lucide-react';
 
 interface AuthGuardProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'client' | 'master_admin';
+  requiredRole?: 'admin' | 'client' | 'master_admin' | 'team_leader';
   redirectTo?: string;
 }
 
@@ -37,12 +37,12 @@ export function AuthGuard({
       }
 
       if (requiredRole && user?.role !== requiredRole) {
-        // Check if user has access to admin pages (both admin and master_admin can access admin pages)
-        if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'master_admin')) {
-          // Allow access to admin pages for both admin and master_admin roles
+        // Check if user has access to admin pages (admin, team_leader, and master_admin can access admin pages)
+        if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin')) {
+          // Allow access to admin pages for admin, team_leader, and master_admin roles
         } else {
           // Redirect to appropriate dashboard based on user role
-          if (user?.role === 'admin') {
+          if (user?.role === 'admin' || user?.role === 'team_leader') {
             router.push('/admin/applications');
           } else if (user?.role === 'client') {
             router.push('/client/dashboard');
@@ -74,10 +74,10 @@ export function AuthGuard({
     return null;
   }
   
-  // Check role access - allow master_admin to access admin pages
+  // Check role access - allow admin, team_leader, and master_admin to access admin pages
   if (requiredRole && user?.role !== requiredRole) {
-    if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'master_admin')) {
-      // Allow access to admin pages for both admin and master_admin roles
+    if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin')) {
+      // Allow access to admin pages for admin, team_leader, and master_admin roles
     } else {
       return null;
     }

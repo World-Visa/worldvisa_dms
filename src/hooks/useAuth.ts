@@ -16,7 +16,7 @@ interface ClientLoginResponse {
   name?: string;
   email?: string;
   lead_id?: string;
-  role?: 'admin' | 'client' | 'master_admin';
+  role?: 'admin' | 'client' | 'master_admin' | 'team_leader';
 }
 
 interface AuthStore extends AuthState {
@@ -75,9 +75,7 @@ export const useAuth = create<AuthStore>()(
             if (typeof window !== 'undefined') {
               localStorage.setItem('user_data', JSON.stringify(user));
             }
-
-            console.log("user>>>>>>>>>>>", user)
-            
+                        
             set({
               user,
               token,

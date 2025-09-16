@@ -3,12 +3,12 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Eye, Clock, AlertTriangle, CheckCircle } from 'lucide-react';
+import { FileText, Eye } from 'lucide-react';
 import { useRequestedDocumentsToMePaginated, useMyRequestedDocumentsPaginated } from '@/hooks/useRequestedDocuments';
 import { RequestedDocumentsTable } from '@/components/requested-documents/RequestedDocumentsTable';
 import { RequestedDocumentsFilters, RequestedDocumentsFilters as FiltersType } from '@/components/requested-documents/RequestedDocumentsFilters';
+import { RequestedDocsStats } from '@/components/requested-documents/RequestedDocsStats';
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
-import { RequestedDocument } from '@/lib/api/requestedDocuments';
 
 export default function RequestedDocsPage() {
     const [activeTab, setActiveTab] = useState<'requested-to-me' | 'my-requests'>('requested-to-me');
@@ -45,25 +45,13 @@ export default function RequestedDocsPage() {
     const stats = useMemo(() => {
         return {
             pendingRequests: requestedToMeDocuments.filter(doc => doc.requested_review.status === 'pending').length,
-            inProgress: requestedToMeDocuments.filter(doc => doc.status === 'reviewed').length,
-            completed: requestedToMeDocuments.filter(doc => doc.requested_review.status === 'approved').length,
+            reviewedRequests: requestedToMeDocuments.filter(doc => doc.requested_review.status === 'approved').length,
             overdue: requestedToMeDocuments.filter(doc => doc.isOverdue).length,
             myPendingRequests: myRequestsDocuments.filter(doc => doc.requested_review.status === 'pending').length,
-            myCompletedRequests: myRequestsDocuments.filter(doc => doc.requested_review.status === 'approved').length
+            myReviewedRequests: myRequestsDocuments.filter(doc => doc.requested_review.status === 'approved').length
         };
     }, [requestedToMeDocuments, myRequestsDocuments]);
 
-    const handleViewDocument = (document: RequestedDocument) => {
-        if (document.document_link) {
-            window.open(document.document_link, '_blank');
-        }
-    };
-
-    const handleDownloadDocument = (document: RequestedDocument) => {
-        if (document.download_url) {
-            window.open(document.download_url, '_blank');
-        }
-    };
 
     const handleRefresh = () => {
         if (activeTab === 'requested-to-me') {
@@ -95,59 +83,11 @@ export default function RequestedDocsPage() {
             </div>
 
             {/* Stats Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Requests</CardTitle>
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.pendingRequests}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Awaiting review
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-                        <FileText className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.inProgress}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Being reviewed
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Completed</CardTitle>
-                        <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold">{stats.completed}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Approved
-                        </p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Overdue</CardTitle>
-                        <AlertTriangle className="h-4 w-4 text-red-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-red-600">{stats.overdue}</div>
-                        <p className="text-xs text-muted-foreground">
-                            Need attention
-                        </p>
-                    </CardContent>
-                </Card>
-            </div>
+            <RequestedDocsStats 
+                pendingRequests={stats.pendingRequests}
+                reviewedRequests={stats.reviewedRequests}
+                overdue={stats.overdue}
+            />
 
             {/* Main Content */}
             <Card>
@@ -159,12 +99,12 @@ export default function RequestedDocsPage() {
                 </CardHeader>
                 <CardContent>
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-                        <TabsList className="grid w-full grid-cols-2 mb-6">
-                            <TabsTrigger value="requested-to-me" className="flex items-center gap-2">
+                        <TabsList className="grid w-full grid-cols-2 h-12 mb-6">
+                            <TabsTrigger value="requested-to-me" className="flex h-10 items-center gap-2">
                                 <Eye className="h-4 w-4" />
                                 Requested to Me ({requestedToMePagination?.totalItems || 0})
                             </TabsTrigger>
-                            <TabsTrigger value="my-requests" className="flex items-center gap-2">
+                            <TabsTrigger value="my-requests" className="flex h-10 items-center gap-2">
                                 <FileText className="h-4 w-4" />
                                 My Requests ({myRequestsPagination?.totalItems || 0})
                             </TabsTrigger>
@@ -184,8 +124,6 @@ export default function RequestedDocsPage() {
                                 documents={requestedToMeDocuments}
                                 isLoading={isLoadingRequestedToMe}
                                 type="requested-to-me"
-                                onViewDocument={handleViewDocument}
-                                onDownloadDocument={handleDownloadDocument}
                             />
 
                             {/* Pagination */}
@@ -213,8 +151,6 @@ export default function RequestedDocsPage() {
                                 documents={myRequestsDocuments}
                                 isLoading={isLoadingMyRequests}
                                 type="my-requests"
-                                onViewDocument={handleViewDocument}
-                                onDownloadDocument={handleDownloadDocument}
                             />
 
                             {/* Pagination */}

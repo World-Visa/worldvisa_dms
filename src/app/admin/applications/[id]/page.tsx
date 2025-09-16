@@ -428,7 +428,7 @@ export default function ApplicationDetailsPage() {
           </div>
           <Skeleton className="h-96 w-full rounded-xl" />
         </div>
-      ) : !isAuthLoading && isAuthenticated && (user?.role === 'admin' || user?.role === 'master_admin') ? (
+      ) : !isAuthLoading && isAuthenticated && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin') ? (
         <div className="space-y-6">
           {/* Applicant Details */}
           <ApplicantDetails

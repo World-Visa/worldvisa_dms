@@ -49,7 +49,7 @@ export function isTokenExpired(token: string): boolean {
 }
 
 // Extract user role from token
-export function getUserRole(token: string): 'admin' | 'client' | 'master_admin' | null {
+export function getUserRole(token: string): 'admin' | 'client' | 'master_admin' | 'team_leader' | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.role || null;
