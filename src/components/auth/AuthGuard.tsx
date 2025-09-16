@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { Loader2 } from 'lucide-react';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { Loader2 } from "lucide-react";
 
 interface AuthGuardProps {
   children: React.ReactNode;
@@ -11,10 +11,10 @@ interface AuthGuardProps {
   redirectTo?: string;
 }
 
-export function AuthGuard({ 
-  children, 
-  requiredRole, 
-  redirectTo = '/portal' 
+export function AuthGuard({
+  children,
+  requiredRole,
+  redirectTo = "/portal",
 }: AuthGuardProps) {
   const { isAuthenticated, user, isLoading, checkAuth } = useAuth();
   const router = useRouter();
@@ -55,7 +55,15 @@ export function AuthGuard({
         }
       }
     }
-  }, [isAuthenticated, user, isLoading, isChecking, requiredRole, redirectTo, router]);
+  }, [
+    isAuthenticated,
+    user,
+    isLoading,
+    isChecking,
+    requiredRole,
+    redirectTo,
+    router,
+  ]);
 
   // Show loading spinner while checking authentication
   if (isChecking || isLoading) {
@@ -73,8 +81,8 @@ export function AuthGuard({
   if (!isAuthenticated) {
     return null;
   }
-  
-  // Check role access - allow admin, team_leader, and master_admin to access admin pages
+
+  // Check role access - allow master_admin to access admin pages
   if (requiredRole && user?.role !== requiredRole) {
     if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin')) {
       // Allow access to admin pages for admin, team_leader, and master_admin roles
