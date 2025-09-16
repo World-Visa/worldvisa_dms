@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import {
   useUpdateUserRole,
   useResetUserPassword,
+  useCreateUser,
 } from "@/hooks/useUserMutations";
 import { Toaster } from "@/components/ui/sonner";
 
@@ -41,6 +42,7 @@ function ManageUsers() {
     useUpdateUserRole();
   const { mutate: resetUserPassword, isPending: isResettingPassword } =
     useResetUserPassword();
+  const { mutate: createUser, isPending: isCreatingUser } = useCreateUser();
 
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
@@ -48,6 +50,8 @@ function ManageUsers() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [newUsername, setNewUsername] = useState("");
+  const [newUserRole, setNewUserRole] = useState("admin");
 
   const handleRoleChange = (username: string, newRole: string) => {
     updateUserRole({ username, newRole });
@@ -73,13 +77,96 @@ function ManageUsers() {
     }
   };
 
+  const handleCreateUser = () => {
+    if (!newUsername || !newPassword || newPassword !== confirmPassword) {
+      console.error("Invalid input or passwords do not match");
+      return;
+    }
+    createUser(
+      { username: newUsername, password: newPassword, role: newUserRole },
+      {
+        onSuccess: () => {
+          setNewUsername("");
+          setNewPassword("");
+          setConfirmPassword("");
+          setIsDialogOpen(false);
+        },
+      }
+    );
+  };
+
   if (isLoadingAdmins) return <div>Loading...</div>;
   if (adminError) return <div>Error loading users</div>;
 
   return (
     <div>
       <Toaster />
-      <h1>Manage Users</h1>
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogTrigger asChild>
+          <Button className="cursor-pointer">Add a New User</Button>
+        </DialogTrigger>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New User</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <Input
+              placeholder="Enter username"
+              value={newUsername}
+              onChange={(e) => setNewUsername(e.target.value)}
+            />
+            <div className="relative">
+              <Input
+                type={showNewPassword ? "text" : "password"}
+                placeholder="Enter password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3"
+                onClick={() => setShowNewPassword(!showNewPassword)}
+              >
+                {showNewPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+            <div className="relative">
+              <Input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+              />
+              <button
+                type="button"
+                className="absolute inset-y-0 right-0 flex items-center pr-3"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              >
+                {showConfirmPassword ? "Hide" : "Show"}
+              </button>
+            </div>
+            <Select defaultValue={newUserRole} onValueChange={setNewUserRole}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select role" />
+              </SelectTrigger>
+              <SelectContent className="font-medium">
+                <SelectItem className="font-semibold" value="master_admin">
+                  Master Admin
+                </SelectItem>
+                <SelectItem className="font-semibold" value="admin">
+                  Admin
+                </SelectItem>
+                <SelectItem className="font-semibold" value="team_leader">
+                  Team Leader
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <Button onClick={handleCreateUser} disabled={isCreatingUser}>
+              {isCreatingUser ? "Creating..." : "Create User"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <Table>
         <TableHeader>
           <TableRow>

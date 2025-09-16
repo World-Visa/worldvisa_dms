@@ -65,3 +65,33 @@ export function useResetUserPassword() {
     },
   });
 }
+
+// 3. Create User
+interface CreateUserPayload {
+  username: string;
+  password: string;
+  role: string;
+}
+
+const createUser = async (payload: CreateUserPayload) => {
+  return fetcher("http://localhost:3000/api/zoho_dms/users/signup", {
+    method: "POST",
+    body: JSON.stringify({
+      username: payload.username,
+      password: payload.password,
+      role: payload.role,
+    }),
+  });
+};
+
+export function useCreateUser() {
+  return useMutation({
+    mutationFn: createUser,
+    onSuccess: () => {
+      toast.success("User created successfully.");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to create user: ${error.message}`);
+    },
+  });
+}
