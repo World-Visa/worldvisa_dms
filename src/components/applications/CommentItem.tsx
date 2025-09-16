@@ -47,14 +47,14 @@ const CommentItem: React.FC<CommentItemProps> = ({
     // Determine if current user can delete this comment
     const canDelete = user && (
         // Admin can delete any comment
-        (user.role === 'admin' || user.role === 'master_admin') ||
+        (user.role === 'admin' || user.role === 'team_leader' || user.role === 'master_admin') ||
         // Client can only delete their own comments
         (user.role === 'client' && comment.added_by === user.username)
     );
     
     // Determine if this is a client comment (different UI)
     const isClientComment = user && user.role === 'client' && comment.added_by === user.username;
-    const isAdminComment = user && (user.role === 'admin' || user.role === 'master_admin') && comment.added_by === user.username;
+    const isAdminComment = user && (user.role === 'admin' || user.role === 'team_leader' || user.role === 'master_admin') && comment.added_by === user.username;
 
     return (
         <Card 
