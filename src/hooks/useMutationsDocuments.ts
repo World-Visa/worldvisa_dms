@@ -19,6 +19,9 @@ export function useAddDocument() {
           queryKey: ['application-documents-paginated', variables.applicationId],
         }),
         queryClient.invalidateQueries({
+          queryKey: ['application-documents-all', variables.applicationId],
+        }),
+        queryClient.invalidateQueries({
           queryKey: ['application-documents'],
         }),
         

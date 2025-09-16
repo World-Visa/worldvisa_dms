@@ -314,20 +314,31 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
             // Default mode: Show upload/view/reupload buttons
             <>
               {item.isUploaded && item.documentStatus !== 'rejected' && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const uploadedDoc = item.uploadedDocument as Document;
-                    const documentType = item.documentType || uploadedDoc?.document_type || 'Document';
-                    const category = item.category || uploadedDoc?.document_category || 'Other Documents';
-                    handleViewDocuments(documentType, category);
-                  }}
-                  className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
-                >
-                  <Eye className="h-3 w-3" />
-                  <span className="hidden sm:inline">View</span>
-                </Button>
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const uploadedDoc = item.uploadedDocument as Document;
+                      const documentType = item.documentType || uploadedDoc?.document_type || 'Document';
+                      const category = item.category || uploadedDoc?.document_category || 'Other Documents';
+                      handleViewDocuments(documentType, category);
+                    }}
+                    className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
+                  >
+                    <Eye className="h-3 w-3" />
+                    <span className="hidden sm:inline">View</span>
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleUploadClick(item.documentType, item.category)}
+                    className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
+                  >
+                    <Upload className="h-3 w-3" />
+                    <span className="hidden sm:inline">Upload</span>
+                  </Button>
+                </div>
               )}
               {item.isUploaded && item.documentStatus === 'rejected' && (
                 <div className="flex items-center gap-1">

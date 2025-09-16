@@ -9,7 +9,7 @@ import { DocumentChecklistTable } from '@/components/applications/DocumentCheckl
 import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
 import { AddCompanyDialog } from '@/components/applications/AddCompanyDialog';
 import { useApplicationDetails } from '@/hooks/useApplicationDetails';
-import { useApplicationDocuments } from '@/hooks/useApplicationDocuments';
+import { useApplicationDocuments, useAllApplicationDocuments } from '@/hooks/useApplicationDocuments';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, RefreshCw, CheckCircle } from 'lucide-react';
@@ -79,12 +79,20 @@ export default function ApplicationDetailsPage() {
     error: documentsError,
   } = useApplicationDocuments(applicationId);
 
+  // Fetch all documents for checklist matching (not paginated)
+  const {
+    data: allDocumentsData,
+    isLoading: isAllDocumentsLoading,
+    error: allDocumentsError,
+  } = useAllApplicationDocuments(applicationId);
+
   const application = applicationData?.data;
   const documents = documentsData?.data;
+  const allDocuments = allDocumentsData?.data; // All documents for checklist matching
 
    const checklistState = useChecklistState({
     applicationId,
-    documents,
+    documents: allDocuments, // Use all documents for checklist matching
     companies
   });
 
@@ -96,6 +104,7 @@ export default function ApplicationDetailsPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['application-details', applicationId] }),
         queryClient.invalidateQueries({ queryKey: ['application-documents', applicationId] }),
+        queryClient.invalidateQueries({ queryKey: ['application-documents-all', applicationId] }),
         queryClient.invalidateQueries({ queryKey: ['application-documents-paginated', applicationId] }),
         queryClient.invalidateQueries({ queryKey: ['checklist', applicationId] }),
         queryClient.invalidateQueries({ queryKey: ['document-comment-counts'] }),
@@ -386,7 +395,7 @@ export default function ApplicationDetailsPage() {
               <TooltipContent>
                 {areAllDocumentsApproved 
                   ? "All documents are approved. Ready for quality check."
-                  : "All submitted documents must be approved before pushing for quality check."
+                  : "All submitted documents must be reviewed before pushing for quality check."
                 }
               </TooltipContent>
             </Tooltip>
@@ -473,9 +482,9 @@ export default function ApplicationDetailsPage() {
               />
             ) : (
               <DocumentChecklistTable
-                documents={documents}
-                isLoading={isDocumentsLoading}
-                error={documentsError}
+                documents={allDocuments}
+                isLoading={isAllDocumentsLoading}
+                error={allDocumentsError}
                 applicationId={applicationId}
                 selectedCategory={selectedCategory}
                 companies={companies}

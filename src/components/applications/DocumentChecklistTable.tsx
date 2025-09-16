@@ -361,10 +361,11 @@ const DocumentChecklistTableComponent = ({
   }, []);
 
   const getLatestDocuments = useCallback((fallbackDocuments: Document[]): Document[] => {
+    // Use the all documents query to get all documents, not just paginated ones
     const latestDocumentsData = queryClient.getQueryData<{
       success: boolean;
       data: Document[]
-    }>(['application-documents', applicationId]);
+    }>(['application-documents-all', applicationId]);
     return latestDocumentsData?.data || fallbackDocuments || [];
   }, [queryClient, applicationId]);
 
@@ -416,7 +417,7 @@ const DocumentChecklistTableComponent = ({
     if (documents && documents.length > 0) {
       const timeoutId = setTimeout(() => {
         queryClient.invalidateQueries({
-          queryKey: ['application-documents', applicationId],
+          queryKey: ['application-documents-all', applicationId],
         });
       }, 50);
       
@@ -529,7 +530,7 @@ const DocumentChecklistTableComponent = ({
         isClientView={isClientView}
         onDocumentDeleted={() => {
           queryClient.refetchQueries({ 
-            queryKey: ['application-documents', applicationId] 
+            queryKey: ['application-documents-all', applicationId] 
           }).then(() => {
             const latestDocuments = getLatestDocuments(documents || []);
             const matchingDocuments = filterDocumentsByType(latestDocuments, selectedDocumentTypeForView, selectedCompanyCategoryForView);

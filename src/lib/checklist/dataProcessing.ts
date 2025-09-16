@@ -1,18 +1,18 @@
-import { 
-  IDENTITY_DOCUMENTS, 
-  EDUCATION_DOCUMENTS, 
-  OTHER_DOCUMENTS, 
-  COMPANY_DOCUMENTS
-} from '@/lib/documents/checklist';
-import { Document } from '@/types/applications';
-import { Company } from '@/types/documents';
+import {
+  IDENTITY_DOCUMENTS,
+  EDUCATION_DOCUMENTS,
+  OTHER_DOCUMENTS,
+  COMPANY_DOCUMENTS,
+} from "@/lib/documents/checklist";
+import { Document } from "@/types/applications";
+import { Company } from "@/types/documents";
 
-import type { 
-  ChecklistState, 
-  ChecklistDocument, 
-  DocumentRequirement, 
-  ChecklistItem 
-} from '@/types/checklist';
+import type {
+  ChecklistState,
+  ChecklistDocument,
+  DocumentRequirement,
+  ChecklistItem,
+} from "@/types/checklist";
 
 interface DocumentType {
   category: string;
@@ -39,23 +39,25 @@ export function generateAllDocumentTypes(
   checklistData?: { success: boolean; data: ChecklistItem[] }
 ): DocumentType[] {
   if (isClientView && checklistData?.data) {
-    return checklistData.data.map((item: {document_category: string; document_type: string}) => {
-      let categoryLabel = item.document_category;
-      if (item.document_category === 'Identity') {
-        categoryLabel = 'Identity Documents';
-      } else if (item.document_category === 'Education') {
-        categoryLabel = 'Education Documents';
-      } else if (item.document_category === 'Other') {
-        categoryLabel = 'Other Documents';
-      } else if (item.document_category === 'Company') {
-        categoryLabel = 'Company Documents';
+    return checklistData.data.map(
+      (item: { document_category: string; document_type: string }) => {
+        let categoryLabel = item.document_category;
+        if (item.document_category === "Identity") {
+          categoryLabel = "Identity Documents";
+        } else if (item.document_category === "Education") {
+          categoryLabel = "Education Documents";
+        } else if (item.document_category === "Other") {
+          categoryLabel = "Other Documents";
+        } else if (item.document_category === "Company") {
+          categoryLabel = "Company Documents";
+        }
+
+        return {
+          documentType: item.document_type,
+          category: categoryLabel,
+        };
       }
-      
-      return {
-        documentType: item.document_type,
-        category: categoryLabel
-      };
-    });
+    );
   }
 
   const baseDocuments = [
@@ -64,68 +66,76 @@ export function generateAllDocumentTypes(
     ...OTHER_DOCUMENTS,
   ];
 
-  const companyDocuments = companies.flatMap(company => 
-    COMPANY_DOCUMENTS.map(doc => ({
+  const companyDocuments = companies.flatMap((company) =>
+    COMPANY_DOCUMENTS.map((doc) => ({
       ...doc,
       category: company.category,
-      companyName: company.name
+      companyName: company.name,
     }))
   );
 
   return [...baseDocuments, ...companyDocuments];
 }
 
-export function extractCompaniesFromDocuments(documents: Document[]): Company[] {
+export function extractCompaniesFromDocuments(
+  documents: Document[]
+): Company[] {
   if (!documents || documents.length === 0) return [];
-  
+
   const companyCategories = new Set<string>();
-  documents.forEach(doc => {
-    if (doc.document_category && doc.document_category.includes('Company Documents')) {
+  documents.forEach((doc) => {
+    if (
+      doc.document_category &&
+      doc.document_category.includes("Company Documents")
+    ) {
       companyCategories.add(doc.document_category);
     }
   });
-  
-  return Array.from(companyCategories).map(category => {
-    const companyName = category.split(' ')[0].toLowerCase();
+
+  return Array.from(companyCategories).map((category) => {
+    const companyName = category.split(" ")[0].toLowerCase();
     return {
       name: companyName,
       category: category,
       fromDate: "2024-01",
-      toDate: "2025-12"
+      toDate: "2025-12",
     };
   });
 }
 
 export function mapCategoryLabel(category: string): string {
-  if (category === 'Identity') return 'Identity Documents';
-  if (category === 'Education') return 'Education Documents';
-  if (category === 'Other') return 'Other Documents';
-  if (category === 'Company') return 'Company Documents';
+  if (category === "Identity") return "Identity Documents";
+  if (category === "Education") return "Education Documents";
+  if (category === "Other") return "Other Documents";
+  if (category === "Company") return "Company Documents";
   return category;
 }
 
-export function matchesCategory(itemCategory: string, targetCategory: string): boolean {
+export function matchesCategory(
+  itemCategory: string,
+  targetCategory: string
+): boolean {
   const categoryLabel = mapCategoryLabel(itemCategory);
-  
-  if (targetCategory === 'company') {
-    return categoryLabel === 'Company Documents' || categoryLabel === 'Company';
+
+  if (targetCategory === "company") {
+    return categoryLabel === "Company Documents" || categoryLabel === "Company";
   }
-  
-  if (targetCategory.includes('Company Documents')) {
+
+  if (targetCategory.includes("Company Documents")) {
     return categoryLabel === targetCategory;
   }
-  
+
   switch (targetCategory) {
-    case 'identity':
-    case 'identity_documents':
-      return categoryLabel === 'Identity Documents';
-    case 'education':
-    case 'education_documents':
-      return categoryLabel === 'Education Documents';
-    case 'other':
-    case 'other_documents':
-      return categoryLabel === 'Other Documents';
-    case 'all':
+    case "identity":
+    case "identity_documents":
+      return categoryLabel === "Identity Documents";
+    case "education":
+    case "education_documents":
+      return categoryLabel === "Education Documents";
+    case "other":
+    case "other_documents":
+      return categoryLabel === "Other Documents";
+    case "all":
     default:
       return true;
   }
@@ -137,15 +147,17 @@ export function generateCreatingItems(
   requirementMap: Record<string, DocumentRequirement>,
   selectedDocuments: ChecklistDocument[]
 ): ChecklistTableItem[] {
-  if (checklistState !== 'creating') return [];
-  
+  if (checklistState !== "creating") return [];
+
   return filteredDocuments.map((docType: DocumentType) => {
     const key = `${docType.category}-${docType.documentType}`;
-    const requirement = requirementMap[key] || 'not_required';
-    const isSelected = selectedDocuments.some(doc => 
-      doc.category === docType.category && doc.documentType === docType.documentType
+    const requirement = requirementMap[key] || "not_required";
+    const isSelected = selectedDocuments.some(
+      (doc) =>
+        doc.category === docType.category &&
+        doc.documentType === docType.documentType
     );
-    
+
     return {
       category: docType.category,
       documentType: docType.documentType,
@@ -153,7 +165,7 @@ export function generateCreatingItems(
       uploadedDocument: undefined,
       requirement,
       isSelected,
-      company_name: docType.companyName
+      company_name: docType.companyName,
     };
   });
 }
@@ -162,11 +174,11 @@ export function generateEditingCurrentItems(
   checklistState: ChecklistState,
   currentChecklistDocuments: ChecklistDocument[]
 ): ChecklistTableItem[] {
-  if (checklistState !== 'editing') return [];
-  
+  if (checklistState !== "editing") return [];
+
   return currentChecklistDocuments.map((item: ChecklistDocument) => ({
     ...item,
-    category: mapCategoryLabel(item.category)
+    category: mapCategoryLabel(item.category),
   }));
 }
 
@@ -176,17 +188,20 @@ export function generateEditingAvailableItems(
   requirementMap: Record<string, DocumentRequirement>,
   pendingAdditions: ChecklistDocument[]
 ): ChecklistTableItem[] {
-  if (checklistState !== 'editing') return [];
-  
+  if (checklistState !== "editing") return [];
+
   return availableDocumentsForEditing.map((docType: DocumentType) => {
     const key = `${docType.category}-${docType.documentType}`;
-    
-    const pendingAddition = pendingAdditions.find(doc => 
-      doc.category === docType.category && doc.documentType === docType.documentType
+
+    const pendingAddition = pendingAdditions.find(
+      (doc) =>
+        doc.category === docType.category &&
+        doc.documentType === docType.documentType
     );
-    
-    const requirement = pendingAddition?.requirement || requirementMap[key] || 'not_required';
-    
+
+    const requirement =
+      pendingAddition?.requirement || requirementMap[key] || "not_required";
+
     return {
       category: docType.category,
       documentType: docType.documentType,
@@ -194,7 +209,7 @@ export function generateEditingAvailableItems(
       uploadedDocument: undefined,
       requirement: requirement as DocumentRequirement,
       isSelected: false,
-      company_name: docType.companyName
+      company_name: docType.companyName,
     };
   });
 }
@@ -204,31 +219,109 @@ export function generateDefaultItems(
   allDocumentTypes: DocumentType[],
   documents: Document[]
 ): ChecklistTableItem[] {
-  if (checklistState !== 'none') return [];
-  
-  const validDocuments = documents?.filter(doc => 
-    doc && typeof doc === 'object' && doc.file_name
-  ) || [];
-  
+  console.log("🚀 generateDefaultItems called with state:", checklistState);
+  if (checklistState !== "none") return [];
+
+  const validDocuments =
+    documents?.filter(
+      (doc) => doc && typeof doc === "object" && doc.file_name
+    ) || [];
+
+  // Debug: Log all available documents
+  console.log(
+    "📄 Available documents:",
+    validDocuments.map((doc) => ({
+      name: doc.document_name,
+      type: doc.document_type,
+      category: doc.document_category,
+      fileName: doc.file_name,
+    }))
+  );
+
   return allDocumentTypes.map((docType: DocumentType) => {
-    const expectedDocType = docType.documentType.toLowerCase().replace(/\s+/g, '_');
-    
-    const uploadedDoc = validDocuments.find(doc => {
+    const expectedDocType = docType.documentType
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    // Debug: Log all document types being processed
+    console.log(
+      "📋 Processing document type:",
+      docType.documentType,
+      "Category:",
+      docType.category
+    );
+
+    const uploadedDoc = validDocuments.find((doc) => {
       if (!doc || !doc.file_name) return false;
-      
-      
+
+      // Debug logging for promotion letters
+      if (docType.documentType.toLowerCase().includes("promotion")) {
+        console.log("🔍 Checking promotion letter match:", {
+          expectedDocType,
+          docTypeCategory: docType.category,
+          docName: doc.document_name,
+          docType: doc.document_type,
+          docCategory: doc.document_category,
+          fileName: doc.file_name,
+        });
+      }
+
       // First, try to match by document_name field (API field)
       const docTypeFromName = doc.document_name;
       if (docTypeFromName) {
-        const normalizedDocName = docTypeFromName.toLowerCase().replace(/\s+/g, '_');
+        const normalizedDocName = docTypeFromName
+          .toLowerCase()
+          .replace(/\s+/g, "_");
         const normalizedExpectedType = expectedDocType.toLowerCase();
-        
+
         // Exact match
         if (normalizedDocName === normalizedExpectedType) {
           // For company documents, also check category match
-          if (docType.category.includes('Documents') && 
-              !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
-            return doc.document_category === docType.category;
+          if (
+            docType.category.includes("Documents") &&
+            ![
+              "Identity Documents",
+              "Education Documents",
+              "Other Documents",
+            ].includes(docType.category)
+          ) {
+            // For company documents, use more flexible matching
+            const docCategory = doc.document_category;
+            if (docCategory) {
+              // Direct match
+              if (doc.document_category === docType.category) {
+                if (docType.documentType.toLowerCase().includes("promotion")) {
+                  console.log(
+                    "✅ Promotion letter matched by direct category match"
+                  );
+                }
+                return true;
+              }
+              // Check if both are company documents (more flexible)
+              if (
+                doc.document_category?.includes("Company") &&
+                docType.category.includes("Company")
+              ) {
+                if (docType.documentType.toLowerCase().includes("promotion")) {
+                  console.log(
+                    "✅ Promotion letter matched by flexible company match"
+                  );
+                }
+                return true;
+              }
+              // Check mapped category
+              const mappedCategory = mapCategoryLabel(docCategory);
+              if (mappedCategory === docType.category) {
+                if (docType.documentType.toLowerCase().includes("promotion")) {
+                  console.log("✅ Promotion letter matched by mapped category");
+                }
+                return true;
+              }
+            }
+            if (docType.documentType.toLowerCase().includes("promotion")) {
+              console.log("❌ Promotion letter category match failed");
+            }
+            return false;
           }
           const docCategory = doc.document_category;
           if (docCategory) {
@@ -237,24 +330,109 @@ export function generateDefaultItems(
           }
           return true;
         }
-        
+
         // Partial match - check if the document name contains the expected type
-        if (normalizedDocName.includes(normalizedExpectedType) || normalizedExpectedType.includes(normalizedDocName)) {
+        if (
+          normalizedDocName.includes(normalizedExpectedType) ||
+          normalizedExpectedType.includes(normalizedDocName)
+        ) {
           const docCategory = doc.document_category;
           if (docCategory) {
+            // For company documents, use more flexible matching
+            if (
+              docType.category.includes("Documents") &&
+              ![
+                "Identity Documents",
+                "Education Documents",
+                "Other Documents",
+              ].includes(docType.category)
+            ) {
+              // Direct match
+              if (doc.document_category === docType.category) {
+                if (docType.documentType.toLowerCase().includes("promotion")) {
+                  console.log(
+                    "✅ Promotion letter matched by partial name + direct category"
+                  );
+                }
+                return true;
+              }
+              // Check if both are company documents (more flexible)
+              if (
+                doc.document_category?.includes("Company") &&
+                docType.category.includes("Company")
+              ) {
+                if (docType.documentType.toLowerCase().includes("promotion")) {
+                  console.log(
+                    "✅ Promotion letter matched by partial name + flexible company"
+                  );
+                }
+                return true;
+              }
+              // Check mapped category
+              const mappedCategory = mapCategoryLabel(docCategory);
+              if (mappedCategory === docType.category) {
+                if (docType.documentType.toLowerCase().includes("promotion")) {
+                  console.log(
+                    "✅ Promotion letter matched by partial name + mapped category"
+                  );
+                }
+                return true;
+              }
+            }
             const mappedCategory = mapCategoryLabel(docCategory);
             return mappedCategory === docType.category;
           }
         }
       }
-      
+
       // Fallback: try to match by document_type field
       const docTypeFromField = doc.document_type;
       if (docTypeFromField && docTypeFromField === expectedDocType) {
         // For company documents, also check category match
-        if (docType.category.includes('Documents') && 
-            !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
-          return doc.document_category === docType.category;
+        if (
+          docType.category.includes("Documents") &&
+          ![
+            "Identity Documents",
+            "Education Documents",
+            "Other Documents",
+          ].includes(docType.category)
+        ) {
+          // For company documents, use more flexible matching
+          const docCategory = doc.document_category;
+          if (docCategory) {
+            // Direct match
+            if (doc.document_category === docType.category) {
+              if (docType.documentType.toLowerCase().includes("promotion")) {
+                console.log(
+                  "✅ Promotion letter matched by document_type + direct category"
+                );
+              }
+              return true;
+            }
+            // Check if both are company documents (more flexible)
+            if (
+              doc.document_category?.includes("Company") &&
+              docType.category.includes("Company")
+            ) {
+              if (docType.documentType.toLowerCase().includes("promotion")) {
+                console.log(
+                  "✅ Promotion letter matched by document_type + flexible company"
+                );
+              }
+              return true;
+            }
+            // Check mapped category
+            const mappedCategory = mapCategoryLabel(docCategory);
+            if (mappedCategory === docType.category) {
+              if (docType.documentType.toLowerCase().includes("promotion")) {
+                console.log(
+                  "✅ Promotion letter matched by document_type + mapped category"
+                );
+              }
+              return true;
+            }
+          }
+          return false;
         }
         // For standard documents, check if category matches (with mapping)
         const docCategory = doc.document_category;
@@ -264,17 +442,58 @@ export function generateDefaultItems(
         }
         return true;
       }
-      
+
       // Fallback: try to match by filename
       const fileName = doc.file_name.toLowerCase();
       const docTypeName = docType.documentType.toLowerCase();
       const fileNameMatch = fileName.includes(docTypeName);
-      
+
       if (fileNameMatch) {
         // For company documents, also check category match
-        if (docType.category.includes('Documents') && 
-            !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
-          return doc.document_category === docType.category;
+        if (
+          docType.category.includes("Documents") &&
+          ![
+            "Identity Documents",
+            "Education Documents",
+            "Other Documents",
+          ].includes(docType.category)
+        ) {
+          // For company documents, use more flexible matching
+          const docCategory = doc.document_category;
+          if (docCategory) {
+            // Direct match
+            if (doc.document_category === docType.category) {
+              if (docType.documentType.toLowerCase().includes("promotion")) {
+                console.log(
+                  "✅ Promotion letter matched by filename + direct category"
+                );
+              }
+              return true;
+            }
+            // Check if both are company documents (more flexible)
+            if (
+              doc.document_category?.includes("Company") &&
+              docType.category.includes("Company")
+            ) {
+              if (docType.documentType.toLowerCase().includes("promotion")) {
+                console.log(
+                  "✅ Promotion letter matched by filename + flexible company"
+                );
+              }
+              return true;
+            }
+            // Check mapped category
+            const mappedCategory = mapCategoryLabel(docCategory);
+            if (mappedCategory === docType.category) {
+              if (docType.documentType.toLowerCase().includes("promotion")) {
+                console.log(
+                  "✅ Promotion letter matched by filename + mapped category"
+                );
+              }
+              return true;
+            }
+          }
+          return false;
         }
         // For standard documents, check if category matches (with mapping)
         const docCategory = doc.document_category;
@@ -284,10 +503,64 @@ export function generateDefaultItems(
         }
         return true;
       }
-      
+
+      // Special case for promotion letters - try more aggressive matching
+      if (docType.documentType.toLowerCase().includes("promotion")) {
+        console.log("🔍 Trying aggressive promotion letter matching...");
+
+        // Check if the document name or filename contains "promotion"
+        const docNameContainsPromotion =
+          doc.document_name?.toLowerCase().includes("promotion") ||
+          doc.file_name.toLowerCase().includes("promotion");
+
+        if (docNameContainsPromotion) {
+          // For company documents, check if both are company-related
+          if (
+            docType.category.includes("Documents") &&
+            ![
+              "Identity Documents",
+              "Education Documents",
+              "Other Documents",
+            ].includes(docType.category)
+          ) {
+            const docCategory = doc.document_category;
+            if (docCategory) {
+              // Direct match
+              if (doc.document_category === docType.category) {
+                console.log(
+                  "✅ Promotion letter matched by aggressive direct category match"
+                );
+                return true;
+              }
+              // Check if both are company documents (more flexible)
+              if (
+                doc.document_category?.includes("Company") &&
+                docType.category.includes("Company")
+              ) {
+                console.log(
+                  "✅ Promotion letter matched by aggressive flexible company match"
+                );
+                return true;
+              }
+              // Check mapped category
+              const mappedCategory = mapCategoryLabel(docCategory);
+              if (mappedCategory === docType.category) {
+                console.log(
+                  "✅ Promotion letter matched by aggressive mapped category"
+                );
+                return true;
+              }
+            }
+          }
+        }
+
+        console.log(
+          "❌ Promotion letter no match found even with aggressive matching"
+        );
+      }
       return false;
     });
-    
+
     return {
       category: docType.category,
       documentType: docType.documentType,
@@ -306,96 +579,246 @@ export function generateSavedItems(
   selectedCategory: string,
   extractedCompanies: Company[]
 ): ChecklistTableItem[] {
-  if (checklistState !== 'saved' || !checklistData?.data || !Array.isArray(checklistData.data)) {
+  if (
+    checklistState !== "saved" ||
+    !checklistData?.data ||
+    !Array.isArray(checklistData.data)
+  ) {
     return [];
   }
-  
+
   let currentCompanyForSavedItems = null;
-  
-  if (selectedCategory === 'company') {
+
+  if (selectedCategory === "company") {
     currentCompanyForSavedItems = null;
-  } else if (selectedCategory.includes('company_documents')) {
+  } else if (selectedCategory.includes("company_documents")) {
     const categoryLabel = selectedCategory
-      .split('_')
+      .split("_")
       .map((word, index) => {
         if (index === 0) return word.toLowerCase();
         return word.charAt(0).toUpperCase() + word.slice(1);
       })
-      .join(' ');
-    
+      .join(" ");
+
     if (extractedCompanies.length === 0) {
       currentCompanyForSavedItems = null;
     } else {
-      currentCompanyForSavedItems = extractedCompanies.find(company => company.category === categoryLabel);
+      currentCompanyForSavedItems = extractedCompanies.find(
+        (company) => company.category === categoryLabel
+      );
     }
   }
 
-  const validDocuments = documents?.filter(doc => 
-    doc && typeof doc === 'object' && doc.file_name
-  ) || [];
-  
+  const validDocuments =
+    documents?.filter(
+      (doc) => doc && typeof doc === "object" && doc.file_name
+    ) || [];
+
+
   return checklistData.data.map((checklistItem: ChecklistItem) => {
-    let categoryLabel = mapCategoryLabel(checklistItem.document_category);
     
-    if ((checklistItem.document_category === 'Company' || 
-         checklistItem.document_category === 'Company Documents' || 
-         categoryLabel === 'Company Documents') && currentCompanyForSavedItems) {
+    
+    // Special debug for promotion letters
+    if (checklistItem.document_type.toLowerCase().includes("promotion")) {
+      console.log("🎯 PROMOTION LETTER CHECKLIST ITEM FOUND:", checklistItem);
+    }
+
+    let categoryLabel = mapCategoryLabel(checklistItem.document_category);
+
+    if (
+      (checklistItem.document_category === "Company" ||
+        checklistItem.document_category === "Company Documents" ||
+        categoryLabel === "Company Documents") &&
+      currentCompanyForSavedItems
+    ) {
       categoryLabel = currentCompanyForSavedItems.category;
     }
-    
-    const expectedDocType = checklistItem.document_type.toLowerCase().replace(/\s+/g, '_');
-    
-    const uploadedDoc = validDocuments.find(doc => {
+
+    const expectedDocType = checklistItem.document_type
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    const uploadedDoc = validDocuments.find((doc) => {
       if (!doc || !doc.file_name) return false;
-      
-      // First, try to match by document_name field (API field)
-      const docTypeFromName = doc.document_name;
-      if (docTypeFromName && docTypeFromName.toLowerCase().replace(/\s+/g, '_') === expectedDocType) {
+
+      // Debug logging for promotion letters in generateSavedItems
+      if (checklistItem.document_type.toLowerCase().includes("promotion")) {
+        console.log(
+          "🔍 Checking promotion letter match in generateSavedItems:",
+          {
+            expectedDocType,
+            categoryLabel,
+            docName: doc.document_name,
+            docType: doc.document_type,
+            docCategory: doc.document_category,
+            fileName: doc.file_name,
+          }
+        );
+      }
+
+       // First, try to match by document_name field (API field)
+       const docTypeFromName = doc.document_name;
+       if (docTypeFromName) {
+         const normalizedDocName = docTypeFromName.toLowerCase().replace(/\s+/g, "_");
+         console.log('🔍 Document name comparison:', {
+           normalizedDocName,
+           expectedDocType,
+           match: normalizedDocName === expectedDocType
+         });
+       }
+       if (
+         docTypeFromName &&
+         docTypeFromName.toLowerCase().replace(/\s+/g, "_") === expectedDocType
+       ) {
         // Check category match with mapping
         const docCategory = doc.document_category;
         if (docCategory) {
+          // Direct match
+          if (doc.document_category === categoryLabel) return true;
+          // For company documents, use more flexible matching
+          if (
+            categoryLabel.includes("Company") &&
+            doc.document_category?.includes("Company")
+          )
+            return true;
+          // Check mapped category
           const mappedCategory = mapCategoryLabel(docCategory);
           return mappedCategory === categoryLabel;
         }
         return true;
-      }
-      
-      // Fallback: try to match by document_type field
-      const docTypeFromField = doc.document_type;
-      if (docTypeFromField && docTypeFromField === expectedDocType) {
-        // Check category match with mapping
-        const docCategory = doc.document_category;
-        if (docCategory) {
-          const mappedCategory = mapCategoryLabel(docCategory);
-          return mappedCategory === categoryLabel;
-        }
-        return true;
-      }
-      
+       }
+
+       // Fallback: try to match by document_type field
+       const docTypeFromField = doc.document_type;
+       console.log('🔍 Document type comparison:', {
+         docTypeFromField,
+         expectedDocType,
+         match: docTypeFromField === expectedDocType
+       });
+       if (docTypeFromField && docTypeFromField === expectedDocType) {
+         // Check category match with mapping
+         const docCategory = doc.document_category;
+         if (docCategory) {
+           // Direct match
+           if (doc.document_category === categoryLabel) return true;
+           // For company documents, use more flexible matching
+           if (
+             categoryLabel.includes("Company") &&
+             doc.document_category?.includes("Company")
+           )
+             return true;
+           // Check mapped category
+           const mappedCategory = mapCategoryLabel(docCategory);
+           return mappedCategory === categoryLabel;
+         }
+         return true;
+       }
+
       // Fallback: try to match by filename
       const fileName = doc.file_name.toLowerCase();
       const docTypeName = checklistItem.document_type.toLowerCase();
       const fileNameMatch = fileName.includes(docTypeName);
-      
+
       if (fileNameMatch) {
         // Check category match with mapping
         const docCategory = doc.document_category;
         if (docCategory) {
+          // Direct match
+          if (doc.document_category === categoryLabel) return true;
+          // For company documents, use more flexible matching
+          if (
+            categoryLabel.includes("Company") &&
+            doc.document_category?.includes("Company")
+          )
+            return true;
+          // Check mapped category
           const mappedCategory = mapCategoryLabel(docCategory);
           return mappedCategory === categoryLabel;
         }
         return true;
       }
-      
+
+       // Special case for promotion letters - try more aggressive matching
+       if (checklistItem.document_type.toLowerCase().includes("promotion")) {
+         console.log(
+           "🔍 Trying aggressive promotion letter matching in generateSavedItems..."
+         );
+         console.log("🔍 Document being checked:", {
+           docName: doc.document_name,
+           docType: doc.document_type,
+           docCategory: doc.document_category,
+           fileName: doc.file_name,
+         });
+
+         // Check if the document name or filename contains "promotion"
+         const docNameContainsPromotion =
+           doc.document_name?.toLowerCase().includes("promotion") ||
+           doc.file_name.toLowerCase().includes("promotion");
+
+         console.log(
+           '🔍 Does document contain "promotion"?',
+           docNameContainsPromotion
+         );
+
+         if (docNameContainsPromotion) {
+           // For company documents, check if both are company-related
+           if (categoryLabel.includes("Company")) {
+             const docCategory = doc.document_category;
+             if (docCategory) {
+               // Direct match
+               if (doc.document_category === categoryLabel) {
+                 console.log(
+                   "✅ Promotion letter matched by aggressive direct category match in generateSavedItems"
+                 );
+                 return true;
+               }
+               // Check if both are company documents (more flexible)
+               if (
+                 doc.document_category?.includes("Company") &&
+                 categoryLabel.includes("Company")
+               ) {
+                 console.log(
+                   "✅ Promotion letter matched by aggressive flexible company match in generateSavedItems"
+                 );
+                 return true;
+               }
+               // Check mapped category
+               const mappedCategory = mapCategoryLabel(docCategory);
+               if (mappedCategory === categoryLabel) {
+                 console.log(
+                   "✅ Promotion letter matched by aggressive mapped category in generateSavedItems"
+                 );
+                 return true;
+               }
+             }
+           }
+         }
+
+         // ULTIMATE FALLBACK: If it's a promotion letter and company document, just match it
+         if (checklistItem.document_type.toLowerCase() === "promotion_letters" && 
+             doc.document_type === "promotion_letters" &&
+             categoryLabel.includes("Company") && 
+             doc.document_category?.includes("Company")) {
+           console.log("🚨 ULTIMATE FALLBACK: Promotion letter matched by type and company");
+           return true;
+         }
+
+         console.log(
+           "❌ Promotion letter no match found even with aggressive matching in generateSavedItems"
+         );
+       }
+
       return false;
     });
-    
+
     return {
       category: categoryLabel,
       documentType: checklistItem.document_type,
       isUploaded: !!uploadedDoc,
       uploadedDocument: uploadedDoc,
-      requirement: (checklistItem.required ? 'mandatory' : 'optional') as DocumentRequirement,
+      requirement: (checklistItem.required
+        ? "mandatory"
+        : "optional") as DocumentRequirement,
       checklist_id: checklistItem.checklist_id,
       rejectedRemark: uploadedDoc?.reject_message,
       documentStatus: uploadedDoc?.status,
@@ -408,57 +831,71 @@ export function filterItemsByCategory(
   selectedCategory: string
 ): ChecklistTableItem[] {
   // Handle company documents
-  if (selectedCategory === 'company') {
-    return checklistItems.filter(item => 
-      item.category === 'Company Documents' || item.category === 'Company'
+  if (selectedCategory === "company") {
+    return checklistItems.filter(
+      (item) =>
+        item.category === "Company Documents" || item.category === "Company"
     );
   }
-  
+
   // Handle dynamic company documents (with company names)
-  if (selectedCategory.includes('company_documents')) {
+  if (selectedCategory.includes("company_documents")) {
     const categoryLabel = selectedCategory
-      .split('_')
+      .split("_")
       .map((word, index) => {
         if (index === 0) return word.toLowerCase();
         return word.charAt(0).toUpperCase() + word.slice(1);
       })
-      .join(' ');
-    
-    return checklistItems.filter(item => 
-      item.category === categoryLabel || item.category === 'Company Documents' || item.category === 'Company'
+      .join(" ");
+
+    return checklistItems.filter(
+      (item) =>
+        item.category === categoryLabel ||
+        item.category === "Company Documents" ||
+        item.category === "Company"
     );
   }
-  
+
   switch (selectedCategory) {
-    case 'identity':
-    case 'identity_documents':
-      return checklistItems.filter(item => item.category === 'Identity Documents');
-    case 'education':
-    case 'education_documents':
-      return checklistItems.filter(item => item.category === 'Education Documents');
-    case 'other':
-    case 'other_documents':
-      return checklistItems.filter(item => item.category === 'Other Documents');
-    case 'all':
+    case "identity":
+    case "identity_documents":
+      return checklistItems.filter(
+        (item) => item.category === "Identity Documents"
+      );
+    case "education":
+    case "education_documents":
+      return checklistItems.filter(
+        (item) => item.category === "Education Documents"
+      );
+    case "other":
+    case "other_documents":
+      return checklistItems.filter(
+        (item) => item.category === "Other Documents"
+      );
+    case "all":
     default:
       return checklistItems;
   }
 }
 
 export function getCategoryBadgeStyle(category: string): string {
-  if (category.endsWith(' Documents') && 
-      !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
-    return 'bg-orange-500 hover:bg-orange-600'; // Company documents
+  if (
+    category.endsWith(" Documents") &&
+    !["Identity Documents", "Education Documents", "Other Documents"].includes(
+      category
+    )
+  ) {
+    return "bg-orange-500 hover:bg-orange-600"; // Company documents
   }
-  
+
   switch (category) {
-    case 'Identity Documents':
-      return 'bg-blue-500 hover:bg-blue-600';
-    case 'Education Documents':
-      return 'bg-green-500 hover:bg-green-600';
-    case 'Other Documents':
-      return 'bg-purple-500 hover:bg-purple-600';
+    case "Identity Documents":
+      return "bg-blue-500 hover:bg-blue-600";
+    case "Education Documents":
+      return "bg-green-500 hover:bg-green-600";
+    case "Other Documents":
+      return "bg-purple-500 hover:bg-purple-600";
     default:
-      return 'bg-gray-500 hover:bg-gray-600';
+      return "bg-gray-500 hover:bg-gray-600";
   }
 }
