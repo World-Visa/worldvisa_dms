@@ -25,15 +25,18 @@ export async function GET(request: NextRequest) {
     // Verify user role (allow both admin and client for real-time updates)
     const jwtRole = getUserRole(token);
     const headerRole = request.headers.get("x-user-role");
-    // Check role from JWT token, URL parameter, or custom header - allow admin, master_admin, and client
+    // Check role from JWT token, URL parameter, or custom header - allow admin, team_leader, master_admin, and client
     const isAuthorized =
       jwtRole === "admin" ||
+      jwtRole === "team_leader" ||
       jwtRole === "master_admin" ||
       jwtRole === "client" ||
       role === "admin" ||
+      role === "team_leader" ||
       role === "master_admin" ||
       role === "client" ||
       headerRole === "admin" ||
+      headerRole === "team_leader" ||
       headerRole === "master_admin" ||
       headerRole === "client";
 
