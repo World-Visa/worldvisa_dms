@@ -4,11 +4,12 @@ import React, { memo } from 'react';
 import { TableRow, TableCell } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Eye, Upload, Plus, Check } from 'lucide-react';
+import { FileText, Eye, Upload, Plus, Check, MessageCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { HighlightText } from '@/components/ui/HighlightText';
 import { RequirementSelector } from './RequirementSelector';
 import { RejectionMessageDisplay } from '../RejectionMessageDisplay';
+import { CommentIcon } from '../CommentIcon';
 import type { ChecklistState, ChecklistDocument, DocumentRequirement } from '@/types/checklist';
 import { Document } from '@/types/applications';
 
@@ -60,6 +61,8 @@ interface ChecklistTableRowProps {
   // Success states
   isDocumentAdded?: boolean;
   addedDocumentId?: string;
+  // Comment counts
+  commentCounts?: Record<string, number>;
 }
 
 export const ChecklistTableRow = memo(function ChecklistTableRow({
@@ -82,7 +85,9 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   addingDocumentId,
   // Success states
   isDocumentAdded = false,
-  addedDocumentId
+  addedDocumentId,
+  // Comment counts
+  commentCounts = {}
 }: ChecklistTableRowProps) {
   return (
     <TableRow key={`${item.category}-${item.documentType}-${item.checklist_id || 'new'}-${index}`}>
@@ -220,6 +225,20 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
             </div>
           )}
         </div>
+      </TableCell>
+      <TableCell className="w-20">
+        {item.isUploaded && item.uploadedDocument ? (
+          <CommentIcon 
+            documentId={(item.uploadedDocument as Document)._id}
+            commentCount={commentCounts[(item.uploadedDocument as Document)._id] || 0}
+            size="sm"
+          />
+        ) : (
+          <div className="flex items-center gap-1">
+            <MessageCircle className="h-3 w-3 text-muted-foreground" />
+            <span className="text-xs text-muted-foreground">0</span>
+          </div>
+        )}
       </TableCell>
       <TableCell className="text-right w-24">
         <div className="flex items-center justify-end gap-1">

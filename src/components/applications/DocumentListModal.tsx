@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText, Trash2, Upload, AlertCircle } from 'lucide-react';
+import { FileText, Trash2, Upload } from 'lucide-react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import ViewDocumentSheet from './ViewDocumentSheet';
@@ -153,7 +153,11 @@ export function DocumentListModal({
                       variant="outline"
                       size="sm"
                       onClick={() => handleDeleteDocument(document._id, document.file_name)}
-                      disabled={deleteDocumentMutation.isPending}
+                      disabled={
+                        isClientView 
+                          ? (deleteDocumentMutation.isPending || document.status === 'approved')
+                          : deleteDocumentMutation.isPending
+                      }
                       className="cursor-pointer"
                     >
                       <Trash2 className="h-4 w-4" />

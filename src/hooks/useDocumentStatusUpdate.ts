@@ -3,6 +3,7 @@ import { updateDocumentStatus, UpdateDocumentStatusRequest } from '@/lib/api/upd
 import { Document } from '@/types/applications';
 import { toast } from 'sonner';
 import * as Sentry from '@sentry/nextjs';
+import { useAddComment } from './useCommentMutations';
 
 interface PaginationInfo {
   currentPage: number;
@@ -19,16 +20,20 @@ interface DocumentsResponse {
 
 interface UseDocumentStatusUpdateProps {
   applicationId?: string;
+  documentId?: string; // Add documentId for comment creation
   onSuccess?: (documentId: string, newStatus: string) => void;
   onError?: (error: Error, documentId: string, newStatus: string) => void;
 }
 
 export function useDocumentStatusUpdate({ 
   applicationId,
+  documentId,
   onSuccess, 
   onError 
 }: UseDocumentStatusUpdateProps) {
   const queryClient = useQueryClient();
+  
+  const addCommentMutation = useAddComment(documentId || '');
 
   return useMutation({
     mutationFn: async ({ 
@@ -55,6 +60,29 @@ export function useDocumentStatusUpdate({
 
         if (!response.success) {
           throw new Error(response.message || 'Failed to update document status');
+        }
+
+        // If document is rejected and has a rejection message, create a comment
+        if (status === 'rejected' && rejectMessage && documentId) {
+          try {
+            await addCommentMutation.mutateAsync({
+              comment: `Document rejected: ${rejectMessage}`,
+              added_by: changedBy
+            });
+          } catch (commentError) {
+            // Log comment creation error but don't fail the status update
+            console.warn('Failed to create rejection comment:', commentError);
+            Sentry.captureException(commentError, {
+              tags: {
+                operation: 'create_rejection_comment',
+                documentId
+              },
+              extra: {
+                rejectMessage,
+                changedBy
+              }
+            });
+          }
         }
 
         // Track performance

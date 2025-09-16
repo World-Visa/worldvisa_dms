@@ -22,6 +22,8 @@ import ViewDocumentSheet from './ViewDocumentSheet';
 import { Document as ApplicationDocument } from '@/types/applications';
 import { ClientDocumentsResponse } from '@/types/client';
 import { useClientDeleteDocument } from '@/hooks/useClientDeleteDocument';
+import { CommentIcon } from './CommentIcon';
+import { useDocumentCommentCounts } from '@/hooks/useDocumentCommentCounts';
 
 interface DocumentsTableProps {
     applicationId: string;
@@ -75,6 +77,10 @@ export function DocumentsTable({
         ? ((documentsData as ClientDocumentsResponse)?.data?.documents || [])
         : (documentsData?.data || []);
     const pagination = documentsData?.pagination;
+
+    // Get document IDs for comment counts
+    const documentIds = (documents as ApplicationDocument[]).map(doc => doc._id);
+    const { data: commentCounts = {} } = useDocumentCommentCounts(documentIds);
 
     const handleDeleteDocument = (documentId: string, fileName: string) => {
         setDocumentToDelete({ id: documentId, name: fileName });
@@ -223,6 +229,7 @@ export function DocumentsTable({
                                 <TableHead>Document Type</TableHead>
                                 <TableHead>Category</TableHead>
                                 <TableHead>Status</TableHead>
+                                <TableHead>Comments</TableHead>
                                 <TableHead>Submitted At</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
                             </TableRow>
@@ -350,6 +357,13 @@ export function DocumentsTable({
                                             );
                                         })()}
                                     </TableCell>
+                                    <TableCell>
+                                        <CommentIcon 
+                                            documentId={document._id}
+                                            commentCount={commentCounts[document._id] || 0}
+                                            size="sm"
+                                        />
+                                    </TableCell>
                                     <TableCell>{formatDate(document.uploaded_at, 'time')}</TableCell>
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end space-x-2 w-full">
@@ -365,7 +379,11 @@ export function DocumentsTable({
                                                 variant="outline"
                                                 size="sm"
                                                 onClick={() => handleDeleteDocument(document._id, document.file_name)}
-                                                disabled={isClientView ? clientDeleteDocumentMutation.isPending : deleteDocumentMutation.isPending}
+                                                disabled={
+                                                    isClientView 
+                                                        ? (clientDeleteDocumentMutation.isPending || document.status === 'approved')
+                                                        : deleteDocumentMutation.isPending
+                                                }
                                                 className='cursor-pointer'
                                             >
                                                 <Trash2 className="h-4 w-4" />

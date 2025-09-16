@@ -16,12 +16,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { AddCompanyDialog } from '@/components/applications/AddCompanyDialog';
 import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
-import { useReuploadDocument } from '@/hooks/useReuploadDocument';
 import { generateChecklistCategories } from '@/lib/checklist/categoryUtils';
 
 export default function ClientApplicationDetailsPage() {
@@ -42,9 +41,26 @@ export default function ClientApplicationDetailsPage() {
   const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
   const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
   const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Reupload mutation
-  const reuploadMutation = useReuploadDocument();
+
+  // Refresh function
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate all relevant queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['client-application'] }),
+        queryClient.invalidateQueries({ queryKey: ['client-documents'] }),
+        queryClient.invalidateQueries({ queryKey: ['client-checklist', applicationId] }),
+        queryClient.invalidateQueries({ queryKey: ['document-comment-counts'] }),
+      ]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   useEffect(() => {
     if (!isAuthLoading && (!isAuthenticated || user?.role !== 'client')) {
@@ -280,7 +296,7 @@ export default function ClientApplicationDetailsPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-start">
+      <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-lexend font-bold">My Application</h1>
@@ -293,6 +309,16 @@ export default function ClientApplicationDetailsPage() {
             </div>
           </div>
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <span className="hidden sm:inline">Refresh</span>
+        </Button>
       </div>
       {/* Loading State */}
       {(isAuthLoading || isApplicationLoading || isDocumentsLoading || isChecklistLoading) ? (

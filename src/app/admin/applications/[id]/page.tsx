@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { ApplicantDetails } from '@/components/applications/ApplicantDetails';
@@ -12,8 +12,9 @@ import { useApplicationDetails } from '@/hooks/useApplicationDetails';
 import { useApplicationDocuments } from '@/hooks/useApplicationDocuments';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, RefreshCw, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
 import { useState } from 'react';
 import { DocumentCategory, Company } from '@/types/documents';
@@ -22,14 +23,15 @@ import { localStorageUtils } from '@/lib/localStorage';
 import { useChecklistState } from '@/hooks/useChecklistState';
 import { useChecklistURLState } from '@/lib/urlState';
 import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
-import { useReuploadDocument } from '@/hooks/useReuploadDocument';
 import { generateChecklistCategories } from '@/lib/checklist/categoryUtils';
+import { useQueryClient } from '@tanstack/react-query';
 
 export default function ApplicationDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const applicationId = params.id as string;
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const queryClient = useQueryClient();
   
   // URL state management
   const { category: urlCategory, setCategory: setURLCategory } = useChecklistURLState(applicationId);
@@ -54,6 +56,7 @@ export default function ApplicationDetailsPage() {
   const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
   const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
   const [documentsPage, setDocumentsPage] = useState(1);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const maxCompanies = 5;
 
   // Check authentication
@@ -85,8 +88,39 @@ export default function ApplicationDetailsPage() {
     companies
   });
 
-  // Reupload mutation
-  const reuploadMutation = useReuploadDocument();
+  // Refresh function
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      // Invalidate all relevant queries
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['application-details', applicationId] }),
+        queryClient.invalidateQueries({ queryKey: ['application-documents', applicationId] }),
+        queryClient.invalidateQueries({ queryKey: ['application-documents-paginated', applicationId] }),
+        queryClient.invalidateQueries({ queryKey: ['checklist', applicationId] }),
+        queryClient.invalidateQueries({ queryKey: ['document-comment-counts'] }),
+      ]);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Check if all submitted documents are approved
+  const areAllDocumentsApproved = useMemo(() => {
+    if (!documents || documents.length === 0) {
+      return false;
+    }
+    
+    // Check if all documents have approved status
+    return documents.every((doc: Document) => doc.status === 'approved');
+  }, [documents]);
+
+  // Handle push for quality check
+  const handlePushForQualityCheck = () => {
+    console.log('Pushing application for quality check:', applicationId);
+  };
 
 
     // Populate companies state from existing documents with company information
@@ -311,25 +345,65 @@ export default function ApplicationDetailsPage() {
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Link href="/admin/applications" className='items-center flex'>
-            <Button variant="outline" className='rounded-full w-8 h-8 cursor-pointer ' size="sm">
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-lexend font-bold">Application Details</h1>
-            <div className="text-muted-foreground ">
-              {isApplicationLoading ? (
-                <Skeleton className="h-4 w-32" />
-              ) : (
-                application ? `Application ID: ${application.id}` : 'Loading...'
-              )}
+      <TooltipProvider>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-4">
+            <Link href="/admin/applications" className='items-center flex'>
+              <Button variant="outline" className='rounded-full w-8 h-8 cursor-pointer ' size="sm">
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            </Link>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-lexend font-bold">Application Details</h1>
+              <div className="text-muted-foreground ">
+                {isApplicationLoading ? (
+                  <Skeleton className="h-4 w-32" />
+                ) : (
+                  application ? `Application ID: ${application.id}` : 'Loading...'
+                )}
+              </div>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    variant={areAllDocumentsApproved ? "default" : "outline"}
+                    size="sm"
+                    onClick={handlePushForQualityCheck}
+                    disabled={!areAllDocumentsApproved}
+                    className={`flex items-center gap-2 cursor-pointer ${
+                      areAllDocumentsApproved 
+                        ? "bg-green-600 hover:bg-green-700 text-white" 
+                        : "opacity-50 cursor-not-allowed"
+                    }`}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="hidden sm:inline">Push for Quality Check</span>
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {areAllDocumentsApproved 
+                  ? "All documents are approved. Ready for quality check."
+                  : "All submitted documents must be approved before pushing for quality check."
+                }
+              </TooltipContent>
+            </Tooltip>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 cursor-pointer"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </Button>
+          </div>
         </div>
-      </div>
+      </TooltipProvider>
 
       {/* Loading State */}
       {(isAuthLoading || isApplicationLoading || isDocumentsLoading) ? (

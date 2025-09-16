@@ -24,6 +24,7 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
     
     const statusUpdateMutation = useDocumentStatusUpdate({
         applicationId,
+        documentId: document._id, // Pass documentId for comment creation
         onSuccess: (documentId, newStatus) => {
             onStatusChange?.(documentId, newStatus);
             setUpdatingStatus(null); // Clear loading state

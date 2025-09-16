@@ -15,6 +15,7 @@ import { ChecklistTableRow } from './ChecklistTableRow';
 import { FileText } from 'lucide-react';
 import { ChecklistDocument, ChecklistState, DocumentRequirement } from '@/types/checklist';
 import { Document } from '@/types/applications';
+import { useDocumentCommentCounts } from '@/hooks/useDocumentCommentCounts';
 
 interface ChecklistTableItem {
   category: string;
@@ -94,6 +95,14 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
 }: ChecklistTableBodyProps) {
   const paginatedItems = filteredItems.slice(startIndex, endIndex);
 
+  // Get document IDs for comment counts from uploaded documents
+  const documentIds = paginatedItems
+    .filter(item => item.isUploaded && item.uploadedDocument)
+    .map(item => (item.uploadedDocument as Document)?._id)
+    .filter(Boolean) as string[];
+  
+  const { data: commentCounts = {} } = useDocumentCommentCounts(documentIds);
+
   return (
     <CardContent>
       <div className="space-y-4">
@@ -125,13 +134,14 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                 <TableHead className="hidden sm:table-cell">Category</TableHead>
                 <TableHead>Document Name</TableHead>
                 <TableHead className="hidden md:table-cell">Status</TableHead>
+                <TableHead className="w-20">Comments</TableHead>
                 <TableHead className="text-right w-24">Action</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {paginatedItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">
                       {selectedCategory === 'submitted' 
@@ -169,6 +179,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                     addingDocumentId={addingDocumentId}
                     isDocumentAdded={isDocumentAdded}
                     addedDocumentId={addedDocumentId}
+                    commentCounts={commentCounts}
                   />
                 ))
               )}
