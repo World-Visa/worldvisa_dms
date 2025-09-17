@@ -38,6 +38,7 @@ interface DocumentsTableProps {
     clientError?: Error | null;
     onClientDeleteSuccess?: () => void;
     onReuploadDocument?: (documentId: string, documentType: string, category: string) => void;
+    onUploadSuccess?: () => void;
 }
 
 export function DocumentsTable({
@@ -50,7 +51,8 @@ export function DocumentsTable({
     clientIsLoading = false,
     clientError = null,
     onClientDeleteSuccess,
-    onReuploadDocument
+    onReuploadDocument,
+    onUploadSuccess
 }: DocumentsTableProps) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -266,7 +268,7 @@ export function DocumentsTable({
                                         {(() => {
                                             // Get document type from API response - use document_name field
                                             const documentType = document.document_name;
-                                            
+
                                             if (documentType) {
                                                 const formattedType = documentType.replace(/_/g, ' ').replace(/\//g, '/');
                                                 return (
@@ -289,29 +291,29 @@ export function DocumentsTable({
                                         {(() => {
                                             // Try to determine document category with fallback logic
                                             let documentCategory = document.document_category;
-                                            
+
                                             // If no document_category field, try to infer from filename or document type
                                             if (!documentCategory && document.file_name) {
                                                 const fileName = document.file_name.toLowerCase();
-                                                
+
                                                 // Check for company-related documents
-                                                if (fileName.includes('payslip') || fileName.includes('salary') || 
+                                                if (fileName.includes('payslip') || fileName.includes('salary') ||
                                                     fileName.includes('experience') || fileName.includes('work') ||
                                                     fileName.includes('company') || fileName.includes('employment')) {
                                                     documentCategory = 'Company Documents';
                                                 }
                                                 // Check for identity documents
-                                                else if (fileName.includes('passport') || fileName.includes('aadhaar') || 
-                                                         fileName.includes('aadhar') || fileName.includes('visa') ||
-                                                         fileName.includes('birth') || fileName.includes('marriage')) {
+                                                else if (fileName.includes('passport') || fileName.includes('aadhaar') ||
+                                                    fileName.includes('aadhar') || fileName.includes('visa') ||
+                                                    fileName.includes('birth') || fileName.includes('marriage')) {
                                                     documentCategory = 'Identity Documents';
                                                 }
                                                 // Check for education documents
                                                 else if (fileName.includes('degree') || fileName.includes('certificate') ||
-                                                         fileName.includes('10th') || fileName.includes('12th') ||
-                                                         fileName.includes('bachelor') || fileName.includes('master') ||
-                                                         fileName.includes('diploma') || fileName.includes('ielts') ||
-                                                         fileName.includes('pte') || fileName.includes('toefl')) {
+                                                    fileName.includes('10th') || fileName.includes('12th') ||
+                                                    fileName.includes('bachelor') || fileName.includes('master') ||
+                                                    fileName.includes('diploma') || fileName.includes('ielts') ||
+                                                    fileName.includes('pte') || fileName.includes('toefl')) {
                                                     documentCategory = 'Education Documents';
                                                 }
                                                 // Default to Other Documents
@@ -319,15 +321,15 @@ export function DocumentsTable({
                                                     documentCategory = 'Other Documents';
                                                 }
                                             }
-                                            
+
                                             if (documentCategory) {
                                                 const isCompanyDoc = documentCategory.includes('Company Documents');
                                                 return (
                                                     <Badge
                                                         variant={isCompanyDoc ? "default" : "outline"}
                                                         className={`text-xs max-w-[140px] font-medium truncate ${isCompanyDoc
-                                                                ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                                                                : ''
+                                                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
+                                                            : ''
                                                             }`}
                                                         title={documentCategory}
                                                     >
@@ -359,7 +361,7 @@ export function DocumentsTable({
                                         })()}
                                     </TableCell>
                                     <TableCell>
-                                        <CommentIcon 
+                                        <CommentIcon
                                             documentId={document._id}
                                             commentCount={commentCounts[document._id] || 0}
                                             size="sm"
@@ -381,7 +383,7 @@ export function DocumentsTable({
                                                 size="sm"
                                                 onClick={() => handleDeleteDocument(document._id, document.file_name)}
                                                 disabled={
-                                                    isClientView 
+                                                    isClientView
                                                         ? (clientDeleteDocumentMutation.isPending || document.status === 'approved')
                                                         : deleteDocumentMutation.isPending
                                                 }
@@ -395,7 +397,6 @@ export function DocumentsTable({
                             ))}
                         </TableBody>
                     </Table>
-
                     {/* Pagination */}
                     {pagination && (
                         <ApplicationsPagination
@@ -412,6 +413,7 @@ export function DocumentsTable({
                     applicationId={applicationId}
                     company={undefined}
                     isClientView={isClientView}
+                    onSuccess={onUploadSuccess}
                 />
             </Card>
 

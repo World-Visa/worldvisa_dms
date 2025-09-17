@@ -28,6 +28,7 @@ export function UploadDocumentsModal({
   selectedDocumentCategory: propSelectedDocumentCategory, 
   company,
   documents,
+  onSuccess,
 }: UploadDocumentsModalProps) {
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>(propSelectedDocumentType || '');
   const [selectedDocumentCategory, setSelectedDocumentCategory] = useState<string>(propSelectedDocumentCategory || '');
@@ -303,6 +304,11 @@ export function UploadDocumentsModal({
 
       toast.success('All documents uploaded successfully!');
       onClose();
+      
+      // Call success callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
       
       // Reset state
       setSelectedDocumentType('');

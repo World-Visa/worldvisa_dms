@@ -170,7 +170,7 @@ export function filterDocumentsByCategories(
  */
 export function generateChecklistCategories(
   checklistItems: ChecklistItem[],
-  companies: { name: string; category: string }[] = [],
+  companies: { name: string; category: string; fromDate?: string; toDate?: string }[] = [],
   uploadedDocuments: { document_category?: string }[] = []
 ): ChecklistCategory[] {
   const categoryMap = new Map<string, ChecklistCategory>();
@@ -248,13 +248,18 @@ export function generateChecklistCategories(
       return true;
     });
     
+    // Find the company data to get dates
+    const companyData = companies.find(company => company.name === companyName);
+    
     categoryMap.set(companyCategory, {
       id: companyCategory.toLowerCase().replace(/\s+/g, '_'),
       label: companyCategory,
       count: uniqueCompanyItems.length,
       type: 'company',
       company_name: companyName,
-      is_selected: true
+      is_selected: true,
+      fromDate: companyData?.fromDate,
+      toDate: companyData?.toDate
     });
   });
   
@@ -284,7 +289,9 @@ export function generateChecklistCategories(
       count: companyItems.length,
       type: 'company',
       company_name: company.name,
-      is_selected: true
+      is_selected: true,
+      fromDate: company.fromDate,
+      toDate: company.toDate
     });
   });
   

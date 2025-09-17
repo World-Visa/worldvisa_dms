@@ -23,7 +23,6 @@ import { localStorageUtils } from '@/lib/localStorage';
 import { useChecklistState } from '@/hooks/useChecklistState';
 import { useChecklistURLState } from '@/lib/urlState';
 import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
-import { generateChecklistCategories } from '@/lib/checklist/categoryUtils';
 import { useQueryClient } from '@tanstack/react-query';
 
 export default function ApplicationDetailsPage() {
@@ -134,10 +133,10 @@ export default function ApplicationDetailsPage() {
 
     // Populate companies state from existing documents with company information
   useEffect(() => {
-    if (documents && documents.length > 0) {
+    if (allDocuments && allDocuments.length > 0) {
       const companyMap = new Map<string, Company>();
       
-      documents.forEach((doc: Document) => {
+      allDocuments.forEach((doc: Document) => {
         if (doc.document_category && doc.document_category.includes('Company Documents')) {
           // Extract company name from category (e.g., "Google Company Documents" -> "Google")
           const companyName = doc.document_category.replace(' Company Documents', '').toLowerCase();
@@ -168,8 +167,34 @@ export default function ApplicationDetailsPage() {
                 });
               } catch (error) {
                 console.error('Error parsing dates from API description:', error);
+                // Fallback: still add the company with default dates
+                companyMap.set(companyName, {
+                  name: companyName,
+                  category: doc.document_category,
+                  fromDate: '2024-01-01',
+                  toDate: '2025-12-31',
+                  description: doc.description || ''
+                });
               }
+            } else {
+              // If no date match found, still save the company with default dates
+              companyMap.set(companyName, {
+                name: companyName,
+                category: doc.document_category,
+                fromDate: '2024-01-01',
+                toDate: '2025-12-31',
+                description: doc.description || ''
+              });
             }
+          } else {
+            // If API has a company document but no description, still save the company so the chip persists
+            companyMap.set(companyName, {
+              name: companyName,
+              category: doc.document_category,
+              fromDate: '2024-01-01',
+              toDate: '2025-12-31',
+              description: doc.description || ''
+            });
           }
         }
       });
@@ -179,7 +204,7 @@ export default function ApplicationDetailsPage() {
         setCompanies(Array.from(companyMap.values()));
       }
     }
-  }, [documents]);
+  }, [allDocuments]);
 
  
 
@@ -459,7 +484,7 @@ export default function ApplicationDetailsPage() {
               maxCompanies={maxCompanies}
               // Checklist props
               checklistState={checklistState.state}
-              checklistCategories={generateChecklistCategories(checklistState.checklistData, undefined, companies)}
+              checklistCategories={checklistState.checklistCategories}
               hasCompanyDocuments={checklistState.hasCompanyDocuments}
               onStartCreatingChecklist={handleStartCreatingChecklist}
               onStartEditingChecklist={handleStartEditingChecklist}

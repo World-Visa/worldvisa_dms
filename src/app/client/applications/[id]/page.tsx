@@ -122,7 +122,7 @@ export default function ClientApplicationDetailsPage() {
           const companyName = doc.document_category.replace(
             " Company Documents",
             ""
-          );
+          ).toLowerCase();
 
           // Always prioritize API data if description is available
           if (doc.description) {
@@ -165,8 +165,33 @@ export default function ClientApplicationDetailsPage() {
                   "Error parsing dates from API description:",
                   error
                 );
+                companyMap.set(companyName, {
+                  name: companyName,
+                  category: doc.document_category,
+                  fromDate: '2024-01-01',
+                  toDate: '2025-12-31',
+                  description: doc.description || '',
+                });
               }
+            } else {
+              // If no date match found, still save the company with default dates
+              companyMap.set(companyName, {
+                name: companyName,
+                category: doc.document_category,
+                fromDate: '2024-01-01',
+                toDate: '2025-12-31',
+                description: doc.description || '',
+              });
             }
+          } else {
+            // If API has a company document but no description, still save the company so the chip persists
+            companyMap.set(companyName, {
+              name: companyName,
+              category: doc.document_category,
+              fromDate: '2024-01-01',
+              toDate: '2025-12-31',
+              description: doc.description || '',
+            });
           }
         }
       });
@@ -180,7 +205,6 @@ export default function ClientApplicationDetailsPage() {
 
   // Extract companies from documents API response, but prioritize actual company data
   const extractedCompanies = useMemo(() => {
-    // Get company categories from documents (if any exist)
     const companyCategories = new Set<string>();
     if (
       allDocumentsData?.data?.documents &&
@@ -206,7 +230,6 @@ export default function ClientApplicationDetailsPage() {
       return existingCompanies;
     }
 
-    // Fallback: generate companies from document categories (for backward compatibility)
     if (companyCategories.size > 0) {
       return Array.from(companyCategories).map((category) => {
         // Extract company name from category (e.g., "worldvisa Company Documents" -> "worldvisa")
@@ -509,6 +532,7 @@ export default function ClientApplicationDetailsPage() {
                     clientError={documentsError}
                     onClientDeleteSuccess={handleDeleteSuccess}
                     onReuploadDocument={handleReuploadDocument}
+                    onUploadSuccess={handleUploadSuccess}
                   />
                 );
               }
@@ -527,6 +551,7 @@ export default function ClientApplicationDetailsPage() {
                     clientError={documentsError}
                     onClientDeleteSuccess={handleDeleteSuccess}
                     onReuploadDocument={handleReuploadDocument}
+                    onUploadSuccess={handleUploadSuccess}
                   />
                 );
               } else {
