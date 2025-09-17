@@ -192,7 +192,6 @@ export async function deleteChecklist(
       // Consider "not found" errors as successful deletions since the end result is the same
       if (errorMessage.includes('not found') || errorMessage.includes('Checklist item not found')) {
         successfulDeletions.push(index + 1);
-        console.log(`Checklist item ${index + 1} (ID: ${checklistIds[index]}) was already deleted or not found - treating as successful`);
       } else {
         errors.push(new Error(`Failed to delete item ${index + 1}: ${errorMessage}`));
       }

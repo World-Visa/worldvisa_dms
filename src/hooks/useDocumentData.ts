@@ -17,11 +17,8 @@ export function useDocumentData(documentId: string) {
       // Get from cache first
       const cachedDocument = queryClient.getQueryData<Document>(['document', documentId]);
       if (cachedDocument) {
-        console.log('useDocumentData: Found cached document for', documentId, 'status:', cachedDocument.status);
         return cachedDocument;
       }
-      
-      console.log('useDocumentData: No cached document found for:', documentId);
       // If not in cache, we need to fetch it
       // This would typically be an API call, but for now we'll return null
       // and let the parent component handle the fallback

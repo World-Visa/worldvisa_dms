@@ -116,7 +116,6 @@ export class RealtimeManager {
       this.eventSource = eventSource;
 
       eventSource.onopen = () => {
-        console.log('Realtime connection established');
         this.reconnectAttempts = 0;
         this.reconnectDelay = 1000;
         this.isConnecting = false;
@@ -197,8 +196,6 @@ export class RealtimeManager {
         this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1),
         this.maxReconnectDelay
       );
-
-      console.log(`Reconnecting in ${delay}ms (attempt ${this.reconnectAttempts})`);
       
       setTimeout(() => {
         if (this.listeners.size > 0) {

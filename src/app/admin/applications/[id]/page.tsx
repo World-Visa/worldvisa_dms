@@ -128,7 +128,7 @@ export default function ApplicationDetailsPage() {
 
   // Handle push for quality check
   const handlePushForQualityCheck = () => {
-    console.log('Pushing application for quality check:', applicationId);
+    // Handle quality check push
   };
 
 

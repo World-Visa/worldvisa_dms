@@ -1,17 +1,25 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, Suspense, lazy, memo } from 'react';
 import { useApplications } from '@/hooks/useApplications';
 import { useSearchApplications } from '@/hooks/useSearchApplications';
 import { useDebounce } from '@/hooks/useDebounce';
+import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { ApplicationsFilters } from '@/components/applications/ApplicationsFilters';
-import { ApplicationsTable } from '@/components/applications/ApplicationsTable';
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
+import { ApplicationsTableSkeleton, SearchResultsSkeleton } from '@/components/applications/ApplicationsTableSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Users } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 
-export default function AllApplicationsPage() {
+// Lazy load heavy components for better performance
+const LazyApplicationsTable = lazy(() => 
+  import('@/components/applications/ApplicationsTable').then(module => ({
+    default: module.ApplicationsTable
+  }))
+);
+
+const AllApplicationsPage = memo(function AllApplicationsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
@@ -23,6 +31,9 @@ export default function AllApplicationsPage() {
   
   // Debounce search input for better performance
   const debouncedSearch = useDebounce(search, 300);
+  
+  // Performance monitoring
+  const { measureAsync } = usePerformanceMonitor('AllApplicationsPage');
   
   // Check if we're in search mode
   const isSearchMode = searchQuery.trim() !== '';
@@ -96,12 +107,14 @@ export default function AllApplicationsPage() {
     setSearchType(type);
   }, []);
 
-  const handleSearchClick = useCallback(() => {
+  const handleSearchClick = useCallback(async () => {
     if (search.trim()) {
-      setSearchQuery(search.trim());
-      setPage(1);
+      await measureAsync(async () => {
+        setSearchQuery(search.trim());
+        setPage(1);
+      }, 'searchApplications');
     }
-  }, [search]);
+  }, [search, measureAsync]);
 
   // Auto-search when debounced search changes
   useEffect(() => {
@@ -228,15 +241,17 @@ export default function AllApplicationsPage() {
 
       {/* Applications Table */}
       <div className="mb-6">
-        <ApplicationsTable
-          applications={data?.data || []}
-          currentPage={page}
-          limit={limit}
-          isLoading={isLoading}
-          isSearchMode={isSearchMode}
-          searchResults={searchData?.data || []}
-          isSearchLoading={isSearchQueryLoading}
-        />
+        <Suspense fallback={isSearchMode ? <SearchResultsSkeleton /> : <ApplicationsTableSkeleton />}>
+          <LazyApplicationsTable
+            applications={data?.data || []}
+            currentPage={page}
+            limit={limit}
+            isLoading={isLoading}
+            isSearchMode={isSearchMode}
+            searchResults={searchData?.data || []}
+            isSearchLoading={isSearchQueryLoading}
+          />
+        </Suspense>
       </div>
 
       {/* Pagination (only show when not in search mode) */}
@@ -250,4 +265,6 @@ export default function AllApplicationsPage() {
       )}
     </main>
   );
-}
+});
+
+export default AllApplicationsPage;

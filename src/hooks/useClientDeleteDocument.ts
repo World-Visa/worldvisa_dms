@@ -24,7 +24,10 @@ export function useClientDeleteDocument() {
     onSuccess: () => {
       // Invalidate and refetch client documents
       queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['client-documents-all'] });
       queryClient.invalidateQueries({ queryKey: ['client-checklist'] });
+      queryClient.invalidateQueries({ queryKey: ['application-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['application-documents-all'] });
       
       toast.success('Document deleted successfully');
     },

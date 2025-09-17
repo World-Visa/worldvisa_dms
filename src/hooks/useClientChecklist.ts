@@ -53,7 +53,6 @@ export function useClientChecklist(applicationId: string) {
           error.message.includes('404') ||
           error.message.includes('Not found')
         )) {
-          console.log('Client checklist not found yet, returning empty checklist');
           return { success: true, data: [] };
         }
         throw error;

@@ -30,6 +30,9 @@ export function useAddDocument() {
           queryKey: ['client-documents'],
         }),
         queryClient.invalidateQueries({
+          queryKey: ['client-documents-all'],
+        }),
+        queryClient.invalidateQueries({
           queryKey: ['client-checklist', variables.applicationId],
         }),
         
@@ -75,10 +78,16 @@ export function useDeleteDocument() {
         queryClient.invalidateQueries({
           queryKey: ['application-documents-paginated'],
         }),
+        queryClient.invalidateQueries({
+          queryKey: ['application-documents-all'],
+        }),
         
         // Client view queries
         queryClient.invalidateQueries({
           queryKey: ['client-documents'],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ['client-documents-all'],
         }),
         queryClient.invalidateQueries({
           queryKey: ['client-checklist'],

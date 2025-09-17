@@ -69,9 +69,6 @@ export async function GET(request: NextRequest) {
     // Use the search endpoint from Zoho API
     const zohoUrl = `${ZOHO_BASE_URL}/visa_applications/search?${queryParams.toString()}`;
     
-    console.log('Search API URL:', zohoUrl);
-    console.log('Search parameters:', { name, phone, email });
-    
     const response = await authenticatedFetch(zohoUrl, token);
 
     return NextResponse.json(response);

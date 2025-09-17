@@ -35,7 +35,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
         : comments;
 
     const handleCommentAdded = () => {
-        console.log('Comment added successfully');
+        // Comment added successfully
     };
 
     const handleDeleteComment = async (commentId: string) => {

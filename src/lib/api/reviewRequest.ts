@@ -41,12 +41,7 @@ export async function createReviewRequest(
   const startTime = Date.now();
   
   try {
-    console.log('Making review request:', {
-      url: `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`,
-      method: 'POST',
-      data
-    });
-
+    
     const response = await fetcher(`https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`, {
       method: 'POST',
       headers: {
@@ -54,8 +49,6 @@ export async function createReviewRequest(
       },
       body: JSON.stringify(data),
     }) as ReviewRequestResponse;
-
-    console.log('Review request response:', response);
 
     const responseTime = Date.now() - startTime;
 
@@ -71,7 +64,6 @@ export async function createReviewRequest(
 
     // Handle empty response object (common when server returns 200 with no body)
     if (Object.keys(response).length === 0) {
-      console.log('Empty response received, assuming success for 200 status');
       // Return a success response structure
       return {
         success: true,

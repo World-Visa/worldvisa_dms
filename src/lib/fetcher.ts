@@ -54,7 +54,7 @@ export async function fetcher<T>(
         const isChecklistEndpoint = url.includes('/visa_applications/checklist/');
         
         if (isClientEndpoint || isChecklistEndpoint || url.includes('/comments')) {
-          console.log('Client/Checklist/Comments endpoint failed:', url, 'Status:', response.status, 'Letting hook handle the error');
+          // Let hook handle the error for client/checklist/comments endpoints
         } else {
           // For other endpoints, redirect if authentication fails  
           tokenStorage.remove();

@@ -51,7 +51,6 @@ export function UploadDocumentsModal({
         );
         if (existingDoc && existingDoc.description) {
           autoDescription = existingDoc.description;
-          console.log('Auto-set description from existing document:', autoDescription);
         }
       }
       
@@ -60,7 +59,6 @@ export function UploadDocumentsModal({
           !['Identity Documents', 'Education Documents', 'Other Documents'].includes(selectedDocumentCategory) && 
           company) {
         autoDescription = generateCompanyDescription(company.fromDate, company.toDate);
-        console.log('Auto-set description from company data (first time):', autoDescription);
       }
       
       if (autoDescription) {
@@ -270,13 +268,31 @@ export function UploadDocumentsModal({
             };
           });
 
+          // Update client-documents-all cache for checklist table
+          queryClient.setQueryData(['client-documents-all'], (oldData: { data?: { documents?: unknown[] } } | undefined) => {
+            if (!oldData?.data?.documents) return oldData;
+            return {
+              ...oldData,
+              data: {
+                ...oldData.data,
+                documents: [...oldData.data.documents, ...newDocuments]
+              }
+            };
+          });
+
           // Force immediate refetch to ensure UI updates
           setTimeout(() => {
             queryClient.invalidateQueries({
               queryKey: ['application-documents', applicationId],
             });
             queryClient.invalidateQueries({
+              queryKey: ['application-documents-all', applicationId],
+            });
+            queryClient.invalidateQueries({
               queryKey: ['client-documents'],
+            });
+            queryClient.invalidateQueries({
+              queryKey: ['client-documents-all'],
             });
           }, 100);
         }

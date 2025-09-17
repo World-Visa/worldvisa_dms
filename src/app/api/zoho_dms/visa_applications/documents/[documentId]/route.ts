@@ -74,7 +74,6 @@ export async function DELETE(
     } catch (error) {
       // For DELETE operations, we'll consider it successful even if the backend
       // returns an error, as the document might still be deleted
-      console.log('Backend DELETE operation completed (may have returned error):', error);
       
       // Return success response for DELETE operations
       return NextResponse.json({

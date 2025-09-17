@@ -282,12 +282,10 @@ export function useDocumentStatusUpdate({
     },
 
     onSuccess: (data) => {
-      console.log('Status update success:', data);
       
       // Update the document with the real server response
       queryClient.setQueryData<Document>(['document', data.documentId], (old) => {
         if (!old) {
-          console.log('No old document data found for:', data.documentId);
           return old;
         }
         
@@ -306,7 +304,6 @@ export function useDocumentStatusUpdate({
           ]
         };
         
-        console.log('Updated document in cache:', updatedDocument);
         return updatedDocument;
       });
 

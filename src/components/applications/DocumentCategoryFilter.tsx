@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, memo, useCallback } from 'react';
 import { DocumentCategoryFilterProps, Company } from '@/types/documents';
 import { ChecklistState, ChecklistCategory } from '@/types/checklist';
 import { generateCategories } from './filter/CategoryGenerator';
@@ -28,7 +28,7 @@ interface ExtendedDocumentCategoryFilterProps extends DocumentCategoryFilterProp
   isCategoryChanging?: boolean;
 }
 
-export function DocumentCategoryFilter({
+export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
   selectedCategory,
   onCategoryChange,
   companies = [],
@@ -50,15 +50,26 @@ export function DocumentCategoryFilter({
   // Loading state
   isCategoryChanging = false
 }: ExtendedDocumentCategoryFilterProps) {
-  const categories = useMemo(() => 
+  // Memoize expensive category generation
+  const categories = useMemo(() =>
     generateCategories({
       isClientView,
       checklistState,
       checklistCategories,
       submittedDocumentsCount
-    }), 
+    }),
     [isClientView, checklistState, checklistCategories, submittedDocumentsCount]
   );
+
+  // Memoize category change handler to prevent unnecessary re-renders
+  const handleCategoryChange = useCallback((category: string) => {
+    onCategoryChange(category);
+  }, [onCategoryChange]);
+
+  // Memoize company removal handler
+  const handleRemoveCompany = useCallback((companyName: string) => {
+    onRemoveCompany?.(companyName);
+  }, [onRemoveCompany]);
 
 
   // Show "No checklist" message when there are no categories and it's client view
@@ -83,8 +94,8 @@ export function DocumentCategoryFilter({
         <CategoryChips
           categories={categories}
           selectedCategory={selectedCategory}
-          onCategoryChange={onCategoryChange}
-          onRemoveCompany={onRemoveCompany}
+          onCategoryChange={handleCategoryChange}
+          onRemoveCompany={handleRemoveCompany}
           disabled={isCategoryChanging}
           companies={companies}
           maxCompanies={maxCompanies}
@@ -104,7 +115,7 @@ export function DocumentCategoryFilter({
       <CategoryDropdown
         categories={categories}
         selectedCategory={selectedCategory}
-        onCategoryChange={onCategoryChange}
+        onCategoryChange={handleCategoryChange}
         disabled={isCategoryChanging}
         companies={companies}
         maxCompanies={maxCompanies}
@@ -121,3 +132,4 @@ export function DocumentCategoryFilter({
     </div>
   );
 }
+);

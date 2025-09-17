@@ -277,6 +277,14 @@ export default function ClientApplicationDetailsPage() {
     setSelectedReuploadDocumentCategory('');
   };
 
+  // Handle document upload success to refresh data
+  const handleUploadSuccess = () => {
+    // Invalidate all relevant queries to ensure UI updates
+    queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+    queryClient.invalidateQueries({ queryKey: ['client-documents-all'] });
+    queryClient.invalidateQueries({ queryKey: ['client-checklist', applicationId] });
+  };
+
   // Check if checklist has company documents
   const hasCompanyDocuments = checklistData?.data?.some(item => item.document_category === 'Company') || false;
 

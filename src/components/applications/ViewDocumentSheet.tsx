@@ -65,7 +65,6 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     useEffect(() => {
         if (displayDoc && !currentDoc) {
             queryClient.setQueryData(['document', displayDoc._id], displayDoc);
-            console.log('Cached document in ViewDocumentSheet:', displayDoc._id, displayDoc.status);
         }
     }, [displayDoc, currentDoc, queryClient]);
     
@@ -135,7 +134,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                                         documents={documents}
                                         selectedDocument={displayDoc}
                                         onSend={(documentIds, notes) => {
-                                            console.log('Sending documents:', documentIds, 'with notes:', notes);
+                                            // Handle document sending
                                         }}
                                     />
                                 )}

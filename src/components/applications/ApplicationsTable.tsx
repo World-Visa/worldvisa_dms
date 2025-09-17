@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Table,
@@ -26,7 +26,7 @@ interface ApplicationsTableProps {
   isSearchLoading?: boolean;
 }
 
-export function ApplicationsTable({
+export const ApplicationsTable = memo(function ApplicationsTable({
   applications,
   currentPage,
   limit,
@@ -38,17 +38,24 @@ export function ApplicationsTable({
   const tableRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
-  // Determine which data to display
-  const displayData = isSearchMode ? searchResults : applications;
-  const displayLoading = isSearchMode ? isSearchLoading : isLoading;
+  // Memoize data calculations to prevent unnecessary re-renders
+  const displayData = useMemo(() => 
+    isSearchMode ? searchResults : applications, 
+    [isSearchMode, searchResults, applications]
+  );
+  
+  const displayLoading = useMemo(() => 
+    isSearchMode ? isSearchLoading : isLoading, 
+    [isSearchMode, isSearchLoading, isLoading]
+  );
 
-  const getSerialNumber = (index: number) => {
+  const getSerialNumber = useCallback((index: number) => {
     return (currentPage - 1) * limit + index + 1;
-  };
+  }, [currentPage, limit]);
 
-  const handleRowClick = (applicationId: string) => {
+  const handleRowClick = useCallback((applicationId: string) => {
     router.push(`/admin/applications/${applicationId}`);
-  };
+  }, [router]);
 
   useEffect(() => {
     if (tableRef.current && displayData.length > 0) {
@@ -152,3 +159,4 @@ export function ApplicationsTable({
     </Card>
   );
 }
+);

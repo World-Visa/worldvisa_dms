@@ -38,6 +38,7 @@ export function DocumentListModal({
   const [documentToDelete, setDocumentToDelete] = useState<{ id: string; name: string } | null>(null);
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null);
   
   const deleteDocumentMutation = useDeleteDocument();
   const queryClient = useQueryClient();
@@ -47,10 +48,16 @@ export function DocumentListModal({
     if (isOpen && documents.length > 0) {
       documents.forEach(doc => {
         queryClient.setQueryData(['document', doc._id], doc);
-        console.log('Cached document in DocumentListModal:', doc._id, doc.status);
       });
     }
   }, [isOpen, documents, queryClient]);
+
+  // Reset deleting state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setDeletingDocumentId(null);
+    }
+  }, [isOpen]);
 
   const handleDeleteDocument = (documentId: string, fileName: string) => {
     setDocumentToDelete({ id: documentId, name: fileName });
@@ -77,13 +84,26 @@ export function DocumentListModal({
   const confirmDelete = async () => {
     if (!documentToDelete) return;
     
+    setDeletingDocumentId(documentToDelete.id);
+    
     try {
       await deleteDocumentMutation.mutateAsync(documentToDelete.id);
       setDeleteDialogOpen(false);
       setDocumentToDelete(null);
-      onDocumentDeleted?.(); 
+      
+      // Call the callback to refresh the parent component's data
+      onDocumentDeleted?.();
+      
+      // Also manually refresh the documents list in this modal
+      // by invalidating the relevant queries
+      queryClient.invalidateQueries({ queryKey: ['client-documents-all'] });
+      queryClient.invalidateQueries({ queryKey: ['application-documents-all'] });
+      queryClient.invalidateQueries({ queryKey: ['client-documents'] });
+      queryClient.invalidateQueries({ queryKey: ['application-documents'] });
     } catch {
       // Error is handled in the mutation hook
+    } finally {
+      setDeletingDocumentId(null);
     }
   };
 
@@ -114,7 +134,7 @@ export function DocumentListModal({
                   onDelete={handleDeleteDocument}
                   onReupload={handleReuploadDocument}
                   isClientView={isClientView}
-                  isDeleting={deleteDocumentMutation.isPending}
+                  isDeleting={deletingDocumentId === document._id}
                 />
               ))}
             </div>
@@ -128,7 +148,7 @@ export function DocumentListModal({
         onClose={cancelDelete}
         onConfirm={confirmDelete}
         documentName={documentToDelete?.name || ''}
-        isDeleting={deleteDocumentMutation.isPending}
+        isDeleting={deletingDocumentId === documentToDelete?.id}
       />
 
       {/* View Document Sheet */}

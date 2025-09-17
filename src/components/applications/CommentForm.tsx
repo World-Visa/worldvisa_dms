@@ -32,7 +32,6 @@ const CommentForm: React.FC<CommentFormProps> = ({
       if (userData) {
         try {
           const user = JSON.parse(userData);
-          console.log('User data from localStorage:', user);
           if (user.username) {
             return user.username;
           }
@@ -48,7 +47,6 @@ const CommentForm: React.FC<CommentFormProps> = ({
     
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
-      console.log('JWT Payload for user name:', payload);
       
       // Try multiple possible fields for user identification
       return payload.username || 

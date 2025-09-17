@@ -10,8 +10,6 @@ export function useReuploadDocument() {
   return useMutation<ReuploadDocumentResponse, Error, ReuploadDocumentRequest>({
     mutationFn: reuploadDocument,
     onSuccess: (data, variables) => {
-      console.log('useReuploadDocument: onSuccess called for document:', variables.documentId);
-      console.log('useReuploadDocument: API response:', data);
       
       // First, optimistically update the document status in the cache
       queryClient.setQueryData<{ success: boolean; data: Document[] }>(['application-documents', variables.applicationId], (old) => {
@@ -77,7 +75,6 @@ export function useReuploadDocument() {
       // Update client documents cache (all documents)
       queryClient.setQueryData<{ success: boolean; data: { documents: ClientDocument[] } }>(['client-documents-all'], (old) => {
         if (!old || !old.data || !old.data.documents || !Array.isArray(old.data.documents)) {
-          console.log('useReuploadDocument: No client-documents-all cache found');
           return old;
         }
         
@@ -112,7 +109,6 @@ export function useReuploadDocument() {
       // Update individual document cache for real-time UI updates
       queryClient.setQueryData<Document>(['document', variables.documentId], (old) => {
         if (!old) {
-          console.log('useReuploadDocument: No cached document found for individual cache update:', variables.documentId);
           return old;
         }
         
@@ -133,11 +129,8 @@ export function useReuploadDocument() {
           ]
         };
         
-        console.log('useReuploadDocument: Updated individual document cache:', variables.documentId, 'status:', updatedDocument.status);
         return updatedDocument;
       });
-
-      console.log('useReuploadDocument: All cache updates completed for document:', variables.documentId);
 
       // Then invalidate all relevant queries to ensure UI updates properly
       Promise.all([
@@ -158,6 +151,9 @@ export function useReuploadDocument() {
         }),
         queryClient.invalidateQueries({ 
           queryKey: ['client-documents-all'] 
+        }),
+        queryClient.invalidateQueries({ 
+          queryKey: ['application-documents-all', variables.applicationId] 
         }),
         queryClient.invalidateQueries({ 
           queryKey: ['client-checklist', variables.applicationId] 

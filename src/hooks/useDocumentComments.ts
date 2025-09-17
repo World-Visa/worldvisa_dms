@@ -59,7 +59,6 @@ export function useDocumentComments(documentId: string) {
     isSubscribedRef.current = true;
 
     const unsubscribe = realtimeManager.subscribe(documentId, (event: CommentEvent) => {
-      console.log('Received comment event:', event);
       
       // Update the query cache with the new comment
       queryClient.setQueryData(['document-comments', documentId], (oldData: Comment[] | undefined) => {
