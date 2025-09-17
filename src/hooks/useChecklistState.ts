@@ -19,13 +19,12 @@ import type { Company } from '@/types/documents';
 import {
   getAllDocumentTypes,
   markSubmittedDocumentsAsMandatory,
-  generateChecklistCategories,
   hasCompanyDocumentsInChecklist,
   getAvailableDocumentsForEditing,
   createChecklistItemsFromDocuments,
-  validateChecklist,
-  sortCategoriesForDisplay
+  validateChecklist
 } from '@/lib/checklist/utils';
+import { generateChecklistCategories } from '@/lib/checklist/categoryUtils';
 
 interface UseChecklistStateProps {
   applicationId: string;
@@ -78,11 +77,16 @@ export function useChecklistState({
     [checklistItems]
   );
 
-  // Generate categories for saved checklist
-  const checklistCategories = useMemo(() => 
-    sortCategoriesForDisplay(generateChecklistCategories(checklistItems, companies, documents || [])), 
-    [checklistItems, companies, documents]
-  );
+  // Generate categories for saved checklist using the same function as client side
+  const checklistCategories = useMemo(() => {
+    // Convert checklistItems to the format expected by the client-side function
+    const checklistData = { data: checklistItems };
+    
+    // Convert documents to the format expected by the client-side function
+    const documentsData = documents ? { data: { documents: documents } } : undefined;
+    
+    return generateChecklistCategories(checklistData, documentsData, companies);
+  }, [checklistItems, companies, documents]);
 
   // Get available documents for editing
   const availableDocumentsForEditing = useMemo(() => 
