@@ -244,16 +244,15 @@ export default function ClientApplicationDetailsPage() {
 
   // Company management functions
   const handleAddCompany = (company: Company) => {
-    const companyWithCategory = {
-      ...company,
-      category: `${company.name} Company Documents`
-    };
-    setCompanies(prev => [...prev, companyWithCategory]);
+    // Don't override the category - it's already set correctly in AddCompanyDialog
+    setCompanies(prev => [...prev, company]);
     setIsAddCompanyDialogOpen(false);
   };
 
   const handleRemoveCompany = (companyName: string) => {
-    setCompanies(prev => prev.filter(company => company.name !== companyName));
+    setCompanies(prev => prev.filter(company => 
+      company.name.toLowerCase() !== companyName.toLowerCase()
+    ));
   };
 
   const handleReuploadDocument = (documentId: string, documentType: string, category: string) => {

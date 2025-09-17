@@ -106,6 +106,12 @@ export function useDocumentChecklistLogic({
     if (category === 'Education') return 'Education Documents';
     if (category === 'Other') return 'Other Documents';
     if (category === 'Company') return 'Company Documents';
+    
+    // Handle company-specific categories (e.g., "radicalstart infolab pvt.ltd Company Documents")
+    if (category.includes('Company Documents')) {
+      return category; // Return as-is for company-specific categories
+    }
+    
     return category;
   }, []);
 
@@ -162,6 +168,10 @@ export function useDocumentChecklistLogic({
         companyName: company.name
       }))
     );
+
+    console.log("🔍 DEBUG useDocumentChecklistLogic allDocumentTypes:");
+    console.log("  companies:", companies.map(c => ({ name: c.name, category: c.category })));
+    console.log("  companyDocuments:", companyDocuments.map(dt => ({ documentType: dt.documentType, category: dt.category })));
 
     return [...baseDocuments, ...companyDocuments];
   }, [companies, isClientView, checklistData]);
@@ -240,15 +250,25 @@ export function useDocumentChecklistLogic({
       return null;
     }
     if (selectedCategory.includes('company_documents')) {
-      const categoryLabel = selectedCategory
-        .split('_')
-        .map((word, index) => {
-          if (index === 0) return word.toLowerCase();
-          return word.charAt(0).toUpperCase() + word.slice(1);
-        })
-        .join(' ');
+      // Convert underscore format back to proper category format
+      // e.g., "radicalstart_infolab_pvt.ltd_company_documents" -> "radicalstart infolab pvt.ltd Company Documents"
+      const parts = selectedCategory.split('_');
+      const companyParts = parts.slice(0, -2); // All parts except "company" and "documents"
+      const companyName = companyParts.join(' ').toLowerCase(); // Keep company name in lowercase
+      const categoryLabel = `${companyName} Company Documents`;
       
-      const foundCompany = companies.find(company => company.category === categoryLabel);
+      console.log("🔍 DEBUG currentCompany:");
+      console.log("  selectedCategory:", selectedCategory);
+      console.log("  parts:", parts);
+      console.log("  companyParts:", companyParts);
+      console.log("  companyName:", companyName);
+      console.log("  categoryLabel:", categoryLabel);
+      console.log("  companies:", companies.map(c => ({ name: c.name, category: c.category })));
+      
+      const foundCompany = companies.find(company => 
+        company.category.toLowerCase() === categoryLabel.toLowerCase()
+      );
+      console.log("  foundCompany:", foundCompany);
       return foundCompany;
     }
     return null;

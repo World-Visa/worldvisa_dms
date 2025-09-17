@@ -201,7 +201,13 @@ const DocumentChecklistTableComponent = ({
       if (selectedCategory === 'all') return editingCurrentItems;
       return activeTab === 'current' ? editingCurrentItems : editingAvailableItems;
     }
-    if (checklistState === 'saved') return savedItems;
+    if (checklistState === 'saved') {
+      // If there are no saved items for the selected company, fall back to default items
+      if (savedItems.length === 0 && selectedCategory.includes('company_documents')) {
+        return defaultItems;
+      }
+      return savedItems;
+    }
     return defaultItems;
   }, [
     checklistState,

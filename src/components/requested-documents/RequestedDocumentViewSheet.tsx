@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Sheet,
   SheetContent,
@@ -8,12 +8,10 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { 
   User, 
   Calendar,
   CheckCircle,
-  X,
   Trash2,
   AlertTriangle
 } from 'lucide-react';
@@ -23,6 +21,7 @@ import { useUpdateDocumentStatus, useDeleteRequestedDocument } from '@/hooks/use
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import DocumentPreview from '@/components/applications/DocumentPreview';
+import { RequestedDocumentMessages } from './RequestedDocumentMessages';
 
 interface RequestedDocumentViewSheetProps {
   document: RequestedDocument | null;
@@ -37,19 +36,24 @@ export function RequestedDocumentViewSheet({
   onClose,
   type
 }: RequestedDocumentViewSheetProps) {
-  const [reviewComment, setReviewComment] = useState('');
   const { user } = useAuth();
   const updateStatusMutation = useUpdateDocumentStatus();
   const deleteDocumentMutation = useDeleteRequestedDocument();
+  
+  const [reviewComment, setReviewComment] = useState('');
+  const [isReviewing, setIsReviewing] = useState(false);
 
-  if (!document) return null;
+  // Reset state when modal opens/closes
+  useEffect(() => {
+    if (!isOpen) {
+      setReviewComment('');
+      setIsReviewing(false);
+    }
+  }, [isOpen]);
 
-  const isRequestedToMe = type === 'requested-to-me';
-  const canReview = isRequestedToMe && document.requested_review.status === 'pending';
-  const canDelete = !isRequestedToMe; // Can only delete documents I requested
-
-  const handleMarkAsReviewed = async () => {
-    if (!user?.username || !reviewComment.trim()) {
+  // Define callbacks before early return to avoid conditional hook calls
+  const handleMarkAsReviewed = useCallback(async () => {
+    if (!document || !user?.username || !reviewComment.trim()) {
       toast.error('Please add a review comment');
       return;
     }
@@ -68,10 +72,10 @@ export function RequestedDocumentViewSheet({
     } catch {
       // Error is handled by the mutation
     }
-  };
+  }, [document, user?.username, reviewComment, updateStatusMutation, onClose]);
 
-  const handleDeleteRequest = async () => {
-    if (!document.requested_review._id) {
+  const handleDeleteRequest = useCallback(async () => {
+    if (!document || !document.requested_review._id) {
       toast.error('Cannot delete: Review ID not found');
       return;
     }
@@ -87,8 +91,13 @@ export function RequestedDocumentViewSheet({
     } catch {
       // Error is handled by the mutation
     }
-  };
+  }, [document, deleteDocumentMutation, onClose]);
 
+  if (!document) return null;
+
+  const isRequestedToMe = type === 'requested-to-me';
+  const canReview = isRequestedToMe && document.requested_review.status === 'pending';
+  const canDelete = !isRequestedToMe; // Can only delete documents I requested
 
   // Convert RequestedDocument to Document format for DocumentPreview
   const documentForPreview = {
@@ -147,31 +156,40 @@ export function RequestedDocumentViewSheet({
           </SheetHeader>
 
           {/* Main Content */}
-          <div className="flex-1 flex flex-col overflow-y-auto">
-            {/* Document Preview Section */}
-            <div className="flex-1 p-2 sm:p-4">
+          <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto">
+            {/* Document Section - Top on mobile, Left on desktop */}
+            <div className="flex-1 p-2 sm:p-4 relative order-1 lg:order-1">
               <DocumentPreview document={documentForPreview} />
-            </div>
 
-            {/* Action Buttons */}
-            <div className="p-4 border-t bg-white">
-              <div className="flex gap-2">
+              {/* Action Buttons */}
+              <div className="mt-4 space-y-2">
                 {canReview && (
-                  <div className="flex-1 space-y-2">
-                    <Textarea
-                      placeholder="Add your review comment..."
-                      value={reviewComment}
-                      onChange={(e) => setReviewComment(e.target.value)}
-                      className="min-h-[80px]"
-                    />
+                  <div className="space-y-2">
                     <Button
-                      onClick={handleMarkAsReviewed}
-                      disabled={updateStatusMutation.isPending || !reviewComment.trim()}
+                      onClick={() => setIsReviewing(!isReviewing)}
+                      variant={isReviewing ? "outline" : "default"}
                       className="w-full"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
-                      {updateStatusMutation.isPending ? 'Marking...' : 'Mark as Reviewed'}
+                      {isReviewing ? 'Cancel Review' : 'Mark as Reviewed'}
                     </Button>
+                    {isReviewing && (
+                      <div className="space-y-2">
+                        <textarea
+                          placeholder="Add your review comment..."
+                          value={reviewComment}
+                          onChange={(e) => setReviewComment(e.target.value)}
+                          className="w-full min-h-[80px] p-3 border rounded-md resize-none"
+                        />
+                        <Button
+                          onClick={handleMarkAsReviewed}
+                          disabled={updateStatusMutation.isPending || !reviewComment.trim()}
+                          className="w-full"
+                        >
+                          {updateStatusMutation.isPending ? 'Marking...' : 'Submit Review'}
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -180,18 +198,22 @@ export function RequestedDocumentViewSheet({
                     variant="destructive"
                     onClick={handleDeleteRequest}
                     disabled={deleteDocumentMutation.isPending}
-                    className="flex-1"
+                    className="w-full"
                   >
                     <Trash2 className="h-4 w-4 mr-2" />
                     {deleteDocumentMutation.isPending ? 'Deleting...' : 'Delete Request'}
                   </Button>
                 )}
-
-                <Button variant="outline" onClick={onClose}>
-                  <X className="h-4 w-4 mr-2" />
-                  Close
-                </Button>
               </div>
+            </div>
+
+            {/* Messages Section - Bottom on mobile, Right on desktop */}
+            <div className="w-full lg:flex-shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
+              <RequestedDocumentMessages
+                documentId={document._id}
+                reviewId={document.requested_review._id}
+                type={type}
+              />
             </div>
           </div>
         </div>

@@ -108,6 +108,12 @@ export function mapCategoryLabel(category: string): string {
   if (category === "Education") return "Education Documents";
   if (category === "Other") return "Other Documents";
   if (category === "Company") return "Company Documents";
+  
+  // Handle company-specific categories (e.g., "radicalstart infolab pvt.ltd Company Documents")
+  if (category.includes("Company Documents")) {
+    return category; // Return as-is for company-specific categories
+  }
+  
   return category;
 }
 
@@ -219,7 +225,8 @@ export function generateDefaultItems(
   allDocumentTypes: DocumentType[],
   documents: Document[]
 ): ChecklistTableItem[] {
-  if (checklistState !== "none") return [];
+  if (checklistState !== "none" && checklistState !== "saved") return [];
+
 
   const validDocuments =
     documents?.filter(
@@ -263,12 +270,13 @@ export function generateDefaultItems(
               if (doc.document_category === docType.category) {
                 return true;
               }
-              // Check if both are company documents (more flexible)
+              // Check if both are company documents (exact match only)
               if (
-                doc.document_category?.includes("Company") &&
-                docType.category.includes("Company")
+                doc.document_category?.includes("Company Documents") &&
+                docType.category.includes("Company Documents")
               ) {
-                return true;
+                // Only match if it's the exact same company category
+                return doc.document_category === docType.category;
               }
               // Check mapped category
               const mappedCategory = mapCategoryLabel(docCategory);
@@ -307,13 +315,13 @@ export function generateDefaultItems(
               if (doc.document_category === docType.category) {
                 return true;
               }
-              // Check if both are company documents (more flexible)
+              // Check if both are company documents (exact match only)
               if (
-                doc.document_category?.includes("Company") &&
-                docType.category.includes("Company")
+                doc.document_category?.includes("Company Documents") &&
+                docType.category.includes("Company Documents")
               ) {
-                
-                return true;
+                // Only match if it's the exact same company category
+                return doc.document_category === docType.category;
               }
               // Check mapped category
               const mappedCategory = mapCategoryLabel(docCategory);
@@ -347,13 +355,13 @@ export function generateDefaultItems(
             if (doc.document_category === docType.category) {
               return true;
             }
-            // Check if both are company documents (more flexible)
+            // Check if both are company documents (exact match only)
             if (
-              doc.document_category?.includes("Company") &&
-              docType.category.includes("Company")
+              doc.document_category?.includes("Company Documents") &&
+              docType.category.includes("Company Documents")
             ) {
-            
-              return true;
+              // Only match if it's the exact same company category
+              return doc.document_category === docType.category;
             }
             // Check mapped category
             const mappedCategory = mapCategoryLabel(docCategory);
@@ -395,13 +403,13 @@ export function generateDefaultItems(
              
               return true;
             }
-            // Check if both are company documents (more flexible)
+            // Check if both are company documents (exact match only)
             if (
-              doc.document_category?.includes("Company") &&
-              docType.category.includes("Company")
+              doc.document_category?.includes("Company Documents") &&
+              docType.category.includes("Company Documents")
             ) {
-             
-              return true;
+              // Only match if it's the exact same company category
+              return doc.document_category === docType.category;
             }
             // Check mapped category
             const mappedCategory = mapCategoryLabel(docCategory);
@@ -447,13 +455,13 @@ export function generateDefaultItems(
                
                 return true;
               }
-              // Check if both are company documents (more flexible)
+              // Check if both are company documents (exact match only)
               if (
-                doc.document_category?.includes("Company") &&
-                docType.category.includes("Company")
+                doc.document_category?.includes("Company Documents") &&
+                docType.category.includes("Company Documents")
               ) {
-               
-                return true;
+                // Only match if it's the exact same company category
+                return doc.document_category === docType.category;
               }
               // Check mapped category
               const mappedCategory = mapCategoryLabel(docCategory);
@@ -501,19 +509,18 @@ export function generateSavedItems(
   if (selectedCategory === "company") {
     currentCompanyForSavedItems = null;
   } else if (selectedCategory.includes("company_documents")) {
-    const categoryLabel = selectedCategory
-      .split("_")
-      .map((word, index) => {
-        if (index === 0) return word.toLowerCase();
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      })
-      .join(" ");
+    // Convert underscore format back to proper category format
+    // e.g., "radicalstart_infolab_pvt.ltd_company_documents" -> "radicalstart infolab pvt.ltd Company Documents"
+    const parts = selectedCategory.split("_");
+    const companyParts = parts.slice(0, -2); // All parts except "company" and "documents"
+    const companyName = companyParts.join(" ").toLowerCase(); // Keep company name in lowercase
+    const categoryLabel = `${companyName} Company Documents`;
 
     if (extractedCompanies.length === 0) {
       currentCompanyForSavedItems = null;
     } else {
       currentCompanyForSavedItems = extractedCompanies.find(
-        (company) => company.category === categoryLabel
+        (company) => company.category.toLowerCase() === categoryLabel.toLowerCase()
       );
     }
   }
@@ -557,12 +564,13 @@ export function generateSavedItems(
         if (docCategory) {
           // Direct match
           if (doc.document_category === categoryLabel) return true;
-          // For company documents, use more flexible matching
+          // For company documents, only match if it's the exact same company category
           if (
-            categoryLabel.includes("Company") &&
-            doc.document_category?.includes("Company")
-          )
-            return true;
+            categoryLabel.includes("Company Documents") &&
+            doc.document_category?.includes("Company Documents")
+          ) {
+            return doc.document_category === categoryLabel;
+          }
           // Check mapped category
           const mappedCategory = mapCategoryLabel(docCategory);
           return mappedCategory === categoryLabel;
@@ -579,12 +587,14 @@ export function generateSavedItems(
          if (docCategory) {
            // Direct match
            if (doc.document_category === categoryLabel) return true;
-           // For company documents, use more flexible matching
+           // For company documents, only match if it's the exact same company category
            if (
-             categoryLabel.includes("Company") &&
-             doc.document_category?.includes("Company")
-           )
-             return true;
+             categoryLabel.includes("Company Documents") &&
+             doc.document_category?.includes("Company Documents")
+           ) {
+             // Only match if it's the exact same company category
+             return doc.document_category === categoryLabel;
+           }
            // Check mapped category
            const mappedCategory = mapCategoryLabel(docCategory);
            return mappedCategory === categoryLabel;
@@ -603,12 +613,14 @@ export function generateSavedItems(
         if (docCategory) {
           // Direct match
           if (doc.document_category === categoryLabel) return true;
-          // For company documents, use more flexible matching
+          // For company documents, only match if it's the exact same company category
           if (
-            categoryLabel.includes("Company") &&
-            doc.document_category?.includes("Company")
-          )
-            return true;
+            categoryLabel.includes("Company Documents") &&
+            doc.document_category?.includes("Company Documents")
+          ) {
+            // Only match if it's the exact same company category
+            return doc.document_category === categoryLabel;
+          }
           // Check mapped category
           const mappedCategory = mapCategoryLabel(docCategory);
           return mappedCategory === categoryLabel;
@@ -648,19 +660,15 @@ export function filterItemsByCategory(
 
   // Handle dynamic company documents (with company names)
   if (selectedCategory.includes("company_documents")) {
-    const categoryLabel = selectedCategory
-      .split("_")
-      .map((word, index) => {
-        if (index === 0) return word.toLowerCase();
-        return word.charAt(0).toUpperCase() + word.slice(1);
-      })
-      .join(" ");
+    // Convert underscore format back to proper category format
+    // e.g., "radicalstart_infolab_pvt.ltd_company_documents" -> "radicalstart infolab pvt.ltd Company Documents"
+    const parts = selectedCategory.split("_");
+    const companyParts = parts.slice(0, -2); // All parts except "company" and "documents"
+    const companyName = companyParts.join(" ").toLowerCase(); // Keep company name in lowercase
+    const categoryLabel = `${companyName} Company Documents`;
 
     return checklistItems.filter(
-      (item) =>
-        item.category === categoryLabel ||
-        item.category === "Company Documents" ||
-        item.category === "Company"
+      (item) => item.category.toLowerCase() === categoryLabel.toLowerCase()
     );
   }
 

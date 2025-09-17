@@ -209,7 +209,7 @@ function isDocumentOverdue(doc: RequestedDocument): boolean {
   const requestDate = new Date(doc.uploaded_at);
   const now = new Date();
   const daysDiff = Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60 * 24));
-  return daysDiff > 3; // Consider overdue after 3 days
+  return daysDiff > 4; // Consider overdue after 4 days
 }
 
 function getDaysSinceRequest(doc: RequestedDocument): number {

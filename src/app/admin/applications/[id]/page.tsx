@@ -184,17 +184,16 @@ export default function ApplicationDetailsPage() {
  
 
   const handleAddCompany = (company: Company) => {
-    const companyWithCategory = {
-      ...company,
-      category: `${company.name} Company Documents`
-    };
-    const newCompanies = [...companies, companyWithCategory];
+    // Don't override the category - it's already set correctly in AddCompanyDialog
+    const newCompanies = [...companies, company];
     setCompanies(newCompanies);    
     localStorageUtils.saveCompanies(applicationId, newCompanies);
   };
 
   const handleRemoveCompany = (companyName: string) => {
-    const newCompanies = companies.filter(company => company.name !== companyName);
+    const newCompanies = companies.filter(company => 
+      company.name.toLowerCase() !== companyName.toLowerCase()
+    );
     setCompanies(newCompanies);    
     localStorageUtils.saveCompanies(applicationId, newCompanies);
     if (selectedCategory === `company-${companyName}`) {

@@ -91,7 +91,7 @@ export function AddCompanyDialog({
       return;
     }
 
-    if (existingCompanies.some(company => company.name === companyName.trim().toLowerCase())) {
+    if (existingCompanies.some(company => company.name.toLowerCase() === companyName.trim().toLowerCase())) {
       toast.error('Company with this name already exists');
       return;
     }
