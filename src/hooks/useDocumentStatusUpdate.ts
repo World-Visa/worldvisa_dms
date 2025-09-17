@@ -65,7 +65,8 @@ export function useDocumentStatusUpdate({
         // If document is rejected and has a rejection message, create a comment
         if (status === 'rejected' && rejectMessage && documentId) {
           try {
-            await addCommentMutation.mutateAsync({
+            // Use the comment creation mutation but don't await it to avoid blocking
+            addCommentMutation.mutate({
               comment: `Document rejected: ${rejectMessage}`,
               added_by: changedBy
             });
@@ -137,6 +138,7 @@ export function useDocumentStatusUpdate({
         queryClient.getQueryData<{ success: boolean; data: Document[] }>(['application-documents', applicationId]) : null;
       const previousPaginatedResponse = applicationId ? 
         queryClient.getQueryData<DocumentsResponse>(['application-documents-paginated', applicationId]) : null;
+      const previousClientDocuments = queryClient.getQueryData<{ data?: { documents?: Document[] } }>(['client-documents']);
 
       // Optimistically update the document status
       queryClient.setQueryData<Document>(['document', documentId], (old) => {
@@ -187,6 +189,36 @@ export function useDocumentStatusUpdate({
         });
       }
 
+      // Also update client documents cache for real-time UI updates
+      queryClient.setQueryData<{ data?: { documents?: Document[] } }>(['client-documents'], (old) => {
+        if (!old?.data?.documents || !Array.isArray(old.data.documents)) return old;
+        
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            documents: old.data.documents.map(doc => 
+              doc._id === documentId 
+                ? { 
+                    ...doc, 
+                    status: status as Document['status'],
+                    reject_message: status === 'rejected' ? rejectMessage : doc.reject_message,
+                    history: [
+                      ...doc.history,
+                      {
+                        _id: `temp-${Date.now()}`,
+                        status,
+                        changed_by: 'Current User',
+                        changed_at: new Date().toISOString()
+                      }
+                    ]
+                  }
+                : doc
+            )
+          }
+        };
+      });
+
       // Also update the paginated documents list if available
       if (applicationId && previousPaginatedResponse) {
         queryClient.setQueryData<DocumentsResponse>(['application-documents-paginated', applicationId], (old) => {
@@ -216,7 +248,7 @@ export function useDocumentStatusUpdate({
         });
       }
 
-      return { previousDocument, previousDocumentsResponse, previousPaginatedResponse, documentId, newStatus: status };
+      return { previousDocument, previousDocumentsResponse, previousPaginatedResponse, previousClientDocuments, documentId, newStatus: status };
     },
 
     onError: (error, { documentId, status }, context) => {
@@ -235,6 +267,11 @@ export function useDocumentStatusUpdate({
         queryClient.setQueryData(['application-documents-paginated', applicationId], context.previousPaginatedResponse);
       }
 
+      // Also rollback client documents cache
+      if (context?.previousClientDocuments) {
+        queryClient.setQueryData(['client-documents'], context.previousClientDocuments);
+      }
+
       // Show error toast
       toast.error('Failed to update document status', {
         description: error instanceof Error ? error.message : 'An unexpected error occurred'
@@ -245,11 +282,16 @@ export function useDocumentStatusUpdate({
     },
 
     onSuccess: (data) => {
+      console.log('Status update success:', data);
+      
       // Update the document with the real server response
       queryClient.setQueryData<Document>(['document', data.documentId], (old) => {
-        if (!old) return old;
+        if (!old) {
+          console.log('No old document data found for:', data.documentId);
+          return old;
+        }
         
-        return { 
+        const updatedDocument = { 
           ...old, 
           status: data.newStatus as Document['status'],
           reject_message: data.newStatus === 'rejected' ? data.rejectMessage : old.reject_message,
@@ -263,6 +305,9 @@ export function useDocumentStatusUpdate({
             }] : [])
           ]
         };
+        
+        console.log('Updated document in cache:', updatedDocument);
+        return updatedDocument;
       });
 
       // Also update the documents list if available
@@ -321,6 +366,36 @@ export function useDocumentStatusUpdate({
         });
       }
 
+      // Also update client documents cache with real server response
+      queryClient.setQueryData<{ data?: { documents?: Document[] } }>(['client-documents'], (old) => {
+        if (!old?.data?.documents || !Array.isArray(old.data.documents)) return old;
+        
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            documents: old.data.documents.map(doc => 
+              doc._id === data.documentId 
+                ? { 
+                    ...doc, 
+                    status: data.newStatus as Document['status'],
+                    reject_message: data.newStatus === 'rejected' ? data.rejectMessage : doc.reject_message,
+                    history: [
+                      ...doc.history.filter(h => !h._id.startsWith('temp-')),
+                      ...(data.response ? [{
+                        _id: data.response._id,
+                        status: data.response.status,
+                        changed_by: data.response.changed_by,
+                        changed_at: data.response.changed_at
+                      }] : [])
+                    ]
+                  }
+                : doc
+            )
+          }
+        };
+      });
+
       // Show success toast
       const statusMessages = {
         approved: 'Document approved successfully',
@@ -337,23 +412,25 @@ export function useDocumentStatusUpdate({
     },
 
     onSettled: (data, error, { documentId }) => {
-      // Always refetch to ensure we have the latest data
-      queryClient.invalidateQueries({
-        queryKey: ['document', documentId]
-      });
-      
-      // Also invalidate documents list queries if applicationId is provided
-      if (applicationId) {
+      // Only invalidate on error to ensure we have the latest data
+      if (error) {
         queryClient.invalidateQueries({
-          queryKey: ['application-documents', applicationId]
+          queryKey: ['document', documentId]
         });
-        queryClient.invalidateQueries({
-          queryKey: ['application-documents-paginated', applicationId]
-        });
-        // Invalidate client documents cache to ensure client UI reflects status changes
-        queryClient.invalidateQueries({
-          queryKey: ['client-documents']
-        });
+        
+        // Also invalidate documents list queries if applicationId is provided
+        if (applicationId) {
+          queryClient.invalidateQueries({
+            queryKey: ['application-documents', applicationId]
+          });
+          queryClient.invalidateQueries({
+            queryKey: ['application-documents-paginated', applicationId]
+          });
+          // Invalidate client documents cache to ensure client UI reflects status changes
+          queryClient.invalidateQueries({
+            queryKey: ['client-documents']
+          });
+        }
       }
     }
   });

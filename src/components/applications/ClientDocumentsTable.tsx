@@ -17,8 +17,20 @@ import {
   Clock
 } from 'lucide-react';
 import { ClientDocumentsResponse, ClientDocument } from '@/types/client';
+import { Document } from '@/types/applications';
 import { format } from 'date-fns';
 import ViewDocumentSheet from './ViewDocumentSheet';
+
+// Helper function to convert ClientDocument to Document
+const convertClientDocumentToDocument = (clientDoc: ClientDocument): Document => ({
+  ...clientDoc,
+  comments: clientDoc.comments.map(comment => ({
+    _id: comment._id,
+    comment: comment.comment,
+    added_by: comment.added_by,
+    added_at: comment.created_at || new Date().toISOString()
+  }))
+});
 
 interface ClientDocumentsTableProps {
   data?: ClientDocumentsResponse;
@@ -44,6 +56,7 @@ export function ClientDocumentsTable({
     setSelectedDocument(document);
     setIsViewSheetOpen(true);
   };
+
 
   const handleDownloadDocument = (document: ClientDocument) => {
     if (document.download_url) {
@@ -284,8 +297,8 @@ export function ClientDocumentsTable({
       {/* Document View Sheet */}
       {selectedDocument && (
         <ViewDocumentSheet
-          document={selectedDocument}
-          documents={documents}
+          document={convertClientDocumentToDocument(selectedDocument)}
+          documents={documents.map(convertClientDocumentToDocument)}
           applicationId={selectedDocument.record_id}
           isOpen={isViewSheetOpen}
           onClose={() => {

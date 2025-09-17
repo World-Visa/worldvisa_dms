@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useReuploadDocument } from '@/hooks/useReuploadDocument';
+import { useDocumentData } from '@/hooks/useDocumentData';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Upload, X, AlertCircle, FileText, File } from 'lucide-react';
@@ -46,6 +47,12 @@ export function ReuploadDocumentModal({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reuploadMutation = useReuploadDocument();
   const { user } = useAuth();
+
+  // Get real-time document data from cache
+  const { document: currentDocument } = useDocumentData(document?._id || '');
+  
+  // Use the current document from cache, fallback to prop
+  const displayDocument = currentDocument || document;
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -138,7 +145,7 @@ export function ReuploadDocumentModal({
   };
 
   const handleReupload = async () => {
-    if (!uploadedFile || !document || !user?.username) {
+    if (!uploadedFile || !displayDocument || !user?.username) {
       toast.error('Please select a file and ensure user information is available.');
       return;
     }
@@ -157,7 +164,7 @@ export function ReuploadDocumentModal({
         // Use the reupload API
         await reuploadMutation.mutateAsync({
           applicationId,
-          documentId: document._id,
+          documentId: displayDocument._id,
           file: uploadedFile.file,
           document_name: finalDocumentType,
           document_category: finalCategory,
@@ -172,7 +179,10 @@ export function ReuploadDocumentModal({
         clearInterval(progressInterval);
 
         toast.success('Document reuploaded successfully!');
-        onClose();
+        
+        setTimeout(() => {
+          onClose();
+        }, 500);
         
       } catch (error) {
         clearInterval(progressInterval);
@@ -186,7 +196,7 @@ export function ReuploadDocumentModal({
     }
   };
 
-  if (!document) return null;
+  if (!displayDocument) return null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -202,7 +212,7 @@ export function ReuploadDocumentModal({
           {/* Current Document Info */}
           <div className="p-3 bg-gray-50 rounded-lg">
             <div className="text-sm text-gray-600">
-              <strong>Replacing:</strong> {document.file_name}
+              <strong>Replacing:</strong> {displayDocument.file_name}
             </div>
             <div className="text-sm text-gray-600">
               <strong>Document Type:</strong> {finalDocumentType}
@@ -210,9 +220,9 @@ export function ReuploadDocumentModal({
             <div className="text-sm text-gray-600">
               <strong>Category:</strong> {finalCategory}
             </div>
-            {document.reject_message && (
+            {displayDocument.reject_message && (
               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-                <strong>Rejection Reason:</strong> {document.reject_message}
+                <strong>Rejection Reason:</strong> {displayDocument.reject_message}
               </div>
             )}
           </div>
@@ -274,7 +284,9 @@ export function ReuploadDocumentModal({
                     })()}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {uploadedFile.file.name}
+                        {uploadedFile.file.name.length > 15 
+                          ? `${uploadedFile.file.name.substring(0, 15)}...` 
+                          : uploadedFile.file.name}
                       </p>
                       <p className="text-xs text-muted-foreground">
                         {(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB

@@ -97,6 +97,7 @@ export function DocumentsTable({
         setSelectedDocument(null);
     };
 
+
     const confirmDelete = async () => {
         if (!documentToDelete) return;
         try {

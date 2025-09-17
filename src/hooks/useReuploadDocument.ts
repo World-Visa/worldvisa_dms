@@ -10,6 +10,9 @@ export function useReuploadDocument() {
   return useMutation<ReuploadDocumentResponse, Error, ReuploadDocumentRequest>({
     mutationFn: reuploadDocument,
     onSuccess: (data, variables) => {
+      console.log('useReuploadDocument: onSuccess called for document:', variables.documentId);
+      console.log('useReuploadDocument: API response:', data);
+      
       // First, optimistically update the document status in the cache
       queryClient.setQueryData<{ success: boolean; data: Document[] }>(['application-documents', variables.applicationId], (old) => {
         if (!old || !old.data || !Array.isArray(old.data)) return old;
@@ -71,6 +74,71 @@ export function useReuploadDocument() {
         };
       });
 
+      // Update client documents cache (all documents)
+      queryClient.setQueryData<{ success: boolean; data: { documents: ClientDocument[] } }>(['client-documents-all'], (old) => {
+        if (!old || !old.data || !old.data.documents || !Array.isArray(old.data.documents)) {
+          console.log('useReuploadDocument: No client-documents-all cache found');
+          return old;
+        }
+        
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            documents: old.data.documents.map(doc => 
+              doc._id === variables.documentId 
+                ? { 
+                    ...doc, 
+                    status: 'pending', // Reset to pending after reupload
+                    reject_message: undefined, // Clear rejection message
+                    file_name: variables.file.name, // Update filename
+                    uploaded_at: new Date().toISOString(), // Update upload time
+                    history: [
+                      ...doc.history,
+                      {
+                        _id: `temp-reupload-${Date.now()}`,
+                        status: 'pending',
+                        changed_by: variables.uploaded_by,
+                        changed_at: new Date().toISOString()
+                      }
+                    ]
+                  }
+                : doc
+            )
+          }
+        };
+      });
+
+      // Update individual document cache for real-time UI updates
+      queryClient.setQueryData<Document>(['document', variables.documentId], (old) => {
+        if (!old) {
+          console.log('useReuploadDocument: No cached document found for individual cache update:', variables.documentId);
+          return old;
+        }
+        
+        const updatedDocument: Document = {
+          ...old,
+          status: 'pending' as Document['status'], // Reset to pending after reupload
+          reject_message: undefined, // Clear rejection message
+          file_name: variables.file.name, // Update filename
+          uploaded_at: new Date().toISOString(), // Update upload time
+          history: [
+            ...old.history,
+            {
+              _id: `temp-reupload-${Date.now()}`,
+              status: 'pending' as Document['status'],
+              changed_by: variables.uploaded_by,
+              changed_at: new Date().toISOString()
+            }
+          ]
+        };
+        
+        console.log('useReuploadDocument: Updated individual document cache:', variables.documentId, 'status:', updatedDocument.status);
+        return updatedDocument;
+      });
+
+      console.log('useReuploadDocument: All cache updates completed for document:', variables.documentId);
+
       // Then invalidate all relevant queries to ensure UI updates properly
       Promise.all([
         // Admin view queries
@@ -87,6 +155,9 @@ export function useReuploadDocument() {
         // Client view queries
         queryClient.invalidateQueries({ 
           queryKey: ['client-documents'] 
+        }),
+        queryClient.invalidateQueries({ 
+          queryKey: ['client-documents-all'] 
         }),
         queryClient.invalidateQueries({ 
           queryKey: ['client-checklist', variables.applicationId] 

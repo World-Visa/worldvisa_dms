@@ -20,6 +20,8 @@ import {
     Upload
 } from 'lucide-react'
 import { Document } from '@/types/applications'
+import { useDocumentData } from '@/hooks/useDocumentData'
+import { useQueryClient } from '@tanstack/react-query'
 
 interface ViewDocumentSheetProps {
     document: Document;
@@ -27,7 +29,7 @@ interface ViewDocumentSheetProps {
     applicationId: string;
     isOpen?: boolean;
     onClose?: () => void;
-    isClientView?: boolean; // New prop to hide admin-specific features
+    isClientView?: boolean;
     onReuploadDocument?: (documentId: string, documentType: string, category: string) => void;
     documentType?: string;
     category?: string;
@@ -51,7 +53,21 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     const currentDocumentIndex = documents.findIndex(doc => doc._id === document._id);
     const [selectedIndex, setSelectedIndex] = useState(currentDocumentIndex >= 0 ? currentDocumentIndex : 0);
 
-    const currentDoc = documents[selectedIndex] || documents[0];
+    // Use the custom hook to get real-time document data
+    const { document: currentDoc } = useDocumentData(document._id);
+    
+    // Fallback to the documents array if not in cache
+    const displayDoc = currentDoc || documents[selectedIndex] || documents[0];
+    
+    const queryClient = useQueryClient();
+    
+    // Ensure the document is cached for real-time updates
+    useEffect(() => {
+        if (displayDoc && !currentDoc) {
+            queryClient.setQueryData(['document', displayDoc._id], displayDoc);
+            console.log('Cached document in ViewDocumentSheet:', displayDoc._id, displayDoc.status);
+        }
+    }, [displayDoc, currentDoc, queryClient]);
     
     // Update selectedIndex when documents array changes (e.g., when a document is deleted)
     useEffect(() => {
@@ -68,7 +84,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
         }
     }, [documents, document._id, onClose]);
     
-    if (!currentDoc || documents.length === 0) {
+    if (!displayDoc || documents.length === 0) {
         return (
             <Button
                 variant="link"
@@ -103,21 +119,21 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                                     <div className="flex items-center space-x-2">
                                         <User className="h-4 w-4 text-gray-500" />
                                         <span className="text-sm text-gray-600">
-                                            Uploaded by {currentDoc.uploaded_by}
+                                            Uploaded by {displayDoc.uploaded_by}
                                         </span>
                                     </div>
                                     <div className="flex items-center space-x-2">
                                         <Clock className="h-4 w-4 text-gray-500" />
                                         <span className="sr-only">Uploaded at</span>
                                         <span className="text-sm text-gray-600">
-                                            {new Date(currentDoc.uploaded_at).toLocaleDateString()}
+                                            {new Date(displayDoc.uploaded_at).toLocaleDateString()}
                                         </span>
                                     </div>
                                 </div>
                                 {!isClientView && (
                                     <SendDocumentModal
                                         documents={documents}
-                                        selectedDocument={currentDoc}
+                                        selectedDocument={displayDoc}
                                         onSend={(documentIds, notes) => {
                                             console.log('Sending documents:', documentIds, 'with notes:', notes);
                                         }}
@@ -151,16 +167,16 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                         <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto">
                             {/* Document Section - Top on mobile, Left on desktop */}
                             <div className="flex-1 p-2 sm:p-4 relative order-1 lg:order-1">
-                                <DocumentPreview document={currentDoc} />
+                                <DocumentPreview document={displayDoc} />
 
                                 {/* Status Display */}
-                                <DocumentStatusDisplay document={currentDoc} />
+                                <DocumentStatusDisplay document={displayDoc} />
 
                                 {/* Reupload Button for Rejected Documents */}
-                                {currentDoc.status === 'rejected' && onReuploadDocument && (
+                                {displayDoc.status === 'rejected' && onReuploadDocument && (
                                     <div className="mt-4">
                                         <Button
-                                            onClick={() => onReuploadDocument(currentDoc._id, finalDocumentType, finalCategory)}
+                                            onClick={() => onReuploadDocument(displayDoc._id, finalDocumentType, finalCategory)}
                                             className="bg-orange-600 hover:bg-orange-700 text-white"
                                             size="sm"
                                         >
@@ -173,11 +189,8 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                                 {/* Status Buttons - Bottom Right (Admin only) */}
                                 {!isClientView && (
                                     <DocumentStatusButtons
-                                        document={currentDoc}
+                                        document={displayDoc}
                                         applicationId={applicationId}
-                                        onStatusChange={(documentId, newStatus) => {
-                                            console.log(`Document ${documentId} status changed to: ${newStatus}`);
-                                        }}
                                     />
                                 )}
                             </div>
@@ -186,7 +199,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                             <div className="w-full lg:flex-shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
                                 <CommentErrorBoundary>
                                     <DocumentComments
-                                        documentId={currentDoc._id}
+                                        documentId={displayDoc._id}
                                         isClientView={isClientView}
                                     />
                                 </CommentErrorBoundary>

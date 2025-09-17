@@ -2,31 +2,35 @@ import React, { useState } from 'react'
 import { Button } from '../ui/button'
 import { Document } from '@/types/applications'
 import { useDocumentStatusUpdate } from '@/hooks/useDocumentStatusUpdate'
+import { useDocumentData } from '@/hooks/useDocumentData'
 import { useAuth } from '@/hooks/useAuth'
 import { RejectDocumentDialog } from './RejectDocumentDialog'
 
 interface DocumentStatusButtonsProps {
     document: Document;
     applicationId: string;
-    onStatusChange?: (documentId: string, newStatus: string) => void;
     disabled?: boolean;
 }
 
 const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
     document,
     applicationId,
-    onStatusChange,
     disabled = false
 }) => {
     const { user } = useAuth();
     const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
     const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
     
+    // Get real-time document data from cache
+    const { document: currentDocument } = useDocumentData(document._id);
+    
+    // Use the current document from cache, fallback to prop
+    const displayDocument = currentDocument || document;
+    
     const statusUpdateMutation = useDocumentStatusUpdate({
         applicationId,
         documentId: document._id, // Pass documentId for comment creation
-        onSuccess: (documentId, newStatus) => {
-            onStatusChange?.(documentId, newStatus);
+        onSuccess: () => {
             setUpdatingStatus(null); // Clear loading state
         },
         onError: (error) => {
@@ -60,23 +64,28 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
     };
 
     const isUpdating = statusUpdateMutation.isPending;
-    const currentStatus = document.status;
+    const currentStatus = displayDocument.status;
+    const isAdmin = user?.role === 'admin'; // Hide approve button for admin role
+    
     return (
         <>
             <div className="absolute bottom-4 right-2 sm:bottom-1 sm:right-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-            <Button
-                variant="default"
-                size="sm"
-                onClick={handleApprove}
-                disabled={disabled || isUpdating || currentStatus === 'approved'}
-                className={`${
-                    currentStatus === 'approved' 
-                        ? 'bg-green-800 text-white cursor-default' 
-                        : 'bg-green-700 text-white hover:bg-green-600 cursor-pointer'
-                } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-                {updatingStatus === 'approved' ? 'Updating...' : currentStatus === 'approved' ? 'Approved' : 'Approve'}
-            </Button>
+            {/* Hide approve button for admin role */}
+            {!isAdmin && (
+                <Button
+                    variant="default"
+                    size="sm"
+                    onClick={handleApprove}
+                    disabled={disabled || isUpdating || currentStatus === 'approved'}
+                    className={`${
+                        currentStatus === 'approved' 
+                            ? 'bg-green-800 text-white cursor-default' 
+                            : 'bg-green-700 text-white hover:bg-green-600 cursor-pointer'
+                    } disabled:opacity-50 disabled:cursor-not-allowed`}
+                >
+                    {updatingStatus === 'approved' ? 'Updating...' : currentStatus === 'approved' ? 'Approved' : 'Approve'}
+                </Button>
+            )}
             <Button
                 variant="destructive"
                 size="sm"
@@ -109,7 +118,7 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
                 isOpen={isRejectDialogOpen}
                 onClose={() => setIsRejectDialogOpen(false)}
                 onConfirm={handleRejectConfirm}
-                documentName={document.file_name}
+                documentName={displayDocument.file_name}
                 isLoading={updatingStatus === 'rejected'}
             />
         </>

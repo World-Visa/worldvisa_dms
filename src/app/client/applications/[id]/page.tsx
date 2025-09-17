@@ -10,7 +10,7 @@ import { DocumentCategory, Company } from '@/types/documents';
 import { ClientDocument } from '@/types/client';
 import { Document } from '@/types/applications';
 import { useClientApplication } from '@/hooks/useClientApplication';
-import { useClientDocuments } from '@/hooks/useClientDocuments';
+import { useClientDocuments, useAllClientDocuments } from '@/hooks/useClientDocuments';
 import { useClientChecklist } from '@/hooks/useClientChecklist';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
@@ -52,6 +52,7 @@ export default function ClientApplicationDetailsPage() {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ['client-application'] }),
         queryClient.invalidateQueries({ queryKey: ['client-documents'] }),
+        queryClient.invalidateQueries({ queryKey: ['client-documents-all'] }),
         queryClient.invalidateQueries({ queryKey: ['client-checklist', applicationId] }),
         queryClient.invalidateQueries({ queryKey: ['document-comment-counts'] }),
       ]);
@@ -81,18 +82,25 @@ export default function ClientApplicationDetailsPage() {
     error: documentsError,
   } = useClientDocuments(documentsPage, documentsLimit);
 
+  // Fetch all documents for categories and checklist (not paginated)
+  const {
+    data: allDocumentsData,
+    isLoading: isAllDocumentsLoading,
+    error: allDocumentsError,
+  } = useAllClientDocuments();
+
   const {
     data: checklistData,
     isLoading: isChecklistLoading,
     error: checklistError,
   } = useClientChecklist(applicationId);
 
-  // Prioritize API data (documentsData) over locally generated data
+  // Prioritize API data (allDocumentsData) over locally generated data
   useEffect(() => {
-    if (documentsData?.data?.documents && documentsData.data.documents.length > 0) {
+    if (allDocumentsData?.data?.documents && allDocumentsData.data.documents.length > 0) {
       const companyMap = new Map<string, Company>();
       
-      documentsData.data.documents.forEach((doc: ClientDocument) => {
+      allDocumentsData.data.documents.forEach((doc: ClientDocument) => {
         if (doc.document_category && doc.document_category.includes('Company Documents')) {
           // Extract company name from category (e.g., "Microsoft Company Documents" -> "Microsoft")
           const companyName = doc.document_category.replace(' Company Documents', '');
@@ -134,15 +142,15 @@ export default function ClientApplicationDetailsPage() {
         setCompanies(Array.from(companyMap.values()));
       }
     }
-  }, [documentsData?.data?.documents]);
+  }, [allDocumentsData?.data?.documents]);
 
 
   // Extract companies from documents API response, but prioritize actual company data
   const extractedCompanies = useMemo(() => {
     // Get company categories from documents (if any exist)
     const companyCategories = new Set<string>();
-    if (documentsData?.data?.documents && documentsData.data.documents.length > 0) {
-      documentsData.data.documents.forEach((doc: { document_category?: string }) => {
+    if (allDocumentsData?.data?.documents && allDocumentsData.data.documents.length > 0) {
+      allDocumentsData.data.documents.forEach((doc: { document_category?: string }) => {
         if (doc.document_category && doc.document_category.includes('Company Documents')) {
           companyCategories.add(doc.document_category);
         }
@@ -168,8 +176,8 @@ export default function ClientApplicationDetailsPage() {
         let fromDate = "2024-01-01"; // Default fallback dates
         let toDate = "2025-12-31";
         
-        if (documentsData?.data?.documents && documentsData.data.documents.length > 0) {
-          const companyDoc = documentsData.data.documents.find((doc: ClientDocument) => 
+        if (allDocumentsData?.data?.documents && allDocumentsData.data.documents.length > 0) {
+          const companyDoc = allDocumentsData.data.documents.find((doc: ClientDocument) => 
             doc.document_category === category && doc.description
           );
           
@@ -205,9 +213,8 @@ export default function ClientApplicationDetailsPage() {
       });
     }
     
-    // If no companies and no documents, return empty array
     return [];
-  }, [documentsData?.data?.documents, companies]);
+  }, [allDocumentsData?.data?.documents, companies]);
   
   // Use extracted companies (which now prioritizes actual company data)
   const finalCompanies = extractedCompanies;
@@ -274,7 +281,7 @@ export default function ClientApplicationDetailsPage() {
   const hasCompanyDocuments = checklistData?.data?.some(item => item.document_category === 'Company') || false;
 
 
-  if (applicationError && !applicationData) {
+  if ((applicationError && !applicationData) || (allDocumentsError && !allDocumentsData)) {
     return (
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center space-x-4">
@@ -321,7 +328,7 @@ export default function ClientApplicationDetailsPage() {
         </Button>
       </div>
       {/* Loading State */}
-      {(isAuthLoading || isApplicationLoading || isDocumentsLoading || isChecklistLoading) ? (
+      {(isAuthLoading || isApplicationLoading || isDocumentsLoading || isAllDocumentsLoading || isChecklistLoading) ? (
         <div className="space-y-6">
           <div className="flex justify-between w-full gap-8 items-end">
             <div className="space-y-4 w-full">
@@ -348,9 +355,9 @@ export default function ClientApplicationDetailsPage() {
           {/* Application Details */}
             <ClientApplicationDetails
               data={applicationData}
-              documents={documentsData?.data?.documents}
-              isDocumentsLoading={isDocumentsLoading}
-              documentsError={documentsError}
+              documents={allDocumentsData?.data?.documents}
+              isDocumentsLoading={isAllDocumentsLoading}
+              documentsError={allDocumentsError}
               isLoading={isApplicationLoading}
               error={applicationError}
             />
@@ -366,8 +373,8 @@ export default function ClientApplicationDetailsPage() {
               onRemoveCompany={handleRemoveCompany}
               maxCompanies={5}
               isClientView={true}
-              submittedDocumentsCount={documentsData?.data?.documents?.length || 0}
-              checklistCategories={generateChecklistCategories(checklistData, documentsData, finalCompanies)}
+              submittedDocumentsCount={allDocumentsData?.data?.documents?.length || 0}
+              checklistCategories={generateChecklistCategories(checklistData, allDocumentsData, finalCompanies)}
               hasCompanyDocuments={hasCompanyDocuments}
               // Loading state
               isCategoryChanging={isCategoryChanging}
@@ -376,7 +383,7 @@ export default function ClientApplicationDetailsPage() {
             {/* Conditional Rendering */}
             {(() => {
               const hasChecklist = checklistData?.data && Array.isArray(checklistData.data) && checklistData.data.length > 0;
-              const hasSubmittedDocuments = (documentsData?.data?.documents?.length || 0) > 0;
+              const hasSubmittedDocuments = (allDocumentsData?.data?.documents?.length || 0) > 0;
               
               // If no checklist and no submitted documents, show the no checklist message
               if (!hasChecklist && !hasSubmittedDocuments) {
@@ -429,7 +436,7 @@ export default function ClientApplicationDetailsPage() {
               } else {
                 return (
                   <DocumentChecklistTable
-                    documents={documentsData?.data?.documents as unknown as Document[]}
+                    documents={allDocumentsData?.data?.documents as unknown as Document[]}
                     isLoading={isChecklistLoading}
                     error={checklistError}
                     applicationId={applicationId}

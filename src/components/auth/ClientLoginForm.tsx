@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Loader2, Mail, Lock } from 'lucide-react';
+import { User, Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 
@@ -20,6 +20,7 @@ export function ClientLoginForm() {
   const router = useRouter();
   const formRef = useRef<HTMLDivElement>(null);
   const clientLoginMutation = useClientLogin();
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -39,6 +40,10 @@ export function ClientLoginForm() {
       );
     }
   }, []);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   const onSubmit = async (data: ClientLoginFormData) => {
     // Clear any previous errors
@@ -134,30 +139,27 @@ export function ClientLoginForm() {
                       <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                       <Input
                         id="password"
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="Enter your password"
-                        className="h-12 pl-10"
+                        className="h-12 pl-10 pr-10"
                         {...register('password')}
                       />
+                      <button
+                        type="button"
+                        onClick={togglePasswordVisibility}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                        tabIndex={-1}
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
                     </div>
                     {errors.password && (
                       <p className="text-sm text-red-600">{errors.password.message}</p>
                     )}
-                  </div>
-
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <div className="p-1 bg-blue-100 rounded-full mt-0.5">
-                        <Lock className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">Secure Login</p>
-                        <p className="text-blue-700">
-                          Enter your registered email address and password to access your client portal.
-                          Your credentials are securely encrypted and protected.
-                        </p>
-                      </div>
-                    </div>
                   </div>
 
                   <Button

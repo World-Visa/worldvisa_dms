@@ -1,16 +1,14 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { FileText, Trash2, Upload } from 'lucide-react';
-import Image from 'next/image';
-import { cn } from '@/lib/utils';
+import { FileText } from 'lucide-react';
 import ViewDocumentSheet from './ViewDocumentSheet';
+import { Document } from '@/types/applications';
 import { DeleteDocumentDialog } from './DeleteDocumentDialog';
 import { useDeleteDocument } from '@/hooks/useMutationsDocuments';
-import { Document } from '@/types/applications';
+import { DocumentRow } from './DocumentRow';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface DocumentListModalProps {
   isOpen: boolean;
@@ -23,6 +21,7 @@ interface DocumentListModalProps {
   category?: string;
   isClientView?: boolean;
 }
+
 
 export function DocumentListModal({
   isOpen,
@@ -41,6 +40,18 @@ export function DocumentListModal({
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   
   const deleteDocumentMutation = useDeleteDocument();
+  const queryClient = useQueryClient();
+
+  // Ensure all documents are cached for real-time updates when modal opens
+  useEffect(() => {
+    if (isOpen && documents.length > 0) {
+      console.log('DocumentListModal: Caching documents when modal opens:', documents.length);
+      documents.forEach(doc => {
+        queryClient.setQueryData(['document', doc._id], doc);
+        console.log('Cached document in DocumentListModal:', doc._id, doc.status);
+      });
+    }
+  }, [isOpen, documents, queryClient]);
 
   const handleDeleteDocument = (documentId: string, fileName: string) => {
     setDocumentToDelete({ id: documentId, name: fileName });
@@ -62,6 +73,7 @@ export function DocumentListModal({
     setViewSheetOpen(false);
     setSelectedDocument(null);
   };
+
 
   const confirmDelete = async () => {
     if (!documentToDelete) return;
@@ -96,74 +108,15 @@ export function DocumentListModal({
           ) : (
             <div className="space-y-3">
               {documents.map((document) => (
-                <div
+                <DocumentRow
                   key={document._id}
-                  className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
-                >
-                  <div className="flex items-center space-x-3">
-                    <Image 
-                      src="/icons/pdf_small.svg" 
-                      alt="PDF" 
-                      width={20} 
-                      height={20}
-                      className="flex-shrink-0"
-                    />
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{document.file_name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        Uploaded by {document.uploaded_by} • {new Date(document.uploaded_at).toLocaleDateString()}
-                      </p>
-                     
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "text-xs",
-                        document.status === 'approved' && "bg-green-100 text-green-800",
-                        document.status === 'rejected' && "bg-red-100 text-red-800",
-                        document.status === 'reviewed' && "bg-blue-100 text-blue-800",
-                        document.status === 'request_review' && "bg-yellow-100 text-yellow-800",
-                        document.status === 'pending' && "bg-gray-100 text-gray-800"
-                      )}
-                    >
-                      {document.status.replace('_', ' ')}
-                    </Badge>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => handleViewDocument(document)}
-                      className='cursor-pointer'
-                    >
-                      view
-                    </Button>
-                    {/* Show reupload button for rejected documents */}
-                    {document.status === 'rejected' && onReuploadDocument && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleReuploadDocument(document._id)}
-                        className="cursor-pointer text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
-                      >
-                        <Upload className="h-4 w-4" />
-                      </Button>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleDeleteDocument(document._id, document.file_name)}
-                      disabled={
-                        isClientView 
-                          ? (deleteDocumentMutation.isPending || document.status === 'approved')
-                          : deleteDocumentMutation.isPending
-                      }
-                      className="cursor-pointer"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
+                  document={document}
+                  onView={handleViewDocument}
+                  onDelete={handleDeleteDocument}
+                  onReupload={handleReuploadDocument}
+                  isClientView={isClientView}
+                  isDeleting={deleteDocumentMutation.isPending}
+                />
               ))}
             </div>
           )}
