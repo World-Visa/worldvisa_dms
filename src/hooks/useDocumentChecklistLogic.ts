@@ -169,9 +169,6 @@ export function useDocumentChecklistLogic({
       }))
     );
 
-    console.log("🔍 DEBUG useDocumentChecklistLogic allDocumentTypes:");
-    console.log("  companies:", companies.map(c => ({ name: c.name, category: c.category })));
-    console.log("  companyDocuments:", companyDocuments.map(dt => ({ documentType: dt.documentType, category: dt.category })));
 
     return [...baseDocuments, ...companyDocuments];
   }, [companies, isClientView, checklistData]);
@@ -257,18 +254,9 @@ export function useDocumentChecklistLogic({
       const companyName = companyParts.join(' ').toLowerCase(); // Keep company name in lowercase
       const categoryLabel = `${companyName} Company Documents`;
       
-      console.log("🔍 DEBUG currentCompany:");
-      console.log("  selectedCategory:", selectedCategory);
-      console.log("  parts:", parts);
-      console.log("  companyParts:", companyParts);
-      console.log("  companyName:", companyName);
-      console.log("  categoryLabel:", categoryLabel);
-      console.log("  companies:", companies.map(c => ({ name: c.name, category: c.category })));
-      
       const foundCompany = companies.find(company => 
         company.category.toLowerCase() === categoryLabel.toLowerCase()
       );
-      console.log("  foundCompany:", foundCompany);
       return foundCompany;
     }
     return null;
