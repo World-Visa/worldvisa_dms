@@ -91,7 +91,7 @@ export function AddCompanyDialog({
       return;
     }
 
-    if (existingCompanies.some(company => company.name.toLowerCase() === companyName.trim().toLowerCase())) {
+    if (existingCompanies.some(company => company.name === companyName.trim().toLowerCase())) {
       toast.error('Company with this name already exists');
       return;
     }
@@ -116,7 +116,7 @@ export function AddCompanyDialog({
         name: normalizedCompanyName, // Store as lowercase for consistent matching
         fromDate: fromDateStr,
         toDate: toDateStr,
-        category: `${normalizedCompanyName} Company Documents`, // Use lowercase for category
+        category: `${displayCompanyName} Company Documents`, // Use original case for category display
         description: `Worked at ${displayCompanyName} from ${format(fromDate, 'MMM dd, yyyy')} to ${format(toDate, 'MMM dd, yyyy')} (${experienceDuration})` // Keep original case in description
       };
       

@@ -22,11 +22,21 @@ export function generateCategories({
   checklistCategories,
   submittedDocumentsCount
 }: CategoryGeneratorProps): DocumentCategoryInfo[] {
+  // Deduplicate checklist categories by label (most important) and then by id
+  const seenLabels = new Set<string>();
+  const uniqueChecklistCategories = checklistCategories.filter(cat => {
+    if (seenLabels.has(cat.label)) {
+      return false; // Skip if we've already seen this label
+    }
+    seenLabels.add(cat.label);
+    return true;
+  });
+
   if (isClientView) {
-    return generateClientCategories(checklistCategories, submittedDocumentsCount);
+    return generateClientCategories(uniqueChecklistCategories, submittedDocumentsCount);
   }
   
-  return generateAdminCategories(checklistState, checklistCategories);
+  return generateAdminCategories(checklistState, uniqueChecklistCategories);
 }
 
 function generateClientCategories(
@@ -39,21 +49,27 @@ function generateClientCategories(
       : [];
   }
 
-  const categories: DocumentCategoryInfo[] = [];
+  // Create a map to avoid duplicates
+  const categoryMap = new Map<string, DocumentCategoryInfo>();
 
   if (submittedDocumentsCount > 0) {
-    categories.push({ id: 'submitted', label: 'Submitted Documents', count: submittedDocumentsCount });
+    categoryMap.set('submitted', { id: 'submitted', label: 'Submitted Documents', count: submittedDocumentsCount });
   }
 
-  categories.push(...checklistCategories.map(cat => ({
-    id: cat.id,
-    label: cat.label,
-    count: cat.count,
-    fromDate: cat.fromDate,
-    toDate: cat.toDate
-  })));
+  // Add checklist categories, avoiding duplicates
+  checklistCategories.forEach(cat => {
+    if (!categoryMap.has(cat.id)) {
+      categoryMap.set(cat.id, {
+        id: cat.id,
+        label: cat.label,
+        count: cat.count,
+        fromDate: cat.fromDate,
+        toDate: cat.toDate
+      });
+    }
+  });
 
-  return categories;
+  return Array.from(categoryMap.values());
 }
 
 function generateAdminCategories(
@@ -74,16 +90,26 @@ function generateAdminCategories(
       ];
 
     case 'saved':
-      return [
-        { id: 'submitted', label: 'Submitted Documents', count: 0 },
-        ...checklistCategories.map(cat => ({
-          id: cat.id,
-          label: cat.label,
-          count: cat.count,
-          fromDate: cat.fromDate,
-          toDate: cat.toDate
-        }))
-      ];
+      // Create a map to avoid duplicates
+      const categoryMap = new Map<string, DocumentCategoryInfo>();
+      
+      // Add submitted documents first
+      categoryMap.set('submitted', { id: 'submitted', label: 'Submitted Documents', count: 0 });
+      
+      // Add checklist categories, avoiding duplicates
+      checklistCategories.forEach(cat => {
+        if (!categoryMap.has(cat.id)) {
+          categoryMap.set(cat.id, {
+            id: cat.id,
+            label: cat.label,
+            count: cat.count,
+            fromDate: cat.fromDate,
+            toDate: cat.toDate
+          });
+        }
+      });
+      
+      return Array.from(categoryMap.values());
 
     case 'editing':
       return [

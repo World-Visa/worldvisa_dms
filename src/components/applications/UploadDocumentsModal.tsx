@@ -324,6 +324,11 @@ export function UploadDocumentsModal({
       'Other': 'Other Documents',
     };
     
+    // If it's already a company-specific category, return as-is
+    if (apiCategory.includes('Company Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(apiCategory)) {
+      return apiCategory;
+    }
+    
     return reverseMap[apiCategory] || apiCategory;
   };
 

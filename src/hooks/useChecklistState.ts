@@ -51,7 +51,7 @@ export function useChecklistState({
 
   // API hooks
   const { data: checklistData, isLoading: isChecklistLoading } = useChecklist(applicationId);
-  const { batchSave, batchUpdate, batchDelete, isBatchSaving } = useChecklistMutations(applicationId);
+  const { batchSave, batchUpdate, batchDelete, isBatchSaving, isBatchDeleting } = useChecklistMutations(applicationId);
 
   // Get all available document types
   const allDocumentTypes = useMemo(() => getAllDocumentTypes(companies), [companies]);
@@ -510,6 +510,7 @@ export function useChecklistState({
     // Loading states
     isChecklistLoading,
     isBatchSaving,
+    isBatchDeleting,
     
     // Actions
     startCreatingChecklist,

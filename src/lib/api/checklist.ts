@@ -183,13 +183,25 @@ export async function deleteChecklist(
   const results = await Promise.allSettled(promises);
   
   const errors: Error[] = [];
+  const successfulDeletions: number[] = [];
   
   results.forEach((result, index) => {
     if (result.status === 'rejected') {
-      errors.push(new Error(`Failed to delete item ${index + 1}: ${result.reason.message}`));
+      const errorMessage = result.reason.message || 'Unknown error';
+      
+      // Consider "not found" errors as successful deletions since the end result is the same
+      if (errorMessage.includes('not found') || errorMessage.includes('Checklist item not found')) {
+        successfulDeletions.push(index + 1);
+        console.log(`Checklist item ${index + 1} (ID: ${checklistIds[index]}) was already deleted or not found - treating as successful`);
+      } else {
+        errors.push(new Error(`Failed to delete item ${index + 1}: ${errorMessage}`));
+      }
+    } else {
+      successfulDeletions.push(index + 1);
     }
   });
   
+  // Only throw an error if there are actual failures (not just "not found" errors)
   if (errors.length > 0) {
     throw new Error(`Failed to delete ${errors.length} items: ${errors.map(e => e.message).join(', ')}`);
   }

@@ -48,7 +48,6 @@ interface ChecklistTableRowProps {
   onRemoveFromPendingDeletions?: (checklistId: string) => void;
   onSavePendingChanges?: () => Promise<void>;
   onClearPendingChanges?: () => void;
-  pendingAdditions: ChecklistDocument[];
   pendingDeletions: string[];
   handleViewDocuments: (documentType: string, companyCategory?: string) => void;
   handleUploadClick: (documentType: string, category: string) => void;
@@ -58,6 +57,7 @@ interface ChecklistTableRowProps {
   // Loading states
   isAddingDocument?: boolean;
   addingDocumentId?: string;
+  isBatchDeleting?: boolean;
   // Success states
   isDocumentAdded?: boolean;
   addedDocumentId?: string;
@@ -75,6 +75,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   onUpdateDocumentRequirement,
   onAddToPendingChanges,
   onAddToPendingDeletions,
+  pendingDeletions,
   handleViewDocuments,
   handleUploadClick,
   handleReuploadClick,
@@ -83,6 +84,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   // Loading states
   isAddingDocument = false,
   addingDocumentId,
+  isBatchDeleting = false,
   // Success states
   isDocumentAdded = false,
   addedDocumentId,
@@ -266,9 +268,27 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                     onAddToPendingDeletions(item.checklist_id);
                   }
                 }}
-                className="flex items-center gap-1 px-2 py-1 h-7 text-xs text-red-600 hover:text-red-700"
+                disabled={isBatchDeleting}
+                className={cn(
+                  "flex items-center gap-1 px-2 py-1 h-7 text-xs disabled:opacity-50",
+                  pendingDeletions.includes(item.checklist_id || '') 
+                    ? "bg-red-50 border-red-300 text-red-700 hover:bg-red-100" 
+                    : "text-red-600 hover:text-red-700"
+                )}
               >
-                <span>Delete</span>
+                {isBatchDeleting ? (
+                  <>
+                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
+                    <span className="hidden sm:inline">Deleting...</span>
+                  </>
+                ) : pendingDeletions.includes(item.checklist_id || '') ? (
+                  <>
+                    <div className="animate-pulse rounded-full h-3 w-3 bg-red-600"></div>
+                    <span className="hidden sm:inline">Pending</span>
+                  </>
+                ) : (
+                  <span>Delete</span>
+                )}
               </Button>
             ) : (
               // Available documents tab: Show requirement selector and add button

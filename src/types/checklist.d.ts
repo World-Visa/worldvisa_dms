@@ -13,6 +13,8 @@ export interface ChecklistItem {
   company_name?: string;
   created_at?: string;
   updated_at?: string;
+  fromDate?:string;
+  toDate?:string;
 }
 
 export interface ChecklistResponse {
@@ -50,6 +52,8 @@ export interface ChecklistCategory {
   type: 'base' | 'company' | 'checklist';
   company_name?: string;
   is_selected?: boolean;
+  fromDate?: string;
+  toDate?: string;
 }
 
 export interface ChecklistDocument {

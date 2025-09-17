@@ -50,18 +50,20 @@ export function generateChecklistCategories(
       return;
     }
     
-    if (!categoryMap.has(categoryKey)) {
-      let displayLabel = categoryKey;
-      if (categoryKey === 'Identity') {
-        displayLabel = 'Identity Documents';
-      } else if (categoryKey === 'Education') {
-        displayLabel = 'Education Documents';
-      } else if (categoryKey === 'Other') {
-        displayLabel = 'Other Documents';
-      }
-      
-      categoryMap.set(categoryKey, {
-        id: categoryKey.toLowerCase().replace(/\s+/g, '_'),
+    // Create a consistent key for the category
+    let displayLabel = categoryKey;
+    if (categoryKey === 'Identity') {
+      displayLabel = 'Identity Documents';
+    } else if (categoryKey === 'Education') {
+      displayLabel = 'Education Documents';
+    } else if (categoryKey === 'Other') {
+      displayLabel = 'Other Documents';
+    }
+    
+    // Use the display label as the key to avoid duplicates
+    if (!categoryMap.has(displayLabel)) {
+      categoryMap.set(displayLabel, {
+        id: displayLabel.toLowerCase().replace(/\s+/g, '_'),
         label: displayLabel,
         count: 0,
         type: 'base',
@@ -69,7 +71,7 @@ export function generateChecklistCategories(
       });
     }
     
-    const category = categoryMap.get(categoryKey)!;
+    const category = categoryMap.get(displayLabel)!;
     category.count++;
   });
   
@@ -85,38 +87,8 @@ export function generateChecklistCategories(
     });
   }
   
-  // Add company-specific categories from uploaded documents
-  companyCategories.forEach(companyCategory => {
-    const companyName = companyCategory.replace(' Company Documents', '');
-    
-    // Count items for this specific company
-    let companyItems = checklistData?.data?.filter(item => 
-      item.document_category === 'Company' && 
-      item.company_name === companyName
-    );
-    
-    // If no items found by company_name, fall back to counting all company items
-    if (companyItems?.length === 0) {
-      companyItems = checklistData?.data?.filter(item => item.document_category === 'Company');
-    }
-    
-    // Find the company data to get dates
-    const companyData = finalCompanies.find(company => company.name === companyName);
-    
-    // Always add company category, even if no documents
-    categoryMap.set(companyCategory, {
-      id: companyCategory.toLowerCase().replace(/\s+/g, '_'),
-      label: companyCategory,
-      count: companyItems?.length || 0,
-      type: 'company',
-      company_name: companyName,
-      is_selected: true,
-      fromDate: companyData?.fromDate,
-      toDate: companyData?.toDate
-    });
-  });
-  
   // Add company categories from finalCompanies (prioritize API data)
+  // This will handle both uploaded documents and API data
   finalCompanies.forEach(company => {
     const companyCategoryKey = company.category; // e.g., "WorldVisa Company Documents"
     
@@ -143,6 +115,40 @@ export function generateChecklistCategories(
       fromDate: company.fromDate,
       toDate: company.toDate
     });
+  });
+  
+  // Add any additional company categories from uploaded documents that aren't in finalCompanies
+  companyCategories.forEach(companyCategory => {
+    // Only add if not already added from finalCompanies
+    if (!categoryMap.has(companyCategory)) {
+      const companyName = companyCategory.replace(' Company Documents', '');
+      
+      // Count items for this specific company
+      let companyItems = checklistData?.data?.filter(item => 
+        item.document_category === 'Company' && 
+        item.company_name === companyName
+      );
+      
+      // If no items found by company_name, fall back to counting all company items
+      if (companyItems?.length === 0) {
+        companyItems = checklistData?.data?.filter(item => item.document_category === 'Company');
+      }
+      
+      // Find the company data to get dates
+      const companyData = finalCompanies.find(company => company.name === companyName);
+      
+      // Add company category
+      categoryMap.set(companyCategory, {
+        id: companyCategory.toLowerCase().replace(/\s+/g, '_'),
+        label: companyCategory,
+        count: companyItems?.length || 0,
+        type: 'company',
+        company_name: companyName,
+        is_selected: true,
+        fromDate: companyData?.fromDate,
+        toDate: companyData?.toDate
+      });
+    }
   });
   
   return Array.from(categoryMap.values());

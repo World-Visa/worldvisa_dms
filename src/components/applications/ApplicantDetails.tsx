@@ -11,12 +11,12 @@ interface ApplicantDetailsProps {
     application: Application | undefined;
     isLoading: boolean;
     error: Error | null;
-    documents: Document[] | undefined;
-    isDocumentsLoading: boolean;
-    documentsError: Error | null;
+    allDocuments: Document[] | undefined;
+    isAllDocumentsLoading: boolean;
+    allDocumentsError: Error | null;
 }
 
-export function ApplicantDetails({ application, isLoading, error, documents, isDocumentsLoading, documentsError }: ApplicantDetailsProps) {
+export function ApplicantDetails({ application, isLoading, error, allDocuments, isAllDocumentsLoading, allDocumentsError }: ApplicantDetailsProps) {
 
     if (isLoading) {
         return (
@@ -228,9 +228,9 @@ export function ApplicantDetails({ application, isLoading, error, documents, isD
 
             {/* Documents Summary */}
             <DocumentsSummary
-                documents={documents}
-                isLoading={isDocumentsLoading}
-                error={documentsError}
+                documents={allDocuments}
+                isLoading={isAllDocumentsLoading}
+                error={allDocumentsError}
             />
         </div>
     );

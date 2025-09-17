@@ -55,19 +55,9 @@ export const CategoryButton = memo(function CategoryButton({
       >
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap">{category.label}</span>
-          {category.count > 0 && (
-            <span className={cn(
-              'inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 text-xs font-semibold rounded-full',
-              selectedCategory === category.id
-                ? 'bg-white/20 text-white'
-                : 'bg-gray-100 text-gray-600'
-            )}>
-              {category.count}
-            </span>
-          )}
         </div>
-        {/* Show date range for company chips */}
-        {isCompanyChip && category.fromDate && category.toDate && (
+        {/* Show date range for any chip that has date information */}
+        {category.fromDate && category.toDate && (
           <div className={cn(
             'text-xs font-normal',
             selectedCategory === category.id

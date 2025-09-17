@@ -63,13 +63,15 @@ interface ExtendedDocumentChecklistTableProps extends DocumentChecklistTableProp
   // Pending changes props
   pendingAdditions?: ChecklistDocument[];
   pendingDeletions?: string[];
-  pendingUpdates?: Array<{ checklistId: string, required: boolean, documentType: string, documentCategory: string }>;
+  pendingUpdates?: ChecklistDocument[];
   onAddToPendingChanges?: (document: ChecklistDocument) => void;
   onRemoveFromPendingChanges?: (document: ChecklistDocument) => void;
   onAddToPendingDeletions?: (checklistId: string) => void;
   onRemoveFromPendingDeletions?: (checklistId: string) => void;
   onSavePendingChanges?: () => Promise<void>;
   onClearPendingChanges?: () => void;
+  // Loading states
+  isBatchDeleting?: boolean;
 }
 
 const DocumentChecklistTableComponent = ({
@@ -97,7 +99,9 @@ const DocumentChecklistTableComponent = ({
   onAddToPendingDeletions,
   onRemoveFromPendingDeletions,
   onSavePendingChanges,
-  onClearPendingChanges
+  onClearPendingChanges,
+  // Loading states
+  isBatchDeleting = false
 }: ExtendedDocumentChecklistTableProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>('');
@@ -155,7 +159,7 @@ const DocumentChecklistTableComponent = ({
     checklistData,
     pendingAdditions,
     pendingDeletions,
-    pendingUpdates,
+    pendingUpdates: [],
     onAddToPendingChanges,
     onRemoveFromPendingChanges,
     onAddToPendingDeletions,
@@ -468,7 +472,7 @@ const DocumentChecklistTableComponent = ({
           availableCount={tabCounts.availableCount}
           pendingAdditions={pendingAdditions}
           pendingDeletions={pendingDeletions}
-          pendingUpdates={pendingUpdates}
+          pendingUpdates={[]}
           onClearPendingChanges={onClearPendingChanges}
           onSavePendingChanges={onSavePendingChanges}
           extractedCompanies={extractedCompanies}
@@ -494,7 +498,6 @@ const DocumentChecklistTableComponent = ({
           onRemoveFromPendingDeletions={onRemoveFromPendingDeletions}
           onSavePendingChanges={onSavePendingChanges}
           onClearPendingChanges={onClearPendingChanges}
-          pendingAdditions={pendingAdditions}
           pendingDeletions={pendingDeletions}
           handleViewDocuments={handleViewDocuments}
           handleUploadClick={handleUploadClick}
@@ -505,6 +508,7 @@ const DocumentChecklistTableComponent = ({
           addingDocumentId={addingDocumentId}
           isDocumentAdded={isDocumentAdded}
           addedDocumentId={addedDocumentId}
+          isBatchDeleting={isBatchDeleting}
         />
 
         <UploadDocumentsModal

@@ -219,7 +219,6 @@ export function generateDefaultItems(
   allDocumentTypes: DocumentType[],
   documents: Document[]
 ): ChecklistTableItem[] {
-  console.log("🚀 generateDefaultItems called with state:", checklistState);
   if (checklistState !== "none") return [];
 
   const validDocuments =
@@ -227,45 +226,17 @@ export function generateDefaultItems(
       (doc) => doc && typeof doc === "object" && doc.file_name
     ) || [];
 
-  // Debug: Log all available documents
-  console.log(
-    "📄 Available documents:",
-    validDocuments.map((doc) => ({
-      name: doc.document_name,
-      type: doc.document_type,
-      category: doc.document_category,
-      fileName: doc.file_name,
-    }))
-  );
-
+ 
   return allDocumentTypes.map((docType: DocumentType) => {
     const expectedDocType = docType.documentType
       .toLowerCase()
       .replace(/\s+/g, "_");
 
-    // Debug: Log all document types being processed
-    console.log(
-      "📋 Processing document type:",
-      docType.documentType,
-      "Category:",
-      docType.category
-    );
-
+  
     const uploadedDoc = validDocuments.find((doc) => {
       if (!doc || !doc.file_name) return false;
 
-      // Debug logging for promotion letters
-      if (docType.documentType.toLowerCase().includes("promotion")) {
-        console.log("🔍 Checking promotion letter match:", {
-          expectedDocType,
-          docTypeCategory: docType.category,
-          docName: doc.document_name,
-          docType: doc.document_type,
-          docCategory: doc.document_category,
-          fileName: doc.file_name,
-        });
-      }
-
+     
       // First, try to match by document_name field (API field)
       const docTypeFromName = doc.document_name;
       if (docTypeFromName) {
@@ -290,11 +261,6 @@ export function generateDefaultItems(
             if (docCategory) {
               // Direct match
               if (doc.document_category === docType.category) {
-                if (docType.documentType.toLowerCase().includes("promotion")) {
-                  console.log(
-                    "✅ Promotion letter matched by direct category match"
-                  );
-                }
                 return true;
               }
               // Check if both are company documents (more flexible)
@@ -302,25 +268,15 @@ export function generateDefaultItems(
                 doc.document_category?.includes("Company") &&
                 docType.category.includes("Company")
               ) {
-                if (docType.documentType.toLowerCase().includes("promotion")) {
-                  console.log(
-                    "✅ Promotion letter matched by flexible company match"
-                  );
-                }
                 return true;
               }
               // Check mapped category
               const mappedCategory = mapCategoryLabel(docCategory);
               if (mappedCategory === docType.category) {
-                if (docType.documentType.toLowerCase().includes("promotion")) {
-                  console.log("✅ Promotion letter matched by mapped category");
-                }
                 return true;
               }
             }
-            if (docType.documentType.toLowerCase().includes("promotion")) {
-              console.log("❌ Promotion letter category match failed");
-            }
+           
             return false;
           }
           const docCategory = doc.document_category;
@@ -349,11 +305,6 @@ export function generateDefaultItems(
             ) {
               // Direct match
               if (doc.document_category === docType.category) {
-                if (docType.documentType.toLowerCase().includes("promotion")) {
-                  console.log(
-                    "✅ Promotion letter matched by partial name + direct category"
-                  );
-                }
                 return true;
               }
               // Check if both are company documents (more flexible)
@@ -361,21 +312,13 @@ export function generateDefaultItems(
                 doc.document_category?.includes("Company") &&
                 docType.category.includes("Company")
               ) {
-                if (docType.documentType.toLowerCase().includes("promotion")) {
-                  console.log(
-                    "✅ Promotion letter matched by partial name + flexible company"
-                  );
-                }
+                
                 return true;
               }
               // Check mapped category
               const mappedCategory = mapCategoryLabel(docCategory);
               if (mappedCategory === docType.category) {
-                if (docType.documentType.toLowerCase().includes("promotion")) {
-                  console.log(
-                    "✅ Promotion letter matched by partial name + mapped category"
-                  );
-                }
+               
                 return true;
               }
             }
@@ -402,11 +345,6 @@ export function generateDefaultItems(
           if (docCategory) {
             // Direct match
             if (doc.document_category === docType.category) {
-              if (docType.documentType.toLowerCase().includes("promotion")) {
-                console.log(
-                  "✅ Promotion letter matched by document_type + direct category"
-                );
-              }
               return true;
             }
             // Check if both are company documents (more flexible)
@@ -414,21 +352,12 @@ export function generateDefaultItems(
               doc.document_category?.includes("Company") &&
               docType.category.includes("Company")
             ) {
-              if (docType.documentType.toLowerCase().includes("promotion")) {
-                console.log(
-                  "✅ Promotion letter matched by document_type + flexible company"
-                );
-              }
+            
               return true;
             }
             // Check mapped category
             const mappedCategory = mapCategoryLabel(docCategory);
             if (mappedCategory === docType.category) {
-              if (docType.documentType.toLowerCase().includes("promotion")) {
-                console.log(
-                  "✅ Promotion letter matched by document_type + mapped category"
-                );
-              }
               return true;
             }
           }
@@ -463,11 +392,7 @@ export function generateDefaultItems(
           if (docCategory) {
             // Direct match
             if (doc.document_category === docType.category) {
-              if (docType.documentType.toLowerCase().includes("promotion")) {
-                console.log(
-                  "✅ Promotion letter matched by filename + direct category"
-                );
-              }
+             
               return true;
             }
             // Check if both are company documents (more flexible)
@@ -475,21 +400,13 @@ export function generateDefaultItems(
               doc.document_category?.includes("Company") &&
               docType.category.includes("Company")
             ) {
-              if (docType.documentType.toLowerCase().includes("promotion")) {
-                console.log(
-                  "✅ Promotion letter matched by filename + flexible company"
-                );
-              }
+             
               return true;
             }
             // Check mapped category
             const mappedCategory = mapCategoryLabel(docCategory);
             if (mappedCategory === docType.category) {
-              if (docType.documentType.toLowerCase().includes("promotion")) {
-                console.log(
-                  "✅ Promotion letter matched by filename + mapped category"
-                );
-              }
+             
               return true;
             }
           }
@@ -506,7 +423,7 @@ export function generateDefaultItems(
 
       // Special case for promotion letters - try more aggressive matching
       if (docType.documentType.toLowerCase().includes("promotion")) {
-        console.log("🔍 Trying aggressive promotion letter matching...");
+       
 
         // Check if the document name or filename contains "promotion"
         const docNameContainsPromotion =
@@ -527,9 +444,7 @@ export function generateDefaultItems(
             if (docCategory) {
               // Direct match
               if (doc.document_category === docType.category) {
-                console.log(
-                  "✅ Promotion letter matched by aggressive direct category match"
-                );
+               
                 return true;
               }
               // Check if both are company documents (more flexible)
@@ -537,26 +452,20 @@ export function generateDefaultItems(
                 doc.document_category?.includes("Company") &&
                 docType.category.includes("Company")
               ) {
-                console.log(
-                  "✅ Promotion letter matched by aggressive flexible company match"
-                );
+               
                 return true;
               }
               // Check mapped category
               const mappedCategory = mapCategoryLabel(docCategory);
               if (mappedCategory === docType.category) {
-                console.log(
-                  "✅ Promotion letter matched by aggressive mapped category"
-                );
+               
                 return true;
               }
             }
           }
         }
 
-        console.log(
-          "❌ Promotion letter no match found even with aggressive matching"
-        );
+       
       }
       return false;
     });
@@ -618,11 +527,6 @@ export function generateSavedItems(
   return checklistData.data.map((checklistItem: ChecklistItem) => {
     
     
-    // Special debug for promotion letters
-    if (checklistItem.document_type.toLowerCase().includes("promotion")) {
-      console.log("🎯 PROMOTION LETTER CHECKLIST ITEM FOUND:", checklistItem);
-    }
-
     let categoryLabel = mapCategoryLabel(checklistItem.document_category);
 
     if (
@@ -641,31 +545,9 @@ export function generateSavedItems(
     const uploadedDoc = validDocuments.find((doc) => {
       if (!doc || !doc.file_name) return false;
 
-      // Debug logging for promotion letters in generateSavedItems
-      if (checklistItem.document_type.toLowerCase().includes("promotion")) {
-        console.log(
-          "🔍 Checking promotion letter match in generateSavedItems:",
-          {
-            expectedDocType,
-            categoryLabel,
-            docName: doc.document_name,
-            docType: doc.document_type,
-            docCategory: doc.document_category,
-            fileName: doc.file_name,
-          }
-        );
-      }
-
        // First, try to match by document_name field (API field)
        const docTypeFromName = doc.document_name;
-       if (docTypeFromName) {
-         const normalizedDocName = docTypeFromName.toLowerCase().replace(/\s+/g, "_");
-         console.log('🔍 Document name comparison:', {
-           normalizedDocName,
-           expectedDocType,
-           match: normalizedDocName === expectedDocType
-         });
-       }
+      
        if (
          docTypeFromName &&
          docTypeFromName.toLowerCase().replace(/\s+/g, "_") === expectedDocType
@@ -690,11 +572,7 @@ export function generateSavedItems(
 
        // Fallback: try to match by document_type field
        const docTypeFromField = doc.document_type;
-       console.log('🔍 Document type comparison:', {
-         docTypeFromField,
-         expectedDocType,
-         match: docTypeFromField === expectedDocType
-       });
+      
        if (docTypeFromField && docTypeFromField === expectedDocType) {
          // Check category match with mapping
          const docCategory = doc.document_category;
@@ -737,76 +615,6 @@ export function generateSavedItems(
         }
         return true;
       }
-
-       // Special case for promotion letters - try more aggressive matching
-       if (checklistItem.document_type.toLowerCase().includes("promotion")) {
-         console.log(
-           "🔍 Trying aggressive promotion letter matching in generateSavedItems..."
-         );
-         console.log("🔍 Document being checked:", {
-           docName: doc.document_name,
-           docType: doc.document_type,
-           docCategory: doc.document_category,
-           fileName: doc.file_name,
-         });
-
-         // Check if the document name or filename contains "promotion"
-         const docNameContainsPromotion =
-           doc.document_name?.toLowerCase().includes("promotion") ||
-           doc.file_name.toLowerCase().includes("promotion");
-
-         console.log(
-           '🔍 Does document contain "promotion"?',
-           docNameContainsPromotion
-         );
-
-         if (docNameContainsPromotion) {
-           // For company documents, check if both are company-related
-           if (categoryLabel.includes("Company")) {
-             const docCategory = doc.document_category;
-             if (docCategory) {
-               // Direct match
-               if (doc.document_category === categoryLabel) {
-                 console.log(
-                   "✅ Promotion letter matched by aggressive direct category match in generateSavedItems"
-                 );
-                 return true;
-               }
-               // Check if both are company documents (more flexible)
-               if (
-                 doc.document_category?.includes("Company") &&
-                 categoryLabel.includes("Company")
-               ) {
-                 console.log(
-                   "✅ Promotion letter matched by aggressive flexible company match in generateSavedItems"
-                 );
-                 return true;
-               }
-               // Check mapped category
-               const mappedCategory = mapCategoryLabel(docCategory);
-               if (mappedCategory === categoryLabel) {
-                 console.log(
-                   "✅ Promotion letter matched by aggressive mapped category in generateSavedItems"
-                 );
-                 return true;
-               }
-             }
-           }
-         }
-
-         // ULTIMATE FALLBACK: If it's a promotion letter and company document, just match it
-         if (checklistItem.document_type.toLowerCase() === "promotion_letters" && 
-             doc.document_type === "promotion_letters" &&
-             categoryLabel.includes("Company") && 
-             doc.document_category?.includes("Company")) {
-           console.log("🚨 ULTIMATE FALLBACK: Promotion letter matched by type and company");
-           return true;
-         }
-
-         console.log(
-           "❌ Promotion letter no match found even with aggressive matching in generateSavedItems"
-         );
-       }
 
       return false;
     });

@@ -237,7 +237,13 @@ export function useChecklistMutations(applicationId: string) {
           applicationId
         }
       });
-      toast.error(`Failed to delete checklist items: ${error.message}`);
+      
+      // Provide more user-friendly error messages
+      if (error.message.includes('not found')) {
+        toast.error('Some checklist items were already deleted or not found. Please refresh the page to see the current state.');
+      } else {
+        toast.error(`Failed to delete checklist items: ${error.message}`);
+      }
     },
   });
 

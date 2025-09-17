@@ -439,14 +439,14 @@ export default function ApplicationDetailsPage() {
       ) : !isAuthLoading && isAuthenticated && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin') ? (
         <div className="space-y-6">
           {/* Applicant Details */}
-          <ApplicantDetails
-            application={application}
-            isLoading={isApplicationLoading}
-            error={applicationError}
-            documents={documents}
-            isDocumentsLoading={isDocumentsLoading}
-            documentsError={documentsError}
-          />
+            <ApplicantDetails
+              application={application}
+              isLoading={isApplicationLoading}
+              error={applicationError}
+              allDocuments={allDocuments}
+              isAllDocumentsLoading={isAllDocumentsLoading}
+              allDocumentsError={allDocumentsError}
+            />
 
           {/* Documents Section */}
           <div className="space-y-6">
@@ -503,13 +503,14 @@ export default function ApplicationDetailsPage() {
                 // Pending changes props
                 pendingAdditions={checklistState.pendingAdditions}
                 pendingDeletions={checklistState.pendingDeletions}
-                pendingUpdates={checklistState.pendingUpdates}
+                pendingUpdates={[]}
                 onAddToPendingChanges={checklistState.addToPendingChanges}
                 onRemoveFromPendingChanges={checklistState.removeFromPendingChanges}
                 onAddToPendingDeletions={checklistState.addToPendingDeletions}
                 onRemoveFromPendingDeletions={checklistState.removeFromPendingDeletions}
                 onSavePendingChanges={checklistState.savePendingChanges}
                 onClearPendingChanges={checklistState.clearPendingChanges}
+                isBatchDeleting={checklistState.isBatchDeleting}
               />
             )}
           </div>

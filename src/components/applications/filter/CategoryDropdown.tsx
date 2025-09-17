@@ -14,6 +14,7 @@ import { AddCompanyButton } from './AddCompanyButton';
 import { ActionButtons } from './ActionButtons';
 import { Company } from '@/types/documents';
 import { ChecklistState } from '@/types/checklist';
+import { formatDateRange } from '@/utils/dateFormat';
 
 interface CategoryDropdownProps {
   categories: DocumentCategoryInfo[];

@@ -6,9 +6,8 @@ import { SearchBox } from '@/components/ui/SearchBox';
 import { ChecklistTabs } from './ChecklistTabs';
 import { PendingChangesBanner } from './PendingChangesBanner';
 import { CompanyInfoDisplay } from './CompanyInfoDisplay';
-import { ChecklistState } from '@/types/checklist';
+import { ChecklistDocument, ChecklistState } from '@/types/checklist';
 import { Company } from '@/types/documents';
-import { generateCompanyDescription } from '@/utils/dateCalculations';
 
 interface ChecklistTableHeaderProps {
   title: string;
@@ -20,9 +19,9 @@ interface ChecklistTableHeaderProps {
   onTabChange: (tab: 'current' | 'available') => void;
   currentCount: number;
   availableCount: number;
-  pendingAdditions: any[];
+  pendingAdditions: ChecklistDocument[];
   pendingDeletions: string[];
-  pendingUpdates: any[];
+  pendingUpdates: ChecklistDocument[];
   onClearPendingChanges?: () => void;
   onSavePendingChanges?: () => Promise<void>;
   extractedCompanies: Company[];

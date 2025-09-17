@@ -48,7 +48,6 @@ interface ChecklistTableBodyProps {
   onRemoveFromPendingDeletions?: (checklistId: string) => void;
   onSavePendingChanges?: () => Promise<void>;
   onClearPendingChanges?: () => void;
-  pendingAdditions: ChecklistDocument[];
   pendingDeletions: string[];
   handleViewDocuments: (documentType: string, companyCategory?: string) => void;
   handleUploadClick: (documentType: string, category: string) => void;
@@ -59,6 +58,7 @@ interface ChecklistTableBodyProps {
   addingDocumentId?: string;
   isDocumentAdded: boolean;
   addedDocumentId?: string;
+  isBatchDeleting?: boolean;
 }
 
 export const ChecklistTableBody = memo(function ChecklistTableBody({
@@ -81,7 +81,6 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
   onRemoveFromPendingDeletions,
   onSavePendingChanges,
   onClearPendingChanges,
-  pendingAdditions,
   pendingDeletions,
   handleViewDocuments,
   handleUploadClick,
@@ -91,7 +90,8 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
   isAddingDocument,
   addingDocumentId,
   isDocumentAdded,
-  addedDocumentId
+  addedDocumentId,
+  isBatchDeleting = false
 }: ChecklistTableBodyProps) {
   const paginatedItems = filteredItems.slice(startIndex, endIndex);
 
@@ -168,7 +168,6 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                     onRemoveFromPendingDeletions={onRemoveFromPendingDeletions}
                     onSavePendingChanges={onSavePendingChanges}
                     onClearPendingChanges={onClearPendingChanges}
-                    pendingAdditions={pendingAdditions}
                     pendingDeletions={pendingDeletions}
                     handleViewDocuments={handleViewDocuments}
                     handleUploadClick={handleUploadClick}
@@ -179,6 +178,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                     addingDocumentId={addingDocumentId}
                     isDocumentAdded={isDocumentAdded}
                     addedDocumentId={addedDocumentId}
+                    isBatchDeleting={isBatchDeleting}
                     commentCounts={commentCounts}
                   />
                 ))
