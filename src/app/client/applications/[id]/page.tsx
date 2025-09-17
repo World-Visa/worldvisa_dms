@@ -1,27 +1,30 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { ClientApplicationDetails } from '@/components/applications/ClientApplicationDetails';
-import { DocumentsTable } from '@/components/applications/DocumentsTable';
-import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
-import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
-import { DocumentCategory, Company } from '@/types/documents';
-import { ClientDocument } from '@/types/client';
-import { Document } from '@/types/applications';
-import { useClientApplication } from '@/hooks/useClientApplication';
-import { useClientDocuments, useAllClientDocuments } from '@/hooks/useClientDocuments';
-import { useClientChecklist } from '@/hooks/useClientChecklist';
-import { useAuth } from '@/hooks/useAuth';
-import { useQueryClient } from '@tanstack/react-query';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
-import { AddCompanyDialog } from '@/components/applications/AddCompanyDialog';
-import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
-import { generateChecklistCategories } from '@/lib/checklist/categoryUtils';
+import React, { useState, useEffect, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { ClientApplicationDetails } from "@/components/applications/ClientApplicationDetails";
+import { DocumentsTable } from "@/components/applications/DocumentsTable";
+import { DocumentChecklistTable } from "@/components/applications/DocumentChecklistTable";
+import { DocumentCategoryFilter } from "@/components/applications/DocumentCategoryFilter";
+import { DocumentCategory, Company } from "@/types/documents";
+import { ClientDocument } from "@/types/client";
+import { Document } from "@/types/applications";
+import { useClientApplication } from "@/hooks/useClientApplication";
+import {
+  useClientDocuments,
+  useAllClientDocuments,
+} from "@/hooks/useClientDocuments";
+import { useClientChecklist } from "@/hooks/useClientChecklist";
+import { useAuth } from "@/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
+import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
+import { generateChecklistCategories } from "@/lib/checklist/categoryUtils";
 
 export default function ClientApplicationDetailsPage() {
   const params = useParams();
@@ -29,20 +32,24 @@ export default function ClientApplicationDetailsPage() {
   const applicationId = params.id as string;
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
-  
-  const [selectedCategory, setSelectedCategory] = useState<string>('submitted');
+
+  const [selectedCategory, setSelectedCategory] = useState<string>("submitted");
   const [documentsPage, setDocumentsPage] = useState(1);
   const documentsLimit = 10;
   const [isCategoryChanging, setIsCategoryChanging] = useState(false);
-  
+
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
   const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
-  const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
-  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
-  const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
+  const [selectedReuploadDocument, setSelectedReuploadDocument] =
+    useState<Document | null>(null);
+  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] =
+    useState<string>("");
+  const [
+    selectedReuploadDocumentCategory,
+    setSelectedReuploadDocumentCategory,
+  ] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
-
 
   // Refresh function
   const handleRefresh = async () => {
@@ -50,25 +57,28 @@ export default function ClientApplicationDetailsPage() {
     try {
       // Invalidate all relevant queries
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['client-application'] }),
-        queryClient.invalidateQueries({ queryKey: ['client-documents'] }),
-        queryClient.invalidateQueries({ queryKey: ['client-documents-all'] }),
-        queryClient.invalidateQueries({ queryKey: ['client-checklist', applicationId] }),
-        queryClient.invalidateQueries({ queryKey: ['document-comment-counts'] }),
+        queryClient.invalidateQueries({ queryKey: ["client-application"] }),
+        queryClient.invalidateQueries({ queryKey: ["client-documents"] }),
+        queryClient.invalidateQueries({ queryKey: ["client-documents-all"] }),
+        queryClient.invalidateQueries({
+          queryKey: ["client-checklist", applicationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["document-comment-counts"],
+        }),
       ]);
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error("Error refreshing data:", error);
     } finally {
       setIsRefreshing(false);
     }
   };
 
   useEffect(() => {
-    if (!isAuthLoading && (!isAuthenticated || user?.role !== 'client')) {
-      router.push('/client-login');
+    if (!isAuthLoading && (!isAuthenticated || user?.role !== "client")) {
+      router.push("/client-login");
     }
   }, [isAuthenticated, isAuthLoading, user?.role, router]);
-
 
   const {
     data: applicationData,
@@ -97,46 +107,70 @@ export default function ClientApplicationDetailsPage() {
 
   // Prioritize API data (allDocumentsData) over locally generated data
   useEffect(() => {
-    if (allDocumentsData?.data?.documents && allDocumentsData.data.documents.length > 0) {
+    if (
+      allDocumentsData?.data?.documents &&
+      allDocumentsData.data.documents.length > 0
+    ) {
       const companyMap = new Map<string, Company>();
-      
+
       allDocumentsData.data.documents.forEach((doc: ClientDocument) => {
-        if (doc.document_category && doc.document_category.includes('Company Documents')) {
+        if (
+          doc.document_category &&
+          doc.document_category.includes("Company Documents")
+        ) {
           // Extract company name from category (e.g., "Microsoft Company Documents" -> "Microsoft")
-          const companyName = doc.document_category.replace(' Company Documents', '');
-          
+          const companyName = doc.document_category.replace(
+            " Company Documents",
+            ""
+          );
+
           // Always prioritize API data if description is available
           if (doc.description) {
             // Try to extract dates from description (e.g., "Worked at worldvisa from Aug 06, 2024 to Jul 24, 2025 (11 months)")
-            const dateMatch = doc.description.match(/from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i);
+            const dateMatch = doc.description.match(
+              /from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i
+            );
             if (dateMatch) {
               const fromDateStr = dateMatch[1]; // "Aug 06, 2024"
-              const toDateStr = dateMatch[2];   // "Jul 24, 2025"
-              
+              const toDateStr = dateMatch[2]; // "Jul 24, 2025"
+
               try {
                 // Convert to YYYY-MM-DD format without timezone issues
                 const fromDateObj = new Date(fromDateStr);
                 const toDateObj = new Date(toDateStr);
-                
+
                 // Format as YYYY-MM-DD without timezone conversion
-                const fromDate = `${fromDateObj.getFullYear()}-${String(fromDateObj.getMonth() + 1).padStart(2, '0')}-${String(fromDateObj.getDate()).padStart(2, '0')}`;
-                const toDate = `${toDateObj.getFullYear()}-${String(toDateObj.getMonth() + 1).padStart(2, '0')}-${String(toDateObj.getDate()).padStart(2, '0')}`;
-                
+                const fromDate = `${fromDateObj.getFullYear()}-${String(
+                  fromDateObj.getMonth() + 1
+                ).padStart(2, "0")}-${String(fromDateObj.getDate()).padStart(
+                  2,
+                  "0"
+                )}`;
+                const toDate = `${toDateObj.getFullYear()}-${String(
+                  toDateObj.getMonth() + 1
+                ).padStart(2, "0")}-${String(toDateObj.getDate()).padStart(
+                  2,
+                  "0"
+                )}`;
+
                 companyMap.set(companyName, {
                   name: companyName,
                   category: doc.document_category,
                   fromDate: fromDate,
                   toDate: toDate,
-                  description: doc.description
+                  description: doc.description,
                 });
               } catch (error) {
-                console.error('Error parsing dates from API description:', error);
+                console.error(
+                  "Error parsing dates from API description:",
+                  error
+                );
               }
             }
           }
         }
       });
-      
+
       // Update companies state with API data if available
       if (companyMap.size > 0) {
         setCompanies(Array.from(companyMap.values()));
@@ -144,78 +178,101 @@ export default function ClientApplicationDetailsPage() {
     }
   }, [allDocumentsData?.data?.documents]);
 
-
   // Extract companies from documents API response, but prioritize actual company data
   const extractedCompanies = useMemo(() => {
     // Get company categories from documents (if any exist)
     const companyCategories = new Set<string>();
-    if (allDocumentsData?.data?.documents && allDocumentsData.data.documents.length > 0) {
-      allDocumentsData.data.documents.forEach((doc: { document_category?: string }) => {
-        if (doc.document_category && doc.document_category.includes('Company Documents')) {
-          companyCategories.add(doc.document_category);
+    if (
+      allDocumentsData?.data?.documents &&
+      allDocumentsData.data.documents.length > 0
+    ) {
+      allDocumentsData.data.documents.forEach(
+        (doc: { document_category?: string }) => {
+          if (
+            doc.document_category &&
+            doc.document_category.includes("Company Documents")
+          ) {
+            companyCategories.add(doc.document_category);
+          }
         }
-      });
+      );
     }
-    
+
     // Always include companies from the companies state (which have correct dates and descriptions)
     const existingCompanies = companies || [];
-    
+
     // If we have companies from state, use them (regardless of whether they have documents)
     if (existingCompanies.length > 0) {
       return existingCompanies;
     }
-    
+
     // Fallback: generate companies from document categories (for backward compatibility)
     if (companyCategories.size > 0) {
-      return Array.from(companyCategories).map(category => {
+      return Array.from(companyCategories).map((category) => {
         // Extract company name from category (e.g., "worldvisa Company Documents" -> "worldvisa")
-        const companyName = category.split(' ')[0].toLowerCase();
-        
+        const companyName = category.split(" ")[0].toLowerCase();
+
         // Try to find a document with description for this company to extract dates
-        let description = '';
+        let description = "";
         let fromDate = "2024-01-01"; // Default fallback dates
         let toDate = "2025-12-31";
-        
-        if (allDocumentsData?.data?.documents && allDocumentsData.data.documents.length > 0) {
-          const companyDoc = allDocumentsData.data.documents.find((doc: ClientDocument) => 
-            doc.document_category === category && doc.description
+
+        if (
+          allDocumentsData?.data?.documents &&
+          allDocumentsData.data.documents.length > 0
+        ) {
+          const companyDoc = allDocumentsData.data.documents.find(
+            (doc: ClientDocument) =>
+              doc.document_category === category && doc.description
           );
-          
+
           if (companyDoc && companyDoc.description) {
             description = companyDoc.description;
-            
+
             // Try to extract dates from description
-            const dateMatch = companyDoc.description.match(/from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i);
+            const dateMatch = companyDoc.description.match(
+              /from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i
+            );
             if (dateMatch) {
               const fromDateStr = dateMatch[1];
               const toDateStr = dateMatch[2];
-              
+
               try {
                 const fromDateObj = new Date(fromDateStr);
                 const toDateObj = new Date(toDateStr);
-                
-                fromDate = `${fromDateObj.getFullYear()}-${String(fromDateObj.getMonth() + 1).padStart(2, '0')}-${String(fromDateObj.getDate()).padStart(2, '0')}`;
-                toDate = `${toDateObj.getFullYear()}-${String(toDateObj.getMonth() + 1).padStart(2, '0')}-${String(toDateObj.getDate()).padStart(2, '0')}`;
+
+                fromDate = `${fromDateObj.getFullYear()}-${String(
+                  fromDateObj.getMonth() + 1
+                ).padStart(2, "0")}-${String(fromDateObj.getDate()).padStart(
+                  2,
+                  "0"
+                )}`;
+                toDate = `${toDateObj.getFullYear()}-${String(
+                  toDateObj.getMonth() + 1
+                ).padStart(2, "0")}-${String(toDateObj.getDate()).padStart(
+                  2,
+                  "0"
+                )}`;
               } catch {
                 // Failed to parse dates, using defaults
               }
             }
           }
         }
-        
+
         return {
           name: companyName,
           category: category,
           fromDate: fromDate,
           toDate: toDate,
-          description: description
+          description: description,
         };
       });
     }
-    
+
     return [];
   }, [allDocumentsData?.data?.documents, companies]);
-  
+
   // Use extracted companies (which now prioritizes actual company data)
   const finalCompanies = extractedCompanies;
 
@@ -228,39 +285,46 @@ export default function ClientApplicationDetailsPage() {
     try {
       setSelectedCategory(category);
       setDocumentsPage(1);
-      
-      await new Promise(resolve => setTimeout(resolve, 300));
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } finally {
       setIsCategoryChanging(false);
     }
   };
 
-
   const handleDeleteSuccess = () => {
     // Just invalidate queries to refresh the data without page reload
-    queryClient.invalidateQueries({ queryKey: ['client-documents'] });
-    queryClient.invalidateQueries({ queryKey: ['client-checklist'] });
+    queryClient.invalidateQueries({ queryKey: ["client-documents"] });
+    queryClient.invalidateQueries({ queryKey: ["client-checklist"] });
   };
 
   // Company management functions
   const handleAddCompany = (company: Company) => {
     const companyWithCategory = {
       ...company,
-      category: `${company.name} Company Documents`
+      category: `${company.name} Company Documents`,
     };
-    setCompanies(prev => [...prev, companyWithCategory]);
+    setCompanies((prev) => [...prev, companyWithCategory]);
     setIsAddCompanyDialogOpen(false);
   };
 
   const handleRemoveCompany = (companyName: string) => {
-    setCompanies(prev => prev.filter(company => company.name !== companyName));
+    setCompanies((prev) =>
+      prev.filter((company) => company.name !== companyName)
+    );
   };
 
-  const handleReuploadDocument = (documentId: string, documentType: string, category: string) => {
+  const handleReuploadDocument = (
+    documentId: string,
+    documentType: string,
+    category: string
+  ) => {
     // Find the document to reupload
-    const documentToReupload = documentsData?.data?.documents?.find(doc => doc._id === documentId);
+    const documentToReupload = documentsData?.data?.documents?.find(
+      (doc) => doc._id === documentId
+    );
     if (!documentToReupload) {
-      console.error('Document not found for reupload:', documentId);
+      console.error("Document not found for reupload:", documentId);
       return;
     }
 
@@ -273,15 +337,19 @@ export default function ClientApplicationDetailsPage() {
   const handleReuploadModalClose = () => {
     setIsReuploadModalOpen(false);
     setSelectedReuploadDocument(null);
-    setSelectedReuploadDocumentType('');
-    setSelectedReuploadDocumentCategory('');
+    setSelectedReuploadDocumentType("");
+    setSelectedReuploadDocumentCategory("");
   };
 
   // Check if checklist has company documents
-  const hasCompanyDocuments = checklistData?.data?.some(item => item.document_category === 'Company') || false;
+  const hasCompanyDocuments =
+    checklistData?.data?.some((item) => item.document_category === "Company") ||
+    false;
 
-
-  if ((applicationError && !applicationData) || (allDocumentsError && !allDocumentsData)) {
+  if (
+    (applicationError && !applicationData) ||
+    (allDocumentsError && !allDocumentsData)
+  ) {
     return (
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center space-x-4">
@@ -291,7 +359,7 @@ export default function ClientApplicationDetailsPage() {
             </Button>
           </Link>
         </div>
-        
+
         <Alert variant="destructive">
           <AlertDescription>
             Failed to load application details. Please try again later.
@@ -306,12 +374,16 @@ export default function ClientApplicationDetailsPage() {
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-4">
           <div>
-            <h1 className="text-xl sm:text-2xl font-lexend font-bold">My Application</h1>
+            <h1 className="text-xl sm:text-2xl font-lexend font-bold">
+              My Application
+            </h1>
             <div className="text-muted-foreground ">
               {isApplicationLoading ? (
                 <Skeleton className="h-4 w-32" />
+              ) : applicationData?.data ? (
+                `Application ID: ${applicationData.data.id}`
               ) : (
-                applicationData?.data ? `Application ID: ${applicationData.data.id}` : 'Loading...'
+                "Loading..."
               )}
             </div>
           </div>
@@ -323,12 +395,18 @@ export default function ClientApplicationDetailsPage() {
           disabled={isRefreshing}
           className="flex items-center gap-2"
         >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
           <span className="hidden sm:inline">Refresh</span>
         </Button>
       </div>
       {/* Loading State */}
-      {(isAuthLoading || isApplicationLoading || isDocumentsLoading || isAllDocumentsLoading || isChecklistLoading) ? (
+      {isAuthLoading ||
+      isApplicationLoading ||
+      isDocumentsLoading ||
+      isAllDocumentsLoading ||
+      isChecklistLoading ? (
         <div className="space-y-6">
           <div className="flex justify-between w-full gap-8 items-end">
             <div className="space-y-4 w-full">
@@ -350,17 +428,17 @@ export default function ClientApplicationDetailsPage() {
           </div>
           <Skeleton className="h-96 w-full rounded-xl" />
         </div>
-      ) : !isAuthLoading && isAuthenticated && user?.role === 'client' ? (
+      ) : !isAuthLoading && isAuthenticated && user?.role === "client" ? (
         <div className="space-y-6">
           {/* Application Details */}
-            <ClientApplicationDetails
-              data={applicationData}
-              documents={allDocumentsData?.data?.documents}
-              isDocumentsLoading={isAllDocumentsLoading}
-              documentsError={allDocumentsError}
-              isLoading={isApplicationLoading}
-              error={applicationError}
-            />
+          <ClientApplicationDetails
+            data={applicationData}
+            documents={allDocumentsData?.data?.documents}
+            isDocumentsLoading={isAllDocumentsLoading}
+            documentsError={allDocumentsError}
+            isLoading={isApplicationLoading}
+            error={applicationError}
+          />
 
           {/* Documents Section */}
           <div className="space-y-6">
@@ -373,8 +451,14 @@ export default function ClientApplicationDetailsPage() {
               onRemoveCompany={handleRemoveCompany}
               maxCompanies={5}
               isClientView={true}
-              submittedDocumentsCount={allDocumentsData?.data?.documents?.length || 0}
-              checklistCategories={generateChecklistCategories(checklistData, allDocumentsData, finalCompanies)}
+              submittedDocumentsCount={
+                allDocumentsData?.data?.documents?.length || 0
+              }
+              checklistCategories={generateChecklistCategories(
+                checklistData,
+                allDocumentsData,
+                finalCompanies
+              )}
               hasCompanyDocuments={hasCompanyDocuments}
               // Loading state
               isCategoryChanging={isCategoryChanging}
@@ -382,23 +466,30 @@ export default function ClientApplicationDetailsPage() {
 
             {/* Conditional Rendering */}
             {(() => {
-              const hasChecklist = checklistData?.data && Array.isArray(checklistData.data) && checklistData.data.length > 0;
-              const hasSubmittedDocuments = (allDocumentsData?.data?.documents?.length || 0) > 0;
-              
+              const hasChecklist =
+                checklistData?.data &&
+                Array.isArray(checklistData.data) &&
+                checklistData.data.length > 0;
+              const hasSubmittedDocuments =
+                (allDocumentsData?.data?.documents?.length || 0) > 0;
+
               // If no checklist and no submitted documents, show the no checklist message
               if (!hasChecklist && !hasSubmittedDocuments) {
                 return (
                   <div className="text-center py-12">
                     <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 max-w-md mx-auto">
-                      <h3 className="text-lg font-semibold text-yellow-800 mb-2">No Checklist Generated</h3>
+                      <h3 className="text-lg font-semibold text-yellow-800 mb-2">
+                        No Checklist Generated
+                      </h3>
                       <p className="text-yellow-700">
-                        No checklist has been generated. Contact your application handling processing executive.
+                        No checklist has been generated. Contact your
+                        application handling processing executive.
                       </p>
                     </div>
                   </div>
                 );
               }
-              
+
               // If no checklist but has submitted documents, show submitted documents
               if (!hasChecklist && hasSubmittedDocuments) {
                 return (
@@ -416,9 +507,9 @@ export default function ClientApplicationDetailsPage() {
                   />
                 );
               }
-              
+
               // Normal rendering based on selected category
-              if (selectedCategory === 'submitted') {
+              if (selectedCategory === "submitted") {
                 return (
                   <DocumentsTable
                     applicationId={applicationId}
@@ -436,7 +527,9 @@ export default function ClientApplicationDetailsPage() {
               } else {
                 return (
                   <DocumentChecklistTable
-                    documents={allDocumentsData?.data?.documents as unknown as Document[]}
+                    documents={
+                      allDocumentsData?.data?.documents as unknown as Document[]
+                    }
                     isLoading={isChecklistLoading}
                     error={checklistError}
                     applicationId={applicationId}
@@ -444,7 +537,11 @@ export default function ClientApplicationDetailsPage() {
                     companies={finalCompanies}
                     isClientView={true}
                     checklistData={checklistData}
-                    checklistState={checklistData?.data && checklistData.data.length > 0 ? 'saved' : 'none'}
+                    checklistState={
+                      checklistData?.data && checklistData.data.length > 0
+                        ? "saved"
+                        : "none"
+                    }
                     onAddCompany={() => setIsAddCompanyDialogOpen(true)}
                     onRemoveCompany={handleRemoveCompany}
                   />
@@ -455,8 +552,12 @@ export default function ClientApplicationDetailsPage() {
         </div>
       ) : (
         <div className="text-center py-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You don&apos;t have permission to access this page.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Access Denied
+          </h2>
+          <p className="text-gray-600">
+            You don&apos;t have permission to access this page.
+          </p>
         </div>
       )}
 
