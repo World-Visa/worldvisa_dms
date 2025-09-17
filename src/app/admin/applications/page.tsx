@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { useApplications } from '@/hooks/useApplications';
 import { useSearchApplications } from '@/hooks/useSearchApplications';
+import { useDebounce } from '@/hooks/useDebounce';
 import { ApplicationsFilters } from '@/components/applications/ApplicationsFilters';
 import { ApplicationsTable } from '@/components/applications/ApplicationsTable';
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
@@ -19,6 +20,9 @@ export default function AllApplicationsPage() {
   
   // Separate state for the actual search query that triggers API calls
   const [searchQuery, setSearchQuery] = useState('');
+  
+  // Debounce search input for better performance
+  const debouncedSearch = useDebounce(search, 300);
   
   // Check if we're in search mode
   const isSearchMode = searchQuery.trim() !== '';
@@ -53,11 +57,11 @@ export default function AllApplicationsPage() {
       limit,
       startDate,
       endDate,
-      search: searchQuery || undefined,
+      // Remove search from regular filters since we have a separate search endpoint
     };
     
     return filterParams;
-  }, [page, limit, dateRange, searchQuery]);
+  }, [page, limit, dateRange]);
 
   // Fetch regular applications (only when not in search mode)
   const { data, isLoading, error } = useApplications(filters);
@@ -76,7 +80,6 @@ export default function AllApplicationsPage() {
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
-    // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, []);
 
@@ -94,9 +97,21 @@ export default function AllApplicationsPage() {
   }, []);
 
   const handleSearchClick = useCallback(() => {
-    setSearchQuery(search);
-    setPage(1);
+    if (search.trim()) {
+      setSearchQuery(search.trim());
+      setPage(1);
+    }
   }, [search]);
+
+  // Auto-search when debounced search changes
+  useEffect(() => {
+    if (debouncedSearch.trim() && debouncedSearch.length >= 2) {
+      setSearchQuery(debouncedSearch.trim());
+      setPage(1);
+    } else if (debouncedSearch.trim() === '') {
+      setSearchQuery('');
+    }
+  }, [debouncedSearch]);
 
   const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
     setDateRange(range);
@@ -110,6 +125,13 @@ export default function AllApplicationsPage() {
     setDateRange(undefined);
     setPage(1);
   }, []);
+
+  // Add keyboard shortcut for search (Enter key)
+  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && search.trim()) {
+      handleSearchClick();
+    }
+  }, [search, handleSearchClick]);
 
   const totalApplications = data?.pagination.totalRecords || 0;
   
@@ -162,6 +184,7 @@ export default function AllApplicationsPage() {
           onDateRangeChange={handleDateRangeChange}
           onLimitChange={handleLimitChange}
           onClearFilters={handleClearFilters}
+          onKeyPress={handleKeyPress}
         />
       </div>
 
@@ -174,9 +197,33 @@ export default function AllApplicationsPage() {
                 {isSearchMode ? 'Error searching applications' : 'Error loading applications'}
               </p>
               <p className="text-sm mt-1">{displayError instanceof Error ? displayError.message : displayError}</p>
+              {isSearchMode && (
+                <p className="text-xs mt-2 text-gray-500">
+                  Please check your search term and try again. Make sure you have at least 2 characters.
+                </p>
+              )}
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Search Results Header */}
+      {isSearchMode && (
+        <div className="mb-4">
+          <h3 className="text-lg font-semibold text-gray-900">
+            Search Results ({searchData?.data?.length || 0} results)
+          </h3>
+          <p className="text-sm text-gray-600">
+            Searching for &quot;{searchQuery}&quot; in {searchType}
+          </p>
+          {!isSearchQueryLoading && searchData?.data?.length === 0 && (
+            <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-yellow-800 text-sm">
+                No applications found matching your search criteria. Try adjusting your search term or search type.
+              </p>
+            </div>
+          )}
+        </div>
       )}
 
       {/* Applications Table */}

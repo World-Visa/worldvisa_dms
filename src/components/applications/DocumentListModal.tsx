@@ -45,7 +45,6 @@ export function DocumentListModal({
   // Ensure all documents are cached for real-time updates when modal opens
   useEffect(() => {
     if (isOpen && documents.length > 0) {
-      console.log('DocumentListModal: Caching documents when modal opens:', documents.length);
       documents.forEach(doc => {
         queryClient.setQueryData(['document', doc._id], doc);
         console.log('Cached document in DocumentListModal:', doc._id, doc.status);

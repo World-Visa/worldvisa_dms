@@ -7,8 +7,8 @@ export interface SearchResponse {
 }
 
 /**
- * Search visa applications using the regular applications endpoint with search parameter
- * @param searchParams - Search parameters (name, phone, email, word)
+ * Search visa applications using the dedicated search endpoint
+ * @param searchParams - Search parameters (name, phone, email)
  * @returns Promise<SearchResponse>
  */
 export async function searchApplications(searchParams: SearchParams): Promise<SearchResponse> {
@@ -17,15 +17,23 @@ export async function searchApplications(searchParams: SearchParams): Promise<Se
     Object.entries(searchParams).filter(([, value]) => value && value.trim() !== '')
   );
 
-  // Get the first non-empty search value
-  const searchValue = Object.values(filteredParams)[0];
-  
-  if (!searchValue) {
+  // Validate that at least one search parameter is provided
+  if (Object.keys(filteredParams).length === 0) {
     throw new Error('At least one search parameter is required');
   }
 
-  // Use the regular applications endpoint with search parameter
-  const url = `/api/zoho_dms/visa_applications?search=${encodeURIComponent(searchValue)}&page=1&limit=100`;
+  // Build query string for search endpoint
+  const queryParams = new URLSearchParams();
+  
+  // Add each non-empty search parameter
+  Object.entries(filteredParams).forEach(([key, value]) => {
+    if (value && value.trim() !== '') {
+      queryParams.append(key, value.trim());
+    }
+  });
+
+  // Use the dedicated search endpoint
+  const url = `/api/zoho_dms/visa_applications/search?${queryParams.toString()}`;
   
   return fetcher<SearchResponse>(url);
 }
@@ -38,3 +46,4 @@ export async function searchApplications(searchParams: SearchParams): Promise<Se
 export function isValidSearchParams(searchParams: SearchParams): boolean {
   return Object.values(searchParams).some(value => value && value.trim() !== '');
 }
+

@@ -21,6 +21,7 @@ interface ApplicationsFiltersProps {
   onDateRangeChange: (range: DateRange | undefined) => void;
   onLimitChange: (value: number) => void;
   onClearFilters: () => void;
+  onKeyPress?: (e: React.KeyboardEvent) => void;
 }
 
 export function ApplicationsFilters({
@@ -35,6 +36,7 @@ export function ApplicationsFilters({
   onDateRangeChange,
   onLimitChange,
   onClearFilters,
+  onKeyPress,
 }: ApplicationsFiltersProps) {
   return (
     <div>
@@ -79,6 +81,7 @@ export function ApplicationsFilters({
                 placeholder={`Search by ${searchType}...`}
                 value={search}
                 onChange={(e) => onSearchChange(e.target.value)}
+                onKeyPress={onKeyPress}
                 className="pl-10 h-10"
               />
             </div>

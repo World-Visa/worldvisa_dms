@@ -32,11 +32,7 @@ export function DocumentRow({
   // Use the current document from cache, fallback to prop
   const displayDocument = currentDocument || document;
   
-  console.log('DocumentRow: document._id:', document._id);
-  console.log('DocumentRow: currentDocument from cache:', currentDocument?.status);
-  console.log('DocumentRow: displayDocument status:', displayDocument.status);
-  console.log('DocumentRow: cache timestamp:', new Date().toISOString());
-  
+ 
   return (
     <div
       key={displayDocument._id}
