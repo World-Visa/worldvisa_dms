@@ -25,10 +25,13 @@ export function useClientLogin() {
 
   return useMutation({
     mutationFn: async (credentials: ClientLoginRequest) => {
+      // Clear any previous errors before attempting login
+      clearError();
       return await login(credentials, 'client');
     },
     onError: (error) => {
       console.error('Client login error:', error);
+      // Don't clear error here - let the form handle it
     },
     onSuccess: () => {
       clearError();

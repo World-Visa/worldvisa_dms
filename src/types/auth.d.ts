@@ -29,6 +29,7 @@ export interface AdminLoginRequest {
 
 export interface ClientLoginRequest {
   email: string;
+  password: string;
 }
 
 export interface AuthState {

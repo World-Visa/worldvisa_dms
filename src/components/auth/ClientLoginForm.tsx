@@ -12,8 +12,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { User, Loader2, Mail } from 'lucide-react';
+import { User, Loader2, Mail, Lock } from 'lucide-react';
 import Image from 'next/image';
+import { toast } from 'sonner';
 
 export function ClientLoginForm() {
   const router = useRouter();
@@ -40,14 +41,20 @@ export function ClientLoginForm() {
   }, []);
 
   const onSubmit = async (data: ClientLoginFormData) => {
+    // Clear any previous errors
+    setError('root', { message: '' });
+    
     try {
       await clientLoginMutation.mutateAsync(data);
-      // Redirect to client applications page after successful login
-      // The application ID will be extracted from the user's lead_id
+      toast.success('Login successful! Redirecting to your dashboard...');
       router.push('/client/applications');
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Login failed. Please try again.';
+      
+      toast.error(errorMessage);
+      
       setError('root', {
-        message: error instanceof Error ? error.message : 'Login failed. Please try again.',
+        message: errorMessage,
       });
     }
   };
@@ -89,12 +96,12 @@ export function ClientLoginForm() {
                   Client Login
                 </CardTitle>
                 <CardDescription className="text-gray-600">
-                  Enter your registered email to access your documents
+                  Enter your email and password to access your documents
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                  {errors.root && (
+                  {errors.root && errors.root.message && (
                     <Alert variant="destructive">
                       <AlertDescription>{errors.root.message}</AlertDescription>
                     </Alert>
@@ -119,16 +126,35 @@ export function ClientLoginForm() {
                     )}
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                      Password
+                    </Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      <Input
+                        id="password"
+                        type="password"
+                        placeholder="Enter your password"
+                        className="h-12 pl-10"
+                        {...register('password')}
+                      />
+                    </div>
+                    {errors.password && (
+                      <p className="text-sm text-red-600">{errors.password.message}</p>
+                    )}
+                  </div>
+
                   <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                     <div className="flex items-start gap-3">
                       <div className="p-1 bg-blue-100 rounded-full mt-0.5">
-                        <Mail className="h-4 w-4 text-blue-600" />
+                        <Lock className="h-4 w-4 text-blue-600" />
                       </div>
                       <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">Email-only Login</p>
+                        <p className="font-medium mb-1">Secure Login</p>
                         <p className="text-blue-700">
-                          Simply enter your registered email address to access your client portal.
-                          No password required for enhanced security.
+                          Enter your registered email address and password to access your client portal.
+                          Your credentials are securely encrypted and protected.
                         </p>
                       </div>
                     </div>
