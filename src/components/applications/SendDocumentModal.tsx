@@ -42,15 +42,19 @@ export function SendDocumentModal({
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([selectedDocument._id]);
   const [selectedAdmins, setSelectedAdmins] = useState<string[]>([]);
 
-  // Memoize admin options for performance
+  // Memoize admin options for performance - filter to only show team_leader, supervisor, and master_admin
   const adminOptions: MultiSelectOption[] = useMemo(() => {
     if (!adminUsers) return [];
     
-    return adminUsers.map(admin => ({
-      value: admin.username,
-      label: admin.username,
-      role: admin.role
-    }));
+    const allowedRoles = ['team_leader', 'supervisor', 'master_admin'];
+    
+    return adminUsers
+      .filter(admin => allowedRoles.includes(admin.role))
+      .map(admin => ({
+        value: admin.username,
+        label: admin.username,
+        role: admin.role
+      }));
   }, [adminUsers]);
 
   const handleDocumentToggle = (documentId: string) => {
