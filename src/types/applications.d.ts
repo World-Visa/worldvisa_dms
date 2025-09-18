@@ -20,7 +20,8 @@ export interface Application {
   Service_Finalized?: string;
   Suggested_Anzsco?: string;
   Send_Check_List?: string;
-  Assessing_Authority?:string;
+  Assessing_Authority?: string;
+  DMS_Application_Status?: string;
 }
 
 export interface Document {
@@ -55,7 +56,7 @@ export interface Document {
   __v: number;
 }
 
-export type DocumentStatus = Document['status'];
+export type DocumentStatus = Document["status"];
 
 export interface DocumentStatusUpdate {
   documentId: string;
