@@ -1,29 +1,37 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { ApplicantDetails } from '@/components/applications/ApplicantDetails';
-import { DocumentsTable } from '@/components/applications/DocumentsTable';
-import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
-import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
-import { AddCompanyDialog } from '@/components/applications/AddCompanyDialog';
-import { useApplicationDetails } from '@/hooks/useApplicationDetails';
-import { useApplicationDocuments, useAllApplicationDocuments } from '@/hooks/useApplicationDocuments';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, RefreshCw, CheckCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import Link from 'next/link';
-import { useState } from 'react';
-import { DocumentCategory, Company } from '@/types/documents';
-import { Document } from '@/types/applications';
-import { localStorageUtils } from '@/lib/localStorage';
-import { useChecklistState } from '@/hooks/useChecklistState';
-import { useChecklistURLState } from '@/lib/urlState';
-import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
-import { useQueryClient } from '@tanstack/react-query';
+import React, { useEffect, useMemo } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
+import { ApplicantDetails } from "@/components/applications/ApplicantDetails";
+import { DocumentsTable } from "@/components/applications/DocumentsTable";
+import { DocumentChecklistTable } from "@/components/applications/DocumentChecklistTable";
+import { DocumentCategoryFilter } from "@/components/applications/DocumentCategoryFilter";
+import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
+import { useApplicationDetails } from "@/hooks/useApplicationDetails";
+import {
+  useApplicationDocuments,
+  useAllApplicationDocuments,
+} from "@/hooks/useApplicationDocuments";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ArrowLeft, RefreshCw, CheckCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import Link from "next/link";
+import { useState } from "react";
+import { DocumentCategory, Company } from "@/types/documents";
+import { Document } from "@/types/applications";
+import { localStorageUtils } from "@/lib/localStorage";
+import { useChecklistState } from "@/hooks/useChecklistState";
+import { useChecklistURLState } from "@/lib/urlState";
+import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function ApplicationDetailsPage() {
   const params = useParams();
@@ -31,40 +39,56 @@ export default function ApplicationDetailsPage() {
   const applicationId = params.id as string;
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
-  
+
   // URL state management
-  const { category: urlCategory, setCategory: setURLCategory } = useChecklistURLState(applicationId);
-  
-  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(() => {
-    // Use URL state first, then fallback to localStorage
-    const savedCategory = localStorageUtils.loadCategory(applicationId, urlCategory) as DocumentCategory;
-    return savedCategory;
-  });
-  
+  const { category: urlCategory, setCategory: setURLCategory } =
+    useChecklistURLState(applicationId);
+
+  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(
+    () => {
+      // Use URL state first, then fallback to localStorage
+      const savedCategory = localStorageUtils.loadCategory(
+        applicationId,
+        urlCategory
+      ) as DocumentCategory;
+      return savedCategory;
+    }
+  );
+
   const [isCategoryChanging, setIsCategoryChanging] = useState(false);
-  
+
   // Initialize companies from localStorage or empty array
   const [companies, setCompanies] = useState<Company[]>(() => {
     const savedCompanies = localStorageUtils.loadCompanies(applicationId, []);
     return savedCompanies;
   });
-  
+
   const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
   const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
-  const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
-  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
-  const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
+  const [selectedReuploadDocument, setSelectedReuploadDocument] =
+    useState<Document | null>(null);
+  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] =
+    useState<string>("");
+  const [
+    selectedReuploadDocumentCategory,
+    setSelectedReuploadDocumentCategory,
+  ] = useState<string>("");
   const [documentsPage, setDocumentsPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const maxCompanies = 5;
 
   // Check authentication
   useEffect(() => {
-    if (!isAuthLoading && (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'team_leader' && user?.role !== 'master_admin'))) {
-      router.push('/admin-login');
+    if (
+      !isAuthLoading &&
+      (!isAuthenticated ||
+        (user?.role !== "admin" &&
+          user?.role !== "team_leader" &&
+          user?.role !== "master_admin"))
+    ) {
+      router.push("/admin-login");
     }
   }, [isAuthenticated, isAuthLoading, user?.role, router]);
-
 
   const {
     data: applicationData,
@@ -89,10 +113,10 @@ export default function ApplicationDetailsPage() {
   const documents = documentsData?.data;
   const allDocuments = allDocumentsData?.data; // All documents for checklist matching
 
-   const checklistState = useChecklistState({
+  const checklistState = useChecklistState({
     applicationId,
     documents: allDocuments, // Use all documents for checklist matching
-    companies
+    companies,
   });
 
   // Refresh function
@@ -101,15 +125,30 @@ export default function ApplicationDetailsPage() {
     try {
       // Invalidate all relevant queries
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ['application-details', applicationId] }),
-        queryClient.invalidateQueries({ queryKey: ['application-documents', applicationId] }),
-        queryClient.invalidateQueries({ queryKey: ['application-documents-all', applicationId] }),
-        queryClient.invalidateQueries({ queryKey: ['application-documents-paginated', applicationId] }),
-        queryClient.invalidateQueries({ queryKey: ['checklist', applicationId] }),
-        queryClient.invalidateQueries({ queryKey: ['document-comment-counts'] }),
+        queryClient.invalidateQueries({
+          queryKey: ["application-details", applicationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["application-documents", applicationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["application-documents-all", applicationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["application-documents-paginated", applicationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["checklist", applicationId],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["document-comment-counts"],
+        }),
+        queryClient.invalidateQueries({
+          queryKey: ["application"],
+        }),
       ]);
     } catch (error) {
-      console.error('Error refreshing data:', error);
+      console.error("Error refreshing data:", error);
     } finally {
       setIsRefreshing(false);
     }
@@ -120,9 +159,9 @@ export default function ApplicationDetailsPage() {
     if (!documents || documents.length === 0) {
       return false;
     }
-    
+
     // Check if all documents have approved status
-    return documents.every((doc: Document) => doc.status === 'approved');
+    return documents.every((doc: Document) => doc.status === "approved");
   }, [documents]);
 
   // Handle push for quality check
@@ -130,50 +169,69 @@ export default function ApplicationDetailsPage() {
     // Handle quality check push
   };
 
-
-    // Populate companies state from existing documents with company information
+  // Populate companies state from existing documents with company information
   useEffect(() => {
     if (allDocuments && allDocuments.length > 0) {
       const companyMap = new Map<string, Company>();
-      
+
       allDocuments.forEach((doc: Document) => {
-        if (doc.document_category && doc.document_category.includes('Company Documents')) {
+        if (
+          doc.document_category &&
+          doc.document_category.includes("Company Documents")
+        ) {
           // Extract company name from category (e.g., "Google Company Documents" -> "Google")
-          const companyName = doc.document_category.replace(' Company Documents', '').toLowerCase();
-          
+          const companyName = doc.document_category
+            .replace(" Company Documents", "")
+            .toLowerCase();
+
           // Always prioritize API data if description is available
           if (doc.description) {
             // Try to extract dates from description (e.g., "Worked at google from Jul 04, 2023 to Aug 26, 2025 (2 years 1 month)")
-            const dateMatch = doc.description.match(/from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i);
+            const dateMatch = doc.description.match(
+              /from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i
+            );
             if (dateMatch) {
               const fromDateStr = dateMatch[1]; // "Jul 04, 2023"
-              const toDateStr = dateMatch[2];   // "Aug 26, 2025"
-              
+              const toDateStr = dateMatch[2]; // "Aug 26, 2025"
+
               try {
                 // Convert to YYYY-MM-DD format without timezone issues
                 const fromDateObj = new Date(fromDateStr);
                 const toDateObj = new Date(toDateStr);
-                
+
                 // Format as YYYY-MM-DD without timezone conversion
-                const fromDate = `${fromDateObj.getFullYear()}-${String(fromDateObj.getMonth() + 1).padStart(2, '0')}-${String(fromDateObj.getDate()).padStart(2, '0')}`;
-                const toDate = `${toDateObj.getFullYear()}-${String(toDateObj.getMonth() + 1).padStart(2, '0')}-${String(toDateObj.getDate()).padStart(2, '0')}`;
-                
+                const fromDate = `${fromDateObj.getFullYear()}-${String(
+                  fromDateObj.getMonth() + 1
+                ).padStart(2, "0")}-${String(fromDateObj.getDate()).padStart(
+                  2,
+                  "0"
+                )}`;
+                const toDate = `${toDateObj.getFullYear()}-${String(
+                  toDateObj.getMonth() + 1
+                ).padStart(2, "0")}-${String(toDateObj.getDate()).padStart(
+                  2,
+                  "0"
+                )}`;
+
                 companyMap.set(companyName, {
                   name: companyName,
                   category: doc.document_category,
                   fromDate: fromDate,
                   toDate: toDate,
-                  description: doc.description
+                  description: doc.description,
                 });
               } catch (error) {
-                console.error('Error parsing dates from API description:', error);
+                console.error(
+                  "Error parsing dates from API description:",
+                  error
+                );
                 // Fallback: still add the company with default dates
                 companyMap.set(companyName, {
                   name: companyName,
                   category: doc.document_category,
-                  fromDate: '2024-01-01',
-                  toDate: '2025-12-31',
-                  description: doc.description || ''
+                  fromDate: "2024-01-01",
+                  toDate: "2025-12-31",
+                  description: doc.description || "",
                 });
               }
             } else {
@@ -181,9 +239,9 @@ export default function ApplicationDetailsPage() {
               companyMap.set(companyName, {
                 name: companyName,
                 category: doc.document_category,
-                fromDate: '2024-01-01',
-                toDate: '2025-12-31',
-                description: doc.description || ''
+                fromDate: "2024-01-01",
+                toDate: "2025-12-31",
+                description: doc.description || "",
               });
             }
           } else {
@@ -191,14 +249,14 @@ export default function ApplicationDetailsPage() {
             companyMap.set(companyName, {
               name: companyName,
               category: doc.document_category,
-              fromDate: '2024-01-01',
-              toDate: '2025-12-31',
-              description: doc.description || ''
+              fromDate: "2024-01-01",
+              toDate: "2025-12-31",
+              description: doc.description || "",
             });
           }
         }
       });
-      
+
       // Update companies state with API data if available
       if (companyMap.size > 0) {
         setCompanies(Array.from(companyMap.values()));
@@ -206,23 +264,21 @@ export default function ApplicationDetailsPage() {
     }
   }, [allDocuments]);
 
- 
-
   const handleAddCompany = (company: Company) => {
     // Don't override the category - it's already set correctly in AddCompanyDialog
     const newCompanies = [...companies, company];
-    setCompanies(newCompanies);    
+    setCompanies(newCompanies);
     localStorageUtils.saveCompanies(applicationId, newCompanies);
   };
 
   const handleRemoveCompany = (companyName: string) => {
-    const newCompanies = companies.filter(company => 
-      company.name.toLowerCase() !== companyName.toLowerCase()
+    const newCompanies = companies.filter(
+      (company) => company.name.toLowerCase() !== companyName.toLowerCase()
     );
-    setCompanies(newCompanies);    
+    setCompanies(newCompanies);
     localStorageUtils.saveCompanies(applicationId, newCompanies);
     if (selectedCategory === `company-${companyName}`) {
-      setSelectedCategory('all');
+      setSelectedCategory("all");
     }
   };
 
@@ -238,11 +294,15 @@ export default function ApplicationDetailsPage() {
     setDocumentsPage(page);
   };
 
-  const handleReuploadDocument = (documentId: string, documentType: string, category: string) => {
+  const handleReuploadDocument = (
+    documentId: string,
+    documentType: string,
+    category: string
+  ) => {
     // Find the document to reupload
-    const documentToReupload = documents?.find(doc => doc._id === documentId);
+    const documentToReupload = documents?.find((doc) => doc._id === documentId);
     if (!documentToReupload) {
-      console.error('Document not found for reupload:', documentId);
+      console.error("Document not found for reupload:", documentId);
       return;
     }
 
@@ -255,10 +315,9 @@ export default function ApplicationDetailsPage() {
   const handleReuploadModalClose = () => {
     setIsReuploadModalOpen(false);
     setSelectedReuploadDocument(null);
-    setSelectedReuploadDocumentType('');
-    setSelectedReuploadDocumentCategory('');
+    setSelectedReuploadDocumentType("");
+    setSelectedReuploadDocumentCategory("");
   };
-
 
   // Enhanced cancel function that also resets category
   const handleCancelChecklist = async () => {
@@ -266,27 +325,29 @@ export default function ApplicationDetailsPage() {
     try {
       checklistState.cancelChecklistOperation();
       // Reset to submitted documents when canceling
-      setSelectedCategory('submitted');
-      setURLCategory('submitted');
-      localStorageUtils.saveCategory(applicationId, 'submitted');
-      
+      setSelectedCategory("submitted");
+      setURLCategory("submitted");
+      localStorageUtils.saveCategory(applicationId, "submitted");
+
       // Add a small delay to show the loading state
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } finally {
       setIsCategoryChanging(false);
     }
   };
 
   // Enhanced category change handler that also updates checklist state
-  const handleCategoryChangeWithChecklist = async (category: DocumentCategory) => {
+  const handleCategoryChangeWithChecklist = async (
+    category: DocumentCategory
+  ) => {
     setIsCategoryChanging(true);
     try {
       setSelectedCategory(category);
       setURLCategory(category);
       localStorageUtils.saveCategory(applicationId, category);
-      
+
       // Add a small delay to show the loading state
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } finally {
       setIsCategoryChanging(false);
     }
@@ -298,12 +359,12 @@ export default function ApplicationDetailsPage() {
     try {
       checklistState.startCreatingChecklist();
       // Set the category to 'all' to show all documents
-      setSelectedCategory('all');
-      setURLCategory('all');
-      localStorageUtils.saveCategory(applicationId, 'all');
-      
+      setSelectedCategory("all");
+      setURLCategory("all");
+      localStorageUtils.saveCategory(applicationId, "all");
+
       // Add a small delay to show the loading state
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } finally {
       setIsCategoryChanging(false);
     }
@@ -314,27 +375,27 @@ export default function ApplicationDetailsPage() {
     setIsCategoryChanging(true);
     try {
       checklistState.startEditingChecklist();
-      
+
       // Determine the correct category to switch to based on current selection
-      let targetCategory: DocumentCategory = 'checklist';
-      
+      let targetCategory: DocumentCategory = "checklist";
+
       // If we're on a company-specific category, maintain it
-      if (selectedCategory.includes('_company_documents')) {
+      if (selectedCategory.includes("_company_documents")) {
         targetCategory = selectedCategory as DocumentCategory;
-      } else if (selectedCategory === 'submitted') {
+      } else if (selectedCategory === "submitted") {
         // If on submitted, switch to the first available checklist category
         const firstCategory = checklistState.checklistCategories[0];
         if (firstCategory) {
           targetCategory = firstCategory.id as DocumentCategory;
         }
       }
-      
+
       setSelectedCategory(targetCategory);
       setURLCategory(targetCategory);
       localStorageUtils.saveCategory(applicationId, targetCategory);
-      
+
       // Add a small delay to show the loading state
-      await new Promise(resolve => setTimeout(resolve, 300));
+      await new Promise((resolve) => setTimeout(resolve, 300));
     } finally {
       setIsCategoryChanging(false);
     }
@@ -353,7 +414,6 @@ export default function ApplicationDetailsPage() {
     setDocumentsPage(1);
   }, [selectedCategory]);
 
-
   if (applicationError || documentsError) {
     return (
       <div className="container mx-auto p-6 space-y-6">
@@ -364,7 +424,7 @@ export default function ApplicationDetailsPage() {
             </Button>
           </Link>
         </div>
-        
+
         <Alert variant="destructive">
           <AlertDescription>
             Failed to load application details. Please try again later.
@@ -380,18 +440,26 @@ export default function ApplicationDetailsPage() {
       <TooltipProvider>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/applications" className='items-center flex'>
-              <Button variant="outline" className='rounded-full w-8 h-8 cursor-pointer ' size="sm">
+            <Link href="/admin/applications" className="items-center flex">
+              <Button
+                variant="outline"
+                className="rounded-full w-8 h-8 cursor-pointer "
+                size="sm"
+              >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             </Link>
             <div>
-              <h1 className="text-xl sm:text-2xl font-lexend font-bold">Application Details</h1>
+              <h1 className="text-xl sm:text-2xl font-lexend font-bold">
+                Application Details
+              </h1>
               <div className="text-muted-foreground ">
                 {isApplicationLoading ? (
                   <Skeleton className="h-4 w-32" />
+                ) : application ? (
+                  `Application ID: ${application.id}`
                 ) : (
-                  application ? `Application ID: ${application.id}` : 'Loading...'
+                  "Loading..."
                 )}
               </div>
             </div>
@@ -406,21 +474,22 @@ export default function ApplicationDetailsPage() {
                     onClick={handlePushForQualityCheck}
                     disabled={!areAllDocumentsApproved}
                     className={`flex items-center gap-2 cursor-pointer ${
-                      areAllDocumentsApproved 
-                        ? "bg-green-600 hover:bg-green-700 text-white" 
+                      areAllDocumentsApproved
+                        ? "bg-green-600 hover:bg-green-700 text-white"
                         : "opacity-50 cursor-not-allowed"
                     }`}
                   >
                     <CheckCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">Push for Quality Check</span>
+                    <span className="hidden sm:inline">
+                      Push for Quality Check
+                    </span>
                   </Button>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                {areAllDocumentsApproved 
+                {areAllDocumentsApproved
                   ? "All documents are approved. Ready for quality check."
-                  : "All submitted documents must be reviewed before pushing for quality check."
-                }
+                  : "All submitted documents must be reviewed before pushing for quality check."}
               </TooltipContent>
             </Tooltip>
             <Button
@@ -430,7 +499,9 @@ export default function ApplicationDetailsPage() {
               disabled={isRefreshing}
               className="flex items-center gap-2 cursor-pointer"
             >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              <RefreshCw
+                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+              />
               <span className="hidden sm:inline">Refresh</span>
             </Button>
           </div>
@@ -438,7 +509,7 @@ export default function ApplicationDetailsPage() {
       </TooltipProvider>
 
       {/* Loading State */}
-      {(isAuthLoading || isApplicationLoading || isDocumentsLoading) ? (
+      {isAuthLoading || isApplicationLoading || isDocumentsLoading ? (
         <div className="space-y-6">
           <div className="flex justify-between w-full gap-8 items-end">
             <div className="space-y-4 w-full">
@@ -460,17 +531,22 @@ export default function ApplicationDetailsPage() {
           </div>
           <Skeleton className="h-96 w-full rounded-xl" />
         </div>
-      ) : !isAuthLoading && isAuthenticated && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin') ? (
+      ) : !isAuthLoading &&
+        isAuthenticated &&
+        (user?.role === "admin" ||
+          user?.role === "team_leader" ||
+          user?.role === "master_admin") ? (
         <div className="space-y-6">
           {/* Applicant Details */}
-            <ApplicantDetails
-              application={application}
-              isLoading={isApplicationLoading}
-              error={applicationError}
-              allDocuments={allDocuments}
-              isAllDocumentsLoading={isAllDocumentsLoading}
-              allDocumentsError={allDocumentsError}
-            />
+          <ApplicantDetails
+            application={application}
+            isLoading={isApplicationLoading}
+            error={applicationError}
+            allDocuments={allDocuments}
+            isAllDocumentsLoading={isAllDocumentsLoading}
+            allDocumentsError={allDocumentsError}
+            user={user}
+          />
 
           {/* Documents Section */}
           <div className="space-y-6">
@@ -488,7 +564,11 @@ export default function ApplicationDetailsPage() {
               hasCompanyDocuments={checklistState.hasCompanyDocuments}
               onStartCreatingChecklist={handleStartCreatingChecklist}
               onStartEditingChecklist={handleStartEditingChecklist}
-              onSaveChecklist={checklistState.state === 'editing' ? checklistState.savePendingChanges : checklistState.saveChecklist}
+              onSaveChecklist={
+                checklistState.state === "editing"
+                  ? checklistState.savePendingChanges
+                  : checklistState.saveChecklist
+              }
               onCancelChecklist={handleCancelChecklist}
               isSavingChecklist={checklistState.isBatchSaving}
               // Loading state
@@ -496,7 +576,7 @@ export default function ApplicationDetailsPage() {
             />
 
             {/* Conditional Rendering */}
-            {selectedCategory === 'submitted' ? (
+            {selectedCategory === "submitted" ? (
               <DocumentsTable
                 applicationId={applicationId}
                 currentPage={documentsPage}
@@ -516,12 +596,18 @@ export default function ApplicationDetailsPage() {
                 // Checklist props
                 checklistState={checklistState.state}
                 filteredDocuments={checklistState.filteredDocuments}
-                currentChecklistDocuments={checklistState.currentChecklistDocuments}
-                availableDocumentsForEditing={checklistState.availableDocumentsForEditing}
+                currentChecklistDocuments={
+                  checklistState.currentChecklistDocuments
+                }
+                availableDocumentsForEditing={
+                  checklistState.availableDocumentsForEditing
+                }
                 selectedDocuments={checklistState.selectedDocuments}
                 requirementMap={checklistState.requirementMap}
                 onSelectDocument={checklistState.selectDocument}
-                onUpdateDocumentRequirement={checklistState.updateDocumentRequirement}
+                onUpdateDocumentRequirement={
+                  checklistState.updateDocumentRequirement
+                }
                 onUpdateChecklist={checklistState.updateChecklist}
                 checklistData={checklistState.checklistData}
                 // Pending changes props
@@ -529,9 +615,13 @@ export default function ApplicationDetailsPage() {
                 pendingDeletions={checklistState.pendingDeletions}
                 pendingUpdates={[]}
                 onAddToPendingChanges={checklistState.addToPendingChanges}
-                onRemoveFromPendingChanges={checklistState.removeFromPendingChanges}
+                onRemoveFromPendingChanges={
+                  checklistState.removeFromPendingChanges
+                }
                 onAddToPendingDeletions={checklistState.addToPendingDeletions}
-                onRemoveFromPendingDeletions={checklistState.removeFromPendingDeletions}
+                onRemoveFromPendingDeletions={
+                  checklistState.removeFromPendingDeletions
+                }
                 onSavePendingChanges={checklistState.savePendingChanges}
                 onClearPendingChanges={checklistState.clearPendingChanges}
                 isBatchDeleting={checklistState.isBatchDeleting}
@@ -541,8 +631,12 @@ export default function ApplicationDetailsPage() {
         </div>
       ) : (
         <div className="text-center py-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
-          <p className="text-gray-600">You don&apos;t have permission to access this page.</p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            Access Denied
+          </h2>
+          <p className="text-gray-600">
+            You don&apos;t have permission to access this page.
+          </p>
         </div>
       )}
 
@@ -560,7 +654,7 @@ export default function ApplicationDetailsPage() {
         isOpen={isReuploadModalOpen}
         onClose={handleReuploadModalClose}
         applicationId={applicationId}
-        document={selectedReuploadDocument }
+        document={selectedReuploadDocument}
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}
       />

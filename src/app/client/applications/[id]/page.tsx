@@ -119,10 +119,9 @@ export default function ClientApplicationDetailsPage() {
           doc.document_category.includes("Company Documents")
         ) {
           // Extract company name from category (e.g., "Microsoft Company Documents" -> "Microsoft")
-          const companyName = doc.document_category.replace(
-            " Company Documents",
-            ""
-          ).toLowerCase();
+          const companyName = doc.document_category
+            .replace(" Company Documents", "")
+            .toLowerCase();
 
           // Always prioritize API data if description is available
           if (doc.description) {
@@ -168,9 +167,9 @@ export default function ClientApplicationDetailsPage() {
                 companyMap.set(companyName, {
                   name: companyName,
                   category: doc.document_category,
-                  fromDate: '2024-01-01',
-                  toDate: '2025-12-31',
-                  description: doc.description || '',
+                  fromDate: "2024-01-01",
+                  toDate: "2025-12-31",
+                  description: doc.description || "",
                 });
               }
             } else {
@@ -178,9 +177,9 @@ export default function ClientApplicationDetailsPage() {
               companyMap.set(companyName, {
                 name: companyName,
                 category: doc.document_category,
-                fromDate: '2024-01-01',
-                toDate: '2025-12-31',
-                description: doc.description || '',
+                fromDate: "2024-01-01",
+                toDate: "2025-12-31",
+                description: doc.description || "",
               });
             }
           } else {
@@ -188,9 +187,9 @@ export default function ClientApplicationDetailsPage() {
             companyMap.set(companyName, {
               name: companyName,
               category: doc.document_category,
-              fromDate: '2024-01-01',
-              toDate: '2025-12-31',
-              description: doc.description || '',
+              fromDate: "2024-01-01",
+              toDate: "2025-12-31",
+              description: doc.description || "",
             });
           }
         }
@@ -324,14 +323,16 @@ export default function ClientApplicationDetailsPage() {
   // Company management functions
   const handleAddCompany = (company: Company) => {
     // Don't override the category - it's already set correctly in AddCompanyDialog
-    setCompanies(prev => [...prev, company]);
+    setCompanies((prev) => [...prev, company]);
     setIsAddCompanyDialogOpen(false);
   };
 
   const handleRemoveCompany = (companyName: string) => {
-    setCompanies(prev => prev.filter(company => 
-      company.name.toLowerCase() !== companyName.toLowerCase()
-    ));
+    setCompanies((prev) =>
+      prev.filter(
+        (company) => company.name.toLowerCase() !== companyName.toLowerCase()
+      )
+    );
   };
 
   const handleReuploadDocument = (
@@ -364,9 +365,11 @@ export default function ClientApplicationDetailsPage() {
   // Handle document upload success to refresh data
   const handleUploadSuccess = () => {
     // Invalidate all relevant queries to ensure UI updates
-    queryClient.invalidateQueries({ queryKey: ['client-documents'] });
-    queryClient.invalidateQueries({ queryKey: ['client-documents-all'] });
-    queryClient.invalidateQueries({ queryKey: ['client-checklist', applicationId] });
+    queryClient.invalidateQueries({ queryKey: ["client-documents"] });
+    queryClient.invalidateQueries({ queryKey: ["client-documents-all"] });
+    queryClient.invalidateQueries({
+      queryKey: ["client-checklist", applicationId],
+    });
   };
 
   // Check if checklist has company documents
