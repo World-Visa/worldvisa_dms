@@ -1,22 +1,29 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { Search, User, Phone, Mail } from 'lucide-react';
-import { DateRange } from 'react-day-picker';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectTrigger, SelectValue } from '../ui/select';
-
+import React from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Search, User, Phone, Mail } from "lucide-react";
+import { DateRange } from "react-day-picker";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 interface ApplicationsFiltersProps {
   search: string;
-  searchType: 'name' | 'phone' | 'email';
+  searchType: "name" | "phone" | "email";
   dateRange: DateRange | undefined;
   limit: number;
   isSearchMode?: boolean;
   onSearchChange: (value: string) => void;
-  onSearchTypeChange: (type: 'name' | 'phone' | 'email') => void;
+  onSearchTypeChange: (type: "name" | "phone" | "email") => void;
   onSearchClick: () => void;
   onDateRangeChange: (range: DateRange | undefined) => void;
   onLimitChange: (value: number) => void;
@@ -40,13 +47,13 @@ export function ApplicationsFilters({
 }: ApplicationsFiltersProps) {
   return (
     <div>
-      <div className='w-full'>
+      <div className="w-full">
         <div className="flex flex-col  lg:flex-row md:justify-between gap-4">
           {/* Search Bar */}
           <div className="flex gap-2 items-center max-w-2xl w-full">
             {/* Search Type Selector */}
             <Select value={searchType} onValueChange={onSearchTypeChange}>
-              <SelectTrigger className='w-[140px] border border-gray-300 rounded-lg h-10'>
+              <SelectTrigger className="w-[140px] border border-gray-300 rounded-lg h-10">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -85,24 +92,23 @@ export function ApplicationsFilters({
                 className="pl-10 h-10"
               />
             </div>
-            
-            <Button 
+
+            <Button
               onClick={onSearchClick}
               disabled={!search.trim()}
               className={`h-10 rounded-lg ${
-                isSearchMode 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
-                  : 'bg-primary hover:bg-primary/90 hover:text-gray-200 text-white'
+                isSearchMode
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : "bg-primary hover:bg-primary/90 hover:text-gray-200 text-white"
               }`}
-              variant='outline'
+              variant="outline"
             >
-                {isSearchMode ? 'Search Again' : 'Search'}
+              {isSearchMode ? "Search Again" : "Search"}
             </Button>
           </div>
 
           {/* Date Range Filter */}
-          <div className='flex flex-wrap gap-4 items-center'>
-
+          <div className="flex flex-wrap gap-4 items-center">
             <div className="w-full sm:w-auto">
               <DateRangePicker
                 value={dateRange}
@@ -113,8 +119,11 @@ export function ApplicationsFilters({
 
             {/* Limit Selector */}
             <div className="flex items-center gap-2">
-              <Select value={limit.toString()} onValueChange={(value) => onLimitChange(Number(value))}>
-                <SelectTrigger className='w-[180px] border border-gray-300 rounded-lg'>
+              <Select
+                value={limit.toString()}
+                onValueChange={(value) => onLimitChange(Number(value))}
+              >
+                <SelectTrigger className="w-[180px] border border-gray-300 rounded-lg">
                   <SelectValue placeholder="Select page limit" />
                 </SelectTrigger>
                 <SelectContent>

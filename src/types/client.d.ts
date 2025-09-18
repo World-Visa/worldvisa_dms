@@ -11,6 +11,7 @@ export interface ClientApplicationResponse {
     id: string;
     Name: string;
     AttachmentCount: number;
+    DMS_Application_Status?: string;
   };
 }
 
@@ -24,7 +25,7 @@ export interface ClientDocument {
   document_category: string;
   description?: string;
   uploaded_by: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   history: Array<{
     status: string;
     changed_by: string;
@@ -40,7 +41,7 @@ export interface ClientDocument {
 }
 
 export interface ClientDocumentsResponse {
-  status: 'success' | 'error';
+  status: "success" | "error";
   data: {
     documents: ClientDocument[];
   };
@@ -60,7 +61,7 @@ export interface ClientDocumentUploadRequest {
 }
 
 export interface ClientDocumentUploadResponse {
-  status: 'success' | 'error';
+  status: "success" | "error";
   message?: string;
   data?: {
     document: ClientDocument;

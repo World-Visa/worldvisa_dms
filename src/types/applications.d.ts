@@ -57,7 +57,7 @@ export interface Document {
   __v: number;
 }
 
-export type DocumentStatus = Document['status'];
+export type DocumentStatus = Document["status"];
 
 export interface DocumentStatusUpdate {
   documentId: string;
