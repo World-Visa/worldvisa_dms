@@ -14,7 +14,7 @@ export async function getApplicationById(
 
 export async function updateApplicationFields(
   leadId: string,
-  fieldsToUpdate: Record<string, any>
+  fieldsToUpdate: Record<string, unknown>
 ): Promise<Response> {
   return fetcher<Response>(`${ZOHO_BASE_URL}/visa_applications/update_fields`, {
     method: "PUT",

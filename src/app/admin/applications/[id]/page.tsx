@@ -12,7 +12,7 @@ import { useApplicationDetails } from '@/hooks/useApplicationDetails';
 import { useApplicationDocuments, useAllApplicationDocuments } from '@/hooks/useApplicationDocuments';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, RefreshCw, CheckCircle } from 'lucide-react';
+import { ArrowLeft, RefreshCw, CheckCircle, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Link from 'next/link';
@@ -25,6 +25,7 @@ import { useChecklistURLState } from '@/lib/urlState';
 import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
 import { useQueryClient } from '@tanstack/react-query';
 import { QualityCheckModal } from '@/components/applications/QualityCheckModal';
+import { Badge } from '@/components/ui/badge';
 
 export default function ApplicationDetailsPage() {
   const params = useParams();
@@ -444,8 +445,8 @@ export default function ApplicationDetailsPage() {
               </Button>
             </Link>
             <div>
-              <h1 className="text-xl sm:text-2xl font-lexend font-bold">
-                Application Details
+              <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-lexend font-bold">
+                Application Details <Badge variant="default" className='bg-red-50 text-red-500 hover:bg-red-100 md:mb-0 mb-2 md:h-8 flex items-center gap-2'><BadgeCheck size={16} />{application?.Package_Finalize || 'Not provided'}</Badge>
               </h1>
               <div className="text-muted-foreground ">
                 {isApplicationLoading ? (

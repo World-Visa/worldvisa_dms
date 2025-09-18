@@ -25,7 +25,7 @@ export function useUpdateApplicationFields() {
       fieldsToUpdate,
     }: {
       leadId: string;
-      fieldsToUpdate: Record<string, any>;
+      fieldsToUpdate: Record<string, unknown>;
     }) => updateApplicationFields(leadId, fieldsToUpdate),
     onSuccess: () => {
       toast.success("Application fields updated successfully.");
