@@ -196,6 +196,8 @@ export function RequestedDocumentMessages({
                         isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''
                       )}>
                         <span className="font-medium">{message.username}</span>
+                        <span>•</span>
+                        <span>{new Date(message.added_at).toLocaleString()}</span>
                         {canDelete && (
                           <button
                             onClick={() => handleDeleteMessage(message._id)}

@@ -4,6 +4,7 @@ export interface RequestedDocumentMessage {
   _id: string;
   message: string;
   username: string;
+  added_at: string;
 }
 
 export interface RequestedDocumentMessagesResponse {
@@ -22,6 +23,7 @@ export interface SendMessageResponse {
     _id: string;
     message: string;
     username: string;
+    added_at: string;
   };
   message?: string;
 }

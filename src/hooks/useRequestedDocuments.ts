@@ -301,14 +301,15 @@ function sortDocumentsByPriority(documents: RequestedDocument[], userRole?: stri
  */
 export function useAllRequestedDocumentsPaginated(
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  filters: Omit<RequestedDocumentsParams, 'page' | 'limit'> = {}
 ) {
   const { user } = useAuth();
   
   return useQuery({
-    queryKey: ['all-requested-documents-paginated', page, limit],
-    queryFn: () => getAllRequestedDocuments(page, limit),
-    enabled: !!user,
+    queryKey: ['all-requested-documents-paginated', page, limit, filters],
+    queryFn: () => getAllRequestedDocuments(page, limit, filters),
+    enabled: !!user && user.role === 'master_admin',
     select: (data) => {
       if (!data?.data) return data;
       
@@ -332,5 +333,40 @@ export function useAllRequestedDocumentsPaginated(
       return false;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
+  });
+}
+
+/**
+ * Hook for fetching all requested documents without pagination (for stats)
+ */
+export function useAllRequestedDocuments(
+  filters: Omit<RequestedDocumentsParams, 'page' | 'limit'> = {}
+) {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['all-requested-documents', filters],
+    queryFn: () => getAllRequestedDocuments(1, 1000, filters), // Large limit to get all data
+    enabled: !!user && user.role === 'master_admin',
+    select: (data) => {
+      if (!data?.data) return data;
+      
+      const enhancedData = data.data.map(doc => ({
+        ...doc,
+        isOverdue: isDocumentOverdue(doc, user?.role),
+        daysSinceRequest: getDaysSinceRequest(doc),
+        priority: getDocumentPriority(doc, user?.role)
+      }));
+      
+      return {
+        ...data,
+        data: sortDocumentsByPriority(enhancedData, user?.role)
+      };
+    },
+    staleTime: 2 * 60 * 1000, // 2 minutes
+    gcTime: 5 * 60 * 1000, // 5 minutes
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: false
   });
 }

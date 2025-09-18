@@ -84,6 +84,7 @@ export function RequestedDocumentsTable({
           <TableRow>
             <TableHead className="w-[300px]">Document</TableHead>
             <TableHead>Requested By</TableHead>
+            {type === 'all-requests' && <TableHead>Requested To</TableHead>}
             <TableHead>Status</TableHead>
             <TableHead>Requested</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -135,16 +136,27 @@ export function RequestedDocumentsTable({
                   </div>
                 </TableCell>
                 
+                {type === 'all-requests' && (
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-gray-400" />
+                      <span className="text-sm text-gray-900">
+                        {document.requested_review.requested_to}
+                      </span>
+                    </div>
+                  </TableCell>
+                )}
+                
                 <TableCell>
                   <StatusBadge status={document.requested_review.status} />
                 </TableCell>
                 
                 <TableCell>
                   <div className="text-sm text-gray-900">
-                    {document.formattedRequestDate || 'Unknown date'}
+                    {document.uploaded_at ? new Date(document.uploaded_at).toLocaleDateString() : 'Unknown date'}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {document.uploaded_by} • {document.uploaded_at ? new Date(document.uploaded_at).toLocaleDateString() : 'Unknown date'}
+                    {document.uploaded_by} • {document.uploaded_at ? new Date(document.uploaded_at).toLocaleTimeString() : 'Unknown time'}
                   </div>
                 </TableCell>
                 

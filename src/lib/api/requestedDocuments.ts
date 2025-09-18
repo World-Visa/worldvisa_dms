@@ -88,7 +88,7 @@ export async function getRequestedDocumentsToMe(
     if (params.sort) searchParams.append('sort', params.sort);
     if (params.order) searchParams.append('order', params.order);
 
-    const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/requested_reviews/all?${searchParams.toString()}`;
+    const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/requested_reviews/all_to?${searchParams.toString()}`;
     
     const response = await fetcher(url, {
       method: 'GET',
@@ -222,14 +222,22 @@ export async function updateRequestedDocumentStatus(
  */
 export async function getAllRequestedDocuments(
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
+  filters: Omit<RequestedDocumentsParams, 'page' | 'limit'> = {}
 ): Promise<RequestedDocumentsResponse> {
-  const params = new URLSearchParams({
+  const searchParams = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
   });
 
+  // Add filter parameters
+  if (filters.status) searchParams.append('status', filters.status);
+  if (filters.requested_by) searchParams.append('requested_by', filters.requested_by);
+  if (filters.requested_to) searchParams.append('requested_to', filters.requested_to);
+  if (filters.sort) searchParams.append('sort', filters.sort);
+  if (filters.order) searchParams.append('order', filters.order);
+
   return fetcher<RequestedDocumentsResponse>(
-    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/requested_reviews/all?${params}`
+    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/requested_reviews/all?${searchParams}`
   );
 }
