@@ -1,29 +1,35 @@
 /**
  * Checklist API Integration
- * 
+ *
  * This module handles all API interactions for the dynamic checklist system.
  * Provides clean, type-safe methods for CRUD operations on checklist items.
  */
 
-import { fetcher } from '@/lib/fetcher';
+import { fetcher } from "@/lib/fetcher";
 import type {
+  ChecklistApiResponse,
+  ChecklistCreateRequest,
+  ChecklistDeleteRequest,
   ChecklistItem,
   ChecklistResponse,
-  ChecklistCreateRequest,
   ChecklistUpdateRequest,
-  ChecklistDeleteRequest,
-  ChecklistApiResponse
-} from '@/types/checklist';
+} from "@/types/checklist";
+import {
+  AddDescriptionRequest,
+  AddDescriptionResponse,
+} from "@/types/description";
 
-const API_BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com';
+const API_BASE_URL = "https://worldvisagroup-19a980221060.herokuapp.com";
 
 /**
  * Get all checklist items for an application
  */
-export async function getChecklist(applicationId: string): Promise<ChecklistResponse> {
+export async function getChecklist(
+  applicationId: string
+): Promise<ChecklistResponse> {
   const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
-  
+
   const response = await fetcher<{
     status: string;
     data: {
@@ -35,18 +41,18 @@ export async function getChecklist(applicationId: string): Promise<ChecklistResp
       }>;
     };
   }>(`${url}?${params.toString()}`);
-  
+
   // Transform the nested response to match our expected structure
-  const transformedData = (response.data?.checklist || []).map(item => ({
+  const transformedData = (response.data?.checklist || []).map((item) => ({
     checklist_id: item._id,
     document_type: item.document_type,
     document_category: item.document_category,
     required: item.required,
   }));
-  
+
   return {
-    success: response.status === 'success',
-    data: transformedData
+    success: response.status === "success",
+    data: transformedData,
   };
 }
 
@@ -59,16 +65,18 @@ export async function createChecklistItem(
 ): Promise<ChecklistApiResponse<ChecklistItem>> {
   const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
-   
+
   const requestItem = {
-    ...item
+    ...item,
   };
-  
-  
-  return fetcher<ChecklistApiResponse<ChecklistItem>>(`${url}?${params.toString()}`, {
-    method: 'POST',
-    body: JSON.stringify(requestItem)
-  });
+
+  return fetcher<ChecklistApiResponse<ChecklistItem>>(
+    `${url}?${params.toString()}`,
+    {
+      method: "POST",
+      body: JSON.stringify(requestItem),
+    }
+  );
 }
 
 /**
@@ -80,14 +88,33 @@ export async function updateChecklistItem(
 ): Promise<ChecklistApiResponse<ChecklistItem>> {
   const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
-  
+
   const requestItem = {
-    ...item
+    ...item,
   };
-  
-  return fetcher<ChecklistApiResponse<ChecklistItem>>(`${url}?${params.toString()}`, {
-    method: 'PUT',
-    body: JSON.stringify(requestItem)
+
+  return fetcher<ChecklistApiResponse<ChecklistItem>>(
+    `${url}?${params.toString()}`,
+    {
+      method: "PUT",
+      body: JSON.stringify(requestItem),
+    }
+  );
+}
+
+export async function updateDescription(
+  applicaitonId: string,
+  item: AddDescriptionRequest
+): Promise<AddDescriptionResponse> {
+  const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicaitonId}`;
+  const params = new URLSearchParams({ record_id: applicaitonId });
+
+  return fetcher<AddDescriptionResponse>(`${url}?${params.toString()}`, {
+    method: "PUT",
+    body: JSON.stringify({
+      description: item.description,
+      checklist_id: item.checklist_id,
+    }),
   });
 }
 
@@ -100,10 +127,10 @@ export async function deleteChecklistItem(
 ): Promise<ChecklistApiResponse<void>> {
   const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
-  
+
   return fetcher<ChecklistApiResponse<void>>(`${url}?${params.toString()}`, {
-    method: 'DELETE',
-    body: JSON.stringify(request)
+    method: "DELETE",
+    body: JSON.stringify(request),
   });
 }
 
@@ -115,27 +142,35 @@ export async function saveChecklist(
   applicationId: string,
   items: ChecklistCreateRequest[]
 ): Promise<ChecklistApiResponse<ChecklistItem[]>> {
-  const promises = items.map(item => createChecklistItem(applicationId, item));
+  const promises = items.map((item) =>
+    createChecklistItem(applicationId, item)
+  );
   const results = await Promise.allSettled(promises);
-  
+
   const successful: ChecklistItem[] = [];
   const errors: Error[] = [];
-  
+
   results.forEach((result, index) => {
-    if (result.status === 'fulfilled') {
+    if (result.status === "fulfilled") {
       successful.push(result.value.data);
     } else {
-      errors.push(new Error(`Failed to save item ${index + 1}: ${result.reason.message}`));
+      errors.push(
+        new Error(`Failed to save item ${index + 1}: ${result.reason.message}`)
+      );
     }
   });
-  
+
   if (errors.length > 0) {
-    throw new Error(`Failed to save ${errors.length} items: ${errors.map(e => e.message).join(', ')}`);
+    throw new Error(
+      `Failed to save ${errors.length} items: ${errors
+        .map((e) => e.message)
+        .join(", ")}`
+    );
   }
-  
+
   return {
     success: true,
-    data: successful
+    data: successful,
   };
 }
 
@@ -146,27 +181,37 @@ export async function updateChecklist(
   applicationId: string,
   items: ChecklistUpdateRequest[]
 ): Promise<ChecklistApiResponse<ChecklistItem[]>> {
-  const promises = items.map(item => updateChecklistItem(applicationId, item));
+  const promises = items.map((item) =>
+    updateChecklistItem(applicationId, item)
+  );
   const results = await Promise.allSettled(promises);
-  
+
   const successful: ChecklistItem[] = [];
   const errors: Error[] = [];
-  
+
   results.forEach((result, index) => {
-    if (result.status === 'fulfilled') {
+    if (result.status === "fulfilled") {
       successful.push(result.value.data);
     } else {
-      errors.push(new Error(`Failed to update item ${index + 1}: ${result.reason.message}`));
+      errors.push(
+        new Error(
+          `Failed to update item ${index + 1}: ${result.reason.message}`
+        )
+      );
     }
   });
-  
+
   if (errors.length > 0) {
-    throw new Error(`Failed to update ${errors.length} items: ${errors.map(e => e.message).join(', ')}`);
+    throw new Error(
+      `Failed to update ${errors.length} items: ${errors
+        .map((e) => e.message)
+        .join(", ")}`
+    );
   }
-  
+
   return {
     success: true,
-    data: successful
+    data: successful,
   };
 }
 
@@ -177,36 +222,45 @@ export async function deleteChecklist(
   applicationId: string,
   checklistIds: string[]
 ): Promise<ChecklistApiResponse<void>> {
-  const promises = checklistIds.map(id => 
+  const promises = checklistIds.map((id) =>
     deleteChecklistItem(applicationId, { checklist_id: id })
   );
   const results = await Promise.allSettled(promises);
-  
+
   const errors: Error[] = [];
   const successfulDeletions: number[] = [];
-  
+
   results.forEach((result, index) => {
-    if (result.status === 'rejected') {
-      const errorMessage = result.reason.message || 'Unknown error';
-      
+    if (result.status === "rejected") {
+      const errorMessage = result.reason.message || "Unknown error";
+
       // Consider "not found" errors as successful deletions since the end result is the same
-      if (errorMessage.includes('not found') || errorMessage.includes('Checklist item not found')) {
+      if (
+        errorMessage.includes("not found") ||
+        errorMessage.includes("Checklist item not found")
+      ) {
         successfulDeletions.push(index + 1);
       } else {
-        errors.push(new Error(`Failed to delete item ${index + 1}: ${errorMessage}`));
+        errors.push(
+          new Error(`Failed to delete item ${index + 1}: ${errorMessage}`)
+        );
       }
     } else {
       successfulDeletions.push(index + 1);
     }
   });
-  
+
   // Only throw an error if there are actual failures (not just "not found" errors)
   if (errors.length > 0) {
-    throw new Error(`Failed to delete ${errors.length} items: ${errors.map(e => e.message).join(', ')}`);
+    throw new Error(
+      `Failed to delete ${errors.length} items: ${errors
+        .map((e) => e.message)
+        .join(", ")}`
+    );
   }
-  
+
   return {
     success: true,
-    data: undefined
+    data: undefined,
   };
 }
