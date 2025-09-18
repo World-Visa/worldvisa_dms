@@ -2,83 +2,26 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
-import { LogOut, FileText, FileCheck, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
 import Logo from "../../../public/logos/world-visa-logo.webp";
 import Image from 'next/image';
 import Link from 'next/link';
+import { getNavigationTabsForRole, type SupportedRole } from '@/lib/config/navigation';
 
-interface NavigationTab {
-    id: string;
-    label: string;
-    href: string;
-    icon: React.ComponentType<{ className?: string }>;
-}
-
-const allNavigationTabs: NavigationTab[] = [
-    {
-        id: 'dashboard',
-        label: 'Dashboard',
-        href: '/admin/dashboard',
-        icon: FileText,
-    },
-    {
-        id: 'applications',
-        label: 'All Applications',
-        href: '/admin/applications',
-        icon: FileCheck,
-    },
-    {
-        id: 'requested-docs',
-        label: 'Review-Requested Docs',
-        href: '/admin/requested-docs',
-        icon: FileText,
-    },
-    {
-        id: 'quality-check',
-        label: 'Quality Check',
-        href: '/admin/quality-check',
-        icon: FileCheck,
-    },
-];
-
-const adminNavigationTabs: NavigationTab[] = [
-    {
-        id: 'applications',
-        label: 'All Applications',
-        href: '/admin/applications',
-        icon: FileCheck,
-    },
-    {
-        id: 'requested-docs',
-        label: 'Review-Requested Docs',
-        href: '/admin/requested-docs',
-        icon: FileText,
-    },
-];
-
-const supervisorNavigationTabs: NavigationTab[] = [
-    {
-        id: 'applications',
-        label: 'All Applications',
-        href: '/admin/applications',
-        icon: FileCheck,
-    },
-    {
-        id: 'requested-docs',
-        label: 'Review-Requested Docs',
-        href: '/admin/requested-docs',
-        icon: FileText,
-    },
-    {
-        id: 'quality-check',
-        label: 'Quality Check',
-        href: '/admin/quality-check',
-        icon: FileCheck,
-    },
-];
+// Helper function to get portal title based on role
+const getPortalTitle = (role: string | undefined): string => {
+    const roleTitles: Record<string, string> = {
+        master_admin: '- Master Admin Portal',
+        team_leader: '- Team Leader Portal',
+        supervisor: '- Supervisor Portal',
+        admin: '- Admin Portal',
+    };
+    
+    return roleTitles[role || 'admin'] || '- Admin Portal';
+};
 
 export function AdminHeader() {
     const { user, logout } = useAuth();
@@ -90,19 +33,7 @@ export function AdminHeader() {
 
     // Get navigation tabs based on user role
     const navigationTabs = useMemo(() => {
-        if (!user?.role) return adminNavigationTabs;
-
-        switch (user.role) {
-            case 'master_admin':
-                return allNavigationTabs;
-            case 'admin':
-            case 'team_leader':
-                return adminNavigationTabs;
-            case 'supervisor':
-                return supervisorNavigationTabs;
-            default:
-                return adminNavigationTabs;
-        }
+        return getNavigationTabsForRole(user?.role as SupportedRole);
     }, [user?.role]);
 
     const handleLogout = useCallback(() => {
@@ -219,11 +150,7 @@ export function AdminHeader() {
                             />
                         </div>
                         <h1 className="text-sm sm:text-base font-semibold text-gray-900 hidden sm:block">
-                            {
-                                user?.role === 'master_admin' ? '- Master Admin Portal' : 
-                                user?.role === 'team_leader' ? '- Team Leader Portal' :
-                                user?.role === 'supervisor' ? '- Supervisor Portal' : '- Admin Portal'
-                            }
+                            {getPortalTitle(user?.role)}
                         </h1>
                     </div>
 
@@ -254,14 +181,14 @@ export function AdminHeader() {
                             <div className="relative w-6 h-6">
                                 <Menu
                                     className={`h-6 w-6 absolute transition-all duration-300 ${isMobileMenuOpen
-                                            ? 'opacity-0 rotate-180'
-                                            : 'opacity-100 rotate-0'
+                                        ? 'opacity-0 rotate-180'
+                                        : 'opacity-100 rotate-0'
                                         }`}
                                 />
                                 <X
                                     className={`h-6 w-6 absolute transition-all duration-300 ${isMobileMenuOpen
-                                            ? 'opacity-100 rotate-0'
-                                            : 'opacity-0 -rotate-180'
+                                        ? 'opacity-100 rotate-0'
+                                        : 'opacity-0 -rotate-180'
                                         }`}
                                 />
                             </div>
