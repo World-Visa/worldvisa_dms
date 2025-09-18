@@ -84,7 +84,7 @@ export function RequestedDocumentsTable({
           <TableRow>
             <TableHead className="w-[300px]">Document</TableHead>
             <TableHead>Requested By</TableHead>
-            {type === 'all-requests' && <TableHead>Requested To</TableHead>}
+             <TableHead>Requested To</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Requested</TableHead>
             <TableHead className="text-right">Actions</TableHead>
@@ -136,7 +136,6 @@ export function RequestedDocumentsTable({
                   </div>
                 </TableCell>
                 
-                {type === 'all-requests' && (
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <User className="h-4 w-4 text-gray-400" />
@@ -145,7 +144,6 @@ export function RequestedDocumentsTable({
                       </span>
                     </div>
                   </TableCell>
-                )}
                 
                 <TableCell>
                   <StatusBadge status={document.requested_review.status} />

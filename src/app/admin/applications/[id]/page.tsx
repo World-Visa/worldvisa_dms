@@ -15,7 +15,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ArrowLeft, RefreshCw, CheckCircle, BadgeCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import Link from 'next/link';
 import { useState } from 'react';
 import { DocumentCategory, Company } from '@/types/documents';
 import { Document } from '@/types/applications';
@@ -153,7 +152,7 @@ export default function ApplicationDetailsPage() {
     return documents.every((doc: Document) => doc.status === 'reviewed');
   }, [documents]);
 
-  
+
   // Handle push for quality check
   const handlePushForQualityCheck = () => {
     if (!user?.username || !application?.id) {
@@ -409,15 +408,19 @@ export default function ApplicationDetailsPage() {
     setDocumentsPage(1);
   }, [selectedCategory]);
 
+  const handleBack = () => {
+    router.back();
+  }
+
   if (applicationError || documentsError) {
     return (
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center space-x-4">
-          <Link href="/admin/applications">
-            <Button variant="outline" size="sm">
+          <div className="items-center flex">
+            <Button variant="outline" size="sm" onClick={handleBack}>
               <ArrowLeft className="h-4 w-4 mr-2" />
             </Button>
-          </Link>
+          </div>
         </div>
 
         <Alert variant="destructive">
@@ -435,15 +438,16 @@ export default function ApplicationDetailsPage() {
       <TooltipProvider>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <Link href="/admin/applications" className="items-center flex">
+            <div className="items-center flex">
               <Button
                 variant="outline"
                 className="rounded-full w-8 h-8 cursor-pointer "
                 size="sm"
+                onClick={() => router.back()}
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-            </Link>
+            </div>
             <div>
               <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-lexend font-bold">
                 Application Details <Badge variant="default" className='bg-red-50 text-red-500 hover:bg-red-100 md:mb-0 mb-2 md:h-8 flex items-center gap-2'><BadgeCheck size={16} />{application?.Package_Finalize || 'Not provided'}</Badge>
@@ -468,11 +472,10 @@ export default function ApplicationDetailsPage() {
                     size="sm"
                     onClick={handlePushForQualityCheck}
                     disabled={!areAllDocumentsReviewed}
-                    className={`flex items-center gap-2 cursor-pointer ${
-                      areAllDocumentsReviewed 
-                        ? "bg-green-600 hover:bg-green-700 text-white" 
-                        : "opacity-50 cursor-not-allowed"
-                    }`}
+                    className={`flex items-center gap-2 cursor-pointer ${areAllDocumentsReviewed
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "opacity-50 cursor-not-allowed"
+                      }`}
                   >
                     <CheckCircle className="h-4 w-4" />
                     <span className="hidden sm:inline">
@@ -482,7 +485,7 @@ export default function ApplicationDetailsPage() {
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                {areAllDocumentsReviewed 
+                {areAllDocumentsReviewed
                   ? "All documents are approved. Ready for quality check."
                   : "All submitted documents must be reviewed before pushing for quality check."}
               </TooltipContent>

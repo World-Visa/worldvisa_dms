@@ -88,11 +88,13 @@ export function useUpdateDocumentStatus() {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['requested-documents-to-me'] });
       await queryClient.cancelQueries({ queryKey: ['my-requested-documents'] });
+      await queryClient.cancelQueries({ queryKey: ['all-requested-documents'] });
       await queryClient.cancelQueries({ queryKey: ['requested-document', documentId] });
       
       // Get current data for rollback
       const previousToMeData = queryClient.getQueriesData({ queryKey: ['requested-documents-to-me'] });
       const previousMyRequestsData = queryClient.getQueriesData({ queryKey: ['my-requested-documents'] });
+      const previousAllRequestsData = queryClient.getQueriesData({ queryKey: ['all-requested-documents'] });
       const previousDocumentData = queryClient.getQueryData<RequestedDocument>(['requested-document', documentId]);
       
       // Update the individual document cache immediately (like ViewDocumentSheet pattern)
@@ -189,13 +191,46 @@ export function useUpdateDocumentStatus() {
         };
       });
       
+      queryClient.setQueriesData({ queryKey: ['all-requested-documents'] }, (old: { data: RequestedDocument[] } | undefined) => {
+        if (!old?.data) return old;
+        const updatedData = old.data.map((doc: RequestedDocument) => {
+          if (doc._id === documentId) {
+            const updatedDoc = { 
+              ...doc, 
+              // Don't update top-level status - only requested_review.status
+              requested_review: { ...doc.requested_review, status: data.status },
+              // Also update requested_reviews array if it exists
+              requested_reviews: doc.requested_reviews?.map(review => 
+                review._id === doc.requested_review._id 
+                  ? { ...review, status: data.status }
+                  : review
+              ) || doc.requested_reviews
+            };
+            return {
+              ...updatedDoc,
+              isOverdue: isDocumentOverdue(updatedDoc, user?.role),
+              daysSinceRequest: getDaysSinceRequest(updatedDoc),
+              priority: getDocumentPriority(updatedDoc, user?.role),
+              formattedUploadDate: new Date(updatedDoc.uploaded_at).toLocaleDateString(),
+              formattedRequestDate: new Date(updatedDoc.uploaded_at).toLocaleDateString(),
+            };
+          }
+          return doc;
+        });
+        
+        return {
+          ...old,
+          data: sortDocumentsByPriority(updatedData, user?.role)
+        };
+      });
+      
       // Show optimistic toast
       toast.loading(`Updating document status to ${data.status}...`, {
         id: 'update-document-status'
       });
       
       // Return context for potential rollback
-      return { previousToMeData, previousMyRequestsData, previousDocumentData };
+      return { previousToMeData, previousMyRequestsData, previousAllRequestsData, previousDocumentData };
     },
     onSuccess: (data, variables) => {
       const { data: statusData } = variables;
@@ -231,6 +266,11 @@ export function useUpdateDocumentStatus() {
           queryClient.setQueryData(queryKey, data);
         });
       }
+      if (context?.previousAllRequestsData) {
+        context.previousAllRequestsData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
       if (context?.previousDocumentData) {
         queryClient.setQueryData(['requested-document', variables.documentId], context.previousDocumentData);
       }
@@ -254,11 +294,13 @@ export function useDeleteRequestedDocument() {
       // Cancel any outgoing refetches
       await queryClient.cancelQueries({ queryKey: ['requested-documents-to-me'] });
       await queryClient.cancelQueries({ queryKey: ['my-requested-documents'] });
+      await queryClient.cancelQueries({ queryKey: ['all-requested-documents'] });
       await queryClient.cancelQueries({ queryKey: ['requested-document', documentId] });
       
       // Get current data for rollback
       const previousToMeData = queryClient.getQueriesData({ queryKey: ['requested-documents-to-me'] });
       const previousMyRequestsData = queryClient.getQueriesData({ queryKey: ['my-requested-documents'] });
+      const previousAllRequestsData = queryClient.getQueriesData({ queryKey: ['all-requested-documents'] });
       const previousDocumentData = queryClient.getQueryData<RequestedDocument>(['requested-document', documentId]);
       
       // Optimistically remove the document from list caches
@@ -280,6 +322,15 @@ export function useDeleteRequestedDocument() {
         };
       });
       
+      queryClient.setQueriesData({ queryKey: ['all-requested-documents'] }, (old: { data: RequestedDocument[] } | undefined) => {
+        if (!old?.data) return old;
+        const filteredData = old.data.filter((doc: RequestedDocument) => doc._id !== documentId);
+        return {
+          ...old,
+          data: sortDocumentsByPriority(filteredData, user?.role)
+        };
+      });
+      
       // Remove the individual document from cache
       queryClient.removeQueries({ queryKey: ['requested-document', documentId] });
       
@@ -289,7 +340,7 @@ export function useDeleteRequestedDocument() {
       });
       
       // Return context for potential rollback
-      return { previousToMeData, previousMyRequestsData, previousDocumentData };
+      return { previousToMeData, previousMyRequestsData, previousAllRequestsData, previousDocumentData };
     },
     onSuccess: () => {
       // Dismiss loading toast
@@ -307,6 +358,11 @@ export function useDeleteRequestedDocument() {
       }
       if (context?.previousMyRequestsData) {
         context.previousMyRequestsData.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      if (context?.previousAllRequestsData) {
+        context.previousAllRequestsData.forEach(([queryKey, data]) => {
           queryClient.setQueryData(queryKey, data);
         });
       }
