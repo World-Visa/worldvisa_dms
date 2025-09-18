@@ -41,7 +41,6 @@ export async function createReviewRequest(
   const startTime = Date.now();
   
   try {
-    
     const response = await fetcher(`https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`, {
       method: 'POST',
       headers: {

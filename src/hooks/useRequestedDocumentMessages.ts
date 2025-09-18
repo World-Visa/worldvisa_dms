@@ -3,7 +3,6 @@ import {
   getRequestedDocumentMessages,
   sendRequestedDocumentMessage,
   deleteRequestedDocumentMessage,
-  RequestedDocumentMessage,
   SendMessageRequest,
   DeleteMessageRequest
 } from '@/lib/api/requestedDocumentMessages';
@@ -19,16 +18,16 @@ export function useRequestedDocumentMessages(documentId: string, reviewId: strin
     enabled: !!documentId && !!reviewId,
     staleTime: 30 * 1000, // 30 seconds
     gcTime: 5 * 60 * 1000, // 5 minutes
-    retry: 2,
+    retry: (failureCount, error) => {
+      if (error.message.includes('401') || error.message.includes('403')) {
+        return false;
+      }
+      return failureCount < 2;
+    },
     refetchOnWindowFocus: false,
     select: (data) => {
-      // Sort messages by sent_at date (newest first)
-      return {
-        ...data,
-        data: data.data.sort((a, b) => 
-          new Date(b.sent_at).getTime() - new Date(a.sent_at).getTime()
-        )
-      };
+      // Return data as-is since there's no timestamp to sort by
+      return data;
     },
     meta: {
       errorMessage: 'Failed to load messages. Please try again.'

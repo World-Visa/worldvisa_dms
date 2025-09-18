@@ -9,7 +9,11 @@ export async function GET(
   { params }: { params: { documentId: string; reviewId: string } }
 ) {
   try {
-    const token = request.cookies.get('auth-token')?.value;
+    // Try to get token from Authorization header first, then from cookies
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.startsWith('Bearer ') 
+      ? authHeader.substring(7) 
+      : request.cookies.get('auth-token')?.value;
     
     if (!token) {
       return NextResponse.json(
@@ -50,7 +54,11 @@ export async function POST(
   { params }: { params: { documentId: string; reviewId: string } }
 ) {
   try {
-    const token = request.cookies.get('auth-token')?.value;
+    // Try to get token from Authorization header first, then from cookies
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.startsWith('Bearer ') 
+      ? authHeader.substring(7) 
+      : request.cookies.get('auth-token')?.value;
     
     if (!token) {
       return NextResponse.json(
@@ -98,7 +106,11 @@ export async function DELETE(
   { params }: { params: { documentId: string; reviewId: string } }
 ) {
   try {
-    const token = request.cookies.get('auth-token')?.value;
+    // Try to get token from Authorization header first, then from cookies
+    const authHeader = request.headers.get('authorization');
+    const token = authHeader?.startsWith('Bearer ') 
+      ? authHeader.substring(7) 
+      : request.cookies.get('auth-token')?.value;
     
     if (!token) {
       return NextResponse.json(

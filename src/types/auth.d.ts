@@ -2,7 +2,7 @@ export interface User {
   _id: string;
   username?: string;
   email?: string;
-  role: "admin" | "client" | "master_admin" | "team_leader";
+  role: "admin" | "client" | "master_admin" | "team_leader" | "supervisor";
   lead_id?: string;
 }
 
@@ -19,7 +19,7 @@ export interface AuthResponse {
   name?: string;
   email?: string;
   lead_id?: string;
-  role?: "admin" | "client" | "master_admin" | "team_leader";
+  role?: "admin" | "client" | "master_admin" | "team_leader" | "supervisor";
 }
 
 export interface AdminLoginRequest {
@@ -48,7 +48,7 @@ export interface JWTPayload {
   id: string;
   username?: string;
   email?: string;
-  role: "admin" | "client" | "master_admin" | "team_leader";
+  role: "admin" | "client" | "master_admin" | "team_leader" | "supervisor";
   lead_id?: string;
   iat: number;
   exp: number;

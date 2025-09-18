@@ -37,9 +37,9 @@ export function AuthGuard({
       }
 
       if (requiredRole && user?.role !== requiredRole) {
-        // Check if user has access to admin pages (admin, team_leader, and master_admin can access admin pages)
-        if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin')) {
-          // Allow access to admin pages for admin, team_leader, and master_admin roles
+        // Check if user has access to admin pages (admin, team_leader, master_admin, and supervisor can access admin pages)
+        if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin' || user?.role === 'supervisor')) {
+          // Allow access to admin pages for admin, team_leader, master_admin, and supervisor roles
         } else {
           // Redirect to appropriate dashboard based on user role
           if (user?.role === 'admin' || user?.role === 'team_leader') {
@@ -48,6 +48,8 @@ export function AuthGuard({
             router.push('/client/dashboard');
           } else if(user?.role === 'master_admin') {
             router.push('/admin/dashboard');
+          } else if(user?.role === 'supervisor') {
+            router.push('/admin/applications');
           } else {
             router.push(redirectTo);
           }
@@ -82,10 +84,10 @@ export function AuthGuard({
     return null;
   }
 
-  // Check role access - allow master_admin to access admin pages
+  // Check role access - allow master_admin and supervisor to access admin pages
   if (requiredRole && user?.role !== requiredRole) {
-    if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin')) {
-      // Allow access to admin pages for admin, team_leader, and master_admin roles
+    if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin' || user?.role === 'supervisor')) {
+      // Allow access to admin pages for admin, team_leader, master_admin, and supervisor roles
     } else {
       return null;
     }

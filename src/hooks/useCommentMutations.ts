@@ -96,7 +96,7 @@ export function useAddComment(documentId: string) {
         added_by: newComment.added_by || currentUser,
         created_at: new Date().toISOString(),
         document_id: documentId,
-        is_important: newComment.added_by?.toLowerCase().includes('kavitha') || false
+        is_important: newComment.added_by?.toLowerCase().includes('moshin') || false
       };
 
       // Optimistically update the cache
@@ -161,12 +161,12 @@ export function useAddComment(documentId: string) {
 // Helper function to sort comments by priority
 function sortCommentsByPriority(comments: Comment[]): Comment[] {
   return comments.sort((a, b) => {
-    // Kavitha's comments first
-    const aIsKavitha = a.added_by.toLowerCase().includes('kavitha');
-    const bIsKavitha = b.added_by.toLowerCase().includes('kavitha');
+    // Moshin's comments first
+    const aIsMoshin = a.added_by.toLowerCase().includes('moshin');
+    const bIsMoshin = b.added_by.toLowerCase().includes('moshin');
     
-    if (aIsKavitha && !bIsKavitha) return -1;
-    if (!aIsKavitha && bIsKavitha) return 1;
+    if (aIsMoshin && !bIsMoshin) return -1;
+    if (!aIsMoshin && bIsMoshin) return 1;
     
     // Then sort by creation date (newest first)
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();

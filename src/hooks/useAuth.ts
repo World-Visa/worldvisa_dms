@@ -16,7 +16,7 @@ interface ClientLoginResponse {
   name?: string;
   email?: string;
   lead_id?: string;
-  role?: 'admin' | 'client' | 'master_admin' | 'team_leader';
+  role?: 'admin' | 'client' | 'master_admin' | 'team_leader' | 'supervisor';
 }
 
 interface AuthStore extends AuthState {

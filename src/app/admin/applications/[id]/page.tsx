@@ -24,6 +24,7 @@ import { useChecklistState } from '@/hooks/useChecklistState';
 import { useChecklistURLState } from '@/lib/urlState';
 import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
 import { useQueryClient } from '@tanstack/react-query';
+import { QualityCheckModal } from '@/components/applications/QualityCheckModal';
 
 export default function ApplicationDetailsPage() {
   const params = useParams();
@@ -56,11 +57,12 @@ export default function ApplicationDetailsPage() {
   const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
   const [documentsPage, setDocumentsPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isQualityCheckModalOpen, setIsQualityCheckModalOpen] = useState(false);
   const maxCompanies = 5;
 
   // Check authentication
   useEffect(() => {
-    if (!isAuthLoading && (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'team_leader' && user?.role !== 'master_admin'))) {
+    if (!isAuthLoading && (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'team_leader' && user?.role !== 'master_admin' && user?.role !== 'supervisor'))) {
       router.push('/admin-login');
     }
   }, [isAuthenticated, isAuthLoading, user?.role, router]);
@@ -116,18 +118,24 @@ export default function ApplicationDetailsPage() {
   };
 
   // Check if all submitted documents are approved
-  const areAllDocumentsApproved = useMemo(() => {
+  const areAllDocumentsReviewed = useMemo(() => {
     if (!documents || documents.length === 0) {
       return false;
     }
     
     // Check if all documents have approved status
-    return documents.every((doc: Document) => doc.status === 'approved');
+    return documents.every((doc: Document) => doc.status === 'reviewed');
   }, [documents]);
 
+  
   // Handle push for quality check
   const handlePushForQualityCheck = () => {
-    // Handle quality check push
+    if (!user?.username || !application?.id) {
+      console.error('Missing user or application data');
+      return;
+    }
+
+    setIsQualityCheckModalOpen(true);
   };
 
 
@@ -401,23 +409,25 @@ export default function ApplicationDetailsPage() {
               <TooltipTrigger asChild>
                 <div>
                   <Button
-                    variant={areAllDocumentsApproved ? "default" : "outline"}
+                    variant={areAllDocumentsReviewed ? "default" : "outline"}
                     size="sm"
                     onClick={handlePushForQualityCheck}
-                    disabled={!areAllDocumentsApproved}
+                    disabled={!areAllDocumentsReviewed}
                     className={`flex items-center gap-2 cursor-pointer ${
-                      areAllDocumentsApproved 
+                      areAllDocumentsReviewed 
                         ? "bg-green-600 hover:bg-green-700 text-white" 
                         : "opacity-50 cursor-not-allowed"
                     }`}
                   >
                     <CheckCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">Push for Quality Check</span>
+                    <span className="hidden sm:inline">
+                      Push for Quality Check
+                    </span>
                   </Button>
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                {areAllDocumentsApproved 
+                {areAllDocumentsReviewed 
                   ? "All documents are approved. Ready for quality check."
                   : "All submitted documents must be reviewed before pushing for quality check."
                 }
@@ -460,7 +470,7 @@ export default function ApplicationDetailsPage() {
           </div>
           <Skeleton className="h-96 w-full rounded-xl" />
         </div>
-      ) : !isAuthLoading && isAuthenticated && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin') ? (
+      ) : !isAuthLoading && isAuthenticated && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin' || user?.role === 'supervisor') ? (
         <div className="space-y-6">
           {/* Applicant Details */}
             <ApplicantDetails
@@ -563,6 +573,15 @@ export default function ApplicationDetailsPage() {
         document={selectedReuploadDocument }
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}
+      />
+
+      {/* Quality Check Modal */}
+      <QualityCheckModal
+        applicationId={applicationId}
+        leadId={application?.id || ''}
+        isOpen={isQualityCheckModalOpen}
+        onOpenChange={setIsQualityCheckModalOpen}
+        disabled={!areAllDocumentsReviewed}
       />
     </div>
   );

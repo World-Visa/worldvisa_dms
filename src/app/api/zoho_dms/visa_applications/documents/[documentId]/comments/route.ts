@@ -127,7 +127,7 @@ export async function GET(
             document_id: documentId,
             is_important: Boolean(
               comment.added_by &&
-                comment.added_by.toLowerCase().includes("kavitha")
+                comment.added_by.toLowerCase().includes("moshin")
             ),
           }));
 
@@ -341,7 +341,7 @@ export async function POST(
             document_id: documentId,
             is_important: Boolean(
               latestComment.added_by &&
-                latestComment.added_by.toLowerCase().includes("kavitha")
+                latestComment.added_by.toLowerCase().includes("moshin")
             ),
           };
 

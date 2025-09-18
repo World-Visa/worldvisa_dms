@@ -50,11 +50,11 @@ export function useAdminUsers() {
       // Filter and sort admin users
       return data
         .filter((user) =>
-          ["admin", "team_leader", "master_admin"].includes(user.role)
+          ["admin", "team_leader", "master_admin", "supervisor"].includes(user.role)
         )
         .map((user) => ({
           ...user,
-          username: user.username === "admin" ? "kavitha mam" : user.username,
+          username: user.username === "admin" ? "mohsin" : user.username,
         }))
         .sort((a, b) => {
           // Sort by role priority, then by username

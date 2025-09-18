@@ -49,7 +49,7 @@ export function isTokenExpired(token: string): boolean {
 }
 
 // Extract user role from token
-export function getUserRole(token: string): 'admin' | 'client' | 'master_admin' | 'team_leader' | null {
+export function getUserRole(token: string): 'admin' | 'client' | 'master_admin' | 'team_leader' | 'supervisor' | null {
   try {
     const payload = JSON.parse(atob(token.split('.')[1]));
     return payload.role || null;
@@ -79,5 +79,25 @@ export const tokenStorage = {
     const token = tokenStorage.get();
     if (!token) return false;
     return !isTokenExpired(token);
+  },
+
+  // Debug utility to check token status
+  debug: (): void => {
+    if (typeof window === 'undefined') {
+      console.log('🔍 Token Debug: Running on server side');
+      return;
+    }
+    
+    const token = tokenStorage.get();
+    const userData = localStorage.getItem('user_data');
+    
+    console.log('🔍 Token Debug:', {
+      hasToken: !!token,
+      tokenLength: token?.length || 0,
+      tokenPreview: token ? `${token.substring(0, 20)}...` : 'No token',
+      isExpired: token ? isTokenExpired(token) : 'N/A',
+      hasUserData: !!userData,
+      userData: userData ? JSON.parse(userData) : null
+    });
   }
 };

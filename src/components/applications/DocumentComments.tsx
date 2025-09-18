@@ -27,10 +27,10 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
     const connectionState = useRealtimeConnection();
     const deleteCommentMutation = useDeleteComment(documentId);
 
-    // Filter comments for client view - hide "kavitha mam" comments
+    // Filter comments for client view - hide "moshin" comments
     const filteredComments = isClientView 
         ? comments.filter(comment => 
-            !comment.added_by.toLowerCase().includes('kavitha')
+            !comment.added_by.toLowerCase().includes('mohsin')
           )
         : comments;
 

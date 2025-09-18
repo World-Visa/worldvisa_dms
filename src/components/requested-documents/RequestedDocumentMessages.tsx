@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -8,7 +8,6 @@ import {
   Send, 
   Trash2, 
   User, 
-  Clock,
   MessageSquare
 } from 'lucide-react';
 import { 
@@ -17,19 +16,16 @@ import {
   useDeleteRequestedDocumentMessage 
 } from '@/hooks/useRequestedDocumentMessages';
 import { useAuth } from '@/hooks/useAuth';
-import { RequestedDocumentMessage } from '@/lib/api/requestedDocumentMessages';
 import { cn } from '@/lib/utils';
 
 interface RequestedDocumentMessagesProps {
   documentId: string;
   reviewId: string;
-  type: 'requested-to-me' | 'my-requests';
 }
 
 export function RequestedDocumentMessages({
   documentId,
-  reviewId,
-  type
+  reviewId
 }: RequestedDocumentMessagesProps) {
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState('');
@@ -44,7 +40,7 @@ export function RequestedDocumentMessages({
   const sendMessageMutation = useSendRequestedDocumentMessage();
   const deleteMessageMutation = useDeleteRequestedDocumentMessage();
 
-  const messages = messagesData?.data || [];
+  const messages = useMemo(() => messagesData?.data || [], [messagesData?.data]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
@@ -150,7 +146,7 @@ export function RequestedDocumentMessages({
             </div>
           ) : (
             messages.map((message) => {
-              const isCurrentUser = message.sent_by === user?.username;
+              const isCurrentUser = message.username === user?.username;
               const canDelete = isCurrentUser; // Only allow deleting own messages
               
               return (
@@ -199,17 +195,7 @@ export function RequestedDocumentMessages({
                         'flex items-center space-x-2 text-xs text-gray-500',
                         isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''
                       )}>
-                        <span className="font-medium">{message.sent_by}</span>
-                        <div className="flex items-center space-x-1">
-                          <Clock className="h-3 w-3" />
-                          <span>
-                            {new Date(message.sent_at).toLocaleDateString()} at{' '}
-                            {new Date(message.sent_at).toLocaleTimeString([], { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
-                          </span>
-                        </div>
+                        <span className="font-medium">{message.username}</span>
                         {canDelete && (
                           <button
                             onClick={() => handleDeleteMessage(message._id)}
@@ -238,7 +224,7 @@ export function RequestedDocumentMessages({
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Type your message..."
-            className="min-h-[60px] max-h-[120px] resize-none"
+            className="min-h-[60px] max-h-[120px] border border-gray-300 resize-none"
             disabled={sendMessageMutation.isPending}
           />
           <Button

@@ -21,6 +21,8 @@ export interface Application {
   Suggested_Anzsco?: string;
   Send_Check_List?: string;
   Assessing_Authority?:string;
+  DMS_Application_Status?:string;
+  Package_Finalize?:string;
 }
 
 export interface Document {

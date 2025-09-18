@@ -6,7 +6,7 @@ A production-grade, real-time comment system for document management with optimi
 
 - **Real-time Updates**: Server-Sent Events (SSE) with automatic reconnection
 - **Optimistic UI**: Instant comment display with rollback on errors
-- **Priority Comments**: Kavitha's comments are highlighted and pinned at the top
+- **Priority Comments**: Moshin's comments are highlighted and pinned at the top
 - **Error Handling**: Comprehensive error boundaries and Sentry integration
 - **Performance Monitoring**: Built-in metrics and performance tracking
 - **Fallback Polling**: Automatic fallback when real-time connection fails
@@ -175,12 +175,12 @@ The system uses Server-Sent Events (SSE) for real-time updates with automatic fa
 
 ## 🎨 Comment Prioritization
 
-Comments from Kavitha are automatically prioritized:
+Comments from Moshin are automatically prioritized:
 
 - **Visual Emphasis**: Purple gradient background and border
 - **Badge**: "Important" badge displayed
 - **Positioning**: Always appear at the top of the comment list
-- **Sorting**: Kavitha's comments first, then by creation date (newest first)
+- **Sorting**: Moshin's comments first, then by creation date (newest first)
 
 ## 📊 Monitoring & Analytics
 

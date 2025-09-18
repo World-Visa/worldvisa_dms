@@ -2,17 +2,21 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { 
   getRequestedDocumentsToMe, 
   getMyRequestedDocuments, 
+  getAllRequestedDocuments,
   updateRequestedDocumentStatus,
   RequestedDocumentsParams, 
   RequestedDocument
 } from '@/lib/api/requestedDocuments';
 import { toast } from 'sonner';
 import * as Sentry from '@sentry/nextjs';
+import { useAuth } from './useAuth';
 
 /**
  * Hook to fetch documents requested for review by the current user
  */
 export function useRequestedDocumentsToMe(params: RequestedDocumentsParams = {}) {
+  const { user } = useAuth();
+  
   return useQuery({
     queryKey: ['requested-documents-to-me', params],
     queryFn: () => getRequestedDocumentsToMe(params),
@@ -22,19 +26,33 @@ export function useRequestedDocumentsToMe(params: RequestedDocumentsParams = {})
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     refetchOnWindowFocus: false,
     select: (data) => {
-      // Transform and enhance the data
+      // Debug: Log the raw API data
+      console.log('🌐 Raw API data received:', data);
+      console.log('📊 Document statuses from API:', data.data.map(doc => ({
+        id: doc._id,
+        document_name: doc.document_name,
+        topLevelStatus: doc.status,
+        requestedReviewStatus: doc.requested_review?.status
+      })));
+      
+      // Transform and enhance the data with role-based calculations
+      const enhancedData = data.data.map(doc => ({
+        ...doc,
+        // Add computed fields with user role
+        isOverdue: isDocumentOverdue(doc, user?.role),
+        daysSinceRequest: getDaysSinceRequest(doc),
+        priority: getDocumentPriority(doc, user?.role),
+        // Format dates
+        formattedUploadDate: new Date(doc.uploaded_at).toLocaleDateString(),
+        formattedRequestDate: new Date(doc.uploaded_at).toLocaleDateString(), // Use uploaded_at as request date for now
+      }));
+      
+      // Sort documents with overdue first
+      const sortedData = sortDocumentsByPriority(enhancedData, user?.role);
+      
       return {
         ...data,
-        data: data.data.map(doc => ({
-          ...doc,
-          // Add computed fields
-          isOverdue: isDocumentOverdue(doc),
-          daysSinceRequest: getDaysSinceRequest(doc),
-          priority: getDocumentPriority(doc),
-          // Format dates
-          formattedUploadDate: new Date(doc.uploaded_at).toLocaleDateString(),
-          formattedRequestDate: new Date(doc.uploaded_at).toLocaleDateString(), // Use uploaded_at as request date for now
-        }))
+        data: sortedData
       };
     },
     meta: {
@@ -64,6 +82,8 @@ export function useRequestedDocumentsToMePaginated(
  * Hook to fetch documents that the current user has requested for review
  */
 export function useMyRequestedDocuments(params: RequestedDocumentsParams = {}) {
+  const { user } = useAuth();
+  
   return useQuery({
     queryKey: ['my-requested-documents', params],
     queryFn: () => getMyRequestedDocuments(params),
@@ -73,19 +93,24 @@ export function useMyRequestedDocuments(params: RequestedDocumentsParams = {}) {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     refetchOnWindowFocus: false,
     select: (data) => {
-      // Transform and enhance the data
+      // Transform and enhance the data with role-based calculations
+      const enhancedData = data.data.map(doc => ({
+        ...doc,
+        // Add computed fields with user role
+        isOverdue: isDocumentOverdue(doc, user?.role),
+        daysSinceRequest: getDaysSinceRequest(doc),
+        priority: getDocumentPriority(doc, user?.role),
+        // Format dates
+        formattedUploadDate: new Date(doc.uploaded_at).toLocaleDateString(),
+        formattedRequestDate: new Date(doc.uploaded_at).toLocaleDateString(), // Use uploaded_at as request date for now
+      }));
+      
+      // Sort documents with overdue first
+      const sortedData = sortDocumentsByPriority(enhancedData, user?.role);
+      
       return {
         ...data,
-        data: data.data.map(doc => ({
-          ...doc,
-          // Add computed fields
-          isOverdue: isDocumentOverdue(doc),
-          daysSinceRequest: getDaysSinceRequest(doc),
-          priority: getDocumentPriority(doc),
-          // Format dates
-          formattedUploadDate: new Date(doc.uploaded_at).toLocaleDateString(),
-          formattedRequestDate: new Date(doc.uploaded_at).toLocaleDateString(), // Use uploaded_at as request date for now
-        }))
+        data: sortedData
       };
     },
     meta: {
@@ -124,7 +149,7 @@ export function useUpdateRequestedDocumentStatus() {
       message 
     }: { 
       documentId: string; 
-      status: 'approved' | 'rejected'; 
+      status: 'reviewed'; 
       message?: string; 
     }) => {
       const startTime = Date.now();
@@ -205,11 +230,20 @@ export function useUpdateRequestedDocumentStatus() {
 }
 
 // Helper functions
-function isDocumentOverdue(doc: RequestedDocument): boolean {
+function isDocumentOverdue(doc: RequestedDocument, userRole?: string): boolean {
   const requestDate = new Date(doc.uploaded_at);
   const now = new Date();
   const daysDiff = Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60 * 24));
-  return daysDiff > 4; // Consider overdue after 4 days
+  
+  // Role-based overdue thresholds
+  switch (userRole) {
+    case 'master_admin':
+      return daysDiff > 4; // 4+ days for master_admin
+    case 'team_leader':
+      return daysDiff > 1; // 1+ days for team_leader
+    default:
+      return daysDiff > 4; // Default 4+ days for other roles
+  }
 }
 
 function getDaysSinceRequest(doc: RequestedDocument): number {
@@ -218,10 +252,85 @@ function getDaysSinceRequest(doc: RequestedDocument): number {
   return Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-function getDocumentPriority(doc: RequestedDocument): 'high' | 'medium' | 'low' {
+function getDocumentPriority(doc: RequestedDocument, userRole?: string): 'high' | 'medium' | 'low' {
   const daysSinceRequest = getDaysSinceRequest(doc);
+  const isOverdue = isDocumentOverdue(doc, userRole);
   
-  if (daysSinceRequest > 5) return 'high';
-  if (daysSinceRequest > 2) return 'medium';
-  return 'low';
+  // Overdue documents are always high priority
+  if (isOverdue) return 'high';
+  
+  // Role-based priority thresholds
+  switch (userRole) {
+    case 'master_admin':
+      if (daysSinceRequest > 3) return 'high';
+      if (daysSinceRequest > 2) return 'medium';
+      return 'low';
+    case 'team_leader':
+      if (daysSinceRequest > 0) return 'high';
+      return 'medium';
+    default:
+      if (daysSinceRequest > 3) return 'high';
+      if (daysSinceRequest > 2) return 'medium';
+      return 'low';
+  }
+}
+
+function sortDocumentsByPriority(documents: RequestedDocument[], userRole?: string): RequestedDocument[] {
+  return [...documents].sort((a, b) => {
+    const aOverdue = isDocumentOverdue(a, userRole);
+    const bOverdue = isDocumentOverdue(b, userRole);
+    
+    // Overdue documents come first
+    if (aOverdue && !bOverdue) return -1;
+    if (!aOverdue && bOverdue) return 1;
+    
+    // If both are overdue or both are not overdue, sort by days since request (descending)
+    const aDays = getDaysSinceRequest(a);
+    const bDays = getDaysSinceRequest(b);
+    
+    if (aOverdue && bOverdue) {
+      return bDays - aDays; // More overdue first
+    }
+    
+    return bDays - aDays; // More recent requests first for non-overdue
+  });
+}
+
+/**
+ * Hook for fetching all requested documents (master admin only)
+ */
+export function useAllRequestedDocumentsPaginated(
+  page: number = 1,
+  limit: number = 10
+) {
+  const { user } = useAuth();
+  
+  return useQuery({
+    queryKey: ['all-requested-documents-paginated', page, limit],
+    queryFn: () => getAllRequestedDocuments(page, limit),
+    enabled: !!user,
+    select: (data) => {
+      if (!data?.data) return data;
+      
+      const enhancedData = data.data.map(doc => ({
+        ...doc,
+        isOverdue: isDocumentOverdue(doc, user?.role),
+        daysSinceRequest: getDaysSinceRequest(doc),
+        priority: getDocumentPriority(doc, user?.role)
+      }));
+      
+      return {
+        ...data,
+        data: sortDocumentsByPriority(enhancedData, user?.role)
+      };
+    },
+    staleTime: 30000, // 30 seconds
+    retry: (failureCount, error) => {
+      if (failureCount < 2 && error.message.includes('network')) {
+        return true;
+      }
+      return false;
+    },
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000)
+  });
 }

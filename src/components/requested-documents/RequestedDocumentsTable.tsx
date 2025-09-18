@@ -19,13 +19,14 @@ import {
 import { RequestedDocument } from '@/lib/api/requestedDocuments';
 import { StatusBadge } from './StatusBadge';
 import { RequestedDocumentViewSheet } from './RequestedDocumentViewSheet';
+import { RequestedDocumentType } from '@/types/common';
 
 import { cn } from '@/lib/utils';
 
 interface RequestedDocumentsTableProps {
   documents: RequestedDocument[];
   isLoading?: boolean;
-  type: 'requested-to-me' | 'my-requests';
+  type: RequestedDocumentType;
 }
 
 export function RequestedDocumentsTable({

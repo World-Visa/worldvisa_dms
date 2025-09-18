@@ -13,21 +13,29 @@ import {
   Calendar,
   CheckCircle,
   Trash2,
-  AlertTriangle
+  AlertTriangle,
+  ExternalLink
 } from 'lucide-react';
 import { RequestedDocument } from '@/lib/api/requestedDocuments';
 import { StatusBadge } from './StatusBadge';
+import { RequestedDocumentType } from '@/types/common';
 import { useUpdateDocumentStatus, useDeleteRequestedDocument } from '@/hooks/useRequestedDocumentActions';
+import { useRequestedDocumentData } from '@/hooks/useRequestedDocumentData';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import DocumentPreview from '@/components/applications/DocumentPreview';
 import { RequestedDocumentMessages } from './RequestedDocumentMessages';
+import { useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
+import { sendRequestedDocumentMessage } from '@/lib/api/requestedDocumentMessages';
+import { useApplicationDetails } from '@/hooks/useApplicationDetails';
+import { ApplicationDetailsAccordion } from './ApplicationDetailsAccordion';
 
 interface RequestedDocumentViewSheetProps {
   document: RequestedDocument | null;
   isOpen: boolean;
   onClose: () => void;
-  type: 'requested-to-me' | 'my-requests';
+  type: 'requested-to-me' | 'my-requests' | 'all-requests';
 }
 
 export function RequestedDocumentViewSheet({
@@ -39,83 +47,132 @@ export function RequestedDocumentViewSheet({
   const { user } = useAuth();
   const updateStatusMutation = useUpdateDocumentStatus();
   const deleteDocumentMutation = useDeleteRequestedDocument();
+  const queryClient = useQueryClient();
+  const router = useRouter();
+  
+  // Use the custom hook to get real-time document data (like ViewDocumentSheet pattern)
+  const { document: currentDoc } = useRequestedDocumentData(document?._id || '');
+  
+  // Fallback to the passed document if not in cache
+  const displayDoc = currentDoc || document;
+  
+  // Fetch application details for the compact application details card
+  const { data: applicationResponse, isLoading: isApplicationLoading } = useApplicationDetails(displayDoc?.record_id || '');
+  const application = applicationResponse?.data;
+  
+  // Ensure the document is cached for real-time updates
+  useEffect(() => {
+    if (displayDoc && !currentDoc && document) {
+      queryClient.setQueryData(['requested-document', document._id], document);
+    }
+  }, [displayDoc, currentDoc, document, queryClient]);
   
   const [reviewComment, setReviewComment] = useState('');
   const [isReviewing, setIsReviewing] = useState(false);
+  const [isAccordionOpen, setIsAccordionOpen] = useState(false);
 
   // Reset state when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
       setReviewComment('');
       setIsReviewing(false);
+      setIsAccordionOpen(false);
     }
   }, [isOpen]);
 
   // Define callbacks before early return to avoid conditional hook calls
   const handleMarkAsReviewed = useCallback(async () => {
-    if (!document || !user?.username || !reviewComment.trim()) {
+    if (!displayDoc || !user?.username || !reviewComment.trim()) {
       toast.error('Please add a review comment');
       return;
     }
 
     try {
+      // First, update the document status
       await updateStatusMutation.mutateAsync({
-        documentId: document._id,
+        documentId: displayDoc._id,
         data: {
-          status: 'approved',
-          changed_by: user.username,
-          reject_message: reviewComment.trim()
+          reviewId: displayDoc.requested_review._id,
+          requested_by: displayDoc.requested_review.requested_by,
+          requested_to: displayDoc.requested_review.requested_to,
+          message: reviewComment.trim(),
+          status: 'reviewed'
         }
       });
+
+      // Then, send the review comment as a message
+      try {
+        await sendRequestedDocumentMessage(
+          displayDoc._id,
+          displayDoc.requested_review._id,
+          { message: reviewComment.trim() }
+        );
+      } catch (messageError) {
+        console.warn('Failed to send review comment as message:', messageError);
+        // Don't fail the entire operation if message sending fails
+      }
+
       setReviewComment('');
+      setIsAccordionOpen(false); // Close accordion when review is submitted
       onClose();
     } catch {
       // Error is handled by the mutation
     }
-  }, [document, user?.username, reviewComment, updateStatusMutation, onClose]);
+  }, [displayDoc, user?.username, reviewComment, updateStatusMutation, onClose]);
 
   const handleDeleteRequest = useCallback(async () => {
-    if (!document || !document.requested_review._id) {
+    if (!displayDoc || !displayDoc.requested_review._id) {
       toast.error('Cannot delete: Review ID not found');
       return;
     }
 
     try {
       await deleteDocumentMutation.mutateAsync({
-        documentId: document._id,
+        documentId: displayDoc._id,
         data: {
-          reviewId: document.requested_review._id
+          reviewId: displayDoc.requested_review._id
         }
       });
       onClose();
     } catch {
       // Error is handled by the mutation
     }
-  }, [document, deleteDocumentMutation, onClose]);
+  }, [displayDoc, deleteDocumentMutation, onClose]);
 
-  if (!document) return null;
+  const handleViewApplication = useCallback(() => {
+    if (!displayDoc?.record_id) {
+      toast.error('Application record ID not found');
+      return;
+    }
+    
+    // Navigate to the application page
+    router.push(`/admin/applications/${displayDoc.record_id}`);
+    onClose(); // Close the sheet after navigation
+  }, [displayDoc?.record_id, router, onClose]);
+
+  if (!displayDoc) return null;
 
   const isRequestedToMe = type === 'requested-to-me';
-  const canReview = isRequestedToMe && document.requested_review.status === 'pending';
+  const canReview = isRequestedToMe && displayDoc.requested_review.status === 'pending';
   const canDelete = !isRequestedToMe; // Can only delete documents I requested
 
   // Convert RequestedDocument to Document format for DocumentPreview
   const documentForPreview = {
-    _id: document._id,
-    file_name: document.file_name,
-    document_name: document.document_name,
-    document_type: document.document_name || 'Document', // Use document_name as fallback
-    document_category: document.document_category,
-    document_link: document.document_link,
-    uploaded_by: document.uploaded_by,
-    uploaded_at: document.uploaded_at,
-    status: document.status,
+    _id: displayDoc._id,
+    file_name: displayDoc.file_name,
+    document_name: displayDoc.document_name,
+    document_type: displayDoc.document_name || 'Document', // Use document_name as fallback
+    document_category: displayDoc.document_category,
+    document_link: displayDoc.document_link,
+    uploaded_by: displayDoc.uploaded_by,
+    uploaded_at: displayDoc.uploaded_at,
+    status: displayDoc.status,
     description: '', // RequestedDocument doesn't have description
-    workdrive_file_id: document.workdrive_file_id,
-    record_id: document.record_id,
+    workdrive_file_id: displayDoc.workdrive_file_id,
+    record_id: displayDoc.record_id,
     workdrive_parent_id: '', // Add missing property
-    history: document.history || [], // Add missing property
-    comments: document.comments || [], // Add missing property
+    history: displayDoc.history || [], // Add missing property
+    comments: displayDoc.comments || [], // Add missing property
     __v: 0 // Add missing property
   };
 
@@ -131,26 +188,26 @@ export function RequestedDocumentViewSheet({
                 <div className="flex items-center space-x-2">
                   <User className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-600">
-                    Requested by {document.requested_review.requested_by}
+                    Requested by {displayDoc.requested_review.requested_by}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-600">
-                    {document.formattedRequestDate || 'Unknown date'}
+                    {displayDoc.formattedRequestDate || 'Unknown date'}
                   </span>
                 </div>
-                {document.isOverdue && (
+                {displayDoc.isOverdue && (
                   <div className="flex items-center gap-1">
                     <AlertTriangle className="h-4 w-4 text-red-500" />
                     <span className="text-sm text-red-600 font-medium">
-                      Overdue ({document.daysSinceRequest} days)
+                      Overdue ({displayDoc.daysSinceRequest} days)
                     </span>
                   </div>
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <StatusBadge status={document.requested_review.status} />
+                <StatusBadge status={displayDoc.requested_review.status} />
               </div>
             </div>
           </SheetHeader>
@@ -159,50 +216,78 @@ export function RequestedDocumentViewSheet({
           <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto">
             {/* Document Section - Top on mobile, Left on desktop */}
             <div className="flex-1 p-2 sm:p-4 relative order-1 lg:order-1">
+              {/* Application Details Accordion */}
+              {displayDoc?.record_id && (
+                <ApplicationDetailsAccordion
+                  application={application}
+                  isLoading={isApplicationLoading}
+                  isOpen={isAccordionOpen}
+                  onToggle={() => setIsAccordionOpen(!isAccordionOpen)}
+                />
+              )}
+
               <DocumentPreview document={documentForPreview} />
 
               {/* Action Buttons */}
               <div className="mt-4 space-y-2">
-                {canReview && (
-                  <div className="space-y-2">
+                {/* Top row buttons */}
+                <div className="flex flex-row gap-2">
+                  {/* View Application Button - Always visible */}
+                  <Button
+                    onClick={handleViewApplication}
+                    variant="outline"
+                    className="flex-1 cursor-pointer"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Application
+                  </Button>
+
+                  {canReview && (
                     <Button
-                      onClick={() => setIsReviewing(!isReviewing)}
+                      onClick={() => {
+                        setIsReviewing(!isReviewing);
+                        if (!isReviewing) {
+                          setIsAccordionOpen(false); 
+                        }
+                      }}
                       variant={isReviewing ? "outline" : "default"}
-                      className="w-full"
+                      className="flex-1"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
                       {isReviewing ? 'Cancel Review' : 'Mark as Reviewed'}
                     </Button>
-                    {isReviewing && (
-                      <div className="space-y-2">
-                        <textarea
-                          placeholder="Add your review comment..."
-                          value={reviewComment}
-                          onChange={(e) => setReviewComment(e.target.value)}
-                          className="w-full min-h-[80px] p-3 border rounded-md resize-none"
-                        />
-                        <Button
-                          onClick={handleMarkAsReviewed}
-                          disabled={updateStatusMutation.isPending || !reviewComment.trim()}
-                          className="w-full"
-                        >
-                          {updateStatusMutation.isPending ? 'Marking...' : 'Submit Review'}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
+                  )}
 
-                {canDelete && (
-                  <Button
-                    variant="destructive"
-                    onClick={handleDeleteRequest}
-                    disabled={deleteDocumentMutation.isPending}
-                    className="w-full"
-                  >
-                    <Trash2 className="h-4 w-4 mr-2" />
-                    {deleteDocumentMutation.isPending ? 'Deleting...' : 'Delete Request'}
-                  </Button>
+                  {canDelete && (
+                    <Button
+                      variant="destructive"
+                      onClick={handleDeleteRequest}
+                      disabled={deleteDocumentMutation.isPending}
+                      className="flex-1"
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deleteDocumentMutation.isPending ? 'Deleting...' : 'Delete Request'}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Review comment section */}
+                {isReviewing && (
+                  <div className="space-y-2">
+                    <textarea
+                      placeholder="Add your review comment..."
+                      value={reviewComment}
+                      onChange={(e) => setReviewComment(e.target.value)}
+                      className="w-full min-h-[80px] p-3 border rounded-md resize-none"
+                    />
+                    <Button
+                      onClick={handleMarkAsReviewed}
+                      disabled={updateStatusMutation.isPending || !reviewComment.trim()}
+                      className="w-full"
+                    >
+                      {updateStatusMutation.isPending ? 'Marking...' : 'Submit Review'}
+                    </Button>
+                  </div>
                 )}
               </div>
             </div>
@@ -210,9 +295,8 @@ export function RequestedDocumentViewSheet({
             {/* Messages Section - Bottom on mobile, Right on desktop */}
             <div className="w-full lg:flex-shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
               <RequestedDocumentMessages
-                documentId={document._id}
-                reviewId={document.requested_review._id}
-                type={type}
+                documentId={displayDoc._id}
+                reviewId={displayDoc.requested_review._id}
               />
             </div>
           </div>

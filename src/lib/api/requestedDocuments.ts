@@ -9,8 +9,8 @@ export interface RequestedDocument {
   document_name?: string;
   document_category?: string;
   uploaded_by: string;
-  status: 'pending' | 'approved' | 'reviewed' | 'rejected';
-  reject_message?: string;
+  status: 'pending' | 'reviewed';
+  review_message?: string;
   history: Array<{
     status: string;
     changed_by: string;
@@ -30,10 +30,17 @@ export interface RequestedDocument {
   requested_review: {
     requested_by: string;
     requested_to: string;
-    status: 'pending' | 'approved' | 'rejected';
+    status: 'pending' | 'reviewed';
     _id: string;
     messages: unknown[];
   };
+  requested_reviews?: Array<{
+    requested_by: string;
+    requested_to: string;
+    status: 'pending' | 'reviewed';
+    _id: string;
+    messages: unknown[];
+  }>;
   // Computed properties added by the hook
   isOverdue?: boolean;
   daysSinceRequest?: number;
@@ -171,7 +178,7 @@ export async function getMyRequestedDocuments(
  */
 export async function updateRequestedDocumentStatus(
   documentId: string,
-  status: 'approved' | 'rejected',
+  status: 'reviewed',
   message?: string
 ): Promise<{ success: boolean; message: string }> {
   const startTime = Date.now();
@@ -208,4 +215,21 @@ export async function updateRequestedDocumentStatus(
 
     throw error;
   }
+}
+
+/**
+ * Fetch all requested documents (master admin only)
+ */
+export async function getAllRequestedDocuments(
+  page: number = 1,
+  limit: number = 10
+): Promise<RequestedDocumentsResponse> {
+  const params = new URLSearchParams({
+    page: page.toString(),
+    limit: limit.toString(),
+  });
+
+  return fetcher<RequestedDocumentsResponse>(
+    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/requested_reviews/all?${params}`
+  );
 }

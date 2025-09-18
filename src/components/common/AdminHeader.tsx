@@ -36,6 +36,12 @@ const allNavigationTabs: NavigationTab[] = [
         href: '/admin/requested-docs',
         icon: FileText,
     },
+    {
+        id: 'quality-check',
+        label: 'Quality Check',
+        href: '/admin/quality-check',
+        icon: FileCheck,
+    },
 ];
 
 const adminNavigationTabs: NavigationTab[] = [
@@ -50,6 +56,27 @@ const adminNavigationTabs: NavigationTab[] = [
         label: 'Review-Requested Docs',
         href: '/admin/requested-docs',
         icon: FileText,
+    },
+];
+
+const supervisorNavigationTabs: NavigationTab[] = [
+    {
+        id: 'applications',
+        label: 'All Applications',
+        href: '/admin/applications',
+        icon: FileCheck,
+    },
+    {
+        id: 'requested-docs',
+        label: 'Review-Requested Docs',
+        href: '/admin/requested-docs',
+        icon: FileText,
+    },
+    {
+        id: 'quality-check',
+        label: 'Quality Check',
+        href: '/admin/quality-check',
+        icon: FileCheck,
     },
 ];
 
@@ -71,6 +98,8 @@ export function AdminHeader() {
             case 'admin':
             case 'team_leader':
                 return adminNavigationTabs;
+            case 'supervisor':
+                return supervisorNavigationTabs;
             default:
                 return adminNavigationTabs;
         }
@@ -192,7 +221,8 @@ export function AdminHeader() {
                         <h1 className="text-sm sm:text-base font-semibold text-gray-900 hidden sm:block">
                             {
                                 user?.role === 'master_admin' ? '- Master Admin Portal' : 
-                                user?.role === 'team_leader' ? '- Team Leader Portal' : '- Admin Portal'
+                                user?.role === 'team_leader' ? '- Team Leader Portal' :
+                                user?.role === 'supervisor' ? '- Supervisor Portal' : '- Admin Portal'
                             }
                         </h1>
                     </div>

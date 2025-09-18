@@ -1,15 +1,17 @@
 import { fetcher } from '@/lib/fetcher';
 
 export interface UpdateDocumentStatusRequest {
-  status: 'pending' | 'approved' | 'rejected';
-  changed_by: string;
-  reject_message?: string;
+  reviewId: string;
+  requested_by: string;
+  requested_to: string;
+  message: string;
+  status: 'pending' | 'reviewed';
 }
 
 export interface UpdateDocumentStatusResponse {
   success: boolean;
   message: string;
-  data?: any;
+  data?: unknown;
 }
 
 export interface DeleteRequestedDocumentRequest {
@@ -26,8 +28,10 @@ export async function updateDocumentStatus(
   data: UpdateDocumentStatusRequest
 ): Promise<UpdateDocumentStatusResponse> {
   try {
-    const response = await fetcher(`/api/zoho_dms/visa_applications/documents/${documentId}/status`, {
-      method: 'PATCH',
+    // Use the correct endpoint for updating requested review status
+    // PUT /api/zoho_dms/visa_applications/documents/{documentId}/requested_reviews
+    const response = await fetcher(`https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`, {
+      method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
@@ -46,7 +50,8 @@ export async function deleteRequestedDocument(
   data: DeleteRequestedDocumentRequest
 ): Promise<DeleteRequestedDocumentResponse> {
   try {
-    const response = await fetcher(`/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`, {
+    // Use production server directly like Postman does
+    const response = await fetcher(`https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

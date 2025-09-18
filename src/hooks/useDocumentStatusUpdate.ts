@@ -189,6 +189,37 @@ export function useDocumentStatusUpdate({
         });
       }
 
+      // Also update the all documents cache (used by DocumentChecklistTable)
+      if (applicationId) {
+        queryClient.setQueriesData<{ success: boolean; data: Document[] }>({ 
+          queryKey: ['application-documents-all', applicationId] 
+        }, (old) => {
+          if (!old || !old.data || !Array.isArray(old.data)) return old;
+          
+          return {
+            ...old,
+            data: old.data.map(doc => 
+              doc._id === documentId 
+                ? { 
+                    ...doc, 
+                    status: status as Document['status'],
+                    reject_message: status === 'rejected' ? rejectMessage : doc.reject_message,
+                    history: [
+                      ...doc.history,
+                      {
+                        _id: `temp-${Date.now()}`,
+                        status,
+                        changed_by: 'Current User',
+                        changed_at: new Date().toISOString()
+                      }
+                    ]
+                  }
+                : doc
+            )
+          };
+        });
+      }
+
       // Also update client documents cache for real-time UI updates
       queryClient.setQueryData<{ data?: { documents?: Document[] } }>(['client-documents'], (old) => {
         if (!old?.data?.documents || !Array.isArray(old.data.documents)) return old;
@@ -221,7 +252,10 @@ export function useDocumentStatusUpdate({
 
       // Also update the paginated documents list if available
       if (applicationId && previousPaginatedResponse) {
-        queryClient.setQueryData<DocumentsResponse>(['application-documents-paginated', applicationId], (old) => {
+        // Update all paginated queries for this application
+        queryClient.setQueriesData<DocumentsResponse>({ 
+          queryKey: ['application-documents-paginated', applicationId] 
+        }, (old) => {
           if (!old || !old.data || !Array.isArray(old.data)) return old;
           
           return {
@@ -264,7 +298,9 @@ export function useDocumentStatusUpdate({
 
       // Also rollback paginated documents list if available
       if (applicationId && context?.previousPaginatedResponse) {
-        queryClient.setQueryData(['application-documents-paginated', applicationId], context.previousPaginatedResponse);
+        queryClient.setQueriesData({ 
+          queryKey: ['application-documents-paginated', applicationId] 
+        }, context.previousPaginatedResponse);
       }
 
       // Also rollback client documents cache
@@ -335,8 +371,39 @@ export function useDocumentStatusUpdate({
           };
         });
 
+        // Also update the all documents cache (used by DocumentChecklistTable)
+        queryClient.setQueriesData<{ success: boolean; data: Document[] }>({ 
+          queryKey: ['application-documents-all', applicationId] 
+        }, (old) => {
+          if (!old || !old.data || !Array.isArray(old.data)) return old;
+          
+          return {
+            ...old,
+            data: old.data.map(doc => 
+              doc._id === data.documentId 
+                ? { 
+                    ...doc, 
+                    status: data.newStatus as Document['status'],
+                    reject_message: data.newStatus === 'rejected' ? data.rejectMessage : doc.reject_message,
+                    history: [
+                      ...doc.history.filter(h => !h._id.startsWith('temp-')),
+                      ...(data.response ? [{
+                        _id: data.response._id,
+                        status: data.response.status,
+                        changed_by: data.response.changed_by,
+                        changed_at: data.response.changed_at
+                      }] : [])
+                    ]
+                  }
+                : doc
+            )
+          };
+        });
+
         // Also update the paginated documents list
-        queryClient.setQueryData<DocumentsResponse>(['application-documents-paginated', applicationId], (old) => {
+        queryClient.setQueriesData<DocumentsResponse>({ 
+          queryKey: ['application-documents-paginated', applicationId] 
+        }, (old) => {
           if (!old || !old.data || !Array.isArray(old.data)) return old;
           
           return {

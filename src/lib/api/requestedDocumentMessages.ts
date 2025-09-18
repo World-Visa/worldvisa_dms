@@ -3,9 +3,7 @@ import { fetcher } from '@/lib/fetcher';
 export interface RequestedDocumentMessage {
   _id: string;
   message: string;
-  sent_by: string;
-  sent_at: string;
-  review_id: string;
+  username: string;
 }
 
 export interface RequestedDocumentMessagesResponse {
@@ -23,9 +21,7 @@ export interface SendMessageResponse {
   data: {
     _id: string;
     message: string;
-    sent_by: string;
-    sent_at: string;
-    review_id: string;
+    username: string;
   };
   message?: string;
 }
@@ -46,8 +42,9 @@ export async function getRequestedDocumentMessages(
   documentId: string,
   reviewId: string
 ): Promise<RequestedDocumentMessagesResponse> {
+  // Use production server directly like Postman does
   return fetcher<RequestedDocumentMessagesResponse>(
-    `/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`
+    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`
   );
 }
 
@@ -60,7 +57,7 @@ export async function sendRequestedDocumentMessage(
   data: SendMessageRequest
 ): Promise<SendMessageResponse> {
   return fetcher<SendMessageResponse>(
-    `/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`,
+    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`,
     {
       method: 'POST',
       headers: {
@@ -79,8 +76,9 @@ export async function deleteRequestedDocumentMessage(
   reviewId: string,
   data: DeleteMessageRequest
 ): Promise<DeleteMessageResponse> {
+  // Use production server directly like Postman does
   return fetcher<DeleteMessageResponse>(
-    `/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`,
+    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`,
     {
       method: 'DELETE',
       headers: {

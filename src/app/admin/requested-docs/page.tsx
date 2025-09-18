@@ -3,15 +3,19 @@
 import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Eye } from 'lucide-react';
-import { useRequestedDocumentsToMePaginated, useMyRequestedDocumentsPaginated } from '@/hooks/useRequestedDocuments';
+import { FileText, Eye, Globe } from 'lucide-react';
+import { useRequestedDocumentsToMePaginated, useMyRequestedDocumentsPaginated, useRequestedDocumentsToMe, useMyRequestedDocuments, useAllRequestedDocumentsPaginated } from '@/hooks/useRequestedDocuments';
 import { RequestedDocumentsTable } from '@/components/requested-documents/RequestedDocumentsTable';
 import { RequestedDocumentsFilters, RequestedDocumentsFilters as FiltersType } from '@/components/requested-documents/RequestedDocumentsFilters';
 import { RequestedDocsStats } from '@/components/requested-documents/RequestedDocsStats';
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function RequestedDocsPage() {
-    const [activeTab, setActiveTab] = useState<'requested-to-me' | 'my-requests'>('requested-to-me');
+    const { user } = useAuth();
+    const [activeTab, setActiveTab] = useState<'requested-to-me' | 'my-requests' | 'all-requests'>(
+        user?.role === 'supervisor' ? 'requested-to-me' : 'all-requests'
+    );
     const [currentPage, setCurrentPage] = useState(1);
     const [limit] = useState(10); // Fixed limit like ApplicationsTable
     const [filters, setFilters] = useState<FiltersType>({
@@ -35,29 +39,47 @@ export default function RequestedDocsPage() {
         refetch: refetchMyRequests
     } = useMyRequestedDocumentsPaginated(currentPage, limit, filters);
 
+    // Fetch all documents for stats calculation (no pagination, no filters)
+    const { data: allRequestedToMeData } = useRequestedDocumentsToMe();
+    const { data: allMyRequestsData } = useMyRequestedDocuments();
+    
+    // Fetch all requested documents (master admin only)
+    const { 
+        data: allRequestsData, 
+        isLoading: isLoadingAllRequests, 
+        refetch: refetchAllRequests
+    } = useAllRequestedDocumentsPaginated(currentPage, limit);
+
     // Get documents and pagination data (server-side filtering)
     const requestedToMeDocuments = useMemo(() => requestedToMeData?.data || [], [requestedToMeData?.data]);
     const myRequestsDocuments = useMemo(() => myRequestsData?.data || [], [myRequestsData?.data]);
+    const allRequestsDocuments = useMemo(() => allRequestsData?.data || [], [allRequestsData?.data]);
     const requestedToMePagination = requestedToMeData?.pagination;
     const myRequestsPagination = myRequestsData?.pagination;
+    const allRequestsPagination = allRequestsData?.pagination;
 
-    // Calculate stats from current page data
+    // Calculate stats from ALL documents (not paginated)
     const stats = useMemo(() => {
+        const allRequestedToMe = allRequestedToMeData?.data || [];
+        const allMyRequests = allMyRequestsData?.data || [];
+        
         return {
-            pendingRequests: requestedToMeDocuments.filter(doc => doc.requested_review.status === 'pending').length,
-            reviewedRequests: requestedToMeDocuments.filter(doc => doc.requested_review.status === 'approved').length,
-            overdue: requestedToMeDocuments.filter(doc => doc.isOverdue).length,
-            myPendingRequests: myRequestsDocuments.filter(doc => doc.requested_review.status === 'pending').length,
-            myReviewedRequests: myRequestsDocuments.filter(doc => doc.requested_review.status === 'approved').length
+            pendingRequests: allRequestedToMe.filter(doc => doc.requested_review.status === 'pending').length,
+            reviewedRequests: allRequestedToMe.filter(doc => doc.requested_review.status === 'reviewed').length,
+            overdue: allRequestedToMe.filter(doc => doc.isOverdue).length,
+            myPendingRequests: allMyRequests.filter(doc => doc.requested_review.status === 'pending').length,
+            myReviewedRequests: allMyRequests.filter(doc => doc.requested_review.status === 'reviewed').length
         };
-    }, [requestedToMeDocuments, myRequestsDocuments]);
+    }, [allRequestedToMeData, allMyRequestsData]);
 
 
     const handleRefresh = () => {
         if (activeTab === 'requested-to-me') {
             refetchRequestedToMe();
-        } else {
+        } else if (activeTab === 'my-requests') {
             refetchMyRequests();
+        } else if (activeTab === 'all-requests') {
+            refetchAllRequests();
         }
     };
 
@@ -99,7 +121,13 @@ export default function RequestedDocsPage() {
                 </CardHeader>
                 <CardContent>
                     <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
-                        <TabsList className="grid w-full grid-cols-2 h-12 mb-6">
+                        <TabsList className={`grid w-full ${user?.role !== 'master_admin' ? 'grid-cols-2' : 'grid-cols-3'} h-12 mb-6`}>
+                            {user?.role == 'master_admin' && (
+                                <TabsTrigger value="all-requests" className="flex h-10 items-center gap-2">
+                                    <Globe className="h-4 w-4" />
+                                    All Requests ({allRequestsPagination?.totalItems || 0})
+                                </TabsTrigger>
+                            )}
                             <TabsTrigger value="requested-to-me" className="flex h-10 items-center gap-2">
                                 <Eye className="h-4 w-4" />
                                 Requested to Me ({requestedToMePagination?.totalItems || 0})
@@ -109,6 +137,35 @@ export default function RequestedDocsPage() {
                                 My Requests ({myRequestsPagination?.totalItems || 0})
                             </TabsTrigger>
                         </TabsList>
+
+                        {user?.role == 'master_admin' && (
+                            <TabsContent value="all-requests" className="space-y-4">
+                                <RequestedDocumentsFilters
+                                    filters={filters}
+                                    onFiltersChange={handleFiltersChange}
+                                    onRefresh={handleRefresh}
+                                    isRefreshing={isLoadingAllRequests}
+                                    totalCount={allRequestsPagination?.totalItems || 0}
+                                    filteredCount={allRequestsDocuments.length}
+                                />
+                                
+                                <RequestedDocumentsTable
+                                    documents={allRequestsDocuments}
+                                    isLoading={isLoadingAllRequests}
+                                    type="all-requests"
+                                />
+
+                                {/* Pagination */}
+                                {allRequestsPagination && (
+                                    <ApplicationsPagination
+                                        currentPage={allRequestsPagination.currentPage}
+                                        totalRecords={allRequestsPagination.totalItems}
+                                        limit={limit}
+                                        onPageChange={handlePageChange}
+                                    />
+                                )}
+                            </TabsContent>
+                        )}
 
                         <TabsContent value="requested-to-me" className="space-y-4">
                             <RequestedDocumentsFilters
@@ -163,6 +220,7 @@ export default function RequestedDocsPage() {
                                 />
                             )}
                         </TabsContent>
+
                     </Tabs>
                 </CardContent>
             </Card>

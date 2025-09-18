@@ -31,6 +31,7 @@ export async function fetcher<T>(
   }
 
 
+
   const response = await fetch(url, {
     ...options,
     headers,
@@ -46,15 +47,17 @@ export async function fetcher<T>(
     } catch {
       errorData = {};
     }
+
     
     // Handle authentication errors - only redirect if it's a clear auth failure
     if (response.status === 401 || response.status === 403) {
       if (token) {
         const isClientEndpoint = url.includes('/clients/');
         const isChecklistEndpoint = url.includes('/visa_applications/checklist/');
+        const isMessagesEndpoint = url.includes('/requested_reviews/') && url.includes('/messages');
         
-        if (isClientEndpoint || isChecklistEndpoint || url.includes('/comments')) {
-          // Let hook handle the error for client/checklist/comments endpoints
+        if (isClientEndpoint || isChecklistEndpoint || url.includes('/comments') || isMessagesEndpoint) {
+          // Let hook handle the error for client/checklist/comments/messages endpoints
         } else {
           // For other endpoints, redirect if authentication fails  
           tokenStorage.remove();

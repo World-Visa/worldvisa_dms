@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createReviewRequest, createMultipleReviewRequests, ReviewRequestData } from '@/lib/api/reviewRequest';
+import { sendRequestedDocumentMessage } from '@/lib/api/requestedDocumentMessages';
 import { toast } from 'sonner';
 import * as Sentry from '@sentry/nextjs';
 
@@ -40,7 +41,35 @@ export function useReviewRequest({ onSuccess, onError }: UseReviewRequestProps =
           });
         });
 
+
         const results = await createMultipleReviewRequests(requests);
+        
+        // Send the message separately for each review request
+        const messagePromises = results.map(async (result) => {
+          // Handle the case where result.data is an array of review requests
+          const reviewRequests = Array.isArray(result.data) ? result.data : [result.data];
+          
+          for (const reviewRequest of reviewRequests) {
+            if (reviewRequest && reviewRequest._id) {
+              try {
+                await sendRequestedDocumentMessage(
+                  reviewRequest.document_id || documentIds[0],
+                  reviewRequest._id,
+                  { message: message }
+                );
+              } catch (error) {
+                console.warn('Failed to send message for review request:', {
+                  reviewId: reviewRequest._id,
+                  documentId: reviewRequest.document_id || documentIds[0],
+                  error: error
+                });
+              }
+            }
+          }
+        });
+        
+        // Wait for all messages to be sent
+        await Promise.allSettled(messagePromises);
         
         const responseTime = Date.now() - startTime;
         

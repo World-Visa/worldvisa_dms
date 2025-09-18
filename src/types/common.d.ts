@@ -24,7 +24,9 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export type UserRole = 'admin' | 'client';
+export type UserRole = 'admin' | 'client' | 'master-admin' | 'team-leader' | 'supervisor';
+
+export type RequestedDocumentType = 'requested-to-me' | 'my-requests' | 'all-requests';
 
 export interface FilterParams {
   search?: string;
@@ -32,4 +34,22 @@ export interface FilterParams {
   dateFrom?: string;
   dateTo?: string;
   [key: string]: unknown;
+}
+
+// Quality Check Types
+export interface QualityCheckRequest {
+  reqUserName: string;
+  leadId: string;
+}
+
+export interface QualityCheckResponse {
+  success: boolean;
+  message?: string;
+  data?: {
+    _id: string;
+    leadId: string;
+    reqUserName: string;
+    createdAt: string;
+    status: string;
+  };
 }

@@ -74,7 +74,7 @@ interface CreateUserPayload {
 }
 
 const createUser = async (payload: CreateUserPayload) => {
-  return fetcher("http://localhost:3000/api/zoho_dms/users/signup", {
+  return fetcher("https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/users/signup", {
     method: "POST",
     body: JSON.stringify({
       username: payload.username,
@@ -85,10 +85,12 @@ const createUser = async (payload: CreateUserPayload) => {
 };
 
 export function useCreateUser() {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createUser,
     onSuccess: () => {
       toast.success("User created successfully.");
+      queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error: Error) => {
       toast.error(`Failed to create user: ${error.message}`);

@@ -71,7 +71,7 @@ export function useDocumentComments(documentId: string) {
             // Check if comment already exists to avoid duplicates
             const commentExists = existingComments.some(c => c._id === event.comment._id);
             if (!commentExists) {
-              // Add new comment and sort by priority (Kavitha's comments first, then by date)
+              // Add new comment and sort by priority (Moshin's comments first, then by date)
               const newComments = [...existingComments, event.comment];
               return sortCommentsByPriority(newComments);
             }
@@ -140,12 +140,12 @@ export function useDocumentComments(documentId: string) {
 // Helper function to sort comments by priority
 function sortCommentsByPriority(comments: Comment[]): Comment[] {
   return comments.sort((a, b) => {
-    // Kavitha's comments first
-    const aIsKavitha = a.added_by.toLowerCase().includes('kavitha');
-    const bIsKavitha = b.added_by.toLowerCase().includes('kavitha');
+    // Moshin's comments first
+    const aIsMoshin = a.added_by.toLowerCase().includes('moshin');
+    const bIsMoshin = b.added_by.toLowerCase().includes('moshin');
     
-    if (aIsKavitha && !bIsKavitha) return -1;
-    if (!aIsKavitha && bIsKavitha) return 1;
+    if (aIsMoshin && !bIsMoshin) return -1;
+    if (!aIsMoshin && bIsMoshin) return 1;
     
     // Then sort by creation date (newest first)
     // Note: Zoho uses 'added_at' but we map it to 'created_at' in our API

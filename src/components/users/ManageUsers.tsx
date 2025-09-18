@@ -159,6 +159,9 @@ function ManageUsers() {
                 <SelectItem className="font-semibold" value="team_leader">
                   Team Leader
                 </SelectItem>
+                <SelectItem className="font-semibold" value="supervisor">
+                  Supervisor
+                </SelectItem>
               </SelectContent>
             </Select>
             <Button onClick={handleCreateUser} disabled={isCreatingUser}>
@@ -211,6 +214,9 @@ function ManageUsers() {
                       </SelectItem>
                       <SelectItem className="font-semibold" value="team_leader">
                         Team Leader
+                      </SelectItem>
+                      <SelectItem className="font-semibold" value="supervisor">
+                        Supervisor
                       </SelectItem>
                     </SelectContent>
                   </Select>
