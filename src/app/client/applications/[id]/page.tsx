@@ -6,6 +6,8 @@ import { ClientApplicationDetails } from "@/components/applications/ClientApplic
 import { DocumentsTable } from "@/components/applications/DocumentsTable";
 import { DocumentChecklistTable } from "@/components/applications/DocumentChecklistTable";
 import { DocumentCategoryFilter } from "@/components/applications/DocumentCategoryFilter";
+import { RequestChecklistCard } from "@/components/applications/RequestChecklistCard";
+import { ChecklistRequestSuccessCard } from "@/components/applications/ChecklistRequestSuccessCard";
 import { DocumentCategory, Company } from "@/types/documents";
 import { ClientDocument } from "@/types/client";
 import { Document } from "@/types/applications";
@@ -434,10 +436,10 @@ export default function ClientApplicationDetailsPage() {
       </div>
       {/* Loading State */}
       {isAuthLoading ||
-      isApplicationLoading ||
-      isDocumentsLoading ||
-      isAllDocumentsLoading ||
-      isChecklistLoading ? (
+        isApplicationLoading ||
+        isDocumentsLoading ||
+        isAllDocumentsLoading ||
+        isChecklistLoading ? (
         <div className="space-y-6">
           <div className="flex justify-between w-full gap-8 items-end">
             <div className="space-y-4 w-full">
@@ -504,20 +506,32 @@ export default function ClientApplicationDetailsPage() {
               const hasSubmittedDocuments =
                 (allDocumentsData?.data?.documents?.length || 0) > 0;
 
-              // If no checklist and no submitted documents, show the no checklist message
-              if (!hasChecklist && !hasSubmittedDocuments) {
+              // Check if checklist has been requested
+              const checklistRequested = applicationData?.data?.Checklist_Requested === true;
+              const leadId = applicationData?.data?.leadId || applicationData?.data?.id;
+
+              // If checklist has been requested, show success card
+              if (checklistRequested && !hasChecklist) {
                 return (
-                  <div className="text-center py-12">
-                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-8 max-w-md mx-auto">
-                      <h3 className="text-lg font-semibold text-yellow-800 mb-2">
-                        No Checklist Generated
-                      </h3>
-                      <p className="text-yellow-700">
-                        No checklist has been generated. Contact your
-                        application handling processing executive.
-                      </p>
-                    </div>
-                  </div>
+                  <ChecklistRequestSuccessCard
+                    onRefresh={() => {
+                      window.location.reload();
+                    }}
+                    requestedAt={applicationData?.data?.Checklist_Requested_At}
+                  />
+                );
+              }
+
+              // If no checklist and no submitted documents, show the request card
+              if (!hasChecklist && !hasSubmittedDocuments && !checklistRequested && leadId) {
+                return (
+                  <RequestChecklistCard
+                    leadId={leadId}
+                    onRequestSuccess={() => {
+                      // Refresh the page to show success state
+                      window.location.reload();
+                    }}
+                  />
                 );
               }
 
