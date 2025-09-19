@@ -10,6 +10,10 @@ const nextConfig: NextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Disable console logs in production
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
   async headers() {
     return [
       {

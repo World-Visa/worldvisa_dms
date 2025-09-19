@@ -23,6 +23,7 @@ export interface Application {
   Assessing_Authority?:string;
   DMS_Application_Status?:string;
   Package_Finalize?:string;
+  Deadline_For_Lodgment?: string;
 }
 
 export interface Document {

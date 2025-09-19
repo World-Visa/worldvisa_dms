@@ -15,6 +15,7 @@ export interface ClientApplicationResponse {
     leadId?: string;
     Checklist_Requested?: boolean;
     Checklist_Requested_At?: string;
+    Deadline_For_Lodgment?: string;
   };
 }
 

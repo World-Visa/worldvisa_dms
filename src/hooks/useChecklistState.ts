@@ -25,6 +25,7 @@ import {
   validateChecklist
 } from '@/lib/checklist/utils';
 import { generateChecklistCategories } from '@/lib/checklist/categoryUtils';
+import { updateChecklistRequested } from '@/lib/api/getApplicationById';
 
 interface UseChecklistStateProps {
   applicationId: string;
@@ -392,11 +393,19 @@ export function useChecklistState({
     const checklistItems = createChecklistItemsFromDocuments(selectedDocuments, requirementMap);
     await batchSave.mutateAsync(checklistItems);
     
+    // Update checklistRequested to false since checklist has been created
+    try {
+      await updateChecklistRequested(applicationId, false);
+    } catch (error) {
+      console.error('Failed to update checklistRequested status:', error);
+      // Don't throw here as the checklist was already saved successfully
+    }
+    
     setState('saved');
     setSelectedCategories([]);
     setSelectedDocuments([]);
     setRequirementMap({});
-  }, [selectedDocuments, requirementMap, batchSave]);
+  }, [selectedDocuments, requirementMap, batchSave, applicationId]);
 
   const updateChecklist = useCallback(async (
     itemsToUpdate: ChecklistUpdateRequest[],
@@ -456,6 +465,14 @@ export function useChecklistState({
         await batchDelete.mutateAsync(pendingDeletions);
       }
 
+      // Update Checklist_Requested to false since checklist has been updated
+      try {
+        await updateChecklistRequested(applicationId, false);
+      } catch (error) {
+        console.error('Failed to update Checklist_Requested status:', error);
+        // Don't throw here as the checklist changes were already saved successfully
+      }
+
       // Clear pending changes and return to saved state
       clearPendingChanges();
       setState('saved');
@@ -463,7 +480,7 @@ export function useChecklistState({
       console.error('Failed to save pending changes:', error);
       throw error;
     }
-  }, [state, pendingAdditions, pendingUpdates, pendingDeletions, batchSave, batchUpdate, batchDelete, clearPendingChanges]);
+  }, [state, pendingAdditions, pendingUpdates, pendingDeletions, batchSave, batchUpdate, batchDelete, clearPendingChanges, applicationId]);
 
   // Get filtered documents based on selected categories
   const filteredDocuments = useMemo(() => {

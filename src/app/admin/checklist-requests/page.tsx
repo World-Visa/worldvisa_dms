@@ -1,21 +1,23 @@
 'use client';
 
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, memo, useMemo } from 'react';
 import { useChecklistRequests } from '@/hooks/useChecklistRequests';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { ChecklistRequestsTable } from '@/components/applications/ChecklistRequestsTable';
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
 import { Card, CardContent } from '@/components/ui/card';
-import { FileText, Clock, CheckCircle, } from 'lucide-react';
+import { FileText, CheckCircle, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
   const [page, setPage] = useState(1);
   const [limit] = useState(20);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Performance monitoring
   const { measureAsync } = usePerformanceMonitor('ChecklistRequestsPage');
 
-  // Fetch checklist requests data
+  // Fetch checklist requests data with optimized settings
   const { 
     data, 
     isLoading, 
@@ -24,36 +26,69 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
   } = useChecklistRequests({
     page,
     limit,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 5 * 60 * 1000, // 5 minutes - increased for better performance
   });
 
+  // Memoized page change handler with debouncing
   const handlePageChange = useCallback(async (newPage: number) => {
+    if (newPage === page) return; // Prevent unnecessary calls
+    
     await measureAsync(async () => {
       setPage(newPage);
+      // Smooth scroll to top
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 'pageChange');
-  }, [measureAsync]);
+  }, [measureAsync, page]);
 
-
+  // Optimized refresh handler with loading state
   const handleRefresh = useCallback(async () => {
-    await measureAsync(async () => {
-      await refetch();
-    }, 'refresh');
-  }, [refetch, measureAsync]);
+    if (isRefreshing) return; // Prevent multiple simultaneous refreshes
+    
+    setIsRefreshing(true);
+    try {
+      await measureAsync(async () => {
+        await refetch();
+      }, 'refresh');
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [refetch, measureAsync, isRefreshing]);
 
-  // Memoized calculations
-  const allRequests = data?.data || [];
-  const validRequests = allRequests.filter(req => req.id && req.id.trim() !== '' && req.Checklist_Requested === true);
-  const totalRequests = validRequests.length; // Use actual valid count instead of API pagination
-  const currentRequests = validRequests;
+  // Memoized calculations with early returns for better performance
+  const { totalRequests, currentRequests } = useMemo(() => {
+    const rawRequests = data?.data || [];
+    
+    // Early return if no data
+    if (rawRequests.length === 0) {
+      return {
+        totalRequests: 0,
+        currentRequests: []
+      };
+    }
+
+    // Filter valid requests in a single pass
+    const valid = rawRequests.filter(req => 
+      req.id && 
+      req.id.trim() !== '' && 
+      req.Checklist_Requested === true
+    );
+
+    return {
+      totalRequests: valid.length,
+      currentRequests: valid
+    };
+  }, [data?.data]);
+
+  // Memoized loading state
+  const isDataLoading = useMemo(() => isLoading || isRefreshing, [isLoading, isRefreshing]);
 
   return (
     <main className="min-h-screen bg-gray-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header Section */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="mb-8">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div>
               <h2 className="text-2xl font-bold text-gray-900 font-lexend mb-2 flex items-center gap-2">
                 <FileText className="h-6 w-6" />
                 Checklist Requests
@@ -63,18 +98,29 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
               </p>
             </div>
 
-            {/* Stats Card */}
-            <div className="hidden lg:block pt-8">
-              <Card className="w-64 border-0 shadow-sm">
+            {/* Stats Card with Refresh Button - Better Layout */}
+            <div className="flex flex-col pt-0 md:pt-10 sm:flex-row items-start sm:items-center gap-4">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isDataLoading}
+                className="flex items-center gap-2 self-start sm:self-center"
+              >
+                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <span>Refresh</span>
+              </Button>
+              
+              <Card className="w-full sm:w-64 border-0 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-gray-600 mb-1">Total Requests</p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {isLoading ? '...' : totalRequests.toLocaleString()}
+                        {isDataLoading ? '...' : totalRequests.toLocaleString()}
                       </p>
                     </div>
-                    <div className="p-3 bg-blue-50 rounded-full">
+                    <div className="p-3 bg-blue-100 rounded-full">
                       <CheckCircle className="h-6 w-6 text-blue-600" />
                     </div>
                   </div>
@@ -84,24 +130,6 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
           </div>
         </div>
 
-        {/* Mobile Stats Card */}
-        <div className="lg:hidden mb-6">
-          <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total Requests</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {isLoading ? '...' : totalRequests.toLocaleString()}
-                  </p>
-                </div>
-                <div className="p-2 bg-blue-50 rounded-full">
-                  <CheckCircle className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
 
         {/* Error State */}
         {error && (
@@ -117,20 +145,21 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
                 <p className="text-red-700 mb-4">
                   {error instanceof Error ? error.message : 'Failed to load checklist requests'}
                 </p>
-                <button
+                <Button
                   onClick={handleRefresh}
+                  disabled={isDataLoading}
                   className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
-                  <Clock className="h-4 w-4 mr-2" />
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                   Retry
-                </button>
+                </Button>
               </div>
             </CardContent>
           </Card>
         )}
 
         {/* Empty State */}
-        {!isLoading && !error && currentRequests.length === 0 && (
+        {!isDataLoading && !error && currentRequests.length === 0 && (
           <Card className="mb-6 border-blue-200 bg-blue-50/50">
             <CardContent className="p-8">
               <div className="text-center">
@@ -149,17 +178,19 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
         )}
 
         {/* Checklist Requests Table */}
-        <div className="mb-8">
-          <ChecklistRequestsTable
-            requests={currentRequests}
-            currentPage={page}
-            limit={limit}
-            isLoading={isLoading}
-          />
-        </div>
+        {!error && (
+          <div className="mb-8">
+            <ChecklistRequestsTable
+              requests={currentRequests}
+              currentPage={page}
+              limit={limit}
+              isLoading={isDataLoading}
+            />
+          </div>
+        )}
 
         {/* Pagination */}
-        {!isLoading && !error && totalRequests > limit && (
+        {!isDataLoading && !error && totalRequests > limit && (
           <div className="flex justify-center">
             <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
               <CardContent className="p-4">

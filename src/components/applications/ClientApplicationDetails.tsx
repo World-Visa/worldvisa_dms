@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientApplicationResponse, ClientDocument } from "@/types/client";
 import { ClientDocumentsSummary } from "./ClientDocumentsSummary";
-import { User, Mail, Phone, Calendar, FileText } from "lucide-react";
+import { User, Mail, Phone, Calendar, FileText, Clock, AlertTriangle } from "lucide-react";
 import { formatDate } from "@/utils/format";
 import { Badge } from "@/components/ui/badge";
 
@@ -125,8 +125,136 @@ export function ClientApplicationDetails({
     return value;
   };
 
+  // Check if deadline is approaching (within 30 days)
+  const isDeadlineApproaching = (deadline: string) => {
+    if (!deadline) return false;
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    const diffTime = deadlineDate.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays <= 30 && diffDays >= 0;
+  };
+
+  // Check if deadline has passed
+  const isDeadlinePassed = (deadline: string) => {
+    if (!deadline) return false;
+    const deadlineDate = new Date(deadline);
+    const today = new Date();
+    return deadlineDate < today;
+  };
+
   return (
     <div className="space-y-6">
+      {/* Deadline Card - Prominent Display */}
+      {application.Deadline_For_Lodgment ? (
+        <Card className={`border-2 ${
+          isDeadlinePassed(application.Deadline_For_Lodgment)
+            ? "border-red-500 bg-red-50"
+            : isDeadlineApproaching(application.Deadline_For_Lodgment)
+            ? "border-orange-500 bg-orange-50"
+            : "border-blue-500 bg-blue-50"
+        }`}>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className={`h-5 w-5 ${
+                isDeadlinePassed(application.Deadline_For_Lodgment)
+                  ? "text-red-600"
+                  : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                  ? "text-orange-600"
+                  : "text-blue-600"
+              }`} />
+              <span className={`${
+                isDeadlinePassed(application.Deadline_For_Lodgment)
+                  ? "text-red-800"
+                  : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                  ? "text-orange-800"
+                  : "text-blue-800"
+              }`}>
+                Application Deadline
+              </span>
+              {isDeadlinePassed(application.Deadline_For_Lodgment) && (
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+              )}
+              {isDeadlineApproaching(application.Deadline_For_Lodgment) && !isDeadlinePassed(application.Deadline_For_Lodgment) && (
+                <AlertTriangle className="h-4 w-4 text-orange-600" />
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className={`text-2xl font-bold ${
+                  isDeadlinePassed(application.Deadline_For_Lodgment)
+                    ? "text-red-700"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                    ? "text-orange-700"
+                    : "text-blue-700"
+                }`}>
+                  {formatDate(application.Deadline_For_Lodgment)}
+                </p>
+                <p className={`text-sm mt-1 ${
+                  isDeadlinePassed(application.Deadline_For_Lodgment)
+                    ? "text-red-600"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                    ? "text-orange-600"
+                    : "text-blue-600"
+                }`}>
+                  {isDeadlinePassed(application.Deadline_For_Lodgment)
+                    ? "⚠️ Deadline has passed"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                    ? "⚠️ Deadline approaching"
+                    : "Application lodgement deadline"}
+                </p>
+              </div>
+              <div className="text-right">
+                <p className="text-sm text-muted-foreground">
+                  Days remaining:
+                </p>
+                <p className={`text-xl font-semibold ${
+                  isDeadlinePassed(application.Deadline_For_Lodgment)
+                    ? "text-red-600"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                    ? "text-orange-600"
+                    : "text-blue-600"
+                }`}>
+                  {(() => {
+                    const deadlineDate = new Date(application.Deadline_For_Lodgment);
+                    const today = new Date();
+                    const diffTime = deadlineDate.getTime() - today.getTime();
+                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    return diffDays < 0 ? "Overdue" : diffDays;
+                  })()}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        // Show a card when no deadline is set
+        <Card className="border-2 border-gray-300 bg-gray-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-gray-600" />
+              <span className="text-gray-800">
+                Application Deadline
+              </span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-2xl font-bold text-gray-700">
+                  No deadline set
+                </p>
+                <p className="text-sm mt-1 text-gray-600">
+                  Application lodgement deadline not configured
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* All Application Information in Single Card */}
       <Card>
         <CardHeader>

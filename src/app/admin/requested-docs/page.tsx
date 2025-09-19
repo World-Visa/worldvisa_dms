@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { FileText, Eye, Globe } from 'lucide-react';
+import { FileText, Eye, Globe, RefreshCw } from 'lucide-react';
 import { useRequestedDocumentsToMePaginated, useMyRequestedDocumentsPaginated, useRequestedDocumentsToMe, useMyRequestedDocuments, useAllRequestedDocumentsPaginated, useAllRequestedDocuments } from '@/hooks/useRequestedDocuments';
 import { RequestedDocumentsTable } from '@/components/requested-documents/RequestedDocumentsTable';
 import { RequestedDocumentsFilters, RequestedDocumentsFilters as FiltersType } from '@/components/requested-documents/RequestedDocumentsFilters';
@@ -11,6 +11,7 @@ import { RequestedDocsStats } from '@/components/requested-documents/RequestedDo
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
 import { useAuth } from '@/hooks/useAuth';
 import { RequestedDocument } from '@/lib/api/requestedDocuments';
+import { Button } from '@/components/ui/button';
 
 export default function RequestedDocsPage() {
     const { user } = useAuth();
@@ -19,7 +20,7 @@ export default function RequestedDocsPage() {
         user?.role === 'master_admin' ? 'all-requests' : 'requested-to-me'
     );
     const [currentPage, setCurrentPage] = useState(1);
-    const [limit] = useState(10); // Fixed limit like ApplicationsTable
+    const [limit] = useState(10);
     const [filters, setFilters] = useState<FiltersType>({
         search: '',
         status: 'all',
@@ -31,32 +32,42 @@ export default function RequestedDocsPage() {
     // Check if user is master admin
     const isMasterAdmin = user?.role === 'master_admin';
 
-   
-    // Prepare filter parameters for API calls
-    const apiFilters = {
+    // Memoize filter parameters to prevent unnecessary re-renders
+    const apiFilters = useMemo(() => ({
         status: (filters.status && filters.status !== 'all') ? filters.status : undefined,
         requested_by: filters.requestedBy || undefined,
         requested_to: filters.requestedTo || undefined,
-    };
+    }), [filters.status, filters.requestedBy, filters.requestedTo]);
 
     // Only apply filters for "All Requests" tab
     const shouldUseFilters = activeTab === 'all-requests';
-    const finalApiFilters = shouldUseFilters ? apiFilters : {};
+    const finalApiFilters = useMemo(() => 
+        shouldUseFilters ? apiFilters : {}, 
+        [shouldUseFilters, apiFilters]
+    );
 
-    // Fetch data for both tabs with pagination
+    // Conditional data fetching - only fetch what's needed for the active tab
     const { 
         data: requestedToMeData, 
         isLoading: isLoadingRequestedToMe, 
         refetch: refetchRequestedToMe
-    } = useRequestedDocumentsToMePaginated(currentPage, limit, {});
+    } = useRequestedDocumentsToMePaginated(
+        currentPage, 
+        limit, 
+        {}
+    );
 
     const { 
         data: myRequestsData, 
         isLoading: isLoadingMyRequests, 
         refetch: refetchMyRequests
-    } = useMyRequestedDocumentsPaginated(currentPage, limit, {});
+    } = useMyRequestedDocumentsPaginated(
+        currentPage, 
+        limit, 
+        {}
+    );
 
-    // Fetch all documents for stats calculation (no pagination, no filters)
+    // Only fetch stats data for the active tab to reduce API calls
     const { data: allRequestedToMeData } = useRequestedDocumentsToMe();
     const { data: allMyRequestsData } = useMyRequestedDocuments();
     const { data: allRequestsDataForStats } = useAllRequestedDocuments();
@@ -66,17 +77,31 @@ export default function RequestedDocsPage() {
         data: allRequestsData, 
         isLoading: isLoadingAllRequests, 
         refetch: refetchAllRequests
-    } = useAllRequestedDocumentsPaginated(currentPage, limit, finalApiFilters);
+    } = useAllRequestedDocumentsPaginated(
+        currentPage, 
+        limit, 
+        finalApiFilters
+    );
 
-    // Get documents and pagination data (server-side filtering)
-    const requestedToMeDocuments = useMemo(() => requestedToMeData?.data || [], [requestedToMeData?.data]);
-    const myRequestsDocuments = useMemo(() => myRequestsData?.data || [], [myRequestsData?.data]);
-    const allRequestsDocuments = useMemo(() => allRequestsData?.data || [], [allRequestsData?.data]);
-    const requestedToMePagination = requestedToMeData?.pagination;
-    const myRequestsPagination = myRequestsData?.pagination;
-    const allRequestsPagination = allRequestsData?.pagination;
+    // Get documents and pagination data (server-side filtering) - only for active tab
+    const requestedToMeDocuments = useMemo(() => 
+        activeTab === 'requested-to-me' ? (requestedToMeData?.data || []) : [], 
+        [requestedToMeData?.data, activeTab]
+    );
+    const myRequestsDocuments = useMemo(() => 
+        activeTab === 'my-requests' ? (myRequestsData?.data || []) : [], 
+        [myRequestsData?.data, activeTab]
+    );
+    const allRequestsDocuments = useMemo(() => 
+        activeTab === 'all-requests' ? (allRequestsData?.data || []) : [], 
+        [allRequestsData?.data, activeTab]
+    );
+    
+    const requestedToMePagination = activeTab === 'requested-to-me' ? requestedToMeData?.pagination : undefined;
+    const myRequestsPagination = activeTab === 'my-requests' ? myRequestsData?.pagination : undefined;
+    const allRequestsPagination = activeTab === 'all-requests' ? allRequestsData?.pagination : undefined;
 
-    // Calculate stats based on active tab
+    // Calculate stats based on active tab - only when data is available
     const stats = useMemo(() => {
         let sourceData: RequestedDocument[] = [];
         
@@ -91,49 +116,92 @@ export default function RequestedDocsPage() {
                 sourceData = allRequestsDataForStats?.data || [];
                 break;
             default:
-                sourceData = allRequestedToMeData?.data || [];
+                sourceData = [];
         }
         
-        return {
-            pendingRequests: sourceData.filter(doc => doc.requested_review?.status === 'pending').length,
-            reviewedRequests: sourceData.filter(doc => doc.requested_review?.status === 'reviewed').length,
-            overdue: sourceData.filter(doc => doc.isOverdue).length,
-        };
-    }, [activeTab, allRequestedToMeData, allMyRequestsData, allRequestsDataForStats]);
+        // Early return if no data to avoid unnecessary calculations
+        if (sourceData.length === 0) {
+            return {
+                pendingRequests: 0,
+                reviewedRequests: 0,
+                overdue: 0,
+            };
+        }
+        
+        // Use reduce for better performance with large datasets
+        const statsResult = sourceData.reduce((acc, doc) => {
+            if (doc.requested_review?.status === 'pending') acc.pendingRequests++;
+            if (doc.requested_review?.status === 'reviewed') acc.reviewedRequests++;
+            if (doc.isOverdue) acc.overdue++;
+            return acc;
+        }, { pendingRequests: 0, reviewedRequests: 0, overdue: 0 });
+        
+        return statsResult;
+    }, [activeTab, allRequestedToMeData?.data, allMyRequestsData?.data, allRequestsDataForStats?.data]);
 
 
-    const handleRefresh = async () => {
+    // Memoize handlers to prevent unnecessary re-renders
+    const handleRefresh = useCallback(async () => {
         try {
-            // Refresh all data sources
-            await Promise.all([
-                refetchRequestedToMe(),
-                refetchMyRequests(),
-                ...(isMasterAdmin ? [refetchAllRequests()] : [])
-            ]);
+            // Only refresh the active tab's data
+            const refreshPromises = [];
+            
+            if (activeTab === 'requested-to-me') {
+                refreshPromises.push(refetchRequestedToMe());
+            } else if (activeTab === 'my-requests') {
+                refreshPromises.push(refetchMyRequests());
+            } else if (activeTab === 'all-requests' && isMasterAdmin) {
+                refreshPromises.push(refetchAllRequests());
+            }
+            
+            await Promise.all(refreshPromises);
         } catch (error) {
             console.error('Error refreshing data:', error);
         }
-    };
+    }, [activeTab, refetchRequestedToMe, refetchMyRequests, refetchAllRequests, isMasterAdmin]);
 
-    const handlePageChange = (page: number) => {
+    const handlePageChange = useCallback((page: number) => {
         setCurrentPage(page);
-    };
+    }, []);
 
-    const handleFiltersChange = (newFilters: FiltersType) => {
+    const handleFiltersChange = useCallback((newFilters: FiltersType) => {
         setFilters(newFilters);
         setCurrentPage(1); 
-    };
+    }, []);
+
+    const handleTabChange = useCallback((value: string) => {
+        setActiveTab(value as typeof activeTab);
+        setCurrentPage(1); // Reset page when switching tabs
+    }, []);
 
 
     return (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
             <div className="mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                    Requested Documents
-                </h2>
-                <p className="text-gray-600">
-                    Manage and track document review requests.
-                </p>
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                    <div>
+                        <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                            Requested Documents
+                        </h2>
+                        <p className="text-gray-600">
+                            Manage and track document review requests.
+                        </p>
+                    </div>
+                    
+                    {/* Global Refresh Button */}
+                    <div className="flex items-center gap-4">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleRefresh}
+                            disabled={isLoadingRequestedToMe || isLoadingMyRequests || isLoadingAllRequests}
+                            className="flex items-center gap-2"
+                        >
+                            <RefreshCw className="h-4 w-4" />
+                            <span>Refresh All</span>
+                        </Button>
+                    </div>
+                </div>
             </div>
 
             {/* Stats Cards */}
@@ -152,7 +220,7 @@ export default function RequestedDocsPage() {
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as typeof activeTab)}>
+                    <Tabs value={activeTab} onValueChange={handleTabChange}>
                         <TabsList className={`grid w-full ${!isMasterAdmin ? 'grid-cols-2' : 'grid-cols-3'} h-12 mb-6`}>
                             {isMasterAdmin && (
                                 <TabsTrigger value="all-requests" className="flex h-10 items-center gap-2">
@@ -170,7 +238,7 @@ export default function RequestedDocsPage() {
                             </TabsTrigger>
                         </TabsList>
 
-                        {isMasterAdmin && (
+                        {isMasterAdmin && activeTab === 'all-requests' && (
                             <TabsContent value="all-requests" className="space-y-4">
                                 <RequestedDocumentsFilters
                                     filters={filters}
@@ -199,41 +267,45 @@ export default function RequestedDocsPage() {
                             </TabsContent>
                         )}
 
-                        <TabsContent value="requested-to-me" className="space-y-4">
-                            <RequestedDocumentsTable
-                                documents={requestedToMeDocuments}
-                                isLoading={isLoadingRequestedToMe}
-                                type="requested-to-me"
-                            />
-
-                            {/* Pagination */}
-                            {requestedToMePagination && (
-                                <ApplicationsPagination
-                                    currentPage={requestedToMePagination.currentPage}
-                                    totalRecords={requestedToMePagination.totalItems}
-                                    limit={limit}
-                                    onPageChange={handlePageChange}
+                        {activeTab === 'requested-to-me' && (
+                            <TabsContent value="requested-to-me" className="space-y-4">
+                                <RequestedDocumentsTable
+                                    documents={requestedToMeDocuments}
+                                    isLoading={isLoadingRequestedToMe}
+                                    type="requested-to-me"
                                 />
-                            )}
-                        </TabsContent>
 
-                        <TabsContent value="my-requests" className="space-y-4">
-                            <RequestedDocumentsTable
-                                documents={myRequestsDocuments}
-                                isLoading={isLoadingMyRequests}
-                                type="my-requests"
-                            />
+                                {/* Pagination */}
+                                {requestedToMePagination && (
+                                    <ApplicationsPagination
+                                        currentPage={requestedToMePagination.currentPage}
+                                        totalRecords={requestedToMePagination.totalItems}
+                                        limit={limit}
+                                        onPageChange={handlePageChange}
+                                    />
+                                )}
+                            </TabsContent>
+                        )}
 
-                            {/* Pagination */}
-                            {myRequestsPagination && (
-                                <ApplicationsPagination
-                                    currentPage={myRequestsPagination.currentPage}
-                                    totalRecords={myRequestsPagination.totalItems}
-                                    limit={limit}
-                                    onPageChange={handlePageChange}
+                        {activeTab === 'my-requests' && (
+                            <TabsContent value="my-requests" className="space-y-4">
+                                <RequestedDocumentsTable
+                                    documents={myRequestsDocuments}
+                                    isLoading={isLoadingMyRequests}
+                                    type="my-requests"
                                 />
-                            )}
-                        </TabsContent>
+
+                                {/* Pagination */}
+                                {myRequestsPagination && (
+                                    <ApplicationsPagination
+                                        currentPage={myRequestsPagination.currentPage}
+                                        totalRecords={myRequestsPagination.totalItems}
+                                        limit={limit}
+                                        onPageChange={handlePageChange}
+                                    />
+                                )}
+                            </TabsContent>
+                        )}
 
                     </Tabs>
                 </CardContent>

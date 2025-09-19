@@ -27,3 +27,49 @@ export async function updateApplicationFields(
     }),
   });
 }
+
+export async function updateDeadlineForLodgement(
+  leadId: string,
+  deadlineDate: string
+): Promise<Response> {
+  const requestBody = {
+    leadId,
+    fieldsToUpdate: {
+      Deadline_For_Lodgment: deadlineDate,
+    },
+  };
+  
+  try {
+    const response = await fetcher<Response>(`${ZOHO_BASE_URL}/visa_applications/update_fields`, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    });
+    
+    console.log("API Response:", response);
+    return response;
+  } catch (error) {
+    console.error("API Error:", error);
+    throw error;
+  }
+}
+
+export async function updateChecklistRequested(
+  leadId: string,
+  checklistRequested: boolean
+): Promise<Response> {
+  return fetcher<Response>(`${ZOHO_BASE_URL}/visa_applications/update_fields`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      leadId,
+      fieldsToUpdate: {
+        Checklist_Requested: checklistRequested,
+      },
+    }),
+  });
+}

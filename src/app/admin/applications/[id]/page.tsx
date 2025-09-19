@@ -450,7 +450,7 @@ export default function ApplicationDetailsPage() {
             </div>
             <div>
               <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-lexend font-bold">
-                Application Details <Badge variant="default" className='bg-red-50 text-red-500 hover:bg-red-100 md:mb-0 mb-2 md:h-8 flex items-center gap-2'><BadgeCheck size={16} />{application?.Package_Finalize || 'Not provided'}</Badge>
+                Application Details <Badge variant="default" className='bg-gradient-to-r from-blue-500/10 to-blue-500/20 text-blue-600 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-200 md:mb-0 mb-2 md:h-8 flex items-center gap-2 px-3 py-1 rounded-full font-medium'><BadgeCheck size={16} className="text-blue-500" />{application?.Package_Finalize || 'Not provided'}</Badge>
               </h1>
               <div className="text-muted-foreground ">
                 {isApplicationLoading ? (
