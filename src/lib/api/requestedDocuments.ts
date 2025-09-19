@@ -1,4 +1,5 @@
 import { fetcher } from '@/lib/fetcher';
+import { API_CONFIG, getFullUrl } from '@/lib/config/api';
 
 export interface RequestedDocument {
   _id: string;
@@ -67,6 +68,7 @@ export interface RequestedDocumentsParams {
   requested_to?: string;
   sort?: string;
   order?: 'asc' | 'desc';
+  [key: string]: string | number | boolean | undefined;
 }
 
 /**
@@ -88,13 +90,11 @@ export async function getRequestedDocumentsToMe(
     if (params.sort) searchParams.append('sort', params.sort);
     if (params.order) searchParams.append('order', params.order);
 
-    const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/requested_reviews/all_to?${searchParams.toString()}`;
+    const url = getFullUrl(API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL_TO, params);
     
     const response = await fetcher(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: API_CONFIG.DEFAULT_HEADERS,
     }) as RequestedDocumentsResponse;
 
     const responseTime = Date.now() - startTime;
@@ -140,13 +140,11 @@ export async function getMyRequestedDocuments(
     if (params.sort) searchParams.append('sort', params.sort);
     if (params.order) searchParams.append('order', params.order);
 
-    const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/requested_reviews/all_me?${searchParams.toString()}`;
+    const url = getFullUrl(API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL_ME, params);
     
     const response = await fetcher(url, {
       method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: API_CONFIG.DEFAULT_HEADERS,
     }) as RequestedDocumentsResponse;
 
     const responseTime = Date.now() - startTime;
@@ -231,13 +229,13 @@ export async function getAllRequestedDocuments(
   });
 
   // Add filter parameters
-  if (filters.status) searchParams.append('status', filters.status);
-  if (filters.requested_by) searchParams.append('requested_by', filters.requested_by);
-  if (filters.requested_to) searchParams.append('requested_to', filters.requested_to);
-  if (filters.sort) searchParams.append('sort', filters.sort);
-  if (filters.order) searchParams.append('order', filters.order);
+  if (filters.status) searchParams.append('status', String(filters.status));
+  if (filters.requested_by) searchParams.append('requested_by', String(filters.requested_by));
+  if (filters.requested_to) searchParams.append('requested_to', String(filters.requested_to));
+  if (filters.sort) searchParams.append('sort', String(filters.sort));
+  if (filters.order) searchParams.append('order', String(filters.order));
 
   return fetcher<RequestedDocumentsResponse>(
-    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/requested_reviews/all?${searchParams}`
+    getFullUrl(API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL, { page, limit, ...filters })
   );
 }

@@ -26,15 +26,6 @@ export function useRequestedDocumentsToMe(params: RequestedDocumentsParams = {})
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     refetchOnWindowFocus: false,
     select: (data) => {
-      // Debug: Log the raw API data
-      console.log('🌐 Raw API data received:', data);
-      console.log('📊 Document statuses from API:', data.data.map(doc => ({
-        id: doc._id,
-        document_name: doc.document_name,
-        topLevelStatus: doc.status,
-        requestedReviewStatus: doc.requested_review?.status
-      })));
-      
       // Transform and enhance the data with role-based calculations
       const enhancedData = data.data.map(doc => ({
         ...doc,

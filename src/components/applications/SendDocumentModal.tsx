@@ -10,6 +10,7 @@ import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { useReviewRequest } from '@/hooks/useReviewRequest';
 import { useAuth } from '@/hooks/useAuth';
+import { toast } from 'sonner';
 
 interface SendDocumentModalProps {
   documents: Document[];
@@ -66,14 +67,63 @@ export function SendDocumentModal({
   };
 
   const handleSend = async () => {
-    if (selectedDocuments.length === 0 || selectedAdmins.length === 0 || !user?.username) return;
+    // Comprehensive input validation
+    if (!user?.username) {
+      toast.error('You must be logged in to send review requests.');
+      return;
+    }
+
+    if (selectedDocuments.length === 0) {
+      toast.error('Please select at least one document to send for review.');
+      return;
+    }
+
+    if (selectedAdmins.length === 0) {
+      toast.error('Please select at least one admin to send the documents to.');
+      return;
+    }
+
+    // Validate document IDs
+    const invalidDocuments = selectedDocuments.filter(id => !id || typeof id !== 'string');
+    if (invalidDocuments.length > 0) {
+      toast.error('Some selected documents have invalid IDs. Please refresh and try again.');
+      return;
+    }
+
+    // Validate admin usernames
+    const invalidAdmins = selectedAdmins.filter(admin => !admin || typeof admin !== 'string');
+    if (invalidAdmins.length > 0) {
+      toast.error('Some selected admins have invalid usernames. Please refresh and try again.');
+      return;
+    }
+
+    // Check for duplicate selections
+    const uniqueDocuments = [...new Set(selectedDocuments)];
+    const uniqueAdmins = [...new Set(selectedAdmins)];
+    
+    if (uniqueDocuments.length !== selectedDocuments.length) {
+      toast.error('Duplicate documents detected. Please refresh and try again.');
+      return;
+    }
+
+    if (uniqueAdmins.length !== selectedAdmins.length) {
+      toast.error('Duplicate admins detected. Please refresh and try again.');
+      return;
+    }
+
+    // Validate message length
+    const message = notes.trim() || 'Please review these documents for verification.';
+    if (message.length > 500) {
+      toast.error('Message is too long. Please keep it under 500 characters.');
+      return;
+    }
     
     try {
       // Use the review request mutation
       await reviewRequestMutation.mutateAsync({
-        documentIds: selectedDocuments,
-        requestedTo: selectedAdmins,
-        message: notes || 'Please review these documents for verification.',
+        documentIds: uniqueDocuments,
+        requestedTo: uniqueAdmins,
+        message,
         requestedBy: user.username
       });
       
@@ -91,6 +141,10 @@ export function SendDocumentModal({
   const selectedCount = selectedDocuments.length;
   const isSubmitting = reviewRequestMutation.isPending;
   const canSend = selectedCount > 0 && selectedAdmins.length > 0 && !isSubmitting && !!user?.username;
+  
+  // Enhanced validation states
+  const hasValidSelection = selectedCount > 0 && selectedAdmins.length > 0;
+  const isFormValid = hasValidSelection && !!user?.username && !isSubmitting;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
@@ -241,7 +295,7 @@ export function SendDocumentModal({
           </Button>
           <Button
             onClick={handleSend}
-            disabled={!canSend}
+            disabled={!isFormValid}
             className="cursor-pointer bg-blue-600 hover:bg-blue-700 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {isSubmitting ? (

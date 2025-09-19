@@ -44,32 +44,43 @@ export function useReviewRequest({ onSuccess, onError }: UseReviewRequestProps =
 
         const results = await createMultipleReviewRequests(requests);
         
-        // Send the message separately for each review request
-        const messagePromises = results.map(async (result) => {
-          // Handle the case where result.data is an array of review requests
-          const reviewRequests = Array.isArray(result.data) ? result.data : [result.data];
-          
-          for (const reviewRequest of reviewRequests) {
-            if (reviewRequest && reviewRequest._id) {
-              try {
-                await sendRequestedDocumentMessage(
-                  reviewRequest.document_id || documentIds[0],
+        // Process results and send messages only to successful review requests
+        const messagePromises: Promise<void>[] = [];
+        const successfulReviewRequests: Array<{ _id: string; document_id: string }> = [];
+        
+        results.forEach((result) => {
+          if (result.success && result.data) {
+            // Ensure result.data is always treated as an array
+            const reviewRequests = Array.isArray(result.data) ? result.data : [result.data];
+            
+            reviewRequests.forEach((reviewRequest) => {
+              if (reviewRequest && reviewRequest._id) {
+                successfulReviewRequests.push({
+                  _id: reviewRequest._id,
+                  document_id: reviewRequest.document_id
+                });
+                
+                const messagePromise = sendRequestedDocumentMessage(
+                  reviewRequest.document_id,
                   reviewRequest._id,
                   { message: message }
-                );
-              } catch (error) {
-                console.warn('Failed to send message for review request:', {
-                  reviewId: reviewRequest._id,
-                  documentId: reviewRequest.document_id || documentIds[0],
-                  error: error
+                ).catch((error) => {
+                  console.warn('Failed to send message for review request:', {
+                    reviewId: reviewRequest._id,
+                    documentId: reviewRequest.document_id,
+                    error: error instanceof Error ? error.message : error
+                  });
                 });
+                
+                messagePromises.push(messagePromise.then(() => void 0));
               }
-            }
+            });
           }
         });
         
-        // Wait for all messages to be sent
-        await Promise.allSettled(messagePromises);
+        // Wait for all messages to be sent (with error handling)
+        const messageResults = await Promise.allSettled(messagePromises);
+        const failedMessages = messageResults.filter(result => result.status === 'rejected').length;
         
         const responseTime = Date.now() - startTime;
         
@@ -83,7 +94,9 @@ export function useReviewRequest({ onSuccess, onError }: UseReviewRequestProps =
           requestedTo,
           results,
           totalRequests: requests.length,
-          successfulRequests: results.length
+          successfulRequests: results.length,
+          successfulReviewRequests: successfulReviewRequests.length,
+          failedMessages
         };
       } catch (error) {
         const responseTime = Date.now() - startTime;
@@ -117,22 +130,37 @@ export function useReviewRequest({ onSuccess, onError }: UseReviewRequestProps =
       });
     },
     onSuccess: (data, variables) => {
-      const { documentIds, requestedTo, successfulRequests, totalRequests } = data;
+      const { documentIds, requestedTo, successfulRequests, totalRequests, successfulReviewRequests, failedMessages } = data;
       
-      // Invalidate relevant queries to refresh data
-      queryClient.invalidateQueries({ queryKey: ['application-documents'] });
-      queryClient.invalidateQueries({ queryKey: ['application-documents-paginated'] });
-      queryClient.invalidateQueries({ queryKey: ['application-details'] });
+      // Optimized query invalidation - only invalidate specific queries
+      const invalidationPromises = [
+        queryClient.invalidateQueries({ queryKey: ['application-documents'] }),
+        queryClient.invalidateQueries({ queryKey: ['application-documents-paginated'] }),
+        queryClient.invalidateQueries({ queryKey: ['application-details'] }),
+        queryClient.invalidateQueries({ queryKey: ['requested-documents-to-me'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-requested-documents'] }),
+        queryClient.invalidateQueries({ queryKey: ['all-requested-documents'] })
+      ];
+      
+      // Execute invalidations in parallel
+      Promise.allSettled(invalidationPromises);
       
       // Dismiss loading toast
       toast.dismiss('review-request-loading');
       
-      // Show success message
-      if (successfulRequests === totalRequests) {
+      // Show detailed success message
+      if (successfulRequests === totalRequests && failedMessages === 0) {
         toast.success(
           `Review requests sent successfully! ${documentIds.length} document${documentIds.length !== 1 ? 's' : ''} sent to ${requestedTo.length} admin${requestedTo.length !== 1 ? 's' : ''}.`,
           {
             duration: 5000
+          }
+        );
+      } else if (successfulRequests === totalRequests && failedMessages > 0) {
+        toast.warning(
+          `Review requests created successfully, but ${failedMessages} message${failedMessages !== 1 ? 's' : ''} failed to send.`,
+          {
+            duration: 7000
           }
         );
       } else {

@@ -1,4 +1,5 @@
 import { fetcher } from '@/lib/fetcher';
+import { API_CONFIG } from '@/lib/config/api';
 
 export interface RequestedDocumentMessage {
   _id: string;
@@ -44,9 +45,8 @@ export async function getRequestedDocumentMessages(
   documentId: string,
   reviewId: string
 ): Promise<RequestedDocumentMessagesResponse> {
-  // Use production server directly like Postman does
   return fetcher<RequestedDocumentMessagesResponse>(
-    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`
+    API_CONFIG.ENDPOINTS.REVIEW_REQUEST_MESSAGES(documentId, reviewId)
   );
 }
 
@@ -59,12 +59,10 @@ export async function sendRequestedDocumentMessage(
   data: SendMessageRequest
 ): Promise<SendMessageResponse> {
   return fetcher<SendMessageResponse>(
-    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`,
+    API_CONFIG.ENDPOINTS.REVIEW_REQUEST_MESSAGES(documentId, reviewId),
     {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: API_CONFIG.DEFAULT_HEADERS,
       body: JSON.stringify(data),
     }
   );
@@ -78,14 +76,11 @@ export async function deleteRequestedDocumentMessage(
   reviewId: string,
   data: DeleteMessageRequest
 ): Promise<DeleteMessageResponse> {
-  // Use production server directly like Postman does
   return fetcher<DeleteMessageResponse>(
-    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`,
+    API_CONFIG.ENDPOINTS.REVIEW_REQUEST_MESSAGES(documentId, reviewId),
     {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: API_CONFIG.DEFAULT_HEADERS,
       body: JSON.stringify(data),
     }
   );

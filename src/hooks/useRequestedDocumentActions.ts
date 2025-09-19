@@ -130,10 +130,8 @@ export function useUpdateDocumentStatus() {
       // Optimistically update the list caches
       queryClient.setQueriesData({ queryKey: ['requested-documents-to-me'] }, (old: { data: RequestedDocument[] } | undefined) => {
         if (!old?.data) return old;
-        console.log('🔄 Optimistically updating requested-documents-to-me cache for document:', documentId, 'to status:', data.status);
         const updatedData = old.data.map((doc: RequestedDocument) => {
           if (doc._id === documentId) {
-            console.log('📝 Found document to update:', doc._id, 'current requested_review.status:', doc.requested_review.status);
             const updatedDoc = { 
               ...doc, 
               // Don't update top-level status - only requested_review.status
@@ -145,7 +143,6 @@ export function useUpdateDocumentStatus() {
                   : review
               ) || doc.requested_reviews
             };
-            console.log('✅ Updated document requested_review.status to:', updatedDoc.requested_review.status);
             return {
               ...updatedDoc,
               isOverdue: isDocumentOverdue(updatedDoc, user?.role),
@@ -235,10 +232,6 @@ export function useUpdateDocumentStatus() {
     onSuccess: (data, variables) => {
       const { data: statusData } = variables;
       
-      // Debug: Log the API response
-      console.log('✅ API Success Response:', data);
-      console.log('✅ Variables sent to API:', variables);
-      
       // Dismiss loading toast first
       toast.dismiss('update-document-status');
       
@@ -250,10 +243,6 @@ export function useUpdateDocumentStatus() {
     },
     onError: (error, variables, context) => {
       const { data: statusData } = variables;
-      
-      // Debug: Log the error
-      console.log('❌ API Error:', error);
-      console.log('❌ Variables that failed:', variables);
       
       // Rollback optimistic updates
       if (context?.previousToMeData) {

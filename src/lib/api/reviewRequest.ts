@@ -1,4 +1,5 @@
 import { fetcher } from '@/lib/fetcher';
+import { API_CONFIG, getFullUrl } from '@/lib/config/api';
 
 export interface ReviewRequestData {
   requested_by: string;
@@ -19,7 +20,16 @@ export interface ReviewRequestResponse {
     message: string;
     created_at: string;
     updated_at: string;
-  };
+  } | {
+    _id: string;
+    document_id: string;
+    requested_by: string;
+    requested_to: string;
+    status: string;
+    message: string;
+    created_at: string;
+    updated_at: string;
+  }[];
 }
 
 export interface ReviewRequestError {
@@ -41,11 +51,9 @@ export async function createReviewRequest(
   const startTime = Date.now();
   
   try {
-    const response = await fetcher(`https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`, {
+    const response = await fetcher(API_CONFIG.ENDPOINTS.REVIEW_REQUESTS(documentId), {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: API_CONFIG.DEFAULT_HEADERS,
       body: JSON.stringify(data),
     }) as ReviewRequestResponse;
 
@@ -63,12 +71,12 @@ export async function createReviewRequest(
 
     // Handle empty response object (common when server returns 200 with no body)
     if (Object.keys(response).length === 0) {
-      // Return a success response structure
+      // Return a success response structure with single item array for consistency
       return {
         success: true,
         message: 'Review request created successfully',
-        data: {
-          _id: 'temp-id',
+        data: [{
+          _id: `temp-${Date.now()}`,
           document_id: documentId,
           requested_by: data.requested_by,
           requested_to: data.requested_to,
@@ -76,7 +84,7 @@ export async function createReviewRequest(
           message: data.message,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        }
+        }]
       };
     }
 
@@ -90,11 +98,16 @@ export async function createReviewRequest(
       return {
         ...response,
         success: true,
-        message: response.message || 'Review request created successfully'
+        message: response.message || 'Review request created successfully',
+        data: Array.isArray(response.data) ? response.data : response.data ? [response.data] : []
       };
     }
 
-    return response;
+    // Normalize response data to always be an array
+    return {
+      ...response,
+      data: Array.isArray(response.data) ? response.data : response.data ? [response.data] : []
+    };
   } catch (error) {
     const responseTime = Date.now() - startTime;
     
@@ -108,7 +121,7 @@ export async function createReviewRequest(
         name: error.name
       } : error,
       responseTime,
-      url: `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`
+      url: API_CONFIG.ENDPOINTS.REVIEW_REQUESTS(documentId)
     });
 
     // Provide more specific error messages
