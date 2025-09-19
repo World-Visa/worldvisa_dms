@@ -1,25 +1,27 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { gsap } from 'gsap';
-import { adminLoginSchema, AdminLoginFormData } from '@/lib/validation';
-import { useAdminLogin } from '@/hooks/useAuthMutations';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Shield, Eye, EyeOff, Loader2 } from 'lucide-react';
-import { useState } from 'react';
+import { useAdminLogin } from '@/hooks/useAuthMutations';
+import { AdminLoginFormData, adminLoginSchema } from '@/lib/validation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { gsap } from 'gsap';
+import { Eye, EyeOff, Loader2, Shield } from 'lucide-react';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
+import { useForm } from 'react-hook-form';
+import loginBackground from '../../../public/background/login background.png';
 
 export function AdminLoginForm() {
   const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const formRef = useRef<HTMLDivElement>(null);
+  const leftRef = useRef<HTMLDivElement>(null);
+  const rightRef = useRef<HTMLDivElement>(null);
   const adminLoginMutation = useAdminLogin();
 
   const {
@@ -32,12 +34,19 @@ export function AdminLoginForm() {
   });
 
   useEffect(() => {
-    if (formRef.current) {
-      gsap.fromTo(
-        formRef.current,
-        { opacity: 0, y: 30 },
-        { opacity: 1, y: 0, duration: 0.6, ease: "power2.out" }
-      );
+    if (leftRef.current && rightRef.current) {
+      gsap.set([leftRef.current, rightRef.current], {
+        opacity: 0,
+        y: 50,
+      });
+
+      gsap.to([leftRef.current, rightRef.current], {
+        opacity: 1,
+        y: 0,
+        duration: 0.8,
+        stagger: 0.2,
+        ease: "power2.out",
+      });
     }
   }, []);
 
@@ -47,37 +56,59 @@ export function AdminLoginForm() {
       router.push('/admin/applications');
     } catch (error) {
       setError('root', {
-        message: error instanceof Error ? error.message : 'Login failed. Please try again.',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'Login failed. Please try again.',
       });
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="w-full max-w-6xl mx-auto">
-        <div className="grid lg:grid-cols-2 gap-8 items-center">
-          {/* Left Side - Image with Overlay */}
-          <div className="relative h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl">
-            <Image
-              height={1000}
-              width={1000}
-              src="https://images.pexels.com/photos/17620435/pexels-photo-17620435.jpeg"
-              alt="WorldVisa DMS"
-              className="w-full h-full object-cover"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-              <h1 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight">
-                WorldVisa Document Management System
-              </h1>
-              <p className="text-lg lg:text-xl text-blue-100 font-medium">
-                for PR Visas
-              </p>
+    <div className="h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-sky-100 flex items-center justify-center">
+      <div ref={formRef} className="w-full h-full mx-auto flex">
+
+        {/* Left Side - Image with Overlay */}
+        <div
+          ref={leftRef}
+          className="relative z-20 w-1/2 h-full rounded-2xl hidden md:block"
+        >
+          <Image
+            src={loginBackground}
+            alt="WorldVisa DMS"
+            fill
+            className="w-full h-full object-cover"
+            priority
+          />
+          <div className="absolute top-5 left-5 p-2 rounded-2xl 
+                bg-white/70 border border-white/20 
+                backdrop-blur-md shadow-lg">
+            <div className="relative h-12 w-48">
+              <Image
+                src="/logos/world-visa-logo.webp"
+                alt="WorldVisa Logo"
+                fill
+                className="object-contain"
+              />
             </div>
           </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+            <h1 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight">
+              WorldVisa Document Management System
+            </h1>
+            <p className="text-lg lg:text-xl text-blue-100 font-medium">
+              for PR Visas
+            </p>
+          </div>
+        </div>
 
-          {/* Right Side - Login Form */}
-          <div ref={formRef} className="w-full max-w-md mx-auto">
+        {/* Right Side - Login Form */}
+        <div
+          ref={rightRef}
+          className="flex w-full md:w-1/2 md:min-w-[480px] items-center justify-center"
+        >
+          <div className="space-y-6 w-[90%] max-w-[400px] md:min-w-[450px]">
             <Card className="shadow-xl border-0">
               <CardHeader className="space-y-2 text-center">
                 <div className="flex justify-center mb-4">
@@ -100,6 +131,7 @@ export function AdminLoginForm() {
                     </Alert>
                   )}
 
+                  {/* Username */}
                   <div className="space-y-2">
                     <Label htmlFor="username" className="text-sm font-medium text-gray-700">
                       Username
@@ -116,6 +148,7 @@ export function AdminLoginForm() {
                     )}
                   </div>
 
+                  {/* Password */}
                   <div className="space-y-2">
                     <Label htmlFor="password" className="text-sm font-medium text-gray-700">
                       Password
@@ -145,6 +178,7 @@ export function AdminLoginForm() {
                     )}
                   </div>
 
+                  {/* Submit */}
                   <Button
                     type="submit"
                     className="w-full h-12 text-base font-medium"
@@ -160,12 +194,11 @@ export function AdminLoginForm() {
                     )}
                   </Button>
                 </form>
-
-
               </CardContent>
             </Card>
           </div>
         </div>
+
       </div>
     </div>
   );
