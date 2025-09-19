@@ -31,6 +31,7 @@ interface ChecklistTableItem {
   checklist_id?: string;
   rejectedRemark?: string;
   documentStatus?: string;
+  description?: string;
 }
 
 export function generateAllDocumentTypes(
@@ -185,6 +186,7 @@ export function generateEditingCurrentItems(
   return currentChecklistDocuments.map((item: ChecklistDocument) => ({
     ...item,
     category: mapCategoryLabel(item.category),
+    description: item.description,
   }));
 }
 
@@ -532,8 +534,6 @@ export function generateSavedItems(
 
 
   return checklistData.data.map((checklistItem: ChecklistItem) => {
-    
-    
     let categoryLabel = mapCategoryLabel(checklistItem.document_category);
 
     if (
@@ -642,6 +642,7 @@ export function generateSavedItems(
       checklist_id: checklistItem.checklist_id,
       rejectedRemark: uploadedDoc?.reject_message,
       documentStatus: uploadedDoc?.status,
+      description: checklistItem.description,
     };
   });
 }

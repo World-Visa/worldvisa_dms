@@ -488,7 +488,8 @@ export function useChecklistState({
       uploadedDocument: undefined,
       requirement: item.required ? 'mandatory' : 'optional' as DocumentRequirement,
       checklist_id: item.checklist_id,
-      company_name: item.company_name
+      company_name: item.company_name,
+      description: item.description
     }));
   }, [state, checklistItems]);
 

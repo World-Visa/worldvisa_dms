@@ -15,6 +15,7 @@ export interface ChecklistItem {
   updated_at?: string;
   fromDate?:string;
   toDate?:string;
+  description?: string;
 }
 
 export interface ChecklistResponse {
@@ -64,6 +65,7 @@ export interface ChecklistDocument {
   requirement?: DocumentRequirement;
   checklist_id?: string;
   company_name?: string;
+  description?: string;
 }
 
 export interface ChecklistStateData {

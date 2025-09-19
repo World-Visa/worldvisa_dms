@@ -13,6 +13,7 @@ import { memo, useState } from 'react';
 import { CommentIcon } from '../CommentIcon';
 import { RejectionMessageDisplay } from '../RejectionMessageDisplay';
 import { DescriptionModal } from './DescriptionModal';
+import { DescriptionDialog } from './DescriptionDialog';
 import { RequirementSelector } from './RequirementSelector';
 
 interface ChecklistTableItem {
@@ -96,17 +97,23 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   // Comment counts
   commentCounts = {},
   applicationId,
-  isClientView = false
 }: ChecklistTableRowProps) {
 
   const { updateItemDescription } = useChecklistMutations(applicationId);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [currentChecklistId, setCurrentChecklistId] = useState("");
   const [mode, setMode] = useState<"view" | "edit">("edit")
+  const [showDescriptionDialog, setShowDescriptionDialog] = useState(false);
 
-  const handleupdateDescription = async (description: string) => {
-    // alert(`Checklist ID: ${currentChecklistId}\nDescription: ${description}`);
-    await updateItemDescription.mutateAsync({ checklist_id: currentChecklistId, description })
+  const handleUpdateDescription = async (description: string) => {
+    if (!currentChecklistId) {
+      throw new Error("No checklist ID available");
+    }
+
+    await updateItemDescription.mutateAsync({ 
+      checklist_id: currentChecklistId, 
+      description 
+    });
   }
 
   const handleOpenModal = () => {
@@ -153,8 +160,48 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   query={searchQuery}
                   className="text-sm"
                 />
-              </div>
+              </div>  
             </div>
+            
+            {/* Description section */}
+            {item.description && item.description.trim() && (
+              <div className="ml-6">
+                {checklistState === "editing" ? (
+                  <Button
+                    onClick={handleOpenModal}
+                    className="flex items-center gap-1 px-2 py-1 h-6 text-xs bg-gray-100 hover:bg-gray-200 cursor-pointer text-black border-gray-500"
+                  >
+                    Edit Description
+                  </Button>
+                ) : (
+                  <div className="text-xs text-muted-foreground">
+                    <p className="inline">
+                      {truncateText(item.description, 50)}
+                      {item.description.trim().length > 50 && '...'}
+                    </p>
+                    {item.description.trim().length > 50 && (
+                      <button
+                        onClick={() => setShowDescriptionDialog(true)}
+                        className="ml-1 text-blue-600 text-xs underline hover:text-blue-800"
+                      >
+                        Read more
+                      </button>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {checklistState === "editing" && (!item.description || !item.description.trim()) && (
+              <div className="ml-6">
+                <Button
+                  onClick={handleOpenModal}
+                  className="flex items-center gap-1 px-2 py-1 h-6 text-xs bg-gray-100 hover:bg-gray-200 cursor-pointer text-black border-gray-500"
+                >
+                  Add Description
+                </Button>
+              </div>
+            )}
             {/* Show category on mobile */}
             <div className="sm:hidden">
               <Badge
@@ -205,41 +252,6 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
               )}
             </div>
           </div>
-        </TableCell>
-        <TableCell className="table-cell">
-          {checklistState === "editing" ? (
-            item.description || "" ? (
-              <Button
-                onClick={handleOpenModal}
-                className="flex items-center gap-1 px-2 py-1 h-7 text-xs bg-gray-100 hover:bg-gray-200 cursor-pointer text-black border-gray-500"
-              >
-                Edit Description
-              </Button>
-            ) : (
-              <Button
-                onClick={handleOpenModal}
-                className="flex items-center gap-1 px-2 py-1 h-7 text-xs bg-gray-100 hover:bg-gray-200 cursor-pointer text-black border-gray-500"
-              >
-                Add Description
-              </Button>
-            )
-          ) : item.description ? (
-            <div>
-              <p className="inline">
-                {truncateText(item.description, 20)} {'...'}
-              </p>
-              {item.description.length > 80 && (
-                <button
-                  onClick={handleOpenViewModal}
-                  className="ml-1 text-blue-600 text-xs underline"
-                >
-                  view Full
-                </button>
-              )}
-            </div>
-          ) : (
-            <p className='text-center'> ---</p>
-          )}
         </TableCell>
         <TableCell className="hidden md:table-cell">
           <div className="flex flex-col gap-2">
@@ -487,10 +499,19 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
           open={showCommentModal}
           onOpenChange={setShowCommentModal}
           existingDescription={item.description || ""}
-          onSave={handleupdateDescription}
+          onSave={handleUpdateDescription}
           mode={mode}
+          isLoading={updateItemDescription.isPending}
         />)
       }
+
+      {/* Description Dialog */}
+      <DescriptionDialog
+        isOpen={showDescriptionDialog}
+        onClose={() => setShowDescriptionDialog(false)}
+        documentType={item.documentType}
+        description={item.description || ""}
+      />
 
     </>
   );

@@ -45,6 +45,7 @@ interface ChecklistTableItem {
   isSelected?: boolean;
   company_name?: string;
   checklist_id?: string;
+  description?: string;
 }
 
 interface ExtendedDocumentChecklistTableProps extends DocumentChecklistTableProps {
@@ -119,6 +120,11 @@ const DocumentChecklistTableComponent = ({
   const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
   const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
   const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
+  
+  // Description dialog state
+  const [isDescriptionDialogOpen, setIsDescriptionDialogOpen] = useState(false);
+  const [selectedDescriptionDocumentType, setSelectedDescriptionDocumentType] = useState<string>('');
+  const [selectedDescriptionText, setSelectedDescriptionText] = useState<string>('');
 
   // Reupload mutation
   const reuploadMutation = useReuploadDocument();

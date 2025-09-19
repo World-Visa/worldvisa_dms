@@ -26,6 +26,7 @@ interface ChecklistTableItem {
   isSelected?: boolean;
   company_name?: string;
   checklist_id?: string;
+  description?: string;
 }
 
 interface ChecklistTableBodyProps {
@@ -137,7 +138,6 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                 <TableHead className="w-16">S.No</TableHead>
                 <TableHead className="hidden sm:table-cell">Category</TableHead>
                 <TableHead>Document Name</TableHead>
-                <TableHead>Description</TableHead>
                 <TableHead className="hidden md:table-cell">Status</TableHead>
                 <TableHead className="w-20">Comments</TableHead>
                 <TableHead className="text-right w-24">Action</TableHead>
@@ -146,7 +146,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
             <TableBody>
               {paginatedItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8">
+                  <TableCell colSpan={5} className="text-center py-8">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">
                       {selectedCategory === 'submitted'

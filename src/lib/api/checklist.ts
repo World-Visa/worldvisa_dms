@@ -38,6 +38,7 @@ export async function getChecklist(
         document_type: string;
         document_category: string;
         required: boolean;
+        description?: string;
       }>;
     };
   }>(`${url}?${params.toString()}`);
@@ -48,8 +49,9 @@ export async function getChecklist(
     document_type: item.document_type,
     document_category: item.document_category,
     required: item.required,
+    description: item.description,
   }));
-
+  
   return {
     success: response.status === "success",
     data: transformedData,
@@ -103,19 +105,50 @@ export async function updateChecklistItem(
 }
 
 export async function updateDescription(
-  applicaitonId: string,
+  applicationId: string,
   item: AddDescriptionRequest
 ): Promise<AddDescriptionResponse> {
-  const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicaitonId}`;
-  const params = new URLSearchParams({ record_id: applicaitonId });
+  // Validate input parameters
+  if (!applicationId || !item.checklist_id) {
+    throw new Error('Application ID and Checklist ID are required');
+  }
 
-  return fetcher<AddDescriptionResponse>(`${url}?${params.toString()}`, {
-    method: "PUT",
-    body: JSON.stringify({
-      description: item.description,
-      checklist_id: item.checklist_id,
-    }),
-  });
+  if (!item.description || item.description.trim().length === 0) {
+    throw new Error('Description cannot be empty');
+  }
+
+  if (item.description.length > 1000) {
+    throw new Error('Description cannot exceed 1000 characters');
+  }
+
+  const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
+  const params = new URLSearchParams({ record_id: applicationId });
+
+  try {
+    const response = await fetcher<AddDescriptionResponse>(`${url}?${params.toString()}`, {
+      method: "PUT",
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        description: item.description.trim(),
+        checklist_id: item.checklist_id,
+      }),
+    });
+
+    // Validate response
+    if (!response || response.status !== 'success') {
+      throw new Error(response?.message || 'Failed to update description');
+    }
+
+    return response;
+  } catch (error) {
+    // Enhanced error handling
+    if (error instanceof Error) {
+      throw new Error(`Failed to update description: ${error.message}`);
+    }
+    throw new Error('An unexpected error occurred while updating description');
+  }
 }
 
 /**

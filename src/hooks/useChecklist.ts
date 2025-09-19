@@ -148,20 +148,54 @@ export function useChecklistMutations(applicationId: string) {
   const updateItemDescription = useMutation({
     mutationFn: (item: AddDescriptionRequest) =>
       updateDescription(applicationId, item),
+    onMutate: async (newItem) => {
+      // Cancel any outgoing refetches
+      await queryClient.cancelQueries({
+        queryKey: ["checklist", applicationId],
+      });
+
+      // Snapshot the previous value
+      const previousData = queryClient.getQueryData(["checklist", applicationId]);
+      // Optimistically update the cache
+      queryClient.setQueryData(["checklist", applicationId], (old: ChecklistResponse | undefined) => {
+        if (!old?.data) return old;
+
+        return {
+          ...old,
+          data: old.data.map((item: ChecklistItem) =>
+            item.checklist_id === newItem.checklist_id
+              ? { ...item, description: newItem.description }
+              : item
+          ),
+        };
+      });
+
+      // Return a context object with the snapshotted value
+      return { previousData };
+    },
     onSuccess: () => {
+      toast.success("Description updated successfully");
+    },
+    onError: (error: Error, newItem, context) => {
+      // If the mutation fails, use the context returned from onMutate to roll back
+      if (context?.previousData) {
+        queryClient.setQueryData(["checklist", applicationId], context.previousData);
+      }
+      
+      Sentry.captureException(error, {
+        tags: {
+          operation: "update_checklist_description",
+          applicationId,
+          checklistId: newItem.checklist_id,
+        },
+      });
+      toast.error(`Failed to update description: ${error.message}`);
+    },
+    onSettled: () => {
+      // Always refetch after error or success to ensure server state
       queryClient.invalidateQueries({
         queryKey: ["checklist", applicationId],
       });
-      toast.success("Description updated successfully");
-    },
-    onError: (error: Error) => {
-      Sentry.captureException(error, {
-        tags: {
-          operation: "update_checklist_item",
-          applicationId,
-        },
-      });
-      toast.error(`Failed to update checklist description: ${error.message}`);
     },
   });
 
@@ -308,3 +342,4 @@ export function useChecklistMutations(applicationId: string) {
     isBatchDeleting: batchDelete.isPending,
   };
 }
+

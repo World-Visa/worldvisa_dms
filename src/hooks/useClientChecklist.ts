@@ -11,6 +11,7 @@ interface ChecklistApiResponse {
       document_type: string;
       required: boolean;
       company_name?: string;
+      description?: string;
     }>;
   };
 }
@@ -37,7 +38,8 @@ export function useClientChecklist(applicationId: string) {
               document_category: item.document_category,
               document_type: item.document_type,
               required: item.required,
-              company_name: item.company_name
+              company_name: item.company_name,
+              description: item.description
             }))
           };
         }

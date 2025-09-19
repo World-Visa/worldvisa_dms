@@ -36,6 +36,7 @@ interface ChecklistTableItem {
   isSelected?: boolean;
   company_name?: string;
   checklist_id?: string;
+  description?: string;
 }
 
 interface UseDocumentChecklistLogicProps {
