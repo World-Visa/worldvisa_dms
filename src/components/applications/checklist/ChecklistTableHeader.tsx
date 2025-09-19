@@ -1,13 +1,13 @@
 'use client';
 
-import React, { memo } from 'react';
 import { CardHeader, CardTitle } from '@/components/ui/card';
 import { SearchBox } from '@/components/ui/SearchBox';
-import { ChecklistTabs } from './ChecklistTabs';
-import { PendingChangesBanner } from './PendingChangesBanner';
-import { CompanyInfoDisplay } from './CompanyInfoDisplay';
 import { ChecklistDocument, ChecklistState } from '@/types/checklist';
 import { Company } from '@/types/documents';
+import { memo } from 'react';
+import { ChecklistTabs } from './ChecklistTabs';
+import { CompanyInfoDisplay } from './CompanyInfoDisplay';
+import { PendingChangesBanner } from './PendingChangesBanner';
 
 interface ChecklistTableHeaderProps {
   title: string;
@@ -25,6 +25,7 @@ interface ChecklistTableHeaderProps {
   onClearPendingChanges?: () => void;
   onSavePendingChanges?: () => Promise<void>;
   extractedCompanies: Company[];
+  isClientView?: boolean
 }
 
 export const ChecklistTableHeader = memo(function ChecklistTableHeader({
@@ -48,7 +49,7 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
     <CardHeader className="pb-4">
       <div className="flex flex-col gap-4">
         <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
-        
+
         {/* Show tabs for editing mode when not on "All" category */}
         {checklistState === 'editing' && selectedCategory !== 'all' && (
           <ChecklistTabs
@@ -69,7 +70,7 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
             onSavePendingChanges={onSavePendingChanges}
           />
         )}
-        
+
         <div className="w-full flex items-center justify-between gap-4">
           <SearchBox
             value={searchQuery}
@@ -78,7 +79,7 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
             aria-label="Search document checklist"
             className="w-full lg:w-[40%]"
           />
-          
+
           <CompanyInfoDisplay
             selectedCategory={selectedCategory}
             extractedCompanies={extractedCompanies}

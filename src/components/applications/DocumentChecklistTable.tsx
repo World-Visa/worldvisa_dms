@@ -1,34 +1,34 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useEffect, memo } from 'react';
 import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { UploadDocumentsModal } from './UploadDocumentsModal';
-import { DocumentListModal } from './DocumentListModal';
-import { RejectionDetailsSheet } from './RejectionDetailsSheet';
-import { ReuploadDocumentModal } from './ReuploadDocumentModal';
-import { useSearchMemo } from '@/lib/utils/search';
-import { ChecklistTableHeader } from './checklist/ChecklistTableHeader';
-import { ChecklistTableBody } from './checklist/ChecklistTableBody';
 import { useDocumentChecklistLogic } from '@/hooks/useDocumentChecklistLogic';
 import { useReuploadDocument } from '@/hooks/useReuploadDocument';
 import {
-  generateCreatingItems,
-  generateEditingCurrentItems,
-  generateEditingAvailableItems,
-  generateDefaultItems,
-  generateSavedItems,
   filterItemsByCategory,
+  generateCreatingItems,
+  generateDefaultItems,
+  generateEditingAvailableItems,
+  generateEditingCurrentItems,
+  generateSavedItems,
   getCategoryBadgeStyle,
   mapCategoryLabel
 } from '@/lib/checklist/dataProcessing';
+import { useSearchMemo } from '@/lib/utils/search';
+import { Document } from '@/types/applications';
+import type { ChecklistDocument, ChecklistItem, ChecklistState, ChecklistUpdateRequest, DocumentRequirement } from '@/types/checklist';
 import {
   ApiDocument,
   Company,
   DocumentChecklistTableProps
 } from '@/types/documents';
-import { Document } from '@/types/applications';
-import type { ChecklistState, ChecklistDocument, DocumentRequirement, ChecklistUpdateRequest, ChecklistItem } from '@/types/checklist';
+import { memo, useCallback, useEffect, useMemo, useState } from 'react';
+import { ChecklistTableBody } from './checklist/ChecklistTableBody';
+import { ChecklistTableHeader } from './checklist/ChecklistTableHeader';
+import { DocumentListModal } from './DocumentListModal';
+import { RejectionDetailsSheet } from './RejectionDetailsSheet';
+import { ReuploadDocumentModal } from './ReuploadDocumentModal';
+import { UploadDocumentsModal } from './UploadDocumentsModal';
 
 interface DocumentType {
   category: string;
@@ -316,15 +316,15 @@ const DocumentChecklistTableComponent = ({
 
     return documents.filter(doc => {
       if (!doc || !doc.file_name) return false;
-      
+
       let typeMatches = false;
-      
+
       // First, try to match by document_name field (API field) - same logic as dataProcessing.ts
       const docTypeFromName = doc.document_name;
       if (docTypeFromName) {
         const normalizedDocName = docTypeFromName.toLowerCase().replace(/\s+/g, '_');
         const normalizedExpectedType = expectedDocType.toLowerCase();
-        
+
         // Exact match
         if (normalizedDocName === normalizedExpectedType) {
           typeMatches = true;
@@ -334,7 +334,7 @@ const DocumentChecklistTableComponent = ({
           typeMatches = true;
         }
       }
-      
+
       // Fallback: try to match by document_type field
       if (!typeMatches && doc.document_type) {
         const docTypeFromField = doc.document_type;
@@ -342,7 +342,7 @@ const DocumentChecklistTableComponent = ({
           typeMatches = true;
         }
       }
-      
+
       // Fallback: try to match by filename
       if (!typeMatches) {
         const fileName = doc.file_name.toLowerCase();
@@ -384,7 +384,7 @@ const DocumentChecklistTableComponent = ({
     setSelectedReuploadDocument(null);
     setSelectedReuploadDocumentType('');
     setSelectedReuploadDocumentCategory('');
-    
+
     // Refresh the document list modal if it's open to show the reuploaded document
     if (isDocumentListModalOpen && selectedDocumentTypeForView) {
       const latestDocuments = getLatestDocuments(documents || []);
@@ -430,7 +430,7 @@ const DocumentChecklistTableComponent = ({
           queryKey: ['application-documents-all', applicationId],
         });
       }, 50);
-      
+
       return () => clearTimeout(timeoutId);
     }
   }, [documents, applicationId, queryClient]);
@@ -515,6 +515,8 @@ const DocumentChecklistTableComponent = ({
           isDocumentAdded={isDocumentAdded}
           addedDocumentId={addedDocumentId}
           isBatchDeleting={isBatchDeleting}
+          applicationId={applicationId}
+          isClientView={isClientView}
         />
 
         <UploadDocumentsModal
@@ -539,8 +541,8 @@ const DocumentChecklistTableComponent = ({
         onReuploadDocument={handleReuploadClick}
         isClientView={isClientView}
         onDocumentDeleted={() => {
-          queryClient.refetchQueries({ 
-            queryKey: ['application-documents-all', applicationId] 
+          queryClient.refetchQueries({
+            queryKey: ['application-documents-all', applicationId]
           }).then(() => {
             const latestDocuments = getLatestDocuments(documents || []);
             const matchingDocuments = filterDocumentsByType(latestDocuments, selectedDocumentTypeForView, selectedCompanyCategoryForView);

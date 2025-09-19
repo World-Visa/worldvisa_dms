@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo } from 'react';
+import { TablePagination } from '@/components/common/TablePagination';
 import { CardContent } from '@/components/ui/card';
 import {
   Table,
@@ -10,12 +10,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { TablePagination } from '@/components/common/TablePagination';
-import { ChecklistTableRow } from './ChecklistTableRow';
-import { FileText } from 'lucide-react';
-import { ChecklistDocument, ChecklistState, DocumentRequirement } from '@/types/checklist';
-import { Document } from '@/types/applications';
 import { useDocumentCommentCounts } from '@/hooks/useDocumentCommentCounts';
+import { Document } from '@/types/applications';
+import { ChecklistDocument, ChecklistState, DocumentRequirement } from '@/types/checklist';
+import { FileText } from 'lucide-react';
+import { memo } from 'react';
+import { ChecklistTableRow } from './ChecklistTableRow';
 
 interface ChecklistTableItem {
   category: string;
@@ -59,6 +59,8 @@ interface ChecklistTableBodyProps {
   isDocumentAdded: boolean;
   addedDocumentId?: string;
   isBatchDeleting?: boolean;
+  applicationId: string;
+  isClientView?: boolean;
 }
 
 export const ChecklistTableBody = memo(function ChecklistTableBody({
@@ -91,7 +93,9 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
   addingDocumentId,
   isDocumentAdded,
   addedDocumentId,
-  isBatchDeleting = false
+  isBatchDeleting = false,
+  applicationId,
+  isClientView = false,
 }: ChecklistTableBodyProps) {
   const paginatedItems = filteredItems.slice(startIndex, endIndex);
 
@@ -100,7 +104,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
     .filter(item => item.isUploaded && item.uploadedDocument)
     .map(item => (item.uploadedDocument as Document)?._id)
     .filter(Boolean) as string[];
-  
+
   const { data: commentCounts = {} } = useDocumentCommentCounts(documentIds);
 
   return (
@@ -108,7 +112,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
       <div className="space-y-4">
         {/* Search Results Indicator */}
         {searchQuery && (
-          <div 
+          <div
             id="search-results"
             className="text-sm text-muted-foreground"
             role="status"
@@ -125,7 +129,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
             )}
           </div>
         )}
-        
+
         <div className="overflow-x-auto">
           <Table>
             <TableHeader>
@@ -133,6 +137,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                 <TableHead className="w-16">S.No</TableHead>
                 <TableHead className="hidden sm:table-cell">Category</TableHead>
                 <TableHead>Document Name</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead className="hidden md:table-cell">Status</TableHead>
                 <TableHead className="w-20">Comments</TableHead>
                 <TableHead className="text-right w-24">Action</TableHead>
@@ -144,8 +149,8 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                   <TableCell colSpan={6} className="text-center py-8">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">
-                      {selectedCategory === 'submitted' 
-                        ? 'No documents uploaded yet' 
+                      {selectedCategory === 'submitted'
+                        ? 'No documents uploaded yet'
                         : 'No documents in this category'}
                     </p>
                   </TableCell>
@@ -180,6 +185,8 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                     addedDocumentId={addedDocumentId}
                     isBatchDeleting={isBatchDeleting}
                     commentCounts={commentCounts}
+                    applicationId={applicationId}
+                    isClientView={isClientView}
                   />
                 ))
               )}
