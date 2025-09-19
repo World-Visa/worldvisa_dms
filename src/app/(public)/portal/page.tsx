@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { gsap } from 'gsap';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shield, User, ArrowRight } from 'lucide-react';
+import { gsap } from 'gsap';
+import { ArrowRight, Shield, User } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useEffect, useRef } from 'react';
+import loginBackground from '../../../../public/background/login background.png';
 
 export default function PortalPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -33,40 +34,65 @@ export default function PortalPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div 
+    // <div className="h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-100 flex items-center justify-center">
+    // <div className="h-screen bg-gradient-to-br from-green-50 via-teal-50 to-cyan-100 flex items-center justify-center">
+    <div className="h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-sky-100 flex items-center justify-center">
+      {/* <div className="h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 flex items-center justify-center">  */}
+      {/* <div className="h-screen bg-gradient-to-br from-pink-50 via-blue-50 to-green-50 flex items-center justify-center">  */}
+      <div
         ref={containerRef}
-        className="w-full max-w-6xl mx-auto"
+        className="w-full h-full mx-auto flex"
       >
-        <div className="grid lg:grid-cols-2 gap-8 items-center">
-          {/* Left Side - Image with Overlay */}
-          <div 
-            ref={leftRef}
-            className="relative h-96 lg:h-[500px] rounded-2xl overflow-hidden shadow-2xl"
-          >
-            <Image
-              src="https://images.pexels.com/photos/17620435/pexels-photo-17620435.jpeg"
-              alt="WorldVisa DMS"
-              fill
-              className="object-cover"
-              priority
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
-            <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
-              <h1 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight">
-                WorldVisa Document Management System
-              </h1>
-              <p className="text-lg lg:text-xl text-blue-100 font-medium">
-                for PR Visas
-              </p>
+
+        {/* Left Side - Image with Overlay */}
+        <div
+          ref={leftRef}
+          className="relative z-20 w-1/2 h-full rounded-2xl hidden md:block"
+        >
+          <Image
+            src={loginBackground}
+            alt="WorldVisa DMS"
+            fill
+            className="w-full h-full object-cover"
+            priority
+          />
+          <div className=" absolute top-5 left-5 p-2 rounded-2xl 
+                bg-white/70 border border-white/20 
+                backdrop-blur-md shadow-lg">
+            <div className="relative h-12 w-48">
+              <Image
+                src="/logos/world-visa-logo.webp"
+                alt="WorldVisa Logo"
+                fill
+                className="object-contain"
+              />
             </div>
           </div>
+          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
+            <h1 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight">
+              WorldVisa Document Management System
+            </h1>
+            <p className="text-lg lg:text-xl text-blue-100 font-medium">
+              for PR Visas
+            </p>
+          </div>
+        </div>
 
-          {/* Right Side - Portal Selection */}
-          <div 
-            ref={rightRef}
-            className="space-y-6"
-          >
+        {/* Right Side - Portal Selection */}
+        <div
+          ref={rightRef}
+          className="flex w-full md:w-1/2  md:min-w-[480px] items-center justify-center"
+        >
+          <div className='space-y-6 w-[90%] md:min-w-[450px]'>
+            <div className="relative m-auto my-3 h-12 w-48">
+              <Image
+                src="/logos/world-visa-logo.webp"
+                alt="WorldVisa Logo"
+                fill
+                className="object-contain"
+              />
+            </div> 
             <div className="text-center lg:text-left">
               <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
                 Welcome to WorldVisa DMS
@@ -96,7 +122,7 @@ export default function PortalPage() {
                 </CardHeader>
                 <CardContent>
                   <Link href="/admin-login">
-                    <Button 
+                    <Button
                       className="w-full group-hover:bg-blue-600 transition-colors"
                       size="lg"
                     >
@@ -126,7 +152,7 @@ export default function PortalPage() {
                 </CardHeader>
                 <CardContent>
                   <Link href="/client-login">
-                    <Button 
+                    <Button
                       variant="outline"
                       className="w-full border-green-200 text-green-700 hover:bg-green-50 group-hover:border-green-300 transition-colors"
                       size="lg"
@@ -139,19 +165,11 @@ export default function PortalPage() {
               </Card>
             </div>
 
-            {/* Logo */}
-            <div className="flex justify-center lg:justify-start pt-4">
-              <div className="relative h-12 w-48">
-                <Image
-                  src="/logos/world-visa-logo.webp"
-                  alt="WorldVisa Logo"
-                  fill
-                  className="object-contain"
-                />
-              </div>
-            </div>
+
+
           </div>
         </div>
+
       </div>
     </div>
   );
