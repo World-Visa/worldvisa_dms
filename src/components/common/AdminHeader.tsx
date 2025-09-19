@@ -1,7 +1,9 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useChecklistRequestsCount } from '@/hooks/useChecklistRequestsCount';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { LogOut, Menu, X } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
@@ -35,6 +37,11 @@ export function AdminHeader() {
     const navigationTabs = useMemo(() => {
         return getNavigationTabsForRole(user?.role as SupportedRole);
     }, [user?.role]);
+
+    // Get checklist requests count for real-time updates
+    const { data: checklistRequestsCount = 0 } = useChecklistRequestsCount({
+        enabled: !!user && user.role !== 'supervisor', // Only fetch for roles that can see checklist requests
+    });
 
     const handleLogout = useCallback(() => {
         logout();
@@ -202,6 +209,7 @@ export function AdminHeader() {
                         {navigationTabs.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTabId === tab.id;
+                            const showCount = tab.id === 'checklist-requests' && checklistRequestsCount > 0;
 
                             return (
                                 <Link
@@ -217,6 +225,14 @@ export function AdminHeader() {
                                 >
                                     <Icon className={`h-4 w-4 mr-2 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                                     {tab.label}
+                                    {showCount && (
+                                        <Badge 
+                                            variant="secondary" 
+                                            className="ml-2 bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5"
+                                        >
+                                            {checklistRequestsCount}
+                                        </Badge>
+                                    )}
                                 </Link>
                             );
                         })}
@@ -234,6 +250,7 @@ export function AdminHeader() {
                         {navigationTabs.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTabId === tab.id;
+                            const showCount = tab.id === 'checklist-requests' && checklistRequestsCount > 0;
 
                             return (
                                 <div
@@ -254,6 +271,14 @@ export function AdminHeader() {
                                     >
                                         <Icon className={`h-5 w-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                                         {tab.label}
+                                        {showCount && (
+                                            <Badge 
+                                                variant="secondary" 
+                                                className="ml-auto bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5"
+                                            >
+                                                {checklistRequestsCount}
+                                            </Badge>
+                                        )}
                                     </Link>
                                 </div>
                             );

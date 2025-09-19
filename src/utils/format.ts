@@ -1,5 +1,10 @@
 // Date formatting utilities
-export function formatDate(date: string | Date, format: 'short' | 'long' | 'time' = 'short'): string {
+export function formatDate(date: string | Date | null | undefined, format: 'short' | 'long' | 'time' | 'datetime' = 'short'): string {
+  // Handle null/undefined values
+  if (!date) {
+    return 'N/A';
+  }
+  
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   
   if (isNaN(dateObj.getTime())) {
@@ -18,6 +23,13 @@ export function formatDate(date: string | Date, format: 'short' | 'long' | 'time
       day: 'numeric',
     },
     time: {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    },
+    datetime: {
       year: 'numeric',
       month: 'short',
       day: 'numeric',

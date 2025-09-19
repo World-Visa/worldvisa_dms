@@ -1,4 +1,5 @@
 import { fetcher } from '@/lib/fetcher';
+import { API_CONFIG } from '@/lib/config/api';
 
 export interface ChecklistRequestPayload {
   leadId: string;
@@ -28,7 +29,9 @@ export async function requestChecklist(payload: ChecklistRequestPayload): Promis
       throw new Error('checklistRequested must be a boolean value');
     }
 
-    const response = await fetcher<ChecklistRequestResponse>('/zoho_dms/visa_applications/checklist/requested', {
+    const endpoint = API_CONFIG.ENDPOINTS.CLIENT_CHECKLIST_REQUESTS.LIST;
+    
+    const response = await fetcher<ChecklistRequestResponse>(endpoint, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -69,7 +72,9 @@ export async function getChecklistRequestStatus(leadId: string): Promise<boolean
 
     // This would be implemented when the backend supports checking status
     // For now, we'll rely on the application details from the client
-    const response = await fetcher<{ checklistRequested: boolean }>(`/zoho_dms/visa_applications/${leadId}/checklist-status`, {
+    const endpoint = `${API_CONFIG.BASE_URL}/visa_applications/${leadId}/checklist-status`;
+    
+    const response = await fetcher<{ checklistRequested: boolean }>(endpoint, {
       method: 'GET',
     });
 

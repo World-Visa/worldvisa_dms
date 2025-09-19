@@ -1,4 +1,4 @@
-import { FileText, FileCheck } from 'lucide-react';
+import { FileText, FileCheck, ClipboardList } from 'lucide-react';
 
 export interface NavigationTab {
   id: string;
@@ -33,6 +33,12 @@ export const NAVIGATION_ITEMS = {
     href: '/admin/quality-check',
     icon: FileCheck,
   },
+  CHECKLIST_REQUESTS: {
+    id: 'checklist-requests',
+    label: 'Checklist Requests',
+    href: '/admin/checklist-requests',
+    icon: ClipboardList,
+  },
 } as const;
 
 // Define role-based navigation configurations
@@ -42,15 +48,18 @@ export const ROLE_NAVIGATION_CONFIG = {
     NAVIGATION_ITEMS.APPLICATIONS,
     NAVIGATION_ITEMS.REQUESTED_DOCS,
     NAVIGATION_ITEMS.QUALITY_CHECK,
+    NAVIGATION_ITEMS.CHECKLIST_REQUESTS,
   ],
   admin: [
     NAVIGATION_ITEMS.APPLICATIONS,
     NAVIGATION_ITEMS.REQUESTED_DOCS,
+    NAVIGATION_ITEMS.CHECKLIST_REQUESTS,
   ],
   team_leader: [
     NAVIGATION_ITEMS.APPLICATIONS,
     NAVIGATION_ITEMS.REQUESTED_DOCS,
     NAVIGATION_ITEMS.QUALITY_CHECK,
+    NAVIGATION_ITEMS.CHECKLIST_REQUESTS,
   ],
   supervisor: [
     NAVIGATION_ITEMS.APPLICATIONS,

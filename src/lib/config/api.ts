@@ -28,6 +28,20 @@ export const API_CONFIG = {
     // Quality check
     QUALITY_CHECK: `${BASE_URL}/visa_applications/quality_check`,
     
+    // Checklist requests (Admin)
+    CHECKLIST_REQUESTS: {
+      LIST: `${BASE_URL}/visa_applications/checklist/requested`,
+      BY_ID: (leadId: string) => `${BASE_URL}/visa_applications/checklist/requested/${leadId}`,
+      STATUS: (leadId: string) => `${BASE_URL}/visa_applications/${leadId}/checklist-status`,
+    },
+    
+    // Client checklist requests
+    CLIENT_CHECKLIST_REQUESTS: {
+      LIST: `${BASE_URL}/clients/checklist/requested`,
+      BY_ID: (leadId: string) => `${BASE_URL}/clients/checklist/requested/${leadId}`,
+      STATUS: (leadId: string) => `${BASE_URL}/visa_applications/${leadId}/checklist-status`,
+    },
+    
     // User management
     USERS: {
       LIST: `${BASE_URL}/users`,
