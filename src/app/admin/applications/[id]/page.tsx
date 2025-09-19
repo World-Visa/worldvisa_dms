@@ -1,30 +1,30 @@
 "use client";
 
-import React, { useEffect, useMemo } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@/hooks/useAuth';
-import { ApplicantDetails } from '@/components/applications/ApplicantDetails';
-import { DocumentsTable } from '@/components/applications/DocumentsTable';
-import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
-import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
 import { AddCompanyDialog } from '@/components/applications/AddCompanyDialog';
-import { useApplicationDetails } from '@/hooks/useApplicationDetails';
-import { useApplicationDocuments, useAllApplicationDocuments } from '@/hooks/useApplicationDocuments';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { ArrowLeft, RefreshCw, CheckCircle, BadgeCheck } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useState } from 'react';
-import { DocumentCategory, Company } from '@/types/documents';
-import { Document } from '@/types/applications';
-import { localStorageUtils } from '@/lib/localStorage';
-import { useChecklistState } from '@/hooks/useChecklistState';
-import { useChecklistURLState } from '@/lib/urlState';
-import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
-import { useQueryClient } from '@tanstack/react-query';
+import { ApplicantDetails } from '@/components/applications/ApplicantDetails';
+import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
+import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
+import { DocumentsTable } from '@/components/applications/DocumentsTable';
 import { QualityCheckModal } from '@/components/applications/QualityCheckModal';
+import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useApplicationDetails } from '@/hooks/useApplicationDetails';
+import { useAllApplicationDocuments, useApplicationDocuments } from '@/hooks/useApplicationDocuments';
+import { useAuth } from '@/hooks/useAuth';
+import { useChecklistState } from '@/hooks/useChecklistState';
+import { localStorageUtils } from '@/lib/localStorage';
+import { useChecklistURLState } from '@/lib/urlState';
+import { Document } from '@/types/applications';
+import { Company, DocumentCategory } from '@/types/documents';
+import { useQueryClient } from '@tanstack/react-query';
+import { ArrowLeft, BadgeCheck, CheckCircle, RefreshCw } from 'lucide-react';
+import Link from 'next/link';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 
 export default function ApplicationDetailsPage() {
   const params = useParams();
@@ -619,6 +619,7 @@ export default function ApplicationDetailsPage() {
                 onSavePendingChanges={checklistState.savePendingChanges}
                 onClearPendingChanges={checklistState.clearPendingChanges}
                 isBatchDeleting={checklistState.isBatchDeleting}
+                isClientView={false}
               />
             )}
           </div>
