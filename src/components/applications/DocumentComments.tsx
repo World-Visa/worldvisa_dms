@@ -27,13 +27,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
     const connectionState = useRealtimeConnection();
     const deleteCommentMutation = useDeleteComment(documentId);
 
-    // Filter comments for client view - hide "moshin" comments
-    const filteredComments = isClientView 
-        ? comments.filter(comment => 
-            !comment.added_by.toLowerCase().includes('mohsin')
-          )
-        : comments;
-
+   
     const handleCommentAdded = () => {
         // Comment added successfully
     };
@@ -120,7 +114,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
                                     </Card>
                                 ))}
                             </div>
-                        ) : filteredComments.length === 0 ? (
+                        ) : comments.length === 0 ? (
                             <div className="text-center py-8">
                                 <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
                                 <p className="text-gray-500 text-sm">
@@ -137,7 +131,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
                                 </p>
                             </div>
                         ) : (
-                            filteredComments.map((comment) => (
+                            comments.map((comment) => (
                                 <CommentItem
                                     key={comment._id}
                                     comment={comment}
