@@ -24,6 +24,7 @@ import { ClientDocumentsResponse } from '@/types/client';
 import { useClientDeleteDocument } from '@/hooks/useClientDeleteDocument';
 import { CommentIcon } from './CommentIcon';
 import { useDocumentCommentCounts } from '@/hooks/useDocumentCommentCounts';
+import { ReuploadDocumentModal } from './ReuploadDocumentModal';
 
 interface DocumentsTableProps {
     applicationId: string;
@@ -59,6 +60,10 @@ export function DocumentsTable({
     const [documentToDelete, setDocumentToDelete] = useState<{ id: string; name: string } | null>(null);
     const [viewSheetOpen, setViewSheetOpen] = useState(false);
     const [selectedDocument, setSelectedDocument] = useState<ApplicationDocument | null>(null);
+    const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
+    const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<ApplicationDocument | null>(null);
+    const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
+    const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
 
     const deleteDocumentMutation = useDeleteDocument();
     const clientDeleteDocumentMutation = useClientDeleteDocument();
@@ -97,6 +102,27 @@ export function DocumentsTable({
     const handleCloseViewSheet = () => {
         setViewSheetOpen(false);
         setSelectedDocument(null);
+    };
+
+
+    const handleOpenReuploadModal = (documentId: string, documentType: string, category: string) => {
+        const documentToReupload = (documents as ApplicationDocument[])?.find(doc => doc._id === documentId);
+        if (!documentToReupload) {
+            console.error('Document not found for reupload:', documentId);
+            return;
+        }
+
+        setSelectedReuploadDocument(documentToReupload);
+        setSelectedReuploadDocumentType(documentType);
+        setSelectedReuploadDocumentCategory(category);
+        setIsReuploadModalOpen(true);
+    };
+
+    const handleReuploadModalClose = () => {
+        setIsReuploadModalOpen(false);
+        setSelectedReuploadDocument(null);
+        setSelectedReuploadDocumentType('');
+        setSelectedReuploadDocumentCategory('');
     };
 
 
@@ -381,7 +407,15 @@ export function DocumentsTable({
                                             <Button
                                                 variant="outline"
                                                 size="sm"
-                                                onClick={() => handleDeleteDocument(document._id, document.file_name)}
+                                                onClick={() => {
+                                                    if (document.status === 'reviewed') {
+                                                        const documentType = document.document_name || document.document_type || 'Document';
+                                                        const category = document.document_category || 'Other Documents';
+                                                        handleOpenReuploadModal(document._id, documentType, category);
+                                                    } else {
+                                                        handleDeleteDocument(document._id, document.file_name);
+                                                    }
+                                                }}
                                                 disabled={
                                                     isClientView
                                                         ? (clientDeleteDocumentMutation.isPending || document.status === 'approved')
@@ -440,6 +474,16 @@ export function DocumentsTable({
                     isClientView={isClientView}
                 />
             )}
+
+            {/* Reupload Document Modal */}
+            <ReuploadDocumentModal
+                isOpen={isReuploadModalOpen}
+                onClose={handleReuploadModalClose}
+                applicationId={applicationId}
+                document={selectedReuploadDocument}
+                documentType={selectedReuploadDocumentType}
+                category={selectedReuploadDocumentCategory}
+            />
         </>
     );
 }

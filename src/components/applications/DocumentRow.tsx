@@ -16,6 +16,9 @@ interface DocumentRowProps {
   onReupload: (documentId: string) => void;
   isClientView: boolean;
   isDeleting: boolean;
+  onPatchToPending?: (documentId: string) => void;
+  isPatching?: boolean;
+  onOpenReuploadModal?: (documentId: string, documentType: string, category: string) => void;
 }
 
 export function DocumentRow({ 
@@ -24,7 +27,10 @@ export function DocumentRow({
   onDelete, 
   onReupload, 
   isClientView, 
-  isDeleting 
+  isDeleting,
+  onPatchToPending,
+  isPatching = false,
+  onOpenReuploadModal
 }: DocumentRowProps) {
   // Get real-time document data from cache
   const { document: currentDocument } = useDocumentData(document._id);
@@ -93,11 +99,21 @@ export function DocumentRow({
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onDelete(displayDocument._id, displayDocument.file_name)}
+          onClick={() => {
+            if (displayDocument.status === 'reviewed' && onOpenReuploadModal) {
+              const documentType = displayDocument.document_name || displayDocument.document_type || 'Document';
+              const category = displayDocument.document_category || 'Other Documents';
+              onOpenReuploadModal(displayDocument._id, documentType, category);
+            } else if (displayDocument.status === 'reviewed' && onPatchToPending) {
+              onPatchToPending(displayDocument._id);
+            } else {
+              onDelete(displayDocument._id, displayDocument.file_name);
+            }
+          }}
           disabled={
             isClientView 
-              ? (isDeleting || displayDocument.status === 'approved')
-              : isDeleting
+              ? (isDeleting || isPatching || displayDocument.status === 'approved')
+              : (isDeleting || isPatching)
           }
           className="cursor-pointer"
         >
