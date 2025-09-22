@@ -625,6 +625,7 @@ export default function ClientApplicationDetailsPage() {
         document={selectedReuploadDocument}
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}
+        isClientView={true}
       />
     </div>
   );

@@ -577,6 +577,7 @@ export default function ApplicationDetailsPage() {
                 limit={10}
                 onPageChange={handleDocumentsPageChange}
                 onReuploadDocument={handleReuploadDocument}
+                isClientView={false}
               />
             ) : (
               <DocumentChecklistTable
@@ -587,6 +588,7 @@ export default function ApplicationDetailsPage() {
                 selectedCategory={selectedCategory}
                 companies={companies}
                 onRemoveCompany={handleRemoveCompany}
+                isClientView={false}
                 // Checklist props
                 checklistState={checklistState.state}
                 filteredDocuments={checklistState.filteredDocuments}
@@ -619,7 +621,6 @@ export default function ApplicationDetailsPage() {
                 onSavePendingChanges={checklistState.savePendingChanges}
                 onClearPendingChanges={checklistState.clearPendingChanges}
                 isBatchDeleting={checklistState.isBatchDeleting}
-                isClientView={false}
               />
             )}
           </div>
@@ -652,6 +653,7 @@ export default function ApplicationDetailsPage() {
         document={selectedReuploadDocument}
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}
+        isClientView={false}
       />
 
       {/* Quality Check Modal */}

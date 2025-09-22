@@ -12,6 +12,9 @@ import Logo from "../../../public/logos/world-visa-logo.webp";
 import Image from 'next/image';
 import Link from 'next/link';
 import { getNavigationTabsForRole, type SupportedRole } from '@/lib/config/navigation';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { NotificationPanel } from '@/components/notifications/NotificationPanel';
+
 
 // Helper function to get portal title based on role
 const getPortalTitle = (role: string | undefined): string => {
@@ -21,7 +24,7 @@ const getPortalTitle = (role: string | undefined): string => {
         supervisor: '- Supervisor Portal',
         admin: '- Admin Portal',
     };
-    
+
     return roleTitles[role || 'admin'] || '- Admin Portal';
 };
 
@@ -145,7 +148,7 @@ export function AdminHeader() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Top Row - Logo and User Info */}
                 <div className="flex justify-between items-center h-16">
-                    <div className="flex items-center">
+                    <div className="flex items-center space-x-4">
                         <div className='w-[120px] sm:w-[160px] text-center h-[60px] sm:h-[80px]'>
                             <Image
                                 src={Logo}
@@ -163,6 +166,7 @@ export function AdminHeader() {
 
                     {/* Desktop User Info */}
                     <div className="hidden md:flex items-center space-x-4">
+                        <NotificationBell />
                         <span className="text-sm text-gray-600 font-lexend">
                             Welcome, {user?.username || 'Admin'}
                         </span>
@@ -178,7 +182,8 @@ export function AdminHeader() {
                     </div>
 
                     {/* Mobile Menu Button */}
-                    <div className="md:hidden">
+                    <div className="md:hidden flex items-center gap-1">
+                        <NotificationBell />
                         <Button
                             variant="ghost"
                             size="sm"
@@ -226,8 +231,8 @@ export function AdminHeader() {
                                     <Icon className={`h-4 w-4 mr-2 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                                     {tab.label}
                                     {showCount && (
-                                        <Badge 
-                                            variant="secondary" 
+                                        <Badge
+                                            variant="secondary"
                                             className="ml-2 bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5"
                                         >
                                             {checklistRequestsCount}
@@ -272,8 +277,8 @@ export function AdminHeader() {
                                         <Icon className={`h-5 w-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                                         {tab.label}
                                         {showCount && (
-                                            <Badge 
-                                                variant="secondary" 
+                                            <Badge
+                                                variant="secondary"
                                                 className="ml-auto bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5"
                                             >
                                                 {checklistRequestsCount}
@@ -307,6 +312,7 @@ export function AdminHeader() {
                     </div>
                 </div>
             </div>
+            <NotificationPanel />
         </header>
     );
 }

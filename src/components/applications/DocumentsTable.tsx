@@ -483,6 +483,7 @@ export function DocumentsTable({
                 document={selectedReuploadDocument}
                 documentType={selectedReuploadDocumentType}
                 category={selectedReuploadDocumentCategory}
+                isClientView={isClientView}
             />
         </>
     );

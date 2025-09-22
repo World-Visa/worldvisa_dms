@@ -243,6 +243,7 @@ export function DocumentListModal({
         document={selectedReuploadDocument}
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}
+        isClientView={isClientView}
       />
     </Dialog>
   );

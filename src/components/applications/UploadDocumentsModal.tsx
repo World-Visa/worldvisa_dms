@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useAddDocument } from '@/hooks/useMutationsDocuments';
+import { useClientUploadDocument } from '@/hooks/useClientDocumentMutations';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -28,6 +29,7 @@ export function UploadDocumentsModal({
   selectedDocumentCategory: propSelectedDocumentCategory, 
   company,
   documents,
+  isClientView = false,
   onSuccess,
 }: UploadDocumentsModalProps) {
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>(propSelectedDocumentType || '');
@@ -37,6 +39,7 @@ export function UploadDocumentsModal({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addDocumentMutation = useAddDocument();
+  const clientUploadDocumentMutation = useClientUploadDocument();
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -207,16 +210,26 @@ export function UploadDocumentsModal({
         const finalCategory = getDocumentCategory(selectedDocumentType, selectedDocumentCategory);
         
 
-        // Upload all files at once with the new API
-        const uploadResult = await addDocumentMutation.mutateAsync({
-          applicationId,
-          files: uploadedFiles.map(uf => uf.file),
-          document_name: selectedDocumentType,
-          document_category: finalCategory,
-          uploaded_by: user.username,
-          description: finalDescription,
-          document_type: selectedDocumentType.toLowerCase().replace(/\s+/g, '_'), 
-        });
+        // Upload all files at once with the appropriate API
+        const uploadResult = isClientView 
+          ? await clientUploadDocumentMutation.mutateAsync({
+              clientId: applicationId, // Use applicationId as clientId for client uploads
+              files: uploadedFiles.map(uf => uf.file),
+              document_name: selectedDocumentType,
+              document_category: finalCategory,
+              uploaded_by: user.username,
+              description: finalDescription,
+              document_type: selectedDocumentType.toLowerCase().replace(/\s+/g, '_'), 
+            })
+          : await addDocumentMutation.mutateAsync({
+              applicationId,
+              files: uploadedFiles.map(uf => uf.file),
+              document_name: selectedDocumentType,
+              document_category: finalCategory,
+              uploaded_by: user.username,
+              description: finalDescription,
+              document_type: selectedDocumentType.toLowerCase().replace(/\s+/g, '_'), 
+            });
 
         // Complete progress for all files
         setUploadedFiles(prev => 

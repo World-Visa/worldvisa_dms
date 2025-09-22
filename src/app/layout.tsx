@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Lexend } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "sonner";
+import { NotificationProvider } from '@/components/notifications/NotificationProvider';
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -56,10 +57,12 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <Providers>
+          <NotificationProvider>
           {children}
-          <Toaster />
-        </Providers>
-      </body>
-    </html>
+        </NotificationProvider>
+        <Toaster />
+      </Providers>
+    </body>
+    </html >
   );
 }

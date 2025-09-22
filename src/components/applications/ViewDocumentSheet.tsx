@@ -53,20 +53,21 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     const currentDocumentIndex = documents.findIndex(doc => doc._id === document._id);
     const [selectedIndex, setSelectedIndex] = useState(currentDocumentIndex >= 0 ? currentDocumentIndex : 0);
 
-    // Use the custom hook to get real-time document data
-    const { document: currentDoc } = useDocumentData(document._id);
+    // Use the custom hook to get real-time document data for the currently selected document
+    const selectedDocument = documents[selectedIndex] || documents[0];
+    const { document: currentDoc } = useDocumentData(selectedDocument?._id);
     
-    // Fallback to the documents array if not in cache
-    const displayDoc = currentDoc || documents[selectedIndex] || documents[0];
+    // Use the real-time data if available, otherwise fallback to the selected document
+    const displayDoc = currentDoc || selectedDocument;
     
     const queryClient = useQueryClient();
     
     // Ensure the document is cached for real-time updates
     useEffect(() => {
-        if (displayDoc && !currentDoc) {
-            queryClient.setQueryData(['document', displayDoc._id], displayDoc);
+        if (selectedDocument && !currentDoc) {
+            queryClient.setQueryData(['document', selectedDocument._id], selectedDocument);
         }
-    }, [displayDoc, currentDoc, queryClient]);
+    }, [selectedDocument, currentDoc, queryClient]);
     
     // Update selectedIndex when documents array changes (e.g., when a document is deleted)
     useEffect(() => {
@@ -133,7 +134,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                                     <SendDocumentModal
                                         documents={documents}
                                         selectedDocument={displayDoc}
-                                        onSend={(documentIds, notes) => {
+                                        onSend={() => {
                                             // Handle document sending
                                         }}
                                     />

@@ -574,6 +574,7 @@ const DocumentChecklistTableComponent = ({
         document={selectedReuploadDocument}
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}
+        isClientView={isClientView}
       />
     </div>
   );

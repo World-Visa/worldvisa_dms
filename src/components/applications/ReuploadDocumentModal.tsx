@@ -11,6 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useReuploadDocument } from '@/hooks/useReuploadDocument';
+import { useClientReuploadDocument } from '@/hooks/useClientDocumentMutations';
 import { useDocumentData } from '@/hooks/useDocumentData';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
@@ -24,6 +25,7 @@ interface ReuploadDocumentModalProps {
   document: Document | null;
   documentType: string;
   category: string;
+  isClientView?: boolean;
 }
 
 interface UploadedFile {
@@ -38,7 +40,8 @@ export function ReuploadDocumentModal({
   applicationId,
   document,
   documentType,
-  category
+  category,
+  isClientView = false
 }: ReuploadDocumentModalProps) {
   const finalDocumentType = documentType || document?.document_type || 'Document';
   const finalCategory = category || document?.document_category || 'Other Documents';
@@ -46,6 +49,7 @@ export function ReuploadDocumentModal({
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reuploadMutation = useReuploadDocument();
+  const clientReuploadMutation = useClientReuploadDocument();
   const { user } = useAuth();
 
   // Get real-time document data from cache
@@ -161,15 +165,26 @@ export function ReuploadDocumentModal({
       }, 200);
 
       try {
-        // Use the reupload API
-        await reuploadMutation.mutateAsync({
-          applicationId,
-          documentId: displayDocument._id,
-          file: uploadedFile.file,
-          document_name: finalDocumentType,
-          document_category: finalCategory,
-          uploaded_by: user.username,
-        });
+        // Use the appropriate reupload API
+        if (isClientView) {
+          await clientReuploadMutation.mutateAsync({
+            clientId: applicationId, // Use applicationId as clientId for client uploads
+            documentId: displayDocument._id,
+            file: uploadedFile.file,
+            document_name: finalDocumentType,
+            document_category: finalCategory,
+            uploaded_by: user.username,
+          });
+        } else {
+          await reuploadMutation.mutateAsync({
+            applicationId,
+            documentId: displayDocument._id,
+            file: uploadedFile.file,
+            document_name: finalDocumentType,
+            document_category: finalCategory,
+            uploaded_by: user.username,
+          });
+        }
 
         // Complete progress
         setUploadedFile(prev => 
