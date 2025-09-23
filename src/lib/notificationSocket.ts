@@ -56,6 +56,13 @@ export class NotificationSocketManager {
     averageReconnectTime: 0,
   };
 
+  // Track processed notifications to prevent duplicates
+  private processedNotifications = new Set<string>();
+  
+  // Throttle notification:all events to reduce spam
+  private lastNotificationAllTime = 0;
+  private notificationAllThrottleMs = 2000; // Only process once every 2 seconds
+
   constructor() {
     this.setupVisibilityHandling();
     this.setupPerformanceMonitoring();
@@ -80,6 +87,10 @@ export class NotificationSocketManager {
 
     // Use production API URL for WebSocket connection
     const baseUrl = NOTIFICATION_API_BASE_URL;
+    
+    console.log('🔔 Attempting to connect to:', baseUrl);
+    console.log('🔔 Socket path:', NOTIFICATION_ENDPOINTS.SOCKET_PATH);
+    console.log('🔔 Auth token available:', !!token);
     
     try {
       this.socket = io(baseUrl, {
@@ -134,9 +145,82 @@ export class NotificationSocketManager {
     return { ...this.metrics };
   }
 
+  // Force re-subscription of all listeners (useful for debugging)
+  forceResubscribe(): void {
+    if (this.socket && this.socket.connected) {
+      console.log('🔔 Force re-subscribing to', this.listeners.size, 'event types');
+      this.listeners.forEach((callbacks, event) => {
+        console.log(`🔔 Force setting up ${callbacks.size} listeners for event: ${event}`);
+        callbacks.forEach(callback => {
+          this.socket!.on(event, callback);
+        });
+      });
+    } else {
+      console.log('🔔 Cannot force re-subscribe: socket not connected');
+    }
+  }
+
+  // Manually trigger a test notification event (for debugging)
+  triggerTestNotification(): void {
+    if (this.socket && this.socket.connected) {
+      const testNotification = {
+        _id: `test_${Date.now()}`,
+        message: 'Manual test notification',
+        type: 'info',
+        category: 'general',
+        link: null,
+        isRead: false,
+        createdAt: new Date().toISOString(),
+      };
+      
+      
+      // Manually call all registered listeners
+      const callbacks = this.listeners.get('notification:new');
+      if (callbacks) {
+        callbacks.forEach((callback) => {
+          try {
+            callback(testNotification);
+          } catch (error) {
+            console.error('🔔 Error in notification callback:', error);
+          }
+        });
+      } else {
+        console.log('🔔 Manual trigger: No callbacks found for notification:new');
+        console.log('🔔 Manual trigger: Available callbacks:', this.listeners);
+      }
+    } else {
+      console.log('🔔 Cannot trigger test notification: socket not connected');
+    }
+  }
+
   // Enhanced connection utilities
   isConnected(): boolean {
     return this.socket?.connected || false;
+  }
+
+  // Check if a notification is new (not already processed)
+  private isNewNotification(notification: any): boolean {
+    if (!notification || !notification._id) {
+      return false;
+    }
+
+    const notificationId = notification._id;
+    
+    if (this.processedNotifications.has(notificationId)) {
+      return false;
+    }
+
+    // Mark as processed
+    this.processedNotifications.add(notificationId);
+    
+    // Clean up old processed notifications (keep only last 100)
+    if (this.processedNotifications.size > 100) {
+      const notificationsArray = Array.from(this.processedNotifications);
+      const toRemove = notificationsArray.slice(0, notificationsArray.length - 100);
+      toRemove.forEach(id => this.processedNotifications.delete(id));
+    }
+
+    return true;
   }
 
   disconnect(): void {
@@ -179,19 +263,28 @@ export class NotificationSocketManager {
 
   // Enhanced private methods with better type safety
   private subscribe(event: keyof EventMap, callback: EventCallback): () => void {
+    console.log(`🔔 subscribe: Registering listener for event: ${event}`);
     
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)!.add(callback);
+    
+    console.log(`🔔 subscribe: Total listeners for ${event}:`, this.listeners.get(event)!.size);
+    
     // Set up socket listener if connected
-    if (this.socket) {
+    if (this.socket && this.socket.connected) {
       this.socket.on(event, callback);
+      console.log(`🔔 subscribe: Socket listener set up for ${event}`);
     } else {
+      console.log(`🔔 subscribe: Socket not connected, listener will be set up on connection`);
     }
 
     return () => {
+      console.log(`🔔 subscribe: Unsubscribing from event: ${event}`);
+      console.log(`🔔 subscribe: Listeners before unsubscribe:`, this.listeners.get(event)?.size || 0);
       this.listeners.get(event)?.delete(callback);
+      console.log(`🔔 subscribe: Listeners after unsubscribe:`, this.listeners.get(event)?.size || 0);
       if (this.socket) {
         this.socket.off(event, callback);
       }
@@ -205,6 +298,8 @@ export class NotificationSocketManager {
 
 
     this.socket.on('connect', () => {
+      console.log('🔔 Socket connected successfully!');
+      console.log('🔔 Socket ID:', this.socket?.id);
       
       // Clear connection timeout
       if (this.connectionTimeout) {
@@ -225,13 +320,23 @@ export class NotificationSocketManager {
         lastEvent: 'connected'
       });
 
+     
       // Re-subscribe to all events
+      console.log('🔔 Re-subscribing to', this.listeners.size, 'event types');
       this.listeners.forEach((callbacks, event) => {
+        console.log(`🔔 Setting up ${callbacks.size} listeners for event: ${event}`);
         callbacks.forEach(callback => {
           this.socket!.on(event, callback);
         });
       });
 
+      // Force a small delay to ensure all hooks have registered their listeners
+      setTimeout(() => {
+        console.log('🔔 Final listener count:', this.listeners.size, 'event types');
+        this.listeners.forEach((callbacks, event) => {
+          console.log(`🔔 Final count for ${event}: ${callbacks.size} listeners`);
+        });
+      }, 100);
     });
 
     this.socket.on('connect_error', (error: any) => {
@@ -255,25 +360,85 @@ export class NotificationSocketManager {
     });
 
     // Handle message events for metrics
-    this.socket.on('notification:new', () => {
+    this.socket.on('notification:new', (data: any) => {
+      console.log('🔔 Received notification:new event:', data);
+      console.log('🔔 Data type:', typeof data);
+      console.log('🔔 Data keys:', Object.keys(data || {}));
       this.metrics.messagesReceived++;
       this.updateConnectionState({ 
         lastEvent: 'notification:new' 
       });
     });
     
-    this.socket.on('notification:updated', () => {
+    this.socket.on('notification:updated', (data: any) => {
+      console.log('🔔 Received notification:updated event:', data);
       this.metrics.messagesReceived++;
       this.updateConnectionState({ 
         lastEvent: 'notification:updated' 
       });
     });
     
-    this.socket.on('notification:deleted', () => {
+    this.socket.on('notification:deleted', (data: any) => {
+      console.log('🔔 Received notification:deleted event:', data);
       this.metrics.messagesReceived++;
       this.updateConnectionState({ 
         lastEvent: 'notification:deleted' 
       });
+    });
+
+    // Add listeners for common events to debug
+    this.socket.on('message', (data: any) => {
+      console.log('🔔 Received message event:', data);
+    });
+    
+    this.socket.on('notification', (data: any) => {
+      console.log('🔔 Received notification event:', data);
+    });
+
+    // Handle notification:all events (server is sending this instead of notification:new)
+    this.socket.on('notification:all', (data: any) => {
+      const now = Date.now();
+      
+      // Throttle notification:all events to reduce spam
+      if (now - this.lastNotificationAllTime < this.notificationAllThrottleMs) {
+        console.log('🔔 notification:all event throttled (too frequent), skipping');
+        return;
+      }
+      this.lastNotificationAllTime = now;
+      
+      console.log('🔔 Received notification:all event:', data);
+      
+      // Check if data is empty or invalid
+      if (!data || !data.data || !Array.isArray(data.data) || data.data.length === 0) {
+        console.log('🔔 notification:all event has no notifications, skipping');
+        return;
+      }
+      
+      // Process the notification:all event as if it were notification:new
+      // Get the latest notification (first in array)
+      const latestNotification = data.data[0];
+      if (latestNotification) {
+        console.log('🔔 Processing latest notification from notification:all:', latestNotification);
+        
+        // Check if this is a truly new notification (not a duplicate)
+        const isNewNotification = this.isNewNotification(latestNotification);
+        if (isNewNotification) {
+          console.log('🔔 This is a new notification, triggering listeners');
+          // Manually trigger the notification:new listeners
+          const callbacks = this.listeners.get('notification:new');
+          if (callbacks) {
+            callbacks.forEach(callback => {
+              try {
+                callback(latestNotification);
+              } catch (error) {
+                console.error('🔔 Error in notification:all callback:', error);
+              }
+            });
+          }
+        } else {
+          console.log('🔔 This is a duplicate notification, skipping');
+        }
+      }
     });
   }
 
@@ -351,6 +516,7 @@ export class NotificationSocketManager {
       if (process.env.NODE_ENV === 'development') {
         setInterval(() => {
           const metrics = this.getMetrics();
+          console.log('🔔 Notification socket metrics:', metrics);
         }, MONITORING_CONFIG.METRICS_LOG_INTERVAL);
       }
     }

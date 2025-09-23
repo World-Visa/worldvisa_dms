@@ -4,10 +4,19 @@ import { useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { notificationSocket } from '@/lib/notificationSocket';
 import { useNotificationStore } from '@/store/notificationStore';
+import { useNotifications } from '@/hooks/useNotifications';
 
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   const { desktopNotificationsEnabled, soundEnabled } = useNotificationStore();
+  
+  // Initialize the notifications hook to set up event listeners
+  useEffect(() => {
+    console.log('🔔 NotificationProvider: About to call useNotifications hook');
+    // We don't need to call useNotifications here since it's already called in NotificationBell and NotificationPanel
+    // The issue was that calling it here was causing multiple registrations
+    console.log('🔔 NotificationProvider: Skipping useNotifications call to prevent multiple registrations');
+  }, []);
 
   // Initialize notification system when user is authenticated
   useEffect(() => {

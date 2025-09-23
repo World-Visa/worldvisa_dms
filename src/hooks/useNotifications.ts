@@ -29,22 +29,22 @@ const NOTIFICATION_KEYS = {
    unreadCount: () => [...NOTIFICATION_KEYS.all, "unreadCount"] as const,
 } as const;
 
-// Performance optimization: Debounce function
-function useDebounce<T>(value: T, delay: number): T {
-  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+// Performance optimization: Debounce function (currently unused)
+// function useDebounce<T>(value: T, delay: number): T {
+//   const [debouncedValue, setDebouncedValue] = useState<T>(value);
 
-  useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
+//   useEffect(() => {
+//     const handler = setTimeout(() => {
+//       setDebouncedValue(value);
+//     }, delay);
 
-    return () => {
-      clearTimeout(handler);
-    };
-  }, [value, delay]);
+//     return () => {
+//       clearTimeout(handler);
+//     };
+//   }, [value, delay]);
 
-  return debouncedValue;
-}
+//   return debouncedValue;
+// }
 
 /**
  * Enhanced hook for fetching notifications with real-time updates and performance optimizations
@@ -90,20 +90,29 @@ export function useNotifications() {
 
    // Enhanced real-time listeners with better performance
    useEffect(() => {
+      console.log('🔔 useNotifications: Setting up event listeners');
+      console.log('🔔 useNotifications: Hook is running, queryClient:', !!queryClient);
+      
       const unsubscribeNew = notificationSocket.onNotificationNew(
          (newNotification) => {
+            console.log('🔔 useNotifications: Received new notification:', newNotification);
+            console.log('🔔 useNotifications: Callback function called successfully');
+            console.log('🔔 useNotifications: Current cache before update:', queryClient.getQueryData(NOTIFICATION_KEYS.lists()));
             
             queryClient.setQueryData(
                NOTIFICATION_KEYS.lists(),
                (old: Notification[] = []) => {
+                  console.log('🔔 useNotifications: Old cache data:', old);
                   // Prevent duplicates with more efficient check
                   const exists = old.some((n) => n._id === newNotification._id);
                   if (exists) {
+                     console.log('🔔 useNotifications: Notification already exists, skipping');
                      return old;
                   }
 
                   // Add to beginning and limit to prevent memory issues
                   const updated = [newNotification, ...old];
+                  console.log('🔔 useNotifications: Updated cache data:', updated);
                   return updated.slice(0, MONITORING_CONFIG.MAX_NOTIFICATIONS_CACHE);
                }
             );
@@ -111,8 +120,17 @@ export function useNotifications() {
             // Update unread count cache
             queryClient.setQueryData(
                NOTIFICATION_KEYS.unreadCount(),
-               (old: number = 0) => old + 1
+               (old: number = 0) => {
+                  console.log('🔔 useNotifications: Updating unread count from', old, 'to', old + 1);
+                  return old + 1;
+               }
             );
+            
+            console.log('🔔 useNotifications: Cache after update:', queryClient.getQueryData(NOTIFICATION_KEYS.lists()));
+            
+            // Force invalidation to trigger re-render
+            queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.lists() });
+            console.log('🔔 useNotifications: Cache invalidated to trigger re-render');
          }
       );
 
@@ -171,9 +189,14 @@ export function useNotifications() {
       );
 
       return () => {
+         console.log('🔔 useNotifications: Cleaning up event listeners');
+         console.log('🔔 useNotifications: About to unsubscribe from new notifications');
          unsubscribeNew();
+         console.log('🔔 useNotifications: About to unsubscribe from updated notifications');
          unsubscribeUpdated();
+         console.log('🔔 useNotifications: About to unsubscribe from deleted notifications');
          unsubscribeDeleted();
+         console.log('🔔 useNotifications: All event listeners cleaned up');
       };
    }, [queryClient]);
 

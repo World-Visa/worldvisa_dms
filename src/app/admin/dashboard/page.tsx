@@ -3,12 +3,9 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Users, FileText, Settings } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import ManageUsers from "@/components/users/ManageUsers";
 
 export default function AdminDashboard() {
