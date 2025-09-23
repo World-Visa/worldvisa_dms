@@ -3,6 +3,7 @@ export interface VisaApplication {
   Name: string;
   Email: string;
   Phone?: string;
+  Application_Handled_By: string;
   AttachmentCount: number;
   Created_Time?: string;
 }

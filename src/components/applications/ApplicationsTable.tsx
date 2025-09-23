@@ -115,6 +115,7 @@ export const ApplicationsTable = memo(function ApplicationsTable({
                 <TableHead>Applicant Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>Handled By</TableHead>
                 <TableHead>Submitted At</TableHead>
                 <TableHead className="text-center">Attachments</TableHead>
               </TableRow>
@@ -122,7 +123,7 @@ export const ApplicationsTable = memo(function ApplicationsTable({
             <TableBody>
               {displayData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     {isSearchMode ? 'No search results found' : 'No applications found'}
                   </TableCell>
                 </TableRow>
@@ -141,6 +142,11 @@ export const ApplicationsTable = memo(function ApplicationsTable({
                     </TableCell>
                     <TableCell>{application.Email}</TableCell>
                     <TableCell>{application.Phone || 'N/A'}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {application.Application_Handled_By || 'N/A'}
+                      </span>
+                    </TableCell>
                     <TableCell>
                       {application.Created_Time ? formatDate(application.Created_Time, 'time') : 'N/A'}
                     </TableCell>

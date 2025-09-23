@@ -105,13 +105,14 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>Handled By</TableHead>
                 <TableHead className="text-center">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {validRequests.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <FileText className="h-8 w-8 text-gray-400" />
                       <p>No checklist requests found</p>
@@ -139,6 +140,11 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                     </TableCell>
                     <TableCell>
                       {request.Phone}
+                    </TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        {request.Application_Handled_By || 'N/A'}
+                      </span>
                     </TableCell>
                     <TableCell className="text-center">
                       <div className="flex justify-center">
