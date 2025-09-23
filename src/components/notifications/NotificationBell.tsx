@@ -41,7 +41,7 @@ export const NotificationBell = memo<NotificationBellProps>(({ className }) => {
             variant="ghost"
             size="icon"
             onClick={handleClick}
-            className={`relative ${className || ''}`}
+            className={`relative cursor-pointer ${className || ''}`}
             disabled={isConnecting}
           >
             {unreadCount > 0 ? (

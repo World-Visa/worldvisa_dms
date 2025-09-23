@@ -166,15 +166,15 @@ export function AdminHeader() {
 
                     {/* Desktop User Info */}
                     <div className="hidden md:flex items-center space-x-4">
-                        <NotificationBell />
                         <span className="text-sm text-gray-600 font-lexend">
                             Welcome, {user?.username || 'Admin'}
                         </span>
+                        <NotificationBell />
                         <Button
                             variant="outline"
                             size="sm"
                             onClick={handleLogout}
-                            className="flex items-center cursor-pointer hover:bg-gray-50 transition-colors"
+                            className="flex items-center mx-2 cursor-pointer hover:bg-gray-50 transition-colors"
                         >
                             <LogOut className="h-4 w-4 mr-2 text-red-500" />
                             Logout
