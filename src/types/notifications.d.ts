@@ -5,6 +5,7 @@ export interface Notification {
     type: 'info' | 'success' | 'warning' | 'error';
     category: 'general' | 'messages' | 'documents' | 'applications' | 'system';
     link: string | null;
+    leadId?: string;
     isRead: boolean;
     createdAt: string;
   }
@@ -14,6 +15,7 @@ export interface Notification {
     type: 'info' | 'success' | 'warning' | 'error';
     category: 'general' | 'messages' | 'documents' | 'applications' | 'system';
     link?: string;
+    leadId?: string;
   }
   
   export interface NotificationUpdateRequest {
@@ -45,6 +47,7 @@ export interface Notification {
     type: 'info' | 'success' | 'warning' | 'error';
     category: 'general' | 'messages' | 'documents' | 'applications' | 'system';
     link: string | null;
+    leadId?: string;
     isRead: boolean;
     createdAt: string;
   }

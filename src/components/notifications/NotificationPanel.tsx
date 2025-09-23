@@ -1,136 +1,44 @@
-import { useState, memo, useCallback, useMemo } from 'react';
-import { formatDistanceToNow } from 'date-fns';
-import { Check, X, ExternalLink, MoreVertical, RefreshCw, AlertCircle } from 'lucide-react';
-import { useNotifications, useNotificationMutations, useNotificationConnection } from '@/hooks/useNotifications';
+import { memo, useCallback, useEffect, useState, useMemo } from 'react';
+import { Check, X, Bell, Loader2 } from 'lucide-react';
+import { useNotifications, useNotificationMutations } from '@/hooks/useNotifications';
 import { useNotificationStore } from '@/store/notificationStore';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Notification } from '@/types/notifications';
+import { NotificationItem } from './NotificationItem';
 
-// Memoized notification item component for better performance
-const NotificationItem = memo(({ 
-  notification, 
-  onMarkAsRead, 
-  onDelete 
-}: { 
-  notification: Notification; 
-  onMarkAsRead: (id: string) => void; 
-  onDelete: (id: string) => void; 
-}) => {
-  const handleMarkAsRead = useCallback(() => {
-    onMarkAsRead(notification._id);
-  }, [notification._id, onMarkAsRead]);
-
-  const handleDelete = useCallback(() => {
-    onDelete(notification._id);
-  }, [notification._id, onDelete]);
-
-  const handleLinkClick = useCallback(() => {
-    if (notification.link) {
-      window.open(notification.link, '_blank');
-    }
-  }, [notification.link]);
-
-  const getTypeVariant = (type: string) => {
-    switch (type) {
-      case 'error': return 'destructive';
-      case 'warning': return 'secondary';
-      case 'success': return 'default';
-      default: return 'outline';
-    }
-  };
-
-  return (
-    <div
-      className={`p-3 border-b hover:bg-muted/50 transition-colors ${
-        !notification.isRead ? 'bg-blue-50/50 border-l-4 border-l-blue-500' : ''
-      }`}
-    >
-      <div className="flex items-start justify-between">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center space-x-2 mb-1">
-            <Badge 
-              variant={getTypeVariant(notification.type)}
-              className="text-xs"
-            >
-              {notification.type}
-            </Badge>
-            <Badge variant="outline" className="text-xs">
-              {notification.category}
-            </Badge>
-          </div>
-          
-          <p className="text-sm font-medium text-foreground mb-1">
-            {notification.message}
-          </p>
-          
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-muted-foreground">
-              {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-            </span>
-            
-            {notification.link && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={handleLinkClick}
-              >
-                <ExternalLink className="h-3 w-3 mr-1" />
-                View
-              </Button>
-            )}
-          </div>
-        </div>
-        
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="h-6 w-6">
-              <MoreVertical className="h-3 w-3" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {!notification.isRead && (
-              <DropdownMenuItem onClick={handleMarkAsRead}>
-                <Check className="h-3 w-3 mr-2" />
-                Mark as read
-              </DropdownMenuItem>
-            )}
-            <DropdownMenuItem
-              onClick={handleDelete}
-              className="text-destructive"
-            >
-              <X className="h-3 w-3 mr-2" />
-              Delete
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </div>
-  );
-});
-
-NotificationItem.displayName = 'NotificationItem';
 
 export const NotificationPanel = memo(() => {
-  const { 
-    notifications, 
-    isLoading, 
+  const {
+    notifications,
+    isLoading,
+    unreadCount,
   } = useNotifications();
-  
-  const { 
-    updateReadStatus, 
-    deleteNotification, 
+
+  const {
+    updateReadStatus,
+    deleteNotification,
     markAllAsRead,
   } = useNotificationMutations();
-  
-  const { isNotificationPanelOpen, closeNotificationPanel } = useNotificationStore();
-  
+
+  const { isNotificationPanelOpen, closeNotificationPanel, isNavigating } = useNotificationStore();
+
+  // Tab state
+  const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
+
+  // Prevent body scroll when panel is open
+  useEffect(() => {
+    if (isNotificationPanelOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    // Cleanup function to restore scroll when component unmounts
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isNotificationPanelOpen]);
+
   const handleMarkAsRead = useCallback(async (notificationId: string) => {
     try {
       await updateReadStatus({ notificationId, isRead: true });
@@ -154,125 +62,136 @@ export const NotificationPanel = memo(() => {
       console.error('Failed to mark all notifications as read:', error);
     }
   }, [markAllAsRead]);
- 
+
+  // Memoized filtered notifications for better performance
+  const filteredNotifications = useMemo(() => {
+    return activeTab === 'unread'
+      ? notifications.filter(n => !n.isRead)
+      : notifications;
+  }, [notifications, activeTab]);
+
+  // Memoized unread count check
+  const hasUnreadNotifications = useMemo(() => {
+    return notifications.some(n => !n.isRead);
+  }, [notifications]);
+
   if (!isNotificationPanelOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50" onClick={closeNotificationPanel}>
-      <Card 
-        className="absolute right-4 top-16 w-96 max-h-[80vh] shadow-lg"
+    <div
+      className="fixed inset-0 z-50 bg-black/10"
+      onClick={closeNotificationPanel}
+      onWheel={(e) => {
+        e.preventDefault();
+      }}
+    >
+      <Card
+        className="absolute right-4 top-16 w-[420px] max-h-[75vh] shadow-2xl border-0 bg-white rounded-lg"
         onClick={(e) => e.stopPropagation()}
+        onWheel={(e) => {
+          e.stopPropagation();
+        }}
       >
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-lg font-semibold">Notifications</CardTitle>
-          <div className="flex items-center space-x-2">
-            {notifications.some(n => !n.isRead) && (
+        <CardHeader className="px-4 border-b border-gray-200 bg-white">
+          {/* Header with title and actions */}
+          <div className="flex items-center justify-between mb-1">
+            <CardTitle className="text-lg font-semibold text-gray-900">Notifications</CardTitle>
+            <div className="flex items-center space-x-1">
+              {hasUnreadNotifications && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleMarkAllAsRead}
+                  className="text-xs cursor-pointer h-7 px-2 text-gray-600 hover:text-green-600 hover:bg-green-50"
+                >
+                  <Check className="h-3 w-3 mr-1" />
+                  Mark all read
+                </Button>
+              )}
               <Button
-                variant="outline"
-                size="sm"
-                onClick={handleMarkAllAsRead}
-                className="text-xs"
+                variant="ghost"
+                size="icon"
+                onClick={closeNotificationPanel}
+                className="h-7 w-7 cursor-pointer text-gray-400 hover:text-gray-600 hover:bg-gray-100"
               >
-                Mark all read
+                <X className="h-4 w-4" />
               </Button>
-            )}
-            <Button variant="ghost" size="icon" onClick={closeNotificationPanel}>
-              <X className="h-4 w-4" />
-            </Button>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex items-center justify-between">
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setActiveTab('unread')}
+                className={`px-3 py-1.5 cursor-pointer text-sm font-medium rounded-md transition-all duration-200 ${
+                  activeTab === 'unread'
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                Unread {unreadCount}
+              </button>
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`px-3 py-1.5 cursor-pointer text-sm font-medium rounded-md transition-all duration-200 ${
+                  activeTab === 'all'
+                    ? 'bg-gray-900 text-white shadow-sm'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                All {notifications.length}
+              </button>
+            </div>
           </div>
         </CardHeader>
-        
-        <CardContent className="p-0">
-          <ScrollArea className="h-[400px]">
-            {isLoading ? (
-              <div className="p-4 text-center text-muted-foreground">
-                Loading notifications...
+
+        <CardContent className="p-0 bg-white flex-1 overflow-hidden">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-300 mb-4"></div>
+              <p className="text-gray-500 text-sm">Loading notifications...</p>
+            </div>
+          ) : filteredNotifications.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-12 text-center">
+              <div className="rounded-full bg-gray-100 p-6 mb-4">
+                <Bell className="h-8 w-8 text-gray-400" />
               </div>
-            ) : notifications.length === 0 ? (
-              <div className="p-4 text-center text-muted-foreground">
-                No notifications yet
-              </div>
-            ) : (
-              <div className="space-y-1">
-                {notifications.map((notification) => (
-                  <div
+              <h3 className="font-semibold text-base mb-2 text-gray-900">
+                {activeTab === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+              </h3>
+              <p className="text-gray-500 text-sm max-w-xs">
+                {activeTab === 'unread'
+                  ? 'All caught up! No unread notifications.'
+                  : 'You\'ll see new notifications here when they arrive'
+                }
+              </p>
+            </div>
+          ) : (
+            <div className="max-h-[calc(75vh-120px)] overflow-y-auto">
+              <div className="divide-y divide-gray-100">
+                {filteredNotifications.map((notification) => (
+                  <NotificationItem
                     key={notification._id}
-                    className={`p-3 border-b hover:bg-muted/50 transition-colors ${
-                      !notification.isRead ? 'bg-blue-50/50 border-l-4 border-l-blue-500' : ''
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center space-x-2 mb-1">
-                          <Badge 
-                            variant={
-                              notification.type === 'error' ? 'destructive' :
-                              notification.type === 'warning' ? 'secondary' :
-                              notification.type === 'success' ? 'default' : 'outline'
-                            }
-                            className="text-xs"
-                          >
-                            {notification.type}
-                          </Badge>
-                          <Badge variant="outline" className="text-xs">
-                            {notification.category}
-                          </Badge>
-                        </div>
-                        
-                        <p className="text-sm font-medium text-foreground mb-1">
-                          {notification.message}
-                        </p>
-                        
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs text-muted-foreground">
-                            {formatDistanceToNow(new Date(notification.createdAt), { addSuffix: true })}
-                          </span>
-                          
-                          {notification.link && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 px-2 text-xs"
-                              onClick={() => window.open(notification.link!, '_blank')}
-                            >
-                              <ExternalLink className="h-3 w-3 mr-1" />
-                              View
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-6 w-6">
-                            <MoreVertical className="h-3 w-3" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          {!notification.isRead && (
-                            <DropdownMenuItem
-                              onClick={() => handleMarkAsRead(notification._id)}
-                            >
-                              <Check className="h-3 w-3 mr-2" />
-                              Mark as read
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => handleDelete(notification._id)}
-                            className="text-destructive"
-                          >
-                            <X className="h-3 w-3 mr-2" />
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
+                    notification={notification}
+                    onMarkAsRead={handleMarkAsRead}
+                    onDelete={handleDelete}
+                  />
                 ))}
               </div>
-            )}
-          </ScrollArea>
+            </div>
+          )}
         </CardContent>
+        
+        {/* Navigation Loading Overlay */}
+        {isNavigating && (
+          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
+            <div className="flex flex-col items-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+              <p className="text-sm text-gray-600 font-medium">Navigating to application...</p>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

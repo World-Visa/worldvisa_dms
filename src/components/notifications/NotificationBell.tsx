@@ -1,5 +1,5 @@
 import { memo, useCallback } from 'react';
-import { Bell, BellRing, Wifi, WifiOff } from 'lucide-react';
+import { Bell, BellRing } from 'lucide-react';
 import { useNotifications, useNotificationConnection } from '@/hooks/useNotifications';
 import { useNotificationStore } from '@/store/notificationStore';
 import { Button } from '@/components/ui/button';

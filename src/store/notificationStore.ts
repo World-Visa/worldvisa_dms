@@ -6,12 +6,14 @@ interface NotificationStore {
   // UI State
   isNotificationPanelOpen: boolean;
   lastReadTimestamp: string | null;
+  isNavigating: boolean;
   
   // Actions
   toggleNotificationPanel: () => void;
   openNotificationPanel: () => void;
   closeNotificationPanel: () => void;
   updateLastReadTimestamp: (timestamp: string) => void;
+  setNavigating: (isNavigating: boolean) => void;
   
   // Preferences
   soundEnabled: boolean;
@@ -26,6 +28,7 @@ export const useNotificationStore = create<NotificationStore>()(
       // Initial state
       isNotificationPanelOpen: false,
       lastReadTimestamp: null,
+      isNavigating: false,
       soundEnabled: true,
       desktopNotificationsEnabled: false,
 
@@ -46,6 +49,10 @@ export const useNotificationStore = create<NotificationStore>()(
 
       updateLastReadTimestamp: (timestamp: string) => {
         set({ lastReadTimestamp: timestamp });
+      },
+
+      setNavigating: (isNavigating: boolean) => {
+        set({ isNavigating });
       },
 
       setSoundEnabled: (enabled: boolean) => {
