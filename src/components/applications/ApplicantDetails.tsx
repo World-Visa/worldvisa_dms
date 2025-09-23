@@ -205,9 +205,6 @@ export function ApplicantDetails({
     }
   };
 
-  // Debug: Log the application data to see what fields are available
-  console.log("Application data:", application);
-  console.log("Deadline_For_Lodgment:", application.Deadline_For_Lodgment);
 
   return (
     <div className="space-y-6">

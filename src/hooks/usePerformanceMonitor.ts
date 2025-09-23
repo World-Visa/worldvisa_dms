@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
@@ -92,7 +93,6 @@ export function useComponentLifecycle(componentName: string, enabled: boolean = 
       isMounted.current = true;
       
       if (process.env.NODE_ENV === 'development') {
-        console.log(`Component ${componentName} mounted`);
       }
     }
 
@@ -101,7 +101,6 @@ export function useComponentLifecycle(componentName: string, enabled: boolean = 
         const lifecycleTime = performance.now() - mountTime.current;
         
         if (process.env.NODE_ENV === 'development') {
-          console.log(`Component ${componentName} unmounted after ${lifecycleTime.toFixed(2)}ms`);
         }
       }
     };

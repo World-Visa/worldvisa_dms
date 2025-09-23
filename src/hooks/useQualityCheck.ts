@@ -22,9 +22,7 @@ export function useQualityCheck(options: UseQualityCheckOptions = {}) {
       limit?: number; 
     }) => {
       try {
-        console.log('Pushing for quality check with data:', data);
         const response = await pushForQualityCheck(data, page, limit);
-        console.log('Quality check API response:', response);
         return response;
       } catch (error) {
         console.error('Quality check API error:', error);
@@ -34,7 +32,6 @@ export function useQualityCheck(options: UseQualityCheckOptions = {}) {
     
     onSuccess: (response) => {
       try {
-        console.log('Quality check response:', response);
         
         // Check for success response
         if (response.success === true) {

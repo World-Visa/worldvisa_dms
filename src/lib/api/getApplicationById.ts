@@ -48,7 +48,6 @@ export async function updateDeadlineForLodgement(
       body: JSON.stringify(requestBody),
     });
     
-    console.log("API Response:", response);
     return response;
   } catch (error) {
     console.error("API Error:", error);

@@ -64,11 +64,6 @@ export class NotificationSocketManager {
   // Connection management with enhanced error handling
   connect(): void {
     if (this.isConnecting || this.isConnected() || this.isDestroyed) {
-      console.log('🔔 Socket connection skipped:', { 
-        isConnecting: this.isConnecting, 
-        isConnected: this.isConnected(), 
-        isDestroyed: this.isDestroyed 
-      });
       return;
     }
     
@@ -79,7 +74,6 @@ export class NotificationSocketManager {
       return;
     }
 
-    console.log('🔔 Starting socket connection to:', NOTIFICATION_API_BASE_URL);
     this.isConnecting = true;
     this.metrics.connectionAttempts++;
     this.updateConnectionState({ isConnecting: true, error: null });
@@ -97,7 +91,6 @@ export class NotificationSocketManager {
         forceNew: true, // Force new connection
       });
 
-      console.log('🔔 Socket instance created, setting up event listeners...');
 
       // Set connection timeout
       this.connectionTimeout = setTimeout(() => {
@@ -186,7 +179,6 @@ export class NotificationSocketManager {
 
   // Enhanced private methods with better type safety
   private subscribe(event: keyof EventMap, callback: EventCallback): () => void {
-    console.log('🔔 Subscribing to event:', event);
     
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
@@ -194,14 +186,11 @@ export class NotificationSocketManager {
     this.listeners.get(event)!.add(callback);
     // Set up socket listener if connected
     if (this.socket) {
-      console.log('🔔 Socket exists, setting up listener for:', event);
       this.socket.on(event, callback);
     } else {
-      console.log('🔔 Socket not connected yet, callback will be set up on connection');
     }
 
     return () => {
-      console.log('🔔 Unsubscribing from event:', event);
       this.listeners.get(event)?.delete(callback);
       if (this.socket) {
         this.socket.off(event, callback);
@@ -211,14 +200,11 @@ export class NotificationSocketManager {
 
   private setupEventListeners(): void {
     if (!this.socket) {
-      console.log('🔔 No socket instance available for event listeners');
       return;
     }
 
-    console.log('🔔 Setting up socket event listeners...');
 
     this.socket.on('connect', () => {
-      console.log('🔔 Socket connected successfully!');
       
       // Clear connection timeout
       if (this.connectionTimeout) {
@@ -240,15 +226,12 @@ export class NotificationSocketManager {
       });
 
       // Re-subscribe to all events
-      console.log('🔔 Re-subscribing to', this.listeners.size, 'event types');
       this.listeners.forEach((callbacks, event) => {
-        console.log('🔔 Setting up', callbacks.size, 'callbacks for event:', event);
         callbacks.forEach(callback => {
           this.socket!.on(event, callback);
         });
       });
 
-      console.log('🔔 Notification socket connected successfully');
     });
 
     this.socket.on('connect_error', (error: any) => {
@@ -330,7 +313,6 @@ export class NotificationSocketManager {
       }
     }, delay);
 
-    console.log(`🔔 Notification socket: Reconnecting in ${Math.round(delay)}ms`);
   }
 
   private updateConnectionState(updates: Partial<NotificationConnectionState>): void {
@@ -369,7 +351,6 @@ export class NotificationSocketManager {
       if (process.env.NODE_ENV === 'development') {
         setInterval(() => {
           const metrics = this.getMetrics();
-          console.log('🔔 Notification Socket Metrics:', metrics);
         }, MONITORING_CONFIG.METRICS_LOG_INTERVAL);
       }
     }

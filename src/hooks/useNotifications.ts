@@ -92,7 +92,6 @@ export function useNotifications() {
    useEffect(() => {
       const unsubscribeNew = notificationSocket.onNotificationNew(
          (newNotification) => {
-            console.log('🔔 Received new notification via socket:', newNotification);
             
             queryClient.setQueryData(
                NOTIFICATION_KEYS.lists(),
@@ -100,11 +99,9 @@ export function useNotifications() {
                   // Prevent duplicates with more efficient check
                   const exists = old.some((n) => n._id === newNotification._id);
                   if (exists) {
-                     console.log('🔔 Notification already exists, skipping:', newNotification._id);
                      return old;
                   }
 
-                  console.log('🔔 Adding new notification to cache:', newNotification._id);
                   // Add to beginning and limit to prevent memory issues
                   const updated = [newNotification, ...old];
                   return updated.slice(0, MONITORING_CONFIG.MAX_NOTIFICATIONS_CACHE);
@@ -182,19 +179,15 @@ export function useNotifications() {
 
    // Connect to socket when component mounts
    useEffect(() => {
-      console.log('🔔 Connecting to notification socket...');
       notificationSocket.connect();
 
       // Monitor connection state
       const unsubscribeConnection = notificationSocket.onConnectionStateChange((state) => {
-         console.log('🔔 Socket connection state changed:', state);
          
          // If socket connection fails, set up polling as fallback
          if (state.error && !state.isConnected) {
-            console.log('🔔 Socket connection failed, setting up polling fallback...');
             // Poll for new notifications every 30 seconds as fallback
             const pollInterval = setInterval(() => {
-               console.log('🔔 Polling for new notifications...');
                refetch();
             }, 30000);
             

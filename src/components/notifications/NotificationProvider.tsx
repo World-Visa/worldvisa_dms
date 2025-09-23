@@ -12,17 +12,14 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // Initialize notification system when user is authenticated
   useEffect(() => {
     if (isAuthenticated) {
-      console.log('🔔 User authenticated, connecting to notification socket...');
       notificationSocket.connect();
       
       // Request notification permission
       if (desktopNotificationsEnabled && 'Notification' in window) {
         Notification.requestPermission().then(permission => {
-          console.log('🔔 Notification permission:', permission);
         });
       }
     } else {
-      console.log('🔔 User not authenticated, disconnecting notification socket...');
       notificationSocket.disconnect();
     }
   }, [isAuthenticated, desktopNotificationsEnabled]);
@@ -55,13 +52,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   // Set up sound notifications
   useEffect(() => {
     if (!soundEnabled) {
-      console.log('🔔 Sound notifications disabled');
       return;
     }
 
-    console.log('🔔 Setting up sound notifications...');
     const unsubscribeNew = notificationSocket.onNotificationNew((notification) => {
-      console.log('🔔 Playing notification sound for:', notification.message);
       // Play notification sound
       const audio = new Audio('/sound/notification.mp3');
       audio.volume = 0.5; // Set volume to 50%
