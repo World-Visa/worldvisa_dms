@@ -194,7 +194,15 @@ export function RequestedDocumentViewSheet({
                 <div className="flex items-center space-x-2">
                   <Calendar className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-600">
-                    {displayDoc.formattedRequestDate || 'Unknown date'}
+                    {displayDoc.requested_review.requested_at 
+                      ? new Date(displayDoc.requested_review.requested_at).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                          timeZone: 'UTC'
+                        })
+                      : 'Unknown date'
+                    }
                   </span>
                 </div>
                 {displayDoc.isOverdue && (

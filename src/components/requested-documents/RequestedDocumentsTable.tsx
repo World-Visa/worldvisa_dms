@@ -77,6 +77,10 @@ export function RequestedDocumentsTable({
     );
   }
 
+  console.log('Documents:', documents);
+  console.log('First document requested_at:', documents[0]?.requested_review?.requested_at);
+  console.log('Parsed date:', documents[0]?.requested_review?.requested_at ? new Date(documents[0].requested_review.requested_at) : 'No date');
+
     return (
       <>
         <div className="border rounded-lg overflow-hidden">
@@ -155,19 +159,28 @@ export function RequestedDocumentsTable({
                 
                 <TableCell>
                   <div className="text-sm text-gray-900">
-                    {document.requested_review.requested_at ? new Date(document.requested_review.requested_at).toLocaleDateString() : 'Unknown date'}
+                    {document.requested_review.requested_at ? new Date(document.requested_review.requested_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                      timeZone: 'UTC'
+                    }) : 'Unknown date'}
                   </div>
                   <div className="text-xs text-gray-500">
-                    {document.requested_review.requested_by} • {document.requested_review.requested_at ? new Date(document.requested_review.requested_at).toLocaleTimeString() : 'Unknown time'}
+                    {document.requested_review.requested_by} • {document.requested_review.requested_at ? new Date(document.requested_review.requested_at).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      timeZone: 'UTC'
+                    }) : 'Unknown time'}
                   </div>
                 </TableCell>
                 
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    {document.comments.length > 0 && (
+                    {document.requested_review.messages && document.requested_review.messages.length > 0 && (
                       <div className="flex items-center gap-1 text-xs text-gray-500">
                         <MessageSquare className="h-3 w-3" />
-                        {document.comments.length}
+                        {document.requested_review.messages.length}
                       </div>
                     )}
                     
