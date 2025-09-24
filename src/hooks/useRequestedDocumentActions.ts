@@ -11,7 +11,7 @@ import { useAuth } from './useAuth';
 
 // Helper functions for role-based calculations
 function isDocumentOverdue(doc: RequestedDocument, userRole?: string): boolean {
-  const requestDate = new Date(doc.uploaded_at);
+  const requestDate = new Date(doc.requested_review.requested_at);
   const now = new Date();
   const daysDiff = Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60 * 24));
   
@@ -27,7 +27,7 @@ function isDocumentOverdue(doc: RequestedDocument, userRole?: string): boolean {
 }
 
 function getDaysSinceRequest(doc: RequestedDocument): number {
-  const requestDate = new Date(doc.uploaded_at);
+  const requestDate = new Date(doc.requested_review.requested_at);
   const now = new Date();
   return Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60 * 24));
 }
@@ -121,7 +121,7 @@ export function useUpdateDocumentStatus() {
           daysSinceRequest: getDaysSinceRequest(updatedDocument),
           priority: getDocumentPriority(updatedDocument, user?.role),
           formattedUploadDate: new Date(updatedDocument.uploaded_at).toLocaleDateString(),
-          formattedRequestDate: new Date(updatedDocument.uploaded_at).toLocaleDateString(),
+          formattedRequestDate: new Date(updatedDocument.requested_review.requested_at).toLocaleDateString(),
         };
         
         queryClient.setQueryData(['requested-document', documentId], enhancedDocument);
@@ -149,7 +149,7 @@ export function useUpdateDocumentStatus() {
               daysSinceRequest: getDaysSinceRequest(updatedDoc),
               priority: getDocumentPriority(updatedDoc, user?.role),
               formattedUploadDate: new Date(updatedDoc.uploaded_at).toLocaleDateString(),
-              formattedRequestDate: new Date(updatedDoc.uploaded_at).toLocaleDateString(),
+              formattedRequestDate: new Date(updatedDoc.requested_review.requested_at).toLocaleDateString(),
             };
           }
           return doc;
@@ -176,7 +176,7 @@ export function useUpdateDocumentStatus() {
               daysSinceRequest: getDaysSinceRequest(updatedDoc),
               priority: getDocumentPriority(updatedDoc, user?.role),
               formattedUploadDate: new Date(updatedDoc.uploaded_at).toLocaleDateString(),
-              formattedRequestDate: new Date(updatedDoc.uploaded_at).toLocaleDateString(),
+              formattedRequestDate: new Date(updatedDoc.requested_review.requested_at).toLocaleDateString(),
             };
           }
           return doc;
@@ -209,7 +209,7 @@ export function useUpdateDocumentStatus() {
               daysSinceRequest: getDaysSinceRequest(updatedDoc),
               priority: getDocumentPriority(updatedDoc, user?.role),
               formattedUploadDate: new Date(updatedDoc.uploaded_at).toLocaleDateString(),
-              formattedRequestDate: new Date(updatedDoc.uploaded_at).toLocaleDateString(),
+              formattedRequestDate: new Date(updatedDoc.requested_review.requested_at).toLocaleDateString(),
             };
           }
           return doc;

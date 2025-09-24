@@ -67,7 +67,7 @@ export default function RequestedDocsPage() {
         {}
     );
 
-    // Only fetch stats data for the active tab to reduce API calls
+    // Always fetch total counts for all tabs to display correct tab numbers
     const { data: allRequestedToMeData } = useRequestedDocumentsToMe();
     const { data: allMyRequestsData } = useMyRequestedDocuments();
     const { data: allRequestsDataForStats } = useAllRequestedDocuments();
@@ -225,16 +225,16 @@ export default function RequestedDocsPage() {
                             {isMasterAdmin && (
                                 <TabsTrigger value="all-requests" className="flex h-10 items-center gap-2">
                                     <Globe className="h-4 w-4" />
-                                    All Requests ({allRequestsPagination?.totalItems || 0})
+                                    All Requests ({allRequestsDataForStats?.data?.length || 0})
                                 </TabsTrigger>
                             )}
                             <TabsTrigger value="requested-to-me" className="flex h-10 items-center gap-2">
                                 <Eye className="h-4 w-4" />
-                                Requested to Me ({requestedToMePagination?.totalItems || 0})
+                                Requested to Me ({allRequestedToMeData?.data?.length || 0})
                             </TabsTrigger>
                             <TabsTrigger value="my-requests" className="flex h-10 items-center gap-2">
                                 <FileText className="h-4 w-4" />
-                                My Requests ({myRequestsPagination?.totalItems || 0})
+                                My Requests ({allMyRequestsData?.data?.length || 0})
                             </TabsTrigger>
                         </TabsList>
 

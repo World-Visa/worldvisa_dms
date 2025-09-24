@@ -35,7 +35,7 @@ export function useRequestedDocumentsToMe(params: RequestedDocumentsParams = {})
         priority: getDocumentPriority(doc, user?.role),
         // Format dates
         formattedUploadDate: new Date(doc.uploaded_at).toLocaleDateString(),
-        formattedRequestDate: new Date(doc.uploaded_at).toLocaleDateString(), // Use uploaded_at as request date for now
+        formattedRequestDate: new Date(doc.requested_review.requested_at).toLocaleDateString(),
       }));
       
       // Sort documents with overdue first
@@ -93,7 +93,7 @@ export function useMyRequestedDocuments(params: RequestedDocumentsParams = {}) {
         priority: getDocumentPriority(doc, user?.role),
         // Format dates
         formattedUploadDate: new Date(doc.uploaded_at).toLocaleDateString(),
-        formattedRequestDate: new Date(doc.uploaded_at).toLocaleDateString(), // Use uploaded_at as request date for now
+        formattedRequestDate: new Date(doc.requested_review.requested_at).toLocaleDateString(),
       }));
       
       // Sort documents with overdue first
@@ -222,7 +222,7 @@ export function useUpdateRequestedDocumentStatus() {
 
 // Helper functions
 function isDocumentOverdue(doc: RequestedDocument, userRole?: string): boolean {
-  const requestDate = new Date(doc.uploaded_at);
+  const requestDate = new Date(doc.requested_review.requested_at);
   const now = new Date();
   const daysDiff = Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60 * 24));
   
@@ -238,7 +238,7 @@ function isDocumentOverdue(doc: RequestedDocument, userRole?: string): boolean {
 }
 
 function getDaysSinceRequest(doc: RequestedDocument): number {
-  const requestDate = new Date(doc.uploaded_at);
+  const requestDate = new Date(doc.requested_review.requested_at);
   const now = new Date();
   return Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60 * 24));
 }

@@ -34,6 +34,7 @@ export interface RequestedDocument {
     status: 'pending' | 'reviewed';
     _id: string;
     messages: unknown[];
+    requested_at: string;
   };
   requested_reviews?: Array<{
     requested_by: string;
@@ -41,6 +42,7 @@ export interface RequestedDocument {
     status: 'pending' | 'reviewed';
     _id: string;
     messages: unknown[];
+    requested_at: string;
   }>;
   // Computed properties added by the hook
   isOverdue?: boolean;

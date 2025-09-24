@@ -47,7 +47,7 @@ export function SendDocumentModal({
   const adminOptions: MultiSelectOption[] = useMemo(() => {
     if (!adminUsers) return [];
     
-    const allowedRoles = ['team_leader', 'supervisor', 'master_admin'];
+    const allowedRoles = ['team_leader', 'master_admin'];
     
     return adminUsers
       .filter(admin => allowedRoles.includes(admin.role))
