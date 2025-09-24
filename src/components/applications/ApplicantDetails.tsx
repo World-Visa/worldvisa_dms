@@ -543,6 +543,7 @@ export function ApplicantDetails({
         leadId={application.id}
         currentDeadline={application.Deadline_For_Lodgment}
         applicationName={application.Name}
+        recordType={application.Record_Type}
       />
     </div>
   );

@@ -11,6 +11,7 @@ export interface ChecklistRequestItem {
   DMS_Application_Status?: string;
   Deadline_For_Lodgment?: string | null;
   Checklist_Requested: boolean;
+  Record_Type?: string;
 }
 
 export interface ChecklistRequestsResponse {

@@ -1,11 +1,3 @@
-"use client";
-
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import ManageUsers from "@/components/users/ManageUsers";
 
 export default function AdminDashboard() {
@@ -21,14 +13,7 @@ export default function AdminDashboard() {
         </p>
       </div>
 
-      <Card className="my-4">
-        <CardHeader>
-          <CardTitle>Manage Users</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ManageUsers />
-        </CardContent>
-      </Card>
-    </main>
+      <ManageUsers />
+    </main >
   );
 }

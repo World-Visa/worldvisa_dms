@@ -9,12 +9,14 @@ export function useDeadlineUpdate() {
     mutationFn: async ({
       leadId,
       deadlineDate,
+      recordType,
     }: {
       leadId: string;
       deadlineDate: string;
+      recordType: string;
     }) => {
     
-      return updateDeadlineForLodgement(leadId, deadlineDate);
+      return updateDeadlineForLodgement(leadId, deadlineDate, recordType);
     },
     onSuccess: (_, variables) => {
       // Invalidate relevant queries to refresh the data

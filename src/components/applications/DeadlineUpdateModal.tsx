@@ -21,6 +21,7 @@ interface DeadlineUpdateModalProps {
   leadId: string;
   currentDeadline?: string;
   applicationName?: string;
+  recordType?: string;
 }
 
 export function DeadlineUpdateModal({
@@ -29,6 +30,7 @@ export function DeadlineUpdateModal({
   leadId,
   currentDeadline,
   applicationName,
+  recordType = 'default_record_type',
 }: DeadlineUpdateModalProps) {
   const [deadlineDate, setDeadlineDate] = useState("");
   const deadlineUpdate = useDeadlineUpdate();
@@ -65,6 +67,7 @@ export function DeadlineUpdateModal({
       await deadlineUpdate.mutateAsync({
         leadId,
         deadlineDate,
+        recordType,
       });
       onClose();
     } catch (error) {

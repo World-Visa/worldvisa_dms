@@ -108,14 +108,13 @@ export default function UnifiedApplicationDetailsPage({
 
   const application = (applicationData as ApplicationDetailsResponse)?.data || applicationData;
   const documents = documentsData?.data;
-  const allDocuments = allDocumentsData?.data; // All documents for checklist matching
-
-  console.log("applications>>>>>>>>>>>>>>>>>>>>>",application)
+  const allDocuments = allDocumentsData?.data; 
 
   const checklistState = useChecklistState({
     applicationId,
-    documents: allDocuments, // Use all documents for checklist matching
+    documents: allDocuments, 
     companies,
+    recordType: application?.Record_Type,
   });
 
   // Refresh function
@@ -626,6 +625,7 @@ export default function UnifiedApplicationDetailsPage({
           isOpen={isQualityCheckModalOpen}
           onOpenChange={setIsQualityCheckModalOpen}
           disabled={!areAllDocumentsReviewed}
+          recordType={application?.Record_Type}
         />
       )}
     </div>

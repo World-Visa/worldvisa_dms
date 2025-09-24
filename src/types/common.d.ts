@@ -40,6 +40,7 @@ export interface FilterParams {
 export interface QualityCheckRequest {
   reqUserName: string;
   leadId: string;
+  recordType: string;
 }
 
 export interface QualityCheckResponse {

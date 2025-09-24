@@ -16,6 +16,7 @@ interface QualityCheckModalProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   disabled?: boolean;
+  recordType?: string;
 }
 
 export function QualityCheckModal({
@@ -23,7 +24,8 @@ export function QualityCheckModal({
   leadId,
   isOpen,
   onOpenChange,
-  disabled = false
+  disabled = false,
+  recordType = 'default_record_type'
 }: QualityCheckModalProps) {
   const { user } = useAuth();
   const { data: adminUsers, isLoading: isLoadingAdmins, error: adminError } = useAdminUsers();
@@ -61,7 +63,8 @@ export function QualityCheckModal({
       await qualityCheckMutation.mutateAsync({
         data: {
           reqUserName: selectedUser, // Use selected user instead of current user
-          leadId: leadId
+          leadId: leadId,
+          recordType: recordType
         },
         page: 1,
         limit: 10,

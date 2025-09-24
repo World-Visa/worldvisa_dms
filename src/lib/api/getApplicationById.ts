@@ -14,7 +14,8 @@ export async function getApplicationById(
 
 export async function updateApplicationFields(
   leadId: string,
-  fieldsToUpdate: Record<string, unknown>
+  fieldsToUpdate: Record<string, unknown>,
+  recordType: string
 ): Promise<Response> {
   return fetcher<Response>(`${ZOHO_BASE_URL}/visa_applications/update_fields`, {
     method: "PUT",
@@ -23,6 +24,7 @@ export async function updateApplicationFields(
     },
     body: JSON.stringify({
       leadId,
+      recordType,
       fieldsToUpdate,
     }),
   });
@@ -30,10 +32,12 @@ export async function updateApplicationFields(
 
 export async function updateDeadlineForLodgement(
   leadId: string,
-  deadlineDate: string
+  deadlineDate: string,
+  recordType: string
 ): Promise<Response> {
   const requestBody = {
     leadId,
+    recordType,
     fieldsToUpdate: {
       Deadline_For_Lodgment: deadlineDate,
     },
@@ -57,7 +61,8 @@ export async function updateDeadlineForLodgement(
 
 export async function updateChecklistRequested(
   leadId: string,
-  checklistRequested: boolean
+  checklistRequested: boolean,
+  recordType: string
 ): Promise<Response> {
   return fetcher<Response>(`${ZOHO_BASE_URL}/visa_applications/update_fields`, {
     method: "PUT",
@@ -66,6 +71,7 @@ export async function updateChecklistRequested(
     },
     body: JSON.stringify({
       leadId,
+      recordType,
       fieldsToUpdate: {
         Checklist_Requested: checklistRequested,
       },

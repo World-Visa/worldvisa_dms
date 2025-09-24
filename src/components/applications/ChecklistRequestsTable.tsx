@@ -40,18 +40,45 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
     return (currentPage - 1) * limit + index + 1;
   }, [currentPage, limit]);
 
-  const handleRowClick = useCallback((applicationId: string) => {
-    router.push(`/admin/applications/${applicationId}`);
+  const getRecordTypeBadgeVariant = useCallback((recordType?: string) => {
+    switch (recordType) {
+      case 'spouse_skill_assessment':
+        return 'default'; // Blue badge for spouse applications
+      case 'visa_application':
+        return 'secondary'; // Gray badge for regular visa applications
+      default:
+        return 'outline'; // Default outline badge
+    }
+  }, []);
+
+  const getRecordTypeDisplayName = useCallback((recordType?: string) => {
+    switch (recordType) {
+      case 'spouse_skill_assessment':
+        return 'Spouse Assessment';
+      case 'visa_application':
+        return 'Visa Application';
+      default:
+        return recordType || 'Unknown';
+    }
+  }, []);
+
+  const handleRowClick = useCallback((applicationId: string, recordType?: string) => {
+    // Route based on Record_Type
+    if (recordType === 'spouse_skill_assessment') {
+      router.push(`/admin/spouse-skill-assessment-applications/${applicationId}`);
+    } else {
+      router.push(`/admin/applications/${applicationId}`);
+    }
   }, [router]);
 
 
   useEffect(() => {
     if (tableRef.current && requests.length > 0) {
       const rows = tableRef.current.querySelectorAll('tbody tr');
-      
+
       // Set initial state
       gsap.set(rows, { opacity: 0, y: 20 });
-      
+
       // Animate rows in
       gsap.to(rows, {
         opacity: 1,
@@ -105,6 +132,7 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                 <TableHead>Name</TableHead>
                 <TableHead>Email</TableHead>
                 <TableHead>Phone</TableHead>
+                <TableHead>Record Type</TableHead>
                 <TableHead>Handled By</TableHead>
                 <TableHead className="text-center">Actions</TableHead>
               </TableRow>
@@ -112,7 +140,7 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
             <TableBody>
               {validRequests.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                     <div className="flex flex-col items-center gap-2">
                       <FileText className="h-8 w-8 text-gray-400" />
                       <p>No checklist requests found</p>
@@ -124,10 +152,10 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                 </TableRow>
               ) : (
                 validRequests.map((request, index) => (
-                  <TableRow 
-                    key={request.id} 
+                  <TableRow
+                    key={request.id}
                     className='cursor-pointer hover:bg-muted/50 transition-colors'
-                    onClick={() => handleRowClick(request.id)}
+                    onClick={() => handleRowClick(request.id, request.Record_Type)}
                   >
                     <TableCell className="font-medium">
                       {getSerialNumber(index)}
@@ -142,6 +170,14 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                       {request.Phone}
                     </TableCell>
                     <TableCell>
+                      <Badge
+                        variant={getRecordTypeBadgeVariant(request.Record_Type)}
+                        className="text-xs"
+                      >
+                        {getRecordTypeDisplayName(request.Record_Type)}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         {request.Application_Handled_By || 'N/A'}
                       </span>
@@ -153,7 +189,7 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
-                            handleRowClick(request.id);
+                            handleRowClick(request.id, request.Record_Type);
                           }}
                           className="flex items-center gap-2 cursor-pointer"
                         >
