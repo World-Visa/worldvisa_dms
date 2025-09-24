@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Globe, Target, FileText, ChevronDown, ChevronUp } from 'lucide-react';
+import { User, Mail, Globe, Target, FileText, ChevronDown, ChevronUp, Briefcase } from 'lucide-react';
 import { Application } from '@/types/applications';
 import { Button } from '@/components/ui/button';
 
@@ -20,6 +20,21 @@ export function ApplicationDetailsAccordion({
   isOpen,
   onToggle
 }: ApplicationDetailsAccordionProps) {
+
+  const getServiceBadgeVariant = (service: string) => {
+    switch (service?.toLowerCase()) {
+      case "permanent residency":
+        return "default";
+      case "work visa":
+        return "secondary";
+      case "student visa":
+        return "outline";
+      default:
+        return "secondary";
+    }
+  };
+
+  console.log("applicationss>>>>>>>>>>>>", application)
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
@@ -39,7 +54,7 @@ export function ApplicationDetailsAccordion({
           )}
         </Button>
       </CardHeader>
-      
+
       {isOpen && (
         <CardContent className="space-y-3 pt-0">
           {isLoading ? (
@@ -79,12 +94,12 @@ export function ApplicationDetailsAccordion({
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                    <Target className="h-3 w-3" />
-                    Service Type
+                    <FileText className="h-3 w-3" />
+                    Assessing Authority
                   </label>
-                  <Badge variant="secondary" className="text-xs">
-                    {application.Service_Finalized || 'Not provided'}
-                  </Badge>
+                  <p className="text-xs">
+                    {(application.Assessing_Authority || "")}
+                  </p>
                 </div>
               </div>
 
@@ -92,17 +107,26 @@ export function ApplicationDetailsAccordion({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                    <User className="h-3 w-3" />
-                    Handled By
+                    <Target className="h-3 w-3" />
+                    Service Type
                   </label>
-                  <p className="text-sm">{application.Application_Handled_By || 'Not assigned'}</p>
+                  <Badge
+                    variant={getServiceBadgeVariant(
+                      application.Service_Finalized || ""
+                    )}
+                    className="text-xs"
+                  >
+                    {(application.Service_Finalized || "")}
+                  </Badge>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                    <FileText className="h-3 w-3" />
-                    Application ID
+                    <Briefcase className="h-3 w-3" />
+                    Suggested ANZSCO
                   </label>
-                  <p className="text-xs font-mono">{application.id || 'Not available'}</p>
+                  <p className="text-sm">
+                    {(application.Suggested_Anzsco || "")}
+                  </p>
                 </div>
               </div>
             </>
