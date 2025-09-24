@@ -18,6 +18,7 @@ interface ChecklistCategory {
   is_selected: boolean;
   fromDate?: string;
   toDate?: string;
+  isCurrentEmployment?: boolean;
 }
 
 interface ClientDocumentsResponse {
@@ -115,7 +116,8 @@ export function generateChecklistCategories(
       company_name: company.name,
       is_selected: true,
       fromDate: company.fromDate,
-      toDate: company.toDate
+      toDate: company.toDate || undefined,
+      isCurrentEmployment: company.isCurrentEmployment
     });
   });
   
@@ -148,7 +150,8 @@ export function generateChecklistCategories(
         company_name: companyName,
         is_selected: true,
         fromDate: companyData?.fromDate,
-        toDate: companyData?.toDate
+        toDate: companyData?.toDate || undefined,
+        isCurrentEmployment: companyData?.isCurrentEmployment
       });
     }
   });

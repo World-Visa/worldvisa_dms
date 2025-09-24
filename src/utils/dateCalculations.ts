@@ -61,8 +61,57 @@ export const formatDateForDisplay = (dateString: string): string => {
 };
 
 /**
+ * Calculate duration from start date to present (for current employment)
+ * Example: "2 years 1 month"
+ */
+export const calculateDurationToPresent = (fromDate: string): string => {
+  const from = new Date(fromDate.includes('-') && fromDate.split('-').length === 2 ? fromDate + '-01' : fromDate);
+  const to = new Date(); // Current date
+  
+  let years = to.getFullYear() - from.getFullYear();
+  let months = to.getMonth() - from.getMonth();
+  
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+  
+  if (years === 0) {
+    return months === 1 ? '1 month' : `${months} months`;
+  } else if (months === 0) {
+    return years === 1 ? '1 year' : `${years} years`;
+  } else {
+    const yearText = years === 1 ? '1 year' : `${years} years`;
+    const monthText = months === 1 ? '1 month' : `${months} months`;
+    return `${yearText} ${monthText}`;
+  }
+};
+
+/**
+ * Generate description for current employment
+ * Example: "Working at Google since Jul 04, 2023 (2 years 1 month)"
+ */
+export const generateCurrentEmploymentDescription = (companyName: string, fromDate: string): string => {
+  const fromDateFormatted = formatDateForDisplay(fromDate);
+  const duration = calculateDurationToPresent(fromDate);
+  return `Working at ${companyName} since ${fromDateFormatted} (${duration})`;
+};
+
+/**
+ * Generate description for past employment
+ * Example: "Worked at Google from Jul 04, 2023 to Aug 26, 2025 (2 years 1 month)"
+ */
+export const generatePastEmploymentDescription = (companyName: string, fromDate: string, toDate: string): string => {
+  const fromDateFormatted = formatDateForDisplay(fromDate);
+  const toDateFormatted = formatDateForDisplay(toDate);
+  const duration = calculateDuration(fromDate, toDate);
+  return `Worked at ${companyName} from ${fromDateFormatted} to ${toDateFormatted} (${duration})`;
+};
+
+/**
  * Generate a company description with consistent formatting
  * Example: "From Jan 15, 2023 to Dec 20, 2025 (2 years 11 months)"
+ * @deprecated Use generateCurrentEmploymentDescription or generatePastEmploymentDescription instead
  */
 export const generateCompanyDescription = (fromDate: string, toDate: string): string => {
   const fromDateFormatted = formatDateForDisplay(fromDate);

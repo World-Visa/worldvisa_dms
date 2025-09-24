@@ -6,6 +6,7 @@ export interface DocumentCategoryInfo {
   count: number;
   fromDate?: string;
   toDate?: string;
+  isCurrentEmployment?: boolean;
 }
 
 export interface DocumentChecklistItem {
@@ -18,7 +19,8 @@ export interface DocumentChecklistItem {
 export interface Company {
   name: string;
   fromDate: string; // Format: "YYYY-MM-DD"
-  toDate: string;   // Format: "YYYY-MM-DD"
+  toDate: string | null; // Format: "YYYY-MM-DD" or null for current employment
+  isCurrentEmployment: boolean; // true if currently working at this company
   category: string; // Format: "WorldVisa Company Documents"
   description?: string; // Experience description with dates
 }

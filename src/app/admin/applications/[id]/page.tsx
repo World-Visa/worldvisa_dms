@@ -17,12 +17,12 @@ import { useAllApplicationDocuments, useApplicationDocuments } from '@/hooks/use
 import { useAuth } from '@/hooks/useAuth';
 import { useChecklistState } from '@/hooks/useChecklistState';
 import { localStorageUtils } from '@/lib/localStorage';
+import { parseCompaniesFromDocuments } from '@/utils/companyParsing';
 import { useChecklistURLState } from '@/lib/urlState';
 import { Document } from '@/types/applications';
 import { Company, DocumentCategory } from '@/types/documents';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, BadgeCheck, CheckCircle, RefreshCw } from 'lucide-react';
-import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -166,94 +166,8 @@ export default function ApplicationDetailsPage() {
   // Populate companies state from existing documents with company information
   useEffect(() => {
     if (allDocuments && allDocuments.length > 0) {
-      const companyMap = new Map<string, Company>();
-
-      allDocuments.forEach((doc: Document) => {
-        if (
-          doc.document_category &&
-          doc.document_category.includes("Company Documents")
-        ) {
-          // Extract company name from category (e.g., "Google Company Documents" -> "Google")
-          const companyName = doc.document_category
-            .replace(" Company Documents", "")
-            .toLowerCase();
-
-          // Always prioritize API data if description is available
-          if (doc.description) {
-            // Try to extract dates from description (e.g., "Worked at google from Jul 04, 2023 to Aug 26, 2025 (2 years 1 month)")
-            const dateMatch = doc.description.match(
-              /from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i
-            );
-            if (dateMatch) {
-              const fromDateStr = dateMatch[1]; // "Jul 04, 2023"
-              const toDateStr = dateMatch[2]; // "Aug 26, 2025"
-
-              try {
-                // Convert to YYYY-MM-DD format without timezone issues
-                const fromDateObj = new Date(fromDateStr);
-                const toDateObj = new Date(toDateStr);
-
-                // Format as YYYY-MM-DD without timezone conversion
-                const fromDate = `${fromDateObj.getFullYear()}-${String(
-                  fromDateObj.getMonth() + 1
-                ).padStart(2, "0")}-${String(fromDateObj.getDate()).padStart(
-                  2,
-                  "0"
-                )}`;
-                const toDate = `${toDateObj.getFullYear()}-${String(
-                  toDateObj.getMonth() + 1
-                ).padStart(2, "0")}-${String(toDateObj.getDate()).padStart(
-                  2,
-                  "0"
-                )}`;
-
-                companyMap.set(companyName, {
-                  name: companyName,
-                  category: doc.document_category,
-                  fromDate: fromDate,
-                  toDate: toDate,
-                  description: doc.description,
-                });
-              } catch (error) {
-                console.error(
-                  "Error parsing dates from API description:",
-                  error
-                );
-                // Fallback: still add the company with default dates
-                companyMap.set(companyName, {
-                  name: companyName,
-                  category: doc.document_category,
-                  fromDate: "2024-01-01",
-                  toDate: "2025-12-31",
-                  description: doc.description || "",
-                });
-              }
-            } else {
-              // If no date match found, still save the company with default dates
-              companyMap.set(companyName, {
-                name: companyName,
-                category: doc.document_category,
-                fromDate: "2024-01-01",
-                toDate: "2025-12-31",
-                description: doc.description || "",
-              });
-            }
-          } else {
-            // If API has a company document but no description, still save the company so the chip persists
-            companyMap.set(companyName, {
-              name: companyName,
-              category: doc.document_category,
-              fromDate: "2024-01-01",
-              toDate: "2025-12-31",
-              description: doc.description || "",
-            });
-          }
-        }
-      });
-
-      // Update companies state with API data if available
-      if (companyMap.size > 0) {
-        setCompanies(Array.from(companyMap.values()));
+      const parsedCompanies = parseCompaniesFromDocuments(allDocuments);      if (parsedCompanies.length > 0) {
+        setCompanies(parsedCompanies);
       }
     }
   }, [allDocuments]);

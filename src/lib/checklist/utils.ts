@@ -171,7 +171,7 @@ export function filterDocumentsByCategories(
  */
 export function generateChecklistCategories(
   checklistItems: ChecklistItem[],
-  companies: { name: string; category: string; fromDate?: string; toDate?: string }[] = [],
+  companies: { name: string; category: string; fromDate?: string; toDate?: string; isCurrentEmployment?: boolean }[] = [],
   uploadedDocuments: { document_category?: string }[] = []
 ): ChecklistCategory[] {
   const categoryMap = new Map<string, ChecklistCategory>();
@@ -262,7 +262,8 @@ export function generateChecklistCategories(
       company_name: companyName,
       is_selected: true,
       fromDate: companyData?.fromDate,
-      toDate: companyData?.toDate
+      toDate: companyData?.toDate,
+      isCurrentEmployment: companyData?.isCurrentEmployment
     });
   });
   
@@ -294,7 +295,8 @@ export function generateChecklistCategories(
       company_name: company.name,
       is_selected: true,
       fromDate: company.fromDate,
-      toDate: company.toDate
+      toDate: company.toDate,
+      isCurrentEmployment: company.isCurrentEmployment
     });
   });
   

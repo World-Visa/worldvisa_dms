@@ -9,7 +9,6 @@ import { DocumentCategoryFilter } from "@/components/applications/DocumentCatego
 import { RequestChecklistCard } from "@/components/applications/RequestChecklistCard";
 import { ChecklistRequestSuccessCard } from "@/components/applications/ChecklistRequestSuccessCard";
 import { DocumentCategory, Company } from "@/types/documents";
-import { ClientDocument } from "@/types/client";
 import { Document } from "@/types/applications";
 import { useClientApplication } from "@/hooks/useClientApplication";
 import {
@@ -27,6 +26,7 @@ import Link from "next/link";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
 import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
 import { generateChecklistCategories } from "@/lib/checklist/categoryUtils";
+import { parseCompaniesFromDocuments } from '@/utils/companyParsing';
 
 export default function ClientApplicationDetailsPage() {
   const params = useParams();
@@ -113,93 +113,11 @@ export default function ClientApplicationDetailsPage() {
       allDocumentsData?.data?.documents &&
       allDocumentsData.data.documents.length > 0
     ) {
-      const companyMap = new Map<string, Company>();
-
-      allDocumentsData.data.documents.forEach((doc: ClientDocument) => {
-        if (
-          doc.document_category &&
-          doc.document_category.includes("Company Documents")
-        ) {
-          // Extract company name from category (e.g., "Microsoft Company Documents" -> "Microsoft")
-          const companyName = doc.document_category
-            .replace(" Company Documents", "")
-            .toLowerCase();
-
-          // Always prioritize API data if description is available
-          if (doc.description) {
-            // Try to extract dates from description (e.g., "Worked at worldvisa from Aug 06, 2024 to Jul 24, 2025 (11 months)")
-            const dateMatch = doc.description.match(
-              /from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i
-            );
-            if (dateMatch) {
-              const fromDateStr = dateMatch[1]; // "Aug 06, 2024"
-              const toDateStr = dateMatch[2]; // "Jul 24, 2025"
-
-              try {
-                // Convert to YYYY-MM-DD format without timezone issues
-                const fromDateObj = new Date(fromDateStr);
-                const toDateObj = new Date(toDateStr);
-
-                // Format as YYYY-MM-DD without timezone conversion
-                const fromDate = `${fromDateObj.getFullYear()}-${String(
-                  fromDateObj.getMonth() + 1
-                ).padStart(2, "0")}-${String(fromDateObj.getDate()).padStart(
-                  2,
-                  "0"
-                )}`;
-                const toDate = `${toDateObj.getFullYear()}-${String(
-                  toDateObj.getMonth() + 1
-                ).padStart(2, "0")}-${String(toDateObj.getDate()).padStart(
-                  2,
-                  "0"
-                )}`;
-
-                companyMap.set(companyName, {
-                  name: companyName,
-                  category: doc.document_category,
-                  fromDate: fromDate,
-                  toDate: toDate,
-                  description: doc.description,
-                });
-              } catch (error) {
-                console.error(
-                  "Error parsing dates from API description:",
-                  error
-                );
-                companyMap.set(companyName, {
-                  name: companyName,
-                  category: doc.document_category,
-                  fromDate: "2024-01-01",
-                  toDate: "2025-12-31",
-                  description: doc.description || "",
-                });
-              }
-            } else {
-              // If no date match found, still save the company with default dates
-              companyMap.set(companyName, {
-                name: companyName,
-                category: doc.document_category,
-                fromDate: "2024-01-01",
-                toDate: "2025-12-31",
-                description: doc.description || "",
-              });
-            }
-          } else {
-            // If API has a company document but no description, still save the company so the chip persists
-            companyMap.set(companyName, {
-              name: companyName,
-              category: doc.document_category,
-              fromDate: "2024-01-01",
-              toDate: "2025-12-31",
-              description: doc.description || "",
-            });
-          }
-        }
-      });
-
-      // Update companies state with API data if available
-      if (companyMap.size > 0) {
-        setCompanies(Array.from(companyMap.values()));
+      const parsedCompanies = parseCompaniesFromDocuments(allDocumentsData.data.documents);
+      
+      // Update companies state with parsed data
+      if (parsedCompanies.length > 0) {
+        setCompanies(parsedCompanies);
       }
     }
   }, [allDocumentsData?.data?.documents]);
@@ -232,66 +150,7 @@ export default function ClientApplicationDetailsPage() {
     }
 
     if (companyCategories.size > 0) {
-      return Array.from(companyCategories).map((category) => {
-        // Extract company name from category (e.g., "worldvisa Company Documents" -> "worldvisa")
-        const companyName = category.split(" ")[0].toLowerCase();
-
-        // Try to find a document with description for this company to extract dates
-        let description = "";
-        let fromDate = "2024-01-01"; // Default fallback dates
-        let toDate = "2025-12-31";
-
-        if (
-          allDocumentsData?.data?.documents &&
-          allDocumentsData.data.documents.length > 0
-        ) {
-          const companyDoc = allDocumentsData.data.documents.find(
-            (doc: ClientDocument) =>
-              doc.document_category === category && doc.description
-          );
-
-          if (companyDoc && companyDoc.description) {
-            description = companyDoc.description;
-
-            // Try to extract dates from description
-            const dateMatch = companyDoc.description.match(
-              /from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i
-            );
-            if (dateMatch) {
-              const fromDateStr = dateMatch[1];
-              const toDateStr = dateMatch[2];
-
-              try {
-                const fromDateObj = new Date(fromDateStr);
-                const toDateObj = new Date(toDateStr);
-
-                fromDate = `${fromDateObj.getFullYear()}-${String(
-                  fromDateObj.getMonth() + 1
-                ).padStart(2, "0")}-${String(fromDateObj.getDate()).padStart(
-                  2,
-                  "0"
-                )}`;
-                toDate = `${toDateObj.getFullYear()}-${String(
-                  toDateObj.getMonth() + 1
-                ).padStart(2, "0")}-${String(toDateObj.getDate()).padStart(
-                  2,
-                  "0"
-                )}`;
-              } catch {
-                // Failed to parse dates, using defaults
-              }
-            }
-          }
-        }
-
-        return {
-          name: companyName,
-          category: category,
-          fromDate: fromDate,
-          toDate: toDate,
-          description: description,
-        };
-      });
+      return parseCompaniesFromDocuments(allDocumentsData?.data?.documents || []);
     }
 
     return [];

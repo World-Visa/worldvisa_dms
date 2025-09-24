@@ -18,7 +18,11 @@ import { toast } from 'sonner';
 import { Upload, X, FileText, File } from 'lucide-react';
 import Image from 'next/image';
 import { UploadDocumentsModalProps, UploadedFile, ApiDocument } from '@/types/documents';
-import { generateCompanyDescription } from '@/utils/dateCalculations';
+import { 
+  generateCompanyDescription, 
+  generateCurrentEmploymentDescription, 
+  generatePastEmploymentDescription 
+} from '@/utils/dateCalculations';
 
 
 export function UploadDocumentsModal({ 
@@ -62,7 +66,7 @@ export function UploadDocumentsModal({
       if (!autoDescription && selectedDocumentCategory.includes('Documents') && 
           !['Identity Documents', 'Education Documents', 'Other Documents', 'Self Employment/Freelance'].includes(selectedDocumentCategory) && 
           company) {
-        autoDescription = generateCompanyDescription(company.fromDate, company.toDate);
+        autoDescription = generateCompanyDescription(company.fromDate, company.toDate || '2025-12-31');
       }
       
       if (autoDescription) {
@@ -387,9 +391,15 @@ export function UploadDocumentsModal({
         return company.description;
       }
       
-      // Fallback to generating from company data (for backward compatibility)
-      const description = generateCompanyDescription(company.fromDate, company.toDate);
-      return description;
+      // Generate appropriate description based on employment type
+      if (company.isCurrentEmployment) {
+        return generateCurrentEmploymentDescription(company.name, company.fromDate);
+      } else if (company.toDate) {
+        return generatePastEmploymentDescription(company.name, company.fromDate, company.toDate);
+      } else {
+        // Fallback to legacy format
+        return generateCompanyDescription(company.fromDate, company.toDate || '2025-12-31');
+      }
     }
     
     return '';

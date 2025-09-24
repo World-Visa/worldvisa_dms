@@ -65,7 +65,8 @@ function generateClientCategories(
         label: cat.label,
         count: cat.count,
         fromDate: cat.fromDate,
-        toDate: cat.toDate
+        toDate: cat.toDate,
+        isCurrentEmployment: cat.isCurrentEmployment
       });
     }
   });
@@ -106,7 +107,8 @@ function generateAdminCategories(
             label: cat.label,
             count: cat.count,
             fromDate: cat.fromDate,
-            toDate: cat.toDate
+            toDate: cat.toDate,
+            isCurrentEmployment: cat.isCurrentEmployment
           });
         }
       });

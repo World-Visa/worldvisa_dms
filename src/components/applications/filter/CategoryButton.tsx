@@ -4,7 +4,8 @@ import React, { memo } from 'react';
 import { cn } from '@/lib/utils';
 import { X } from 'lucide-react';
 import { DocumentCategoryInfo } from '@/types/documents';
-import { formatDateRange } from '@/utils/dateFormat';
+import { formatDateRange, formatDate } from '@/utils/dateFormat';
+import { Badge } from '@/components/ui/badge';
 
 interface CategoryButtonProps {
   category: DocumentCategoryInfo;
@@ -55,16 +56,30 @@ export const CategoryButton = memo(function CategoryButton({
       >
         <div className="flex items-center gap-2">
           <span className="whitespace-nowrap">{category.label}</span>
+          {/* Show current employment badge */}
+          {category.isCurrentEmployment && (
+            <Badge 
+              variant="secondary" 
+              className="bg-green-500 text-white text-xs px-1.5 py-0.5"
+            >
+              Current
+            </Badge>
+          )}
         </div>
         {/* Show date range for any chip that has date information */}
-        {category.fromDate && category.toDate && (
+        {category.fromDate && (
           <div className={cn(
             'text-xs font-normal',
             selectedCategory === category.id
               ? 'text-white/80'
               : 'text-gray-500'
           )}>
-            {formatDateRange(category.fromDate, category.toDate)}
+            {category.isCurrentEmployment 
+              ? `Since ${formatDate(category.fromDate)} - Present`
+              : category.toDate 
+                ? formatDateRange(category.fromDate, category.toDate)
+                : `From ${formatDate(category.fromDate)}`
+            }
           </div>
         )}
       </button>

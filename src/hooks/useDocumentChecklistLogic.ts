@@ -10,6 +10,7 @@ import {
 import { 
   Company,
 } from '@/types/documents';
+import { parseCompaniesFromDocuments } from '@/utils/companyParsing';
 import { Document } from '@/types/applications';
 import type { 
   ChecklistState, 
@@ -176,46 +177,7 @@ export function useDocumentChecklistLogic({
     
     // Fallback: generate companies from document categories (for backward compatibility)
     if (companyCategories.size > 0) {
-      return Array.from(companyCategories).map(category => {
-        const companyName = category.split(' ')[0].toLowerCase();
-        
-        // Try to find a document with description for this company to extract dates
-        let description = '';
-        let fromDate = "2024-01-01"; // Default fallback dates
-        let toDate = "2025-12-31";
-        
-        if (documents && documents.length > 0) {
-          const companyDoc = documents.find(doc => 
-            doc.document_category === category && doc.description
-          );
-          
-          if (companyDoc && companyDoc.description) {
-            description = companyDoc.description;
-            
-            // Try to extract dates from description
-            const dateMatch = companyDoc.description.match(/from\s+(\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})/i);
-            if (dateMatch) {
-              const fromDateStr = dateMatch[1];
-              const toDateStr = dateMatch[2];
-              
-              try {
-                fromDate = new Date(fromDateStr).toISOString().split('T')[0];
-                toDate = new Date(toDateStr).toISOString().split('T')[0];
-              } catch {
-                // Failed to parse dates, using defaults
-              }
-            }
-          }
-        }
-        
-        return {
-          name: companyName,
-          category: category,
-          fromDate: fromDate,
-          toDate: toDate,
-          description: description
-        };
-      });
+      return parseCompaniesFromDocuments(documents || []);
     }
     
     // If no companies and no documents, return empty array

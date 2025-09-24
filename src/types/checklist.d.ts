@@ -55,6 +55,7 @@ export interface ChecklistCategory {
   is_selected?: boolean;
   fromDate?: string;
   toDate?: string;
+  isCurrentEmployment?: boolean;
 }
 
 export interface ChecklistDocument {

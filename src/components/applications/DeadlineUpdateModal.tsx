@@ -39,7 +39,11 @@ export function DeadlineUpdateModal({
       // Convert the deadline to YYYY-MM-DD format for the date input
       try {
         const date = new Date(currentDeadline);
-        const formattedDate = date.toISOString().split('T')[0];
+        // Use local date components to avoid timezone conversion issues
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const formattedDate = `${year}-${month}-${day}`;
         setDeadlineDate(formattedDate);
       } catch (error) {
         console.error("Error parsing current deadline:", error);

@@ -18,10 +18,14 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover';
 import { toast } from 'sonner';
-import { Building2, CalendarIcon } from 'lucide-react';
+import { Building2, CalendarIcon, Check } from 'lucide-react';
 import { Company } from '@/types/documents';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { 
+  generateCurrentEmploymentDescription, 
+  generatePastEmploymentDescription 
+} from '@/utils/dateCalculations';
 
 interface AddCompanyDialogProps {
   isOpen: boolean;
@@ -41,11 +45,28 @@ export function AddCompanyDialog({
   const [companyName, setCompanyName] = useState('');
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
   const [toDate, setToDate] = useState<Date | undefined>(undefined);
+    const [isCurrentEmployment, setIsCurrentEmployment] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Function to calculate experience duration
+  // Function to calculate experience duration (for past employment)
   const calculateExperience = (from: Date, to: Date): string => {
     const diffInMonths = (to.getFullYear() - from.getFullYear()) * 12 + (to.getMonth() - from.getMonth());
+    const years = Math.floor(diffInMonths / 12);
+    const months = diffInMonths % 12;
+    
+    if (years > 0 && months > 0) {
+      return `${years} year${years > 1 ? 's' : ''} ${months} month${months > 1 ? 's' : ''}`;
+    } else if (years > 0) {
+      return `${years} year${years > 1 ? 's' : ''}`;
+    } else {
+      return `${months} month${months > 1 ? 's' : ''}`;
+    }
+  };
+
+  // Function to calculate current employment duration
+  const calculateCurrentExperience = (from: Date): string => {
+    const now = new Date();
+    const diffInMonths = (now.getFullYear() - from.getFullYear()) * 12 + (now.getMonth() - from.getMonth());
     const years = Math.floor(diffInMonths / 12);
     const months = diffInMonths % 12;
     
@@ -81,14 +102,17 @@ export function AddCompanyDialog({
       return;
     }
 
-    if (!toDate) {
-      toast.error('Please select an end date');
-      return;
-    }
+    // Only validate end date if not current employment
+    if (!isCurrentEmployment) {
+      if (!toDate) {
+        toast.error('Please select an end date');
+        return;
+      }
 
-    if (fromDate >= toDate) {
-      toast.error('Start date must be before end date');
-      return;
+      if (fromDate >= toDate) {
+        toast.error('Start date must be before end date');
+        return;
+      }
     }
 
     if (existingCompanies.some(company => company.name.toLowerCase() === companyName.trim().toLowerCase())) {
@@ -104,26 +128,32 @@ export function AddCompanyDialog({
     setIsSubmitting(true);
     
     try {
-      const experienceDuration = calculateExperience(fromDate, toDate);
       const fromDateStr = formatDateForAPI(fromDate);
-      const toDateStr = formatDateForAPI(toDate);
+      const toDateStr = isCurrentEmployment ? null : formatDateForAPI(toDate!);
       
       // Normalize company name to lowercase for consistent matching
       const normalizedCompanyName = companyName.trim().toLowerCase();
       const displayCompanyName = companyName.trim(); // Keep original case for display
       
+      // Generate appropriate description based on employment type
+      const description = isCurrentEmployment
+        ? generateCurrentEmploymentDescription(displayCompanyName, fromDateStr)
+        : generatePastEmploymentDescription(displayCompanyName, fromDateStr, toDateStr!);
+      
       const newCompany: Company = {
         name: normalizedCompanyName, // Store as lowercase for consistent matching
         fromDate: fromDateStr,
         toDate: toDateStr,
+        isCurrentEmployment: isCurrentEmployment,
         category: `${displayCompanyName} Company Documents`, // Use original case for category display
-        description: `Worked at ${displayCompanyName} from ${format(fromDate, 'MMM dd, yyyy')} to ${format(toDate, 'MMM dd, yyyy')} (${experienceDuration})` // Keep original case in description
+        description: description
       };
       
       await onAddCompany(newCompany);
       setCompanyName('');
       setFromDate(undefined);
       setToDate(undefined);
+      setIsCurrentEmployment(false);
       onClose();
       toast.success(`Company "${displayCompanyName}" added successfully!`);
     } catch {
@@ -138,6 +168,7 @@ export function AddCompanyDialog({
       setCompanyName('');
       setFromDate(undefined);
       setToDate(undefined);
+      setIsCurrentEmployment(false);
       onClose();
     }
   };
@@ -165,6 +196,29 @@ export function AddCompanyDialog({
               className="w-full border h-11 border-gray-200 rounded-lg"
               maxLength={50}
             />
+          </div>
+
+          {/* Current Employment Checkbox */}
+          <div className="flex items-center space-x-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="isCurrentEmployment"
+                checked={isCurrentEmployment}
+                onChange={(e) => setIsCurrentEmployment(e.target.checked)}
+                disabled={isSubmitting}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <Label htmlFor="isCurrentEmployment" className="text-sm font-medium text-blue-800 cursor-pointer">
+                Currently working here
+              </Label>
+            </div>
+            {isCurrentEmployment && (
+              <div className="flex items-center text-xs text-blue-600">
+                <Check className="h-3 w-3 mr-1" />
+                End date not required
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-4">
@@ -197,49 +251,70 @@ export function AddCompanyDialog({
                 </PopoverContent>
               </Popover>
             </div>
-            <div className="space-y-3">
-              <Label>End Date</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal h-11 border-gray-200",
-                      !toDate && "text-muted-foreground"
-                    )}
-                    disabled={isSubmitting}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {toDate ? format(toDate, "MMM dd, yyyy") : "Select end date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="start">
-                  <Calendar
-                    mode="single"
-                    selected={toDate}
-                    onSelect={setToDate}
-                    defaultMonth={toDate || fromDate || new Date()}
-                    disabled={(date) => 
-                      date > new Date() || 
-                      date < new Date("1900-01-01") ||
-                      (fromDate ? date <= fromDate : false)
-                    }
-                    initialFocus
-                    captionLayout='dropdown'
-                  />
-                </PopoverContent>
-              </Popover>
-            </div>
+            {!isCurrentEmployment && (
+              <div className="space-y-3">
+                <Label>End Date</Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal h-11 border-gray-200",
+                        !toDate && "text-muted-foreground"
+                      )}
+                      disabled={isSubmitting}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {toDate ? format(toDate, "MMM dd, yyyy") : "Select end date"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={toDate}
+                      onSelect={setToDate}
+                      defaultMonth={toDate || fromDate || new Date()}
+                      disabled={(date) => 
+                        date > new Date() || 
+                        date < new Date("1900-01-01") ||
+                        (fromDate ? date <= fromDate : false)
+                      }
+                      initialFocus
+                      captionLayout='dropdown'
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
           </div>
 
           {/* Experience Summary */}
-          {fromDate && toDate && (
-            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm text-blue-800">
-                <strong>Experience:</strong> {calculateExperience(fromDate, toDate)}
+          {fromDate && (
+            <div className={cn(
+              "p-3 border rounded-lg",
+              isCurrentEmployment 
+                ? "bg-green-50 border-green-200" 
+                : "bg-blue-50 border-blue-200"
+            )}>
+              <p className={cn(
+                "text-sm",
+                isCurrentEmployment ? "text-green-800" : "text-blue-800"
+              )}>
+                <strong>Experience:</strong> {
+                  isCurrentEmployment 
+                    ? calculateCurrentExperience(fromDate)
+                    : toDate ? calculateExperience(fromDate, toDate) : "Select end date"
+                }
               </p>
-              <p className="text-xs text-blue-600 mt-1">
-                {format(fromDate, "MMM dd, yyyy")} - {format(toDate, "MMM dd, yyyy")}
+              <p className={cn(
+                "text-xs mt-1",
+                isCurrentEmployment ? "text-green-600" : "text-blue-600"
+              )}>
+                {isCurrentEmployment 
+                  ? `Since ${format(fromDate, "MMM dd, yyyy")} (Current)`
+                  : toDate ? `${format(fromDate, "MMM dd, yyyy")} - ${format(toDate, "MMM dd, yyyy")}` 
+                  : `From ${format(fromDate, "MMM dd, yyyy")}`
+                }
               </p>
             </div>
           )}
@@ -259,7 +334,7 @@ export function AddCompanyDialog({
             </Button>
             <Button
               type="submit"
-              disabled={isSubmitting || !companyName.trim() || !fromDate || !toDate}
+              disabled={isSubmitting || !companyName.trim() || !fromDate || (!isCurrentEmployment && !toDate)}
               className="flex items-center gap-2"
             >
               {isSubmitting ? (
