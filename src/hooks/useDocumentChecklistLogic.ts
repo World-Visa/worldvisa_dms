@@ -4,13 +4,11 @@ import {
   IDENTITY_DOCUMENTS, 
   EDUCATION_DOCUMENTS, 
   OTHER_DOCUMENTS, 
-  COMPANY_DOCUMENTS
+  COMPANY_DOCUMENTS,
+  SELF_EMPLOYMENT_DOCUMENTS
 } from '@/lib/documents/checklist';
-import { useSearchMemo } from '@/lib/utils/search';
 import { 
-  ApiDocument,
   Company,
-  DocumentChecklistTableProps
 } from '@/types/documents';
 import { Document } from '@/types/applications';
 import type { 
@@ -25,18 +23,6 @@ interface DocumentType {
   category: string;
   documentType: string;
   companyName?: string;
-}
-
-interface ChecklistTableItem {
-  category: string;
-  documentType: string;
-  isUploaded: boolean;
-  uploadedDocument?: Document | unknown;
-  requirement?: DocumentRequirement;
-  isSelected?: boolean;
-  company_name?: string;
-  checklist_id?: string;
-  description?: string;
 }
 
 interface UseDocumentChecklistLogicProps {
@@ -69,26 +55,14 @@ interface UseDocumentChecklistLogicProps {
 
 export function useDocumentChecklistLogic({
   documents,
-  applicationId,
   selectedCategory,
   companies,
   checklistState = 'none',
-  filteredDocuments = [],
   currentChecklistDocuments = [],
   availableDocumentsForEditing = [],
-  selectedDocuments = [],
-  requirementMap = {},
   isClientView = false,
   checklistData,
-  pendingAdditions = [],
-  pendingDeletions = [],
-  pendingUpdates = [],
   onAddToPendingChanges,
-  onRemoveFromPendingChanges,
-  onAddToPendingDeletions,
-  onRemoveFromPendingDeletions,
-  onSavePendingChanges,
-  onClearPendingChanges
 }: UseDocumentChecklistLogicProps) {
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState<string>('');
@@ -107,6 +81,7 @@ export function useDocumentChecklistLogic({
     if (category === 'Education') return 'Education Documents';
     if (category === 'Other') return 'Other Documents';
     if (category === 'Company') return 'Company Documents';
+    if (category === 'Self Employment/Freelance') return 'Self Employment/Freelance';
     
     // Handle company-specific categories (e.g., "radicalstart infolab pvt.ltd Company Documents")
     if (category.includes('Company Documents')) {
@@ -127,6 +102,10 @@ export function useDocumentChecklistLogic({
           categoryLabel = 'Education Documents';
         } else if (item.document_category === 'Other') {
           categoryLabel = 'Other Documents';
+        } else if (item.document_category === 'Self Employment/Freelance') {
+          categoryLabel = 'Self Employment/Freelance';
+        } else if (item.document_category === 'Self Employment/Freelance') {
+          categoryLabel = 'Self Employment/Freelance';
         } else if (item.document_category === 'Company') {
           // For company documents, try to find the actual company category from documents
           if (documents && documents.length > 0) {
@@ -160,6 +139,7 @@ export function useDocumentChecklistLogic({
       ...IDENTITY_DOCUMENTS,
       ...EDUCATION_DOCUMENTS,
       ...OTHER_DOCUMENTS,
+      ...SELF_EMPLOYMENT_DOCUMENTS,
     ];
 
     const companyDocuments = companies.flatMap(company => 
@@ -172,7 +152,7 @@ export function useDocumentChecklistLogic({
 
 
     return [...baseDocuments, ...companyDocuments];
-  }, [companies, isClientView, checklistData]);
+  }, [companies, isClientView, checklistData, documents]);
 
   // Extract companies from documents API response, but use actual company data when available
   const extractedCompanies = useMemo(() => {
@@ -285,6 +265,9 @@ export function useDocumentChecklistLogic({
       case 'other':
       case 'other_documents':
         return categoryLabel === 'Other Documents';
+      case 'self_employment':
+      case 'self_employment/freelance':
+        return categoryLabel === 'Self Employment/Freelance';
       case 'all':
       default:
         return true;

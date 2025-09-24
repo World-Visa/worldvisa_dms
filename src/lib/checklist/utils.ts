@@ -25,7 +25,7 @@ interface Company {
   name: string;
 }
 import type { Document } from '@/types/applications';
-import { IDENTITY_DOCUMENTS, EDUCATION_DOCUMENTS, OTHER_DOCUMENTS, COMPANY_DOCUMENTS } from '@/lib/documents/checklist';
+import { IDENTITY_DOCUMENTS, EDUCATION_DOCUMENTS, OTHER_DOCUMENTS, COMPANY_DOCUMENTS, SELF_EMPLOYMENT_DOCUMENTS } from '@/lib/documents/checklist';
 
 /**
  * Convert requirement string to boolean for API
@@ -111,8 +111,7 @@ export function getAllDocumentTypes(companies: Company[] = []) {
     ...IDENTITY_DOCUMENTS,
     ...EDUCATION_DOCUMENTS,
     ...OTHER_DOCUMENTS,
-
-    ...COMPANY_DOCUMENTS,
+    ...SELF_EMPLOYMENT_DOCUMENTS,
   ];
 
   // Add company documents for each company (these will have dynamic company names)
@@ -159,6 +158,8 @@ export function filterDocumentsByCategories(
         return selectedCategories.includes('education');
       case 'Other Documents':
         return selectedCategories.includes('other');
+      case 'Self Employment/Freelance':
+        return selectedCategories.includes('self_employment');
       default:
         return false;
     }
@@ -192,6 +193,8 @@ export function generateChecklistCategories(
         displayLabel = 'Education Documents';
       } else if (categoryKey === 'Other') {
         displayLabel = 'Other Documents';
+      } else if (categoryKey === 'Self Employment/Freelance') {
+        displayLabel = 'Self Employment/Freelance';
       }
       
       categoryMap.set(categoryKey, {
@@ -335,14 +338,16 @@ export function getAvailableDocumentsForEditing(
   
   const checklistDocumentTypes = new Set(
     checklistItems.map(item => {
-      let categoryLabel = item.document_category;
-      if (item.document_category === 'Identity') {
-        categoryLabel = 'Identity Documents';
-      } else if (item.document_category === 'Education') {
-        categoryLabel = 'Education Documents';
-      } else if (item.document_category === 'Other') {
-        categoryLabel = 'Other Documents';
-      } else if (item.document_category === 'Company') {
+        let categoryLabel = item.document_category;
+        if (item.document_category === 'Identity') {
+          categoryLabel = 'Identity Documents';
+        } else if (item.document_category === 'Education') {
+          categoryLabel = 'Education Documents';
+        } else if (item.document_category === 'Other') {
+          categoryLabel = 'Other Documents';
+        } else if (item.document_category === 'Self Employment/Freelance') {
+          categoryLabel = 'Self Employment/Freelance';
+        } else if (item.document_category === 'Company') {
         // For company documents, use the specific company name if available
         if (item.company_name) {
           categoryLabel = `${item.company_name} Company Documents`;
@@ -412,6 +417,8 @@ function mapCategoryToApiFormat(category: string): string {
       return 'Education';
     case 'Other Documents':
       return 'Other';
+    case 'Self Employment/Freelance':
+      return 'Self Employment/Freelance';
     case 'Company':
       return 'Company';
     default:
@@ -482,6 +489,7 @@ export function getCategoryDisplayName(category: string): string {
   if (category === 'Identity Documents') return 'Identity';
   if (category === 'Education Documents') return 'Education';
   if (category === 'Other Documents') return 'Other';
+  if (category === 'Self Employment/Freelance') return 'Self Employment/Freelance';
   if (category.includes('Documents')) return category.replace(' Documents', '');
   return category;
 }
@@ -490,7 +498,7 @@ export function getCategoryDisplayName(category: string): string {
  * Sort categories for display
  */
 export function sortCategoriesForDisplay(categories: ChecklistCategory[]): ChecklistCategory[] {
-  const order = ['identity', 'education', 'other', 'company'];
+  const order = ['identity', 'education', 'other', 'self_employment', 'company'];
   
   return categories.sort((a, b) => {
     const aIndex = order.findIndex(o => a.id.includes(o));

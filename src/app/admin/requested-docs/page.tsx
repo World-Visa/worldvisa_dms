@@ -68,9 +68,9 @@ export default function RequestedDocsPage() {
     );
 
     // Always fetch total counts for all tabs to display correct tab numbers
-    const { data: allRequestedToMeData } = useRequestedDocumentsToMe();
-    const { data: allMyRequestsData } = useMyRequestedDocuments();
-    const { data: allRequestsDataForStats } = useAllRequestedDocuments();
+    const { data: allRequestedToMeData, isLoading: isLoadingRequestedToMeCount } = useRequestedDocumentsToMe();
+    const { data: allMyRequestsData, isLoading: isLoadingMyRequestsCount } = useMyRequestedDocuments();
+    const { data: allRequestsDataForStats, isLoading: isLoadingAllRequestsCount } = useAllRequestedDocuments();
     
     // Fetch all requested documents (master admin only) - with filters only for this tab
     const { 
@@ -225,16 +225,16 @@ export default function RequestedDocsPage() {
                             {isMasterAdmin && (
                                 <TabsTrigger value="all-requests" className="flex h-10 items-center gap-2">
                                     <Globe className="h-4 w-4" />
-                                    All Requests ({allRequestsDataForStats?.data?.length || 0})
+                                    All Requests ({isLoadingAllRequestsCount ? '...' : (allRequestsDataForStats?.data?.length || 0)})
                                 </TabsTrigger>
                             )}
                             <TabsTrigger value="requested-to-me" className="flex h-10 items-center gap-2">
                                 <Eye className="h-4 w-4" />
-                                Requested to Me ({allRequestedToMeData?.data?.length || 0})
+                                Requested to Me ({isLoadingRequestedToMeCount ? '...' : (allRequestedToMeData?.data?.length || 0)})
                             </TabsTrigger>
                             <TabsTrigger value="my-requests" className="flex h-10 items-center gap-2">
                                 <FileText className="h-4 w-4" />
-                                My Requests ({allMyRequestsData?.data?.length || 0})
+                                My Requests ({isLoadingMyRequestsCount ? '...' : (allMyRequestsData?.data?.length || 0)})
                             </TabsTrigger>
                         </TabsList>
 

@@ -6,7 +6,8 @@ export const IDENTITY_DOCUMENTS = [
   { "category": "Identity Documents", "documentType": "Photograph" },
   { "category": "Identity Documents", "documentType": "Marriage/ Divorce certificate" },
   { "category": "Identity Documents", "documentType": "Work Permit (Overseas client)" },
-  { "category": "Identity Documents", "documentType": "National Identity Document" }
+  { "category": "Identity Documents", "documentType": "National Identity Document" },
+  { "category": "Identity Documents", "documentType": "Name Change Affidavit" }
 ];
 
 export const EDUCATION_DOCUMENTS = [
@@ -19,7 +20,8 @@ export const EDUCATION_DOCUMENTS = [
   { "category": "Education Documents", "documentType": "Masters Marksheet/ Transcripts" },
   { "category": "Education Documents", "documentType": "PHD Degree Certificate" },
   { "category": "Education Documents", "documentType": "PHD (Grade Sheet)" },
-  { "category": "Education Documents", "documentType": "Education sheet" }
+  { "category": "Education Documents", "documentType": "Education sheet" },
+  { "category": "Education Documents", "documentType": "Provisional Degree Certificate (Engineers Australia)" }
 ];
 
 export const OTHER_DOCUMENTS = [
@@ -51,4 +53,16 @@ export const COMPANY_DOCUMENTS = [
   { "category": "Company", "documentType": "Superannuation (EPFO Statement)" },
   { "category": "Company", "documentType": "Salary Certifcate (only VET/ TRA/EA)" },
   { "category": "Company", "documentType": "Employer Linked Insurance" }
+];
+
+export const SELF_EMPLOYMENT_DOCUMENTS = [
+  { "category": "Self Employment/Freelance", "documentType": "Company registration" },
+  { "category": "Self Employment/Freelance", "documentType": "Reference Letter/ Statutory Declaration" },
+  { "category": "Self Employment/Freelance", "documentType": "Client Invoices" },
+  { "category": "Self Employment/Freelance", "documentType": "Company Bank Statement" },
+  { "category": "Self Employment/Freelance", "documentType": "Taxation Records (showing clients name)" },
+  { "category": "Self Employment/Freelance", "documentType": "Contracts with clients" },
+  { "category": "Self Employment/Freelance", "documentType": "Reference letters from Clients (Endorsement letter)" },
+  { "category": "Self Employment/Freelance", "documentType": "Letter from Accountant (CA)" },
+  { "category": "Self Employment/Freelance", "documentType": "Organisational Chart" }
 ];

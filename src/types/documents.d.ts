@@ -1,4 +1,4 @@
-export type DocumentCategory = 'submitted' | 'all' | 'identity' | 'education' | 'other' | string;
+export type DocumentCategory = 'submitted' | 'all' | 'identity' | 'education' | 'other' | 'self_employment' | string;
 
 export interface DocumentCategoryInfo {
   id: DocumentCategory;

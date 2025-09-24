@@ -60,7 +60,7 @@ export function UploadDocumentsModal({
       
       // Fallback to generating from company data (for first time)
       if (!autoDescription && selectedDocumentCategory.includes('Documents') && 
-          !['Identity Documents', 'Education Documents', 'Other Documents'].includes(selectedDocumentCategory) && 
+          !['Identity Documents', 'Education Documents', 'Other Documents', 'Self Employment/Freelance'].includes(selectedDocumentCategory) && 
           company) {
         autoDescription = generateCompanyDescription(company.fromDate, company.toDate);
       }
@@ -337,7 +337,7 @@ export function UploadDocumentsModal({
   // Helper function to determine document category based on document type and category
   const getDocumentCategory = (documentType: string, category: string): string => {
     // Check if it's a company document (contains company name pattern)
-    if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
+    if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents', 'Self Employment/Freelance'].includes(category)) {
       return category;
     }
     
@@ -346,6 +346,7 @@ export function UploadDocumentsModal({
       'Identity Documents': 'Identity',
       'Education Documents': 'Education', 
       'Other Documents': 'Other',
+      'Self Employment/Freelance': 'Self Employment/Freelance',
     };
     
     return categoryMap[category] || 'Other';
@@ -357,10 +358,11 @@ export function UploadDocumentsModal({
       'Identity': 'Identity Documents',
       'Education': 'Education Documents',
       'Other': 'Other Documents',
+      'Self Employment/Freelance': 'Self Employment/Freelance',
     };
     
     // If it's already a company-specific category, return as-is
-    if (apiCategory.includes('Company Documents') && !['Identity Documents', 'Education Documents', 'Other Documents'].includes(apiCategory)) {
+    if (apiCategory.includes('Company Documents') && !['Identity Documents', 'Education Documents', 'Other Documents', 'Self Employment/Freelance'].includes(apiCategory)) {
       return apiCategory;
     }
     

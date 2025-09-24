@@ -58,6 +58,8 @@ export function generateChecklistCategories(
       displayLabel = 'Education Documents';
     } else if (categoryKey === 'Other') {
       displayLabel = 'Other Documents';
+    } else if (categoryKey === 'Self Employment/Freelance') {
+      displayLabel = 'Self Employment/Freelance';
     }
     
     // Use the display label as the key to avoid duplicates

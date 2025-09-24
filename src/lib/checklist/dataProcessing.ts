@@ -3,6 +3,7 @@ import {
   EDUCATION_DOCUMENTS,
   OTHER_DOCUMENTS,
   COMPANY_DOCUMENTS,
+  SELF_EMPLOYMENT_DOCUMENTS,
 } from "@/lib/documents/checklist";
 import { Document } from "@/types/applications";
 import { Company } from "@/types/documents";
@@ -49,6 +50,8 @@ export function generateAllDocumentTypes(
           categoryLabel = "Education Documents";
         } else if (item.document_category === "Other") {
           categoryLabel = "Other Documents";
+        } else if (item.document_category === "Self Employment/Freelance") {
+          categoryLabel = "Self Employment/Freelance";
         } else if (item.document_category === "Company") {
           categoryLabel = "Company Documents";
         }
@@ -65,6 +68,7 @@ export function generateAllDocumentTypes(
     ...IDENTITY_DOCUMENTS,
     ...EDUCATION_DOCUMENTS,
     ...OTHER_DOCUMENTS,
+    ...SELF_EMPLOYMENT_DOCUMENTS,
   ];
 
   const companyDocuments = companies.flatMap((company) =>
@@ -108,6 +112,7 @@ export function mapCategoryLabel(category: string): string {
   if (category === "Identity") return "Identity Documents";
   if (category === "Education") return "Education Documents";
   if (category === "Other") return "Other Documents";
+  if (category === "Self Employment/Freelance") return "Self Employment/Freelance";
   if (category === "Company") return "Company Documents";
   
   // Handle company-specific categories (e.g., "radicalstart infolab pvt.ltd Company Documents")
@@ -142,6 +147,9 @@ export function matchesCategory(
     case "other":
     case "other_documents":
       return categoryLabel === "Other Documents";
+    case "self_employment":
+    case "self_employment/freelance":
+      return categoryLabel === "Self Employment/Freelance";
     case "all":
     default:
       return true;
@@ -263,6 +271,7 @@ export function generateDefaultItems(
               "Identity Documents",
               "Education Documents",
               "Other Documents",
+              "Self Employment/Freelance",
             ].includes(docType.category)
           ) {
             // For company documents, use more flexible matching
@@ -448,6 +457,7 @@ export function generateDefaultItems(
               "Identity Documents",
               "Education Documents",
               "Other Documents",
+              "Self Employment/Freelance",
             ].includes(docType.category)
           ) {
             const docCategory = doc.document_category;
@@ -689,6 +699,11 @@ export function filterItemsByCategory(
       return checklistItems.filter(
         (item) => item.category === "Other Documents"
       );
+    case "self_employment":
+    case "self_employment/freelance":
+      return checklistItems.filter(
+        (item) => item.category === "Self Employment/Freelance"
+      );
     case "all":
     default:
       return checklistItems;
@@ -698,7 +713,7 @@ export function filterItemsByCategory(
 export function getCategoryBadgeStyle(category: string): string {
   if (
     category.endsWith(" Documents") &&
-    !["Identity Documents", "Education Documents", "Other Documents"].includes(
+    !["Identity Documents", "Education Documents", "Other Documents", "Self Employment/Freelance"].includes(
       category
     )
   ) {
@@ -712,6 +727,8 @@ export function getCategoryBadgeStyle(category: string): string {
       return "bg-green-500 hover:bg-green-600";
     case "Other Documents":
       return "bg-purple-500 hover:bg-purple-600";
+    case "Self Employment/Freelance":
+      return "bg-yellow-500 hover:bg-yellow-600";
     default:
       return "bg-gray-500 hover:bg-gray-600";
   }

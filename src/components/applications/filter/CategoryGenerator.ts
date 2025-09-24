@@ -7,6 +7,7 @@ const baseCategories: DocumentCategoryInfo[] = [
   { id: 'identity', label: 'Identity Documents', count: 0 },
   { id: 'education', label: 'Education Documents', count: 0 },
   { id: 'other', label: 'Other Documents', count: 0 },
+  { id: 'self_employment', label: 'Self Employment/Freelance', count: 0 },
 ];
 
 export interface CategoryGeneratorProps {
@@ -86,6 +87,7 @@ function generateAdminCategories(
         { id: 'identity', label: 'Identity Documents', count: 0 },
         { id: 'education', label: 'Education Documents', count: 0 },
         { id: 'other', label: 'Other Documents', count: 0 },
+        { id: 'self_employment', label: 'Self Employment/Freelance', count: 0 },
         { id: 'company', label: 'Company Documents', count: 0 }
       ];
 
@@ -119,6 +121,7 @@ function generateAdminCategories(
         { id: 'identity', label: 'Identity Documents', count: 0 },
         { id: 'education', label: 'Education Documents', count: 0 },
         { id: 'other', label: 'Other Documents', count: 0 },
+        { id: 'self_employment', label: 'Self Employment/Freelance', count: 0 },
         { id: 'company', label: 'Company Documents', count: 0 }
       ];
 
