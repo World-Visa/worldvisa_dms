@@ -18,6 +18,7 @@ import { useApplicationDocumentsPaginated } from '@/hooks/useApplicationDocument
 import { UploadDocumentsModal } from './UploadDocumentsModal';
 import { ApplicationsPagination } from './ApplicationsPagination';
 import { Trash2, FileText, CheckCircle, Clock, Eye, XCircle, AlertCircle } from 'lucide-react';
+import { getCategoryDisplayProps } from '@/lib/utils/documentCategoryNormalizer';
 import ViewDocumentSheet from './ViewDocumentSheet';
 import { Document as ApplicationDocument } from '@/types/applications';
 import { ClientDocumentsResponse } from '@/types/client';
@@ -349,19 +350,14 @@ export function DocumentsTable({
                                             }
 
                                             if (documentCategory) {
-                                                const isCompanyDoc = documentCategory.includes('Company Documents');
+                                                const { category, badgeVariant, badgeClassName, displayText } = getCategoryDisplayProps(documentCategory);
                                                 return (
                                                     <Badge
-                                                        variant={isCompanyDoc ? "default" : "outline"}
-                                                        className={`text-xs max-w-[140px] font-medium truncate ${isCompanyDoc
-                                                            ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-                                                            : ''
-                                                            }`}
-                                                        title={documentCategory}
+                                                        variant={badgeVariant as "default" | "outline" | "secondary" | "destructive" | null | undefined}
+                                                        className={`text-xs max-w-[140px] font-medium truncate ${badgeClassName}`}
+                                                        title={category}
                                                     >
-                                                        {documentCategory.length > 18
-                                                            ? `${documentCategory.substring(0, 18)}...`
-                                                            : documentCategory}
+                                                        {displayText}
                                                     </Badge>
                                                 );
                                             } else {

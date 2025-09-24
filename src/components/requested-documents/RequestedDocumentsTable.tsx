@@ -22,6 +22,7 @@ import { RequestedDocumentViewSheet } from './RequestedDocumentViewSheet';
 import { RequestedDocumentType } from '@/types/common';
 
 import { cn } from '@/lib/utils';
+import { getCategoryDisplayProps } from '@/lib/utils/documentCategoryNormalizer';
 
 interface RequestedDocumentsTableProps {
   documents: RequestedDocument[];
@@ -113,7 +114,10 @@ export function RequestedDocumentsTable({
                         {document.document_name || document.file_name}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
-                        {document.document_category || 'Document'}
+                        {document.document_category 
+                          ? getCategoryDisplayProps(document.document_category).category 
+                          : 'Document'
+                        }
                       </p>
                       {isOverdue && (
                         <div className="flex items-center gap-1 mt-1">

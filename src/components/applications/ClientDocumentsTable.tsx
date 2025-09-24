@@ -16,6 +16,7 @@ import {
   XCircle,
   Clock
 } from 'lucide-react';
+import { getCategoryDisplayProps } from '@/lib/utils/documentCategoryNormalizer';
 import { ClientDocumentsResponse, ClientDocument } from '@/types/client';
 import { Document } from '@/types/applications';
 import { format } from 'date-fns';
@@ -192,25 +193,26 @@ export function ClientDocumentsTable({
                           </Badge>
                         </TableCell>
                         <TableCell className='font-lexend'>
-                          {document.document_category ? (
-                            <Badge 
-                              variant={document.document_category.includes('Company Documents') ? "default" : "outline"}
-                              className={`text-xs max-w-[140px] font-medium truncate ${
-                                document.document_category.includes('Company Documents') 
-                                  ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' 
-                                  : ''
-                              }`}
-                              title={document.document_category}
-                            >
-                              {document.document_category.length > 18 
-                                ? `${document.document_category.substring(0, 18)}...` 
-                                : document.document_category}
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs text-muted-foreground">
-                              Not specified
-                            </Badge>
-                          )}
+                          {(() => {
+                            if (document.document_category) {
+                              const { category, badgeVariant, badgeClassName, displayText } = getCategoryDisplayProps(document.document_category);
+                              return (
+                                <Badge 
+                                  variant={badgeVariant}
+                                  className={`text-xs max-w-[140px] font-medium truncate ${badgeClassName}`}
+                                  title={category}
+                                >
+                                  {displayText}
+                                </Badge>
+                              );
+                            } else {
+                              return (
+                                <Badge variant="outline" className="text-xs text-muted-foreground">
+                                  Not specified
+                                </Badge>
+                              );
+                            }
+                          })()}
                         </TableCell>
                         <TableCell>
                           {(() => {
