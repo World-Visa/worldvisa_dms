@@ -54,14 +54,13 @@ export const NotificationBell = memo<NotificationBellProps>(({ className }) => {
             {unreadCount > 0 && (
               <Badge 
                 variant="default" 
-                className="absolute -top-1 -right-2 h-5 w-5 rounded-full p-0 text-xs font-bold"
+                className="absolute -top-1 -right-2 h-5 w-5 rounded-full p-0 text-xs font-bold flex items-center justify-center"
               >
-                <p className='pl-1.5'>
-                {unreadCount > 99 ? '99+' : unreadCount}
-                </p>
+                <span>
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
               </Badge>
             )}
-            
             {/* Connection status indicator */}
             <div className="absolute bottom-1 right-1">
               {getConnectionIcon()}

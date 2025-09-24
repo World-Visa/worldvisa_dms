@@ -1,4 +1,4 @@
-import { ChevronRight, Check, X, Loader2 } from "lucide-react";
+import { ChevronRight, Check, X, Loader2, Bell, FileText, MessageSquare, User, CheckCircle } from "lucide-react";
 import { Button } from "../ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { memo, useCallback } from "react";
@@ -44,29 +44,36 @@ const NotificationItem = memo(({
         }
     }, [notification.leadId, router, isNavigating, setNavigating]);
 
-    const getTypeStyles = (type: string) => {
-        const styles = {
-            error: { bg: 'bg-red-100', dot: 'bg-red-500' },
-            warning: { bg: 'bg-yellow-100', dot: 'bg-yellow-500' },
-            success: { bg: 'bg-green-100', dot: 'bg-green-500' },
-            info: { bg: 'bg-blue-100', dot: 'bg-blue-500' }
+    const getCategoryIcon = (category: string) => {
+        const categoryIcons = {
+            general: { icon: Bell, color: 'text-blue-500', bg: 'bg-blue-100' },
+            document: { icon: FileText, color: 'text-green-500', bg: 'bg-green-100' },
+            'admin message': { icon: MessageSquare, color: 'text-purple-500', bg: 'bg-purple-100' },
+            'client message': { icon: User, color: 'text-orange-500', bg: 'bg-orange-100' },
+            'reviewed document': { icon: CheckCircle, color: 'text-emerald-500', bg: 'bg-emerald-100' }
         };
-        return styles[type as keyof typeof styles] || styles.info;
+        
+        // Handle case-insensitive matching and fallback to general
+        const normalizedCategory = category.toLowerCase();
+        return categoryIcons[normalizedCategory as keyof typeof categoryIcons] || categoryIcons.general;
     };
 
-    const typeStyles = getTypeStyles(notification.type);
+    const categoryIcon = getCategoryIcon(notification.category);
+    const IconComponent = categoryIcon.icon;
 
     return (
         <div
-            className={`group relative p-4 hover:bg-gray-50 transition-colors duration-150 ${
+            className={`group relative p-4 pb-6 hover:bg-gray-50 transition-colors duration-150 min-h-[80px] ${
                 !notification.isRead 
                     ? 'bg-blue-50/30 border-l-2 border-l-blue-500' 
                     : 'bg-white'
             }`}
         >
             <div className="flex items-start gap-3">
-                {/* Status indicator */}
-                <div className={`flex-shrink-0 w-2 h-2 rounded-full mt-2 ${typeStyles.dot}`} />
+                {/* Category icon */}
+                <div className={`flex-shrink-0 w-8 h-8 rounded-full ${categoryIcon.bg} flex items-center justify-center mt-1`}>
+                    <IconComponent className={`w-4 h-4 ${categoryIcon.color}`} />
+                </div>
 
                 <div className="flex-1 min-w-0">
                     {/* Message */}

@@ -78,15 +78,19 @@ export const NotificationPanel = memo(() => {
   if (!isNotificationPanelOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-50 bg-black/10"
-      onClick={closeNotificationPanel}
-      onWheel={(e) => {
-        e.preventDefault();
-      }}
-    >
+    <>
+      {/* Backdrop overlay */}
+      <div
+        className="fixed inset-0 z-40 bg-black/20"
+        onClick={closeNotificationPanel}
+        onWheel={(e) => {
+          e.preventDefault();
+        }}
+      />
+      
+      {/* Notification Panel */}
       <Card
-        className="absolute right-4 top-16 w-[420px] max-h-[75vh] shadow-2xl border-0 bg-white rounded-lg"
+        className="fixed right-4 top-16 z-50 w-[420px] max-h-[85vh] shadow-2xl border-0 bg-white rounded-lg"
         onClick={(e) => e.stopPropagation()}
         onWheel={(e) => {
           e.stopPropagation();
@@ -168,7 +172,7 @@ export const NotificationPanel = memo(() => {
               </p>
             </div>
           ) : (
-            <div className="max-h-[calc(75vh-120px)] overflow-y-auto">
+            <div className="max-h-[calc(85vh-160px)] overflow-y-auto">
               <div className="divide-y divide-gray-100">
                 {filteredNotifications.map((notification) => (
                   <NotificationItem
@@ -178,6 +182,8 @@ export const NotificationPanel = memo(() => {
                     onDelete={handleDelete}
                   />
                 ))}
+                {/* Add padding at the bottom to ensure last item is fully visible */}
+                <div className="h-4"></div>
               </div>
             </div>
           )}
@@ -193,7 +199,7 @@ export const NotificationPanel = memo(() => {
           </div>
         )}
       </Card>
-    </div>
+    </>
   );
 });
 
