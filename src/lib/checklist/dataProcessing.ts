@@ -79,7 +79,16 @@ export function generateAllDocumentTypes(
     }))
   );
 
-  return [...baseDocuments, ...companyDocuments];
+  // If no companies are added yet, still include generic company documents
+  // so users can see them in the checklist creation mode
+  const genericCompanyDocuments = companies.length === 0 ? 
+    COMPANY_DOCUMENTS.map(doc => ({
+      ...doc,
+      category: 'Company Documents',
+      companyName: undefined
+    })) : [];
+
+  return [...baseDocuments, ...companyDocuments, ...genericCompanyDocuments];
 }
 
 export function extractCompaniesFromDocuments(
@@ -104,6 +113,7 @@ export function extractCompaniesFromDocuments(
       category: category,
       fromDate: "2024-01",
       toDate: "2025-12",
+      isCurrentEmployment: false,
     };
   });
 }

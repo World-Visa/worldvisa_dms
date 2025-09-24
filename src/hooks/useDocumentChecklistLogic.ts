@@ -151,8 +151,16 @@ export function useDocumentChecklistLogic({
       }))
     );
 
+    // If no companies are added yet, still include generic company documents
+    // so users can see them in the checklist creation mode
+    const genericCompanyDocuments = companies.length === 0 ? 
+      COMPANY_DOCUMENTS.map(doc => ({
+        ...doc,
+        category: 'Company Documents',
+        companyName: undefined
+      })) : [];
 
-    return [...baseDocuments, ...companyDocuments];
+    return [...baseDocuments, ...companyDocuments, ...genericCompanyDocuments];
   }, [companies, isClientView, checklistData, documents]);
 
   // Extract companies from documents API response, but use actual company data when available

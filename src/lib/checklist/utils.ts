@@ -123,7 +123,16 @@ export function getAllDocumentTypes(companies: Company[] = []) {
     }))
   );
 
-  return [...baseDocuments, ...companyDocuments];
+  // If no companies are added yet, still include generic company documents
+  // so users can see them in the checklist creation mode
+  const genericCompanyDocuments = companies.length === 0 ? 
+    COMPANY_DOCUMENTS.map(doc => ({
+      ...doc,
+      category: 'Company Documents',
+      companyName: undefined
+    })) : [];
+
+  return [...baseDocuments, ...companyDocuments, ...genericCompanyDocuments];
 }
 
 /**
