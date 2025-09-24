@@ -31,8 +31,8 @@ interface UnifiedApplicationDetailsPageProps {
   isSpouseApplication?: boolean;
 }
 
-export default function UnifiedApplicationDetailsPage({ 
-  isSpouseApplication = false 
+export default function UnifiedApplicationDetailsPage({
+  isSpouseApplication = false
 }: UnifiedApplicationDetailsPageProps) {
   const params = useParams();
   const router = useRouter();
@@ -88,7 +88,7 @@ export default function UnifiedApplicationDetailsPage({
   // Use both hooks but only use the appropriate one based on application type
   const spouseApplicationQuery = useSpouseApplicationDetails(applicationId);
   const regularApplicationQuery = useApplicationDetails(applicationId);
-  
+
   const applicationData = isSpouseApplication ? spouseApplicationQuery.data : regularApplicationQuery.data;
   const isApplicationLoading = isSpouseApplication ? spouseApplicationQuery.isLoading : regularApplicationQuery.isLoading;
   const applicationError = isSpouseApplication ? spouseApplicationQuery.error : regularApplicationQuery.error;
@@ -108,11 +108,11 @@ export default function UnifiedApplicationDetailsPage({
 
   const application = (applicationData as ApplicationDetailsResponse)?.data || applicationData;
   const documents = documentsData?.data;
-  const allDocuments = allDocumentsData?.data; 
+  const allDocuments = allDocumentsData?.data;
 
   const checklistState = useChecklistState({
     applicationId,
-    documents: allDocuments, 
+    documents: allDocuments,
     companies,
     recordType: application?.Record_Type,
   });
@@ -167,7 +167,7 @@ export default function UnifiedApplicationDetailsPage({
   };
 
   // Check if all submitted documents are approved (only for regular applications)
-  const areAllDocumentsReviewed = useMemo(() => { 
+  const areAllDocumentsReviewed = useMemo(() => {
     if (isSpouseApplication || !allDocuments || allDocuments.length === 0) {
       return false;
     }
@@ -371,12 +371,12 @@ export default function UnifiedApplicationDetailsPage({
   }
 
   // Determine the back navigation path
-  const backPath = isSpouseApplication 
+  const backPath = isSpouseApplication
     ? '/admin/spouse-skill-assessment-applications'
     : '/admin/applications';
 
   // Determine the page title
-  const pageTitle = isSpouseApplication 
+  const pageTitle = isSpouseApplication
     ? 'Spouse Application Details'
     : 'Application Details';
 
@@ -423,7 +423,6 @@ export default function UnifiedApplicationDetailsPage({
             </div>
           </div>
           <div className="flex items-center gap-2">
-            {!isSpouseApplication && (
               <Tooltip>
                 <TooltipTrigger asChild>
                   <div>
@@ -450,7 +449,7 @@ export default function UnifiedApplicationDetailsPage({
                     : "All submitted documents must be reviewed before pushing for quality check."}
                 </TooltipContent>
               </Tooltip>
-            )}
+
             <Button
               variant="outline"
               size="sm"
