@@ -90,26 +90,49 @@ export function UploadDocumentsModal({
     
     // Validate files
     const validFiles = files.filter(file => {
-      // Check file extension
       const fileName = file.name.toLowerCase();
-      const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
+      
+      // Check if it's an identity photograph
+      const isIdentityPhotograph = (selectedDocumentCategory === 'Identity Documents' || selectedDocumentCategory === 'Identity') && 
+        (selectedDocumentType.toLowerCase().includes('photograph') || 
+         selectedDocumentType.toLowerCase().includes('photo') ||
+         selectedDocumentType.toLowerCase().includes('picture'));
+      
+      let allowedExtensions: string[];
+      let allowedMimeTypes: string[];
+      let errorMessage: string;
+      
+      if (isIdentityPhotograph) {
+        // For identity photographs, only allow JPG/JPEG
+        allowedExtensions = ['.jpg', '.jpeg'];
+        allowedMimeTypes = [
+          'image/jpeg',
+          'image/jpg'
+        ];
+        errorMessage = `${file.name} is not a supported file type. Only JPG and JPEG files are allowed for photographs.`;
+      } else {
+        // For all other documents, allow PDF, Word, and text files
+        allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
+        allowedMimeTypes = [
+          'application/pdf',
+          'application/msword',
+          'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+          'text/plain'
+        ];
+        errorMessage = `${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`;
+      }
+      
+      // Check file extension
       const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
       
       if (!hasValidExtension) {
-        toast.error(`${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
+        toast.error(errorMessage);
         return false;
       }
       
       // Check MIME type
-      const allowedMimeTypes = [
-        'application/pdf',
-        'application/msword',
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        'text/plain'
-      ];
-      
       if (!allowedMimeTypes.includes(file.type)) {
-        toast.error(`${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
+        toast.error(errorMessage);
         return false;
       }
       
@@ -331,8 +354,10 @@ export function UploadDocumentsModal({
       setSelectedDocumentType('');
       setSelectedDocumentCategory('');
       setUploadedFiles([]);
-    } catch {
-      toast.error('Failed to upload documents. Please try again.');
+    } catch (error) {
+      console.error('Upload error:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+      toast.error(`Failed to upload documents: ${errorMessage}`);
     } finally {
       setIsUploading(false);
     }
@@ -348,8 +373,11 @@ export function UploadDocumentsModal({
     // Map categories to API categories
     const categoryMap: Record<string, string> = {
       'Identity Documents': 'Identity',
+      'Identity': 'Identity', // Handle both "Identity" and "Identity Documents"
       'Education Documents': 'Education', 
+      'Education': 'Education', // Handle both "Education" and "Education Documents"
       'Other Documents': 'Other',
+      'Other': 'Other', // Handle both "Other" and "Other Documents"
       'Self Employment/Freelance': 'Self Employment/Freelance',
     };
     
@@ -456,17 +484,50 @@ export function UploadDocumentsModal({
               />
               <p className="text-sm text-muted-foreground mb-2">
                 {selectedDocumentType
-                  ? 'Drop your files (PDF, Word (.doc, .docx), and text (.txt)) here, or click to browse'
+                  ? (() => {
+                      const isIdentityPhotograph = (selectedDocumentCategory === 'Identity Documents' || selectedDocumentCategory === 'Identity') && 
+                        (selectedDocumentType.toLowerCase().includes('photograph') || 
+                         selectedDocumentType.toLowerCase().includes('photo') ||
+                         selectedDocumentType.toLowerCase().includes('picture'));
+                      
+                      if (isIdentityPhotograph) {
+                        return 'Drop your JPG/JPEG files here, or click to browse';
+                      } else {
+                        return 'Drop your files (PDF, Word (.doc, .docx), and text (.txt)) here, or click to browse';
+                      }
+                    })()
                   : 'Please select a document type first'}
               </p>
               <p className="text-xs text-muted-foreground">
-                <strong>PDF, Word (.doc, .docx), and text (.txt) files</strong> • Max file size 5MB per file
+                {(() => {
+                  const isIdentityPhotograph = (selectedDocumentCategory === 'Identity Documents' || selectedDocumentCategory === 'Identity') && 
+                    (selectedDocumentType.toLowerCase().includes('photograph') || 
+                     selectedDocumentType.toLowerCase().includes('photo') ||
+                     selectedDocumentType.toLowerCase().includes('picture'));
+                  
+                  if (isIdentityPhotograph) {
+                    return <><strong>JPG and JPEG files only</strong> • Max file size 5MB per file</>;
+                  } else {
+                    return <><strong>PDF, Word (.doc, .docx), and text (.txt) files</strong> • Max file size 5MB per file</>;
+                  }
+                })()}
               </p>
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                accept={(() => {
+                  const isIdentityPhotograph = (selectedDocumentCategory === 'Identity Documents' || selectedDocumentCategory === 'Identity') && 
+                    (selectedDocumentType.toLowerCase().includes('photograph') || 
+                     selectedDocumentType.toLowerCase().includes('photo') ||
+                     selectedDocumentType.toLowerCase().includes('picture'));
+                  
+                  if (isIdentityPhotograph) {
+                    return '.jpg,.jpeg,image/jpeg,image/jpg';
+                  } else {
+                    return '.pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain';
+                  }
+                })()}
                 onChange={handleFileSelect}
                 className="hidden"
                 disabled={!selectedDocumentType}
@@ -487,7 +548,9 @@ export function UploadDocumentsModal({
                     {(() => {
                       const fileName = uploadedFile.file.name.toLowerCase();
                       
-                      if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+                      if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+                        return <File className="h-5 w-5 text-green-600 flex-shrink-0" />;
+                      } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
                         return <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />;
                       } else if (fileName.endsWith('.txt')) {
                         return <File className="h-5 w-5 text-gray-600 flex-shrink-0" />;

@@ -3,7 +3,7 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Globe, Target, FileText, ChevronDown, ChevronUp, Briefcase } from 'lucide-react';
+import { User, Mail, Globe, Target, FileText, ChevronDown, ChevronUp, Briefcase, Library } from 'lucide-react';
 import { Application } from '@/types/applications';
 import { Button } from '@/components/ui/button';
 
@@ -34,7 +34,6 @@ export function ApplicationDetailsAccordion({
     }
   };
 
-  console.log("applicationss>>>>>>>>>>>>", application)
   return (
     <Card className="mb-4">
       <CardHeader className="pb-3">
@@ -126,6 +125,15 @@ export function ApplicationDetailsAccordion({
                   </label>
                   <p className="text-sm">
                     {(application.Suggested_Anzsco || "")}
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                    <Library className="h-3 w-3" />
+                    Record Type
+                  </label>
+                  <p className="text-sm">
+                    {(application.Record_Type || "")}
                   </p>
                 </div>
               </div>

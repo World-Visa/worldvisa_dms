@@ -14,6 +14,8 @@ import Link from 'next/link';
 import { getNavigationTabsForRole, type SupportedRole } from '@/lib/config/navigation';
 import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
+import { ApplicationsDropdown } from './ApplicationsDropdown';
+import { ApplicationsDropdownMobile } from './ApplicationsDropdownMobile';
 
 
 // Helper function to get portal title based on role
@@ -212,6 +214,13 @@ export function AdminHeader() {
                 <nav className="hidden md:block border-t border-gray-200">
                     <div className="flex space-x-8">
                         {navigationTabs.map((tab) => {
+                            // Handle Applications dropdown separately
+                            if (tab.id === 'applications') {
+                                return (
+                                    <ApplicationsDropdown key={tab.id} />
+                                );
+                            }
+
                             const Icon = tab.icon;
                             const isActive = activeTabId === tab.id;
                             const showCount = tab.id === 'checklist-requests' && checklistRequestsCount > 0;
@@ -253,6 +262,21 @@ export function AdminHeader() {
                     <div className="px-2 pt-2 pb-3 space-y-1">
                         {/* Mobile Navigation Links */}
                         {navigationTabs.map((tab) => {
+                            // Handle Applications dropdown separately
+                            if (tab.id === 'applications') {
+                                return (
+                                    <div
+                                        key={tab.id}
+                                        ref={addToRefs}
+                                        className="menu-item"
+                                    >
+                                        <ApplicationsDropdownMobile 
+                                            onItemClick={() => setIsMobileMenuOpen(false)}
+                                        />
+                                    </div>
+                                );
+                            }
+
                             const Icon = tab.icon;
                             const isActive = activeTabId === tab.id;
                             const showCount = tab.id === 'checklist-requests' && checklistRequestsCount > 0;

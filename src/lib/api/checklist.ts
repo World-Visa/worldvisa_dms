@@ -168,37 +168,115 @@ export async function deleteChecklistItem(
 }
 
 /**
- * Batch save multiple checklist items
- * This is more efficient than individual API calls
+ * Batch save multiple checklist items with enhanced error handling and partial success support
+ * This is more efficient than individual API calls and provides better user experience
  */
 export async function saveChecklist(
   applicationId: string,
   items: ChecklistCreateRequest[]
 ): Promise<ChecklistApiResponse<ChecklistItem[]>> {
-  const promises = items.map((item) =>
-    createChecklistItem(applicationId, item)
-  );
-  const results = await Promise.allSettled(promises);
+  // Input validation
+  if (!applicationId || typeof applicationId !== 'string') {
+    throw new Error('Valid application ID is required');
+  }
+  
+  if (!Array.isArray(items) || items.length === 0) {
+    throw new Error('At least one checklist item is required');
+  }
 
-  const successful: ChecklistItem[] = [];
-  const errors: Error[] = [];
-
-  results.forEach((result, index) => {
-    if (result.status === "fulfilled") {
-      successful.push(result.value.data);
-    } else {
-      errors.push(
-        new Error(`Failed to save item ${index + 1}: ${result.reason.message}`)
-      );
+  // Validate each item before processing
+  const validationErrors: string[] = [];
+  items.forEach((item, index) => {
+    if (!item.document_type || typeof item.document_type !== 'string') {
+      validationErrors.push(`Item ${index + 1}: document_type is required`);
+    }
+    if (!item.document_category || typeof item.document_category !== 'string') {
+      validationErrors.push(`Item ${index + 1}: document_category is required`);
+    }
+    if (typeof item.required !== 'boolean') {
+      validationErrors.push(`Item ${index + 1}: required must be a boolean`);
     }
   });
 
+  if (validationErrors.length > 0) {
+    throw new Error(`Validation failed: ${validationErrors.join(', ')}`);
+  }
+
+  // Process items in batches to avoid overwhelming the server
+  const BATCH_SIZE = 5;
+  const batches: ChecklistCreateRequest[][] = [];
+  for (let i = 0; i < items.length; i += BATCH_SIZE) {
+    batches.push(items.slice(i, i + BATCH_SIZE));
+  }
+
+  const successful: ChecklistItem[] = [];
+  const errors: Array<{ index: number; item: ChecklistCreateRequest; error: string }> = [];
+
+  // Process each batch sequentially to avoid rate limiting
+  for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+    const batch = batches[batchIndex];
+    const batchPromises = batch.map((item, itemIndex) => {
+      const globalIndex = batchIndex * BATCH_SIZE + itemIndex;
+      return createChecklistItem(applicationId, item)
+        .then(result => ({ success: true, data: result.data, index: globalIndex, item }))
+        .catch(error => ({ 
+          success: false, 
+          error: error.message || 'Unknown error', 
+          index: globalIndex, 
+          item 
+        }));
+    });
+
+    const batchResults = await Promise.allSettled(batchPromises);
+    
+    batchResults.forEach((result) => {
+      if (result.status === 'fulfilled') {
+        if (result.value.success && 'data' in result.value) {
+          successful.push(result.value.data);
+        } else if (!result.value.success && 'error' in result.value) {
+          errors.push({
+            index: result.value.index,
+            item: result.value.item,
+            error: result.value.error
+          });
+        }
+      } else {
+        // This shouldn't happen since we're catching errors in the promise
+        errors.push({
+          index: -1,
+          item: {} as ChecklistCreateRequest,
+          error: result.reason?.message || 'Unknown error'
+        });
+      }
+    });
+
+    // Add a small delay between batches to be respectful to the server
+    if (batchIndex < batches.length - 1) {
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+  }
+
+  // Enhanced error reporting with specific details
   if (errors.length > 0) {
-    throw new Error(
-      `Failed to save ${errors.length} items: ${errors
-        .map((e) => e.message)
-        .join(", ")}`
-    );
+    const errorDetails = errors.map(({ index, item, error }) => 
+      `Item ${index + 1} (${item.document_type}): ${error}`
+    ).join('; ');
+    
+    // If we have some successful saves, provide partial success information
+    if (successful.length > 0) {
+      console.warn(`Partial success: ${successful.length} items saved, ${errors.length} failed`);
+      // For now, we'll still throw an error, but you could modify this to return partial success
+      throw new Error(
+        `Failed to save ${errors.length} out of ${items.length} items. ` +
+        `Successfully saved: ${successful.length} items. ` +
+        `Errors: ${errorDetails}`
+      );
+    } else {
+      throw new Error(
+        `Failed to save all ${items.length} items. ` +
+        `Errors: ${errorDetails}`
+      );
+    }
   }
 
   return {

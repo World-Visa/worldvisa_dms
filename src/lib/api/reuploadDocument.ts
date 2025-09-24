@@ -27,24 +27,47 @@ export interface ReuploadDocumentResponse {
 export async function reuploadDocument(data: ReuploadDocumentRequest): Promise<ReuploadDocumentResponse> {
   // Validate file on client side before sending
   const fileName = data.file.name.toLowerCase();
-  const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
-  const allowedMimeTypes = [
-    'application/pdf',
-    'application/msword',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'text/plain'
-  ];
+  
+  // Check if it's an identity photograph
+  const isIdentityPhotograph = (data.document_category === 'Identity Documents' || data.document_category === 'Identity') && 
+    (data.document_name.toLowerCase().includes('photograph') || 
+     data.document_name.toLowerCase().includes('photo') ||
+     data.document_name.toLowerCase().includes('picture'));
+  
+  let allowedExtensions: string[];
+  let allowedMimeTypes: string[];
+  let errorMessage: string;
+  
+  if (isIdentityPhotograph) {
+    // For identity photographs, only allow JPG/JPEG
+    allowedExtensions = ['.jpg', '.jpeg'];
+    allowedMimeTypes = [
+      'image/jpeg',
+      'image/jpg'
+    ];
+    errorMessage = `File "${data.file.name}" has an unsupported file type. Only JPG and JPEG files are allowed for photographs.`;
+  } else {
+    // For all other documents, allow PDF, Word, and text files
+    allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
+    allowedMimeTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'text/plain'
+    ];
+    errorMessage = `File "${data.file.name}" has an unsupported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`;
+  }
   
   // Check file extension
   const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
   if (!hasValidExtension) {
-    throw new Error(`File "${data.file.name}" has an unsupported extension. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
+    throw new Error(errorMessage);
   }
   
   // Check MIME type
   const hasValidMimeType = allowedMimeTypes.includes(data.file.type);
   if (!hasValidMimeType) {
-    throw new Error(`File "${data.file.name}" has an unsupported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
+    throw new Error(errorMessage);
   }
   
   if (data.file.size === 0) {

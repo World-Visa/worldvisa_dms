@@ -6,6 +6,7 @@ export interface VisaApplication {
   Application_Handled_By: string;
   AttachmentCount: number;
   Created_Time?: string;
+  Record_Type?: string;
 }
 
 export interface Application {
@@ -25,6 +26,7 @@ export interface Application {
   DMS_Application_Status?:string;
   Package_Finalize?:string;
   Deadline_For_Lodgment?: string;
+  Record_Type?: string;
 }
 
 export interface Document {

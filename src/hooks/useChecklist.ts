@@ -249,13 +249,35 @@ export function useChecklistMutations(applicationId: string) {
       toast.success(`Checklist saved successfully (${data.data.length} items)`);
     },
     onError: (error: Error) => {
+      // Enhanced error logging with more context
       Sentry.captureException(error, {
         tags: {
           operation: "batch_save_checklist",
           applicationId,
         },
+        extra: {
+          errorMessage: error.message,
+          timestamp: new Date().toISOString(),
+        },
       });
-      toast.error(`Failed to save checklist: ${error.message}`);
+
+      // Parse error message to provide more specific feedback
+      let userMessage = "Failed to save checklist";
+      
+      if (error.message.includes("Validation failed")) {
+        userMessage = "Please check your document selections and try again";
+      } else if (error.message.includes("Failed to save") && error.message.includes("out of")) {
+        // Partial failure case
+        userMessage = "Some documents could not be saved. Please try again or contact support if the issue persists";
+      } else if (error.message.includes("Network error") || error.message.includes("fetch")) {
+        userMessage = "Network error. Please check your connection and try again";
+      } else if (error.message.includes("401") || error.message.includes("Unauthorized")) {
+        userMessage = "Session expired. Please refresh the page and try again";
+      } else {
+        userMessage = `Failed to save checklist: ${error.message}`;
+      }
+
+      toast.error(userMessage);
     },
   });
 

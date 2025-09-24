@@ -24,6 +24,7 @@ interface ApplicationsTableProps {
   isSearchMode?: boolean;
   searchResults?: VisaApplication[];
   isSearchLoading?: boolean;
+  isSpouseApplication?: boolean;
 }
 
 export const ApplicationsTable = memo(function ApplicationsTable({
@@ -34,6 +35,7 @@ export const ApplicationsTable = memo(function ApplicationsTable({
   isSearchMode = false,
   searchResults = [],
   isSearchLoading = false,
+  isSpouseApplication = false,
 }: ApplicationsTableProps) {
   const tableRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
@@ -54,8 +56,12 @@ export const ApplicationsTable = memo(function ApplicationsTable({
   }, [currentPage, limit]);
 
   const handleRowClick = useCallback((applicationId: string) => {
-    router.push(`/admin/applications/${applicationId}`);
-  }, [router]);
+    if (isSpouseApplication) {
+      router.push(`/admin/spouse-skill-assessment-applications/${applicationId}`);
+    } else {
+      router.push(`/admin/applications/${applicationId}`);
+    }
+  }, [router, isSpouseApplication]);
 
   useEffect(() => {
     if (tableRef.current && displayData.length > 0) {

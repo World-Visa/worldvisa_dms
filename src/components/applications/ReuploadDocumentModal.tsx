@@ -74,22 +74,43 @@ export function ReuploadDocumentModal({
     if (!files || files.length === 0) return;
 
     const file = files[0];
-
-    // Validate file type and extension
     const fileName = file.name.toLowerCase();
-    const allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
-    const allowedMimeTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'text/plain'
-    ];
+
+    // Check if it's an identity photograph
+    const isIdentityPhotograph = (finalCategory === 'Identity Documents' || finalCategory === 'Identity') && 
+      (finalDocumentType.toLowerCase().includes('photograph') || 
+       finalDocumentType.toLowerCase().includes('photo') ||
+       finalDocumentType.toLowerCase().includes('picture'));
+
+    let allowedExtensions: string[];
+    let allowedMimeTypes: string[];
+    let errorMessage: string;
+    
+    if (isIdentityPhotograph) {
+      // For identity photographs, only allow JPG/JPEG
+      allowedExtensions = ['.jpg', '.jpeg'];
+      allowedMimeTypes = [
+        'image/jpeg',
+        'image/jpg'
+      ];
+      errorMessage = `${file.name} is not a supported file type. Only JPG and JPEG files are allowed for photographs.`;
+    } else {
+      // For all other documents, allow PDF, Word, and text files
+      allowedExtensions = ['.pdf', '.doc', '.docx', '.txt'];
+      allowedMimeTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'text/plain'
+      ];
+      errorMessage = `${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`;
+    }
     
     const hasValidExtension = allowedExtensions.some(ext => fileName.endsWith(ext));
     const hasValidMimeType = allowedMimeTypes.includes(file.type);
     
     if (!hasValidExtension || !hasValidMimeType) {
-      toast.error(`${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`);
+      toast.error(errorMessage);
       return;
     }
 
@@ -259,7 +280,18 @@ export function ReuploadDocumentModal({
               <input
                 ref={fileInputRef}
                 type="file"
-                accept=".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain"
+                accept={(() => {
+                  const isIdentityPhotograph = (finalCategory === 'Identity Documents' || finalCategory === 'Identity') && 
+                    (finalDocumentType.toLowerCase().includes('photograph') || 
+                     finalDocumentType.toLowerCase().includes('photo') ||
+                     finalDocumentType.toLowerCase().includes('picture'));
+                  
+                  if (isIdentityPhotograph) {
+                    return '.jpg,.jpeg,image/jpeg,image/jpg';
+                  } else {
+                    return '.pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain';
+                  }
+                })()}
                 onChange={handleFileSelect}
                 className="hidden"
                 disabled={isUploading}
@@ -272,7 +304,18 @@ export function ReuploadDocumentModal({
                   : 'Drop your file here, or click to browse'}
               </p>
               <p className="text-xs text-gray-500">
-                <strong>PDF, Word (.doc, .docx), and text (.txt) files</strong> • Max file size 5MB
+                {(() => {
+                  const isIdentityPhotograph = (finalCategory === 'Identity Documents' || finalCategory === 'Identity') && 
+                    (finalDocumentType.toLowerCase().includes('photograph') || 
+                     finalDocumentType.toLowerCase().includes('photo') ||
+                     finalDocumentType.toLowerCase().includes('picture'));
+                  
+                  if (isIdentityPhotograph) {
+                    return <><strong>JPG and JPEG files only</strong> • Max file size 5MB</>;
+                  } else {
+                    return <><strong>PDF, Word (.doc, .docx), and text (.txt) files</strong> • Max file size 5MB</>;
+                  }
+                })()}
               </p>
             </div>
 
@@ -285,7 +328,9 @@ export function ReuploadDocumentModal({
                     {(() => {
                       const fileName = uploadedFile.file.name.toLowerCase();
                       
-                      if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
+                      if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
+                        return <File className="h-5 w-5 text-green-600 flex-shrink-0" />;
+                      } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
                         return <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />;
                       } else if (fileName.endsWith('.txt')) {
                         return <File className="h-5 w-5 text-gray-600 flex-shrink-0" />;

@@ -390,7 +390,18 @@ export function useChecklistState({
       throw new Error(validation.errors.join(', '));
     }
 
+    // Log warnings if any (for debugging purposes)
+    if (validation.warnings.length > 0) {
+      console.warn('Checklist validation warnings:', validation.warnings);
+    }
+
     const checklistItems = createChecklistItemsFromDocuments(selectedDocuments, requirementMap);
+    
+    // Additional validation for the created items
+    if (checklistItems.length === 0) {
+      throw new Error('No valid checklist items could be created from the selected documents');
+    }
+
     await batchSave.mutateAsync(checklistItems);
     
     // Update checklistRequested to false since checklist has been created

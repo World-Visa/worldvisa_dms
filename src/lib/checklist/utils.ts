@@ -467,29 +467,87 @@ export function createChecklistItemsFromDocuments(
 }
 
 /**
- * Validate checklist before saving
+ * Enhanced checklist validation with comprehensive checks
  */
 export function validateChecklist(selectedDocuments: ChecklistDocument[]): {
   isValid: boolean;
   errors: string[];
+  warnings: string[];
 } {
   const errors: string[] = [];
+  const warnings: string[] = [];
+  
+  // Basic validation
+  if (!Array.isArray(selectedDocuments)) {
+    errors.push('Invalid document selection format');
+    return { isValid: false, errors, warnings };
+  }
   
   if (selectedDocuments.length === 0) {
     errors.push('Please select at least one document for the checklist');
+    return { isValid: false, errors, warnings };
+  }
+
+  // Check for maximum limit (prevent overwhelming the system)
+  const MAX_DOCUMENTS = 50;
+  if (selectedDocuments.length > MAX_DOCUMENTS) {
+    errors.push(`Too many documents selected. Maximum allowed: ${MAX_DOCUMENTS}`);
+    return { isValid: false, errors, warnings };
   }
   
-  // Check for duplicate documents
-  const documentKeys = selectedDocuments.map(doc => `${doc.category}-${doc.documentType}`);
-  const duplicates = documentKeys.filter((key, index) => documentKeys.indexOf(key) !== index);
+  // Validate each document
+  const documentKeys = new Set<string>();
+  const duplicateKeys: string[] = [];
+  const invalidDocuments: string[] = [];
   
-  if (duplicates.length > 0) {
-    errors.push('Duplicate documents found in selection');
+  selectedDocuments.forEach((doc, index) => {
+    // Check required fields
+    if (!doc.category || typeof doc.category !== 'string') {
+      invalidDocuments.push(`Document ${index + 1}: Missing or invalid category`);
+    }
+    
+    if (!doc.documentType || typeof doc.documentType !== 'string') {
+      invalidDocuments.push(`Document ${index + 1}: Missing or invalid document type`);
+    }
+    
+    // Check for duplicates
+    if (doc.category && doc.documentType) {
+      const key = `${doc.category}-${doc.documentType}`;
+      if (documentKeys.has(key)) {
+        duplicateKeys.push(`${doc.documentType} in ${doc.category}`);
+      } else {
+        documentKeys.add(key);
+      }
+    }
+    
+    // Check for suspicious patterns
+    if (doc.documentType && doc.documentType.length > 100) {
+      warnings.push(`Document ${index + 1}: Document type name is unusually long`);
+    }
+    
+    if (doc.category && doc.category.length > 50) {
+      warnings.push(`Document ${index + 1}: Category name is unusually long`);
+    }
+  });
+  
+  // Add validation errors
+  if (invalidDocuments.length > 0) {
+    errors.push(...invalidDocuments);
+  }
+  
+  if (duplicateKeys.length > 0) {
+    errors.push(`Duplicate documents found: ${duplicateKeys.join(', ')}`);
+  }
+  
+  // Add warnings for potential issues
+  if (selectedDocuments.length > 20) {
+    warnings.push('Large number of documents selected. Save operation may take longer.');
   }
   
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
+    warnings
   };
 }
 

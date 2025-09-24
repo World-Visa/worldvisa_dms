@@ -122,12 +122,6 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
     setShowCommentModal(true);
   };
 
-  const handleOpenViewModal = () => {
-    setCurrentChecklistId(item.checklist_id!);
-    setMode("view");
-    setShowCommentModal(true);
-  }
-
   const truncateText = (text: string, length = 40) => {
     if (text.length <= length) return text;
     return text.slice(0, length) + "...";
