@@ -143,14 +143,14 @@ export default function ApplicationDetailsPage() {
   };
 
   // Check if all submitted documents are approved
-  const areAllDocumentsReviewed = useMemo(() => {
-    if (!documents || documents.length === 0) {
+  const areAllDocumentsReviewed = useMemo(() => { 
+    if (!allDocuments || allDocuments.length === 0) {
       return false;
     }
 
-    // Check if all documents have approved status
-    return documents.every((doc: Document) => doc.status === 'reviewed');
-  }, [documents]);
+    // Check if all documents have approved status (check ALL documents, not just paginated ones)
+    return allDocuments.every((doc: Document) => doc.status === 'reviewed');
+  }, [allDocuments]);
 
 
   // Handle push for quality check
