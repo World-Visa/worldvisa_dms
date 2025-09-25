@@ -11,9 +11,10 @@ import { ApplicationsTableSkeleton, SearchResultsSkeleton } from '@/components/a
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, Users } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
+import { Button } from '@/components/ui/button';
 
 // Lazy load heavy components for better performance
-const LazyApplicationsTable = lazy(() => 
+const LazyApplicationsTable = lazy(() =>
   import('@/components/applications/ApplicationsTable').then(module => ({
     default: module.ApplicationsTable
   }))
@@ -25,30 +26,31 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'phone' | 'email'>('name');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  
+  const [recentActivity, setRecentActivity] = useState(false);
+
   // Separate state for the actual search query that triggers API calls
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Debounce search input for better performance
   const debouncedSearch = useDebounce(search, 300);
-  
+
   // Performance monitoring
   const { measureAsync } = usePerformanceMonitor('AllApplicationsPage');
-  
+
   // Check if we're in search mode
   const isSearchMode = searchQuery.trim() !== '';
 
   const filters = useMemo(() => {
     let startDate: string | undefined;
     let endDate: string | undefined;
-    
+
     const formatLocalDate = (date: Date): string => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     };
-    
+
     if (dateRange?.from && dateRange?.to) {
       if (dateRange.from <= dateRange.to) {
         startDate = formatLocalDate(dateRange.from);
@@ -62,32 +64,33 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
     } else if (dateRange?.to) {
       endDate = formatLocalDate(dateRange.to);
     }
-    
+
     const filterParams = {
       page,
       limit,
       startDate,
       endDate,
+      recentActivity: recentActivity || undefined,
       // Remove search from regular filters since we have a separate search endpoint
     };
-    
+
     return filterParams;
-  }, [page, limit, dateRange]);
+  }, [page, limit, dateRange, recentActivity]);
 
   // Fetch regular applications (only when not in search mode)
   const { data, isLoading, error } = useApplications(filters);
-  
+
   // Create search params based on search type and value
   const searchParamsForAPI = useMemo(() => {
     if (!searchQuery.trim()) return {};
-    
+
     const params: Record<string, string> = {};
     params[searchType] = searchQuery.trim();
     return params;
   }, [searchQuery, searchType]);
 
   const { data: searchData, isLoading: isSearchQueryLoading, error: searchQueryError } = useSearchApplications(searchParamsForAPI);
-  
+
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
@@ -136,6 +139,12 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
     setSearchQuery('');
     setSearchType('name');
     setDateRange(undefined);
+    setRecentActivity(false);
+    setPage(1);
+  }, []);
+
+  const handleRecentActivityToggle = useCallback(() => {
+    setRecentActivity(prev => !prev);
     setPage(1);
   }, []);
 
@@ -147,8 +156,9 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
   }, [search, handleSearchClick]);
 
   const totalApplications = data?.pagination.totalRecords || 0;
-  
+
   const displayError = isSearchMode ? searchQueryError : error;
+  const displayLoading = isLoading;
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -174,10 +184,10 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">
-              {isLoading ? '...' : totalApplications.toLocaleString()}
+              {displayLoading ? '...' : totalApplications.toLocaleString()}
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              {isLoading ? 'Loading...' : 'Applications assigned to you'}
+              {displayLoading ? 'Loading...' : 'Applications assigned to you'}
             </p>
           </CardContent>
         </Card>
@@ -199,6 +209,22 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
           onClearFilters={handleClearFilters}
           onKeyPress={handleKeyPress}
         />
+        <div className='flex gap-2'>
+          <Button 
+            variant={!recentActivity ? "default" : "outline"} 
+            className='rounded-full py-6 px-6 cursor-pointer'
+            onClick={handleRecentActivityToggle}
+          >
+            All applications
+          </Button>
+          <Button 
+            variant={recentActivity ? "default" : "outline"} 
+            className='rounded-full py-6 px-6 cursor-pointer'
+            onClick={handleRecentActivityToggle}
+          >
+            Recent activities
+          </Button>
+        </div>
       </div>
 
       {/* Error State */}
@@ -246,7 +272,7 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
             applications={data?.data || []}
             currentPage={page}
             limit={limit}
-            isLoading={isLoading}
+            isLoading={displayLoading}
             isSearchMode={isSearchMode}
             searchResults={searchData?.data || []}
             isSearchLoading={isSearchQueryLoading}

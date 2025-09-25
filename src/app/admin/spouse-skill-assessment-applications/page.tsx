@@ -10,6 +10,7 @@ import { ApplicationsTableSkeleton, SearchResultsSkeleton } from '@/components/a
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, FileText } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
+import { Button } from '@/components/ui/button';
 
 // Lazy load heavy components for better performance
 const LazyApplicationsTable = lazy(() => 
@@ -24,6 +25,7 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'phone' | 'email'>('name');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [recentActivity, setRecentActivity] = useState(false);
   
   // Separate state for the actual search query that triggers API calls
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,10 +69,11 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
       limit,
       startDate,
       endDate,
+      recentActivity: recentActivity || undefined,
     };
     
     return filterParams;
-  }, [page, limit, dateRange]);
+  }, [page, limit, dateRange, recentActivity]);
 
   // Fetch spouse applications (only when not in search mode)
   const { data, isLoading, error } = useSpouseApplications(filters);
@@ -133,6 +136,12 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
     setSearchQuery('');
     setSearchType('name');
     setDateRange(undefined);
+    setRecentActivity(false);
+    setPage(1);
+  }, []);
+
+  const handleRecentActivityToggle = useCallback(() => {
+    setRecentActivity(prev => !prev);
     setPage(1);
   }, []);
 
@@ -146,6 +155,7 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
   const totalApplications = data?.pagination.totalRecords || 0;
   
   const displayError = isSearchMode ? searchQueryError : error;
+  const displayLoading = isLoading;
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -171,10 +181,10 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-primary">
-              {isLoading ? '...' : totalApplications.toLocaleString()}
+              {displayLoading ? '...' : totalApplications.toLocaleString()}
             </div>
             <p className="text-sm text-muted-foreground mt-1">
-              {isLoading ? 'Loading...' : 'Spouse applications assigned to you'}
+              {displayLoading ? 'Loading...' : 'Spouse applications assigned to you'}
             </p>
           </CardContent>
         </Card>
@@ -196,6 +206,22 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
           onClearFilters={handleClearFilters}
           onKeyPress={handleKeyPress}
         />
+        <div className='flex gap-2'>
+          <Button 
+            variant={!recentActivity ? "default" : "outline"} 
+            className='rounded-full py-6 px-6 cursor-pointer'
+            onClick={handleRecentActivityToggle}
+          >
+            All applications
+          </Button>
+          <Button 
+            variant={recentActivity ? "default" : "outline"} 
+            className='rounded-full py-6 px-6 cursor-pointer'
+            onClick={handleRecentActivityToggle}
+          >
+            Recent activities
+          </Button>
+        </div>
       </div>
 
       {/* Error State */}
@@ -243,7 +269,7 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
             applications={data?.data || []}
             currentPage={page}
             limit={limit}
-            isLoading={isLoading}
+            isLoading={displayLoading}
             isSearchMode={isSearchMode}
             searchResults={searchData?.data || []}
             isSearchLoading={isSearchQueryLoading}

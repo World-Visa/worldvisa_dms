@@ -19,8 +19,8 @@ export async function getSpouseApplications(
   if (filters.startDate) searchParams.append('startDate', filters.startDate);
   if (filters.endDate) searchParams.append('endDate', filters.endDate);
   
-  // Note: sort and order parameters are not available in ApplicationsFilters interface
-  // If needed, they can be added to the interface in the future
+  // Add recent activity filter
+  if (filters.recentActivity) searchParams.append('recentActivity', 'true');
 
   const url = `${ZOHO_BASE_URL}/visa_applications/spouse/applications?${searchParams.toString()}`;
   

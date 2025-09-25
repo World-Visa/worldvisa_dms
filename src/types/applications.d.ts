@@ -95,6 +95,7 @@ export interface ApplicationsFilters {
   startDate?: string;
   endDate?: string;
   search?: string;
+  recentActivity?: boolean;
 }
 
 export interface SearchParams {
