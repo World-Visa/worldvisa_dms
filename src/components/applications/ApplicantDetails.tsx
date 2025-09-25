@@ -342,7 +342,7 @@ export function ApplicantDetails({
       {/* All Application Information in Single Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center justify-between gap-2 text-base">
+          <CardTitle className="flex md:flex-row flex-col items-center md:justify-between gap-2 text-base">
             <div className="flex items-center gap-2 text-base">
               <User className="h-4 w-4" />
               Application Information

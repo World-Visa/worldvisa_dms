@@ -8,13 +8,15 @@ import { useChecklistMutations } from '@/hooks/useChecklist';
 import { cn } from '@/lib/utils';
 import { Document } from '@/types/applications';
 import type { ChecklistDocument, ChecklistState, DocumentRequirement } from '@/types/checklist';
-import { Check, Eye, FileText, MessageCircle, Plus, Upload } from 'lucide-react';
+import { Check, Eye, FileText, MessageCircle, Plus, Upload, FileCheck } from 'lucide-react';
 import { memo, useState } from 'react';
 import { CommentIcon } from '../CommentIcon';
 import { RejectionMessageDisplay } from '../RejectionMessageDisplay';
 import { DescriptionModal } from './DescriptionModal';
 import { DescriptionDialog } from './DescriptionDialog';
 import { RequirementSelector } from './RequirementSelector';
+import { SampleDocumentModal } from '../SampleDocumentModal';
+import { useHasSampleDocument, useDownloadSampleDocument } from '@/hooks/useSampleDocuments';
 
 interface ChecklistTableItem {
   category: string;
@@ -101,6 +103,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   // Document counts
   documentCounts = {},
   applicationId,
+  isClientView = false,
 }: ChecklistTableRowProps) {
 
   const { updateItemDescription } = useChecklistMutations(applicationId);
@@ -108,6 +111,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   const [currentChecklistId, setCurrentChecklistId] = useState("");
   const [mode, setMode] = useState<"view" | "edit">("edit")
   const [showDescriptionDialog, setShowDescriptionDialog] = useState(false);
+  const [showSampleModal, setShowSampleModal] = useState(false);
 
   const handleUpdateDescription = async (description: string) => {
     if (!currentChecklistId) {
@@ -131,6 +135,19 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
     return text.slice(0, length) + "...";
   };
 
+  // Check if this document type has a sample document available
+  const { data: hasSampleDocument = false } = useHasSampleDocument({
+    documentType: item.documentType,
+    category: item.category,
+    enabled: true 
+  });
+  
+  const { downloadSample } = useDownloadSampleDocument();
+  
+  const handleViewSample = () => {
+    setShowSampleModal(true);
+  };
+
   return (
     <>
       <TableRow key={`${item.category}-${item.documentType}-${item.checklist_id || 'new'}-${index}`}>
@@ -141,7 +158,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
           <Badge
             variant="default"
             className={cn(
-              "text-xs py-1 text-white",
+              "text-xs py-1 text-white ",
               getCategoryBadgeStyle(item.category)
             )}
           >
@@ -152,7 +169,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
           <div className="flex flex-col space-y-1">
             <div className="flex items-center space-x-2">
               <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-              <div className="truncate" title={item.documentType}>
+              <div className="" title={item.documentType}>
                 <HighlightText
                   text={item.documentType}
                   query={searchQuery}
@@ -327,6 +344,24 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
             <div className="flex items-center gap-1">
               <MessageCircle className="h-3 w-3 text-muted-foreground" />
               <span className="text-xs text-muted-foreground">0</span>
+            </div>
+          )}
+        </TableCell>
+        <TableCell className="w-20 text-center">
+          {hasSampleDocument ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleViewSample}
+              className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
+              title="View Sample Document"
+            >
+              <FileCheck className="h-3 w-3" />
+              <span className="hidden sm:inline">Sample</span>
+            </Button>
+          ) : (
+            <div className="flex items-center justify-center">
+              <span className="text-xs text-muted-foreground">-</span>
             </div>
           )}
         </TableCell>
@@ -517,6 +552,18 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
         documentType={item.documentType}
         description={item.description || ""}
       />
+
+      {/* Sample Document Modal */}
+      {hasSampleDocument && (
+        <SampleDocumentModal
+          isOpen={showSampleModal}
+          onClose={() => setShowSampleModal(false)}
+          documentType={item.documentType}
+          category={item.category}
+          samplePath={''} // Will be resolved in the modal
+          companyName={item.company_name || item.company?.name}
+        />
+      )}
 
     </>
   );

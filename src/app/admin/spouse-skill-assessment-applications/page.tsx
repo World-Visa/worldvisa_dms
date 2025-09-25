@@ -15,7 +15,7 @@ import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 
 // Lazy load heavy components for better performance
-const LazyApplicationsTable = lazy(() => 
+const LazyApplicationsTable = lazy(() =>
   import('@/components/applications/ApplicationsTable').then(module => ({
     default: module.ApplicationsTable
   }))
@@ -24,42 +24,42 @@ const LazyApplicationsTable = lazy(() =>
 const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApplications() {
   const { queryParams, updateQuery } = useQueryString();
   const queryClient = useQueryClient();
-  
+
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'phone' | 'email'>('name');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   // Initialize recentActivity from URL params, default to false
   const [recentActivity, setRecentActivity] = useState(() => {
     return queryParams.recentActivity === 'true' || queryParams.recentActivity === true;
   });
-  
+
   // Separate state for the actual search query that triggers API calls
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Debounce search input for better performance
   const debouncedSearch = useDebounce(search, 300);
-  
+
   // Performance monitoring
   const { measureAsync } = usePerformanceMonitor('SpouseSkillAssessmentApplications');
-  
+
   // Check if we're in search mode
   const isSearchMode = searchQuery.trim() !== '';
 
   const filters = useMemo(() => {
     let startDate: string | undefined;
     let endDate: string | undefined;
-    
+
     const formatLocalDate = (date: Date): string => {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
       const day = String(date.getDate()).padStart(2, '0');
       return `${year}-${month}-${day}`;
     };
-    
+
     if (dateRange?.from && dateRange?.to) {
       if (dateRange.from <= dateRange.to) {
         startDate = formatLocalDate(dateRange.from);
@@ -73,7 +73,7 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
     } else if (dateRange?.to) {
       endDate = formatLocalDate(dateRange.to);
     }
-    
+
     const filterParams = {
       page,
       limit,
@@ -81,17 +81,17 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
       endDate,
       recentActivity: recentActivity || undefined,
     };
-    
+
     return filterParams;
   }, [page, limit, dateRange, recentActivity]);
 
   // Fetch spouse applications (only when not in search mode)
   const { data, isLoading, error } = useSpouseApplications(filters);
-  
+
   // Create search params based on search type and value
   const searchParamsForAPI = useMemo(() => {
     if (!searchQuery.trim()) return {};
-    
+
     const params: Record<string, string> = {};
     params[searchType] = searchQuery.trim();
     return params;
@@ -156,7 +156,7 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
     setDateRange(undefined);
     setRecentActivity(false);
     setPage(1);
-    
+
     // Clear URL params when clearing filters
     updateQuery({ recentActivity: undefined });
   }, [updateQuery]);
@@ -165,7 +165,7 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
     const newRecentActivity = !recentActivity;
     setRecentActivity(newRecentActivity);
     setPage(1);
-    
+
     // Update URL params to persist the state
     updateQuery({ recentActivity: newRecentActivity ? 'true' : undefined });
   }, [recentActivity, updateQuery]);
@@ -180,18 +180,18 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
   // Handle refresh functionality
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    
+
     try {
       // Clear all spouse application-related cache
       await queryClient.invalidateQueries({
         queryKey: ['spouse-applications']
       });
-      
+
       // Clear search spouse applications cache
       await queryClient.invalidateQueries({
         queryKey: ['search-spouse-applications']
       });
-      
+
       // Force refetch current queries
       await Promise.all([
         queryClient.refetchQueries({
@@ -201,7 +201,7 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
           queryKey: ['search-spouse-applications', searchParamsForAPI]
         })
       ].filter(Boolean));
-      
+
     } catch (error) {
       console.error('Error refreshing spouse applications:', error);
     } finally {
@@ -210,7 +210,7 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
   }, [queryClient, filters, searchQuery, searchParamsForAPI]);
 
   const totalApplications = data?.pagination.totalRecords || 0;
-  
+
   const displayError = isSearchMode ? searchQueryError : error;
   const displayLoading = isLoading;
 
@@ -263,35 +263,39 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
           onClearFilters={handleClearFilters}
           onKeyPress={handleKeyPress}
         />
-        <div className='flex gap-2'>
-          <Button 
-            variant={!recentActivity ? "default" : "outline"} 
-            className='rounded-full py-6 px-6 cursor-pointer'
-            onClick={handleRecentActivityToggle}
+        <div className='flex justify-between gap-2'>
+          <div className='flex gap-2'>
+            <Button
+              variant={!recentActivity ? "default" : "outline"}
+              className='rounded-full py-6 px-6 cursor-pointer'
+              onClick={handleRecentActivityToggle}
+            >
+              All applications
+            </Button>
+            <Button
+              variant={recentActivity ? "default" : "outline"}
+              className='rounded-full py-6 px-6 cursor-pointer'
+              onClick={handleRecentActivityToggle}
+            >
+              Recent activities
+            </Button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 cursor-pointer"
           >
-            All applications
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
-          <Button 
-            variant={recentActivity ? "default" : "outline"} 
-            className='rounded-full py-6 px-6 cursor-pointer'
-            onClick={handleRecentActivityToggle}
-          >
-            Recent activities
-          </Button>
+
         </div>
 
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 cursor-pointer"
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-          />
-          <span className="hidden sm:inline">Refresh</span>
-        </Button>
       </div>
 
       {/* Error State */}
