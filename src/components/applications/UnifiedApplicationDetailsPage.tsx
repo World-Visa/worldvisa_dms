@@ -76,7 +76,7 @@ export default function UnifiedApplicationDetailsPage({
   const [documentsPage, setDocumentsPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isQualityCheckModalOpen, setIsQualityCheckModalOpen] = useState(false);
-  const maxCompanies = 5;
+  const maxCompanies = 10;
 
   // Check authentication
   useEffect(() => {
