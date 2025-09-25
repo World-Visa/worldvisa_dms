@@ -258,8 +258,8 @@ export function AdminHeader() {
                                     className={`
                                         relative flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 group
                                         ${isActive
-                                            ? 'bg-white text-blue-600 shadow-sm border border-blue-200/50'
-                                            : 'text-gray-600 hover:text-gray-900 hover:bg-white/70 hover:shadow-sm'
+                                            ? 'bg-white text-blue-600 '
+                                            : 'text-gray-600 hover:text-gray-900 '
                                         }
                                     `}
                                 >

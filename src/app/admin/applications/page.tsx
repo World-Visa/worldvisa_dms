@@ -5,6 +5,7 @@ import { useApplications } from '@/hooks/useApplications';
 import { useSearchApplications } from '@/hooks/useSearchApplications';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
+import { useQueryString } from '@/hooks/useQueryString';
 import { ApplicationsFilters } from '@/components/applications/ApplicationsFilters';
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
 import { ApplicationsTableSkeleton, SearchResultsSkeleton } from '@/components/applications/ApplicationsTableSkeleton';
@@ -21,12 +22,18 @@ const LazyApplicationsTable = lazy(() =>
 );
 
 const AllApplicationsPage = memo(function AllApplicationsPage() {
+  const { queryParams, updateQuery } = useQueryString();
+  
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'phone' | 'email'>('name');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
-  const [recentActivity, setRecentActivity] = useState(false);
+  
+  // Initialize recentActivity from URL params, default to false
+  const [recentActivity, setRecentActivity] = useState(() => {
+    return queryParams.recentActivity === 'true' || queryParams.recentActivity === true;
+  });
 
   // Separate state for the actual search query that triggers API calls
   const [searchQuery, setSearchQuery] = useState('');
@@ -129,6 +136,14 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
     }
   }, [debouncedSearch]);
 
+  // Sync recentActivity state with URL params
+  useEffect(() => {
+    const urlRecentActivity = queryParams.recentActivity === 'true' || queryParams.recentActivity === true;
+    if (urlRecentActivity !== recentActivity) {
+      setRecentActivity(urlRecentActivity);
+    }
+  }, [queryParams.recentActivity, recentActivity]);
+
   const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
     setDateRange(range);
     setPage(1);
@@ -141,12 +156,19 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
     setDateRange(undefined);
     setRecentActivity(false);
     setPage(1);
-  }, []);
+    
+    // Clear URL params when clearing filters
+    updateQuery({ recentActivity: undefined });
+  }, [updateQuery]);
 
   const handleRecentActivityToggle = useCallback(() => {
-    setRecentActivity(prev => !prev);
+    const newRecentActivity = !recentActivity;
+    setRecentActivity(newRecentActivity);
     setPage(1);
-  }, []);
+    
+    // Update URL params to persist the state
+    updateQuery({ recentActivity: newRecentActivity ? 'true' : undefined });
+  }, [recentActivity, updateQuery]);
 
   // Add keyboard shortcut for search (Enter key)
   const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
