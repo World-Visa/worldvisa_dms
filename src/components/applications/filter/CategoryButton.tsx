@@ -60,7 +60,7 @@ export const CategoryButton = memo(function CategoryButton({
           {category.isCurrentEmployment && (
             <Badge 
               variant="secondary" 
-              className="bg-green-500 text-white text-xs px-1.5 py-0.5"
+              className="bg-green-500 hover:bg-green-600 text-white text-xs px-1.5 py-0.5"
             >
               Current
             </Badge>

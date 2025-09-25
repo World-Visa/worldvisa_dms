@@ -1,10 +1,12 @@
 'use client';
 
+import { QueryClient } from '@tanstack/react-query';
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AuthState, AdminLoginRequest, ClientLoginRequest } from '@/types/auth';
 import { adminLogin, clientLogin } from '@/lib/zoho';
 import { tokenStorage, parseToken, isTokenExpired } from '@/lib/auth';
+import { clearAllCacheData } from '@/lib/cacheUtils';
 
 // Type for client login response structure
 interface ClientLoginResponse {
@@ -21,7 +23,7 @@ interface ClientLoginResponse {
 
 interface AuthStore extends AuthState {
   login: (credentials: AdminLoginRequest | ClientLoginRequest, type: 'admin' | 'client') => Promise<void>;
-  logout: () => void;
+  logout: (queryClient?: QueryClient) => void;
   checkAuth: () => Promise<void>;
   clearError: () => void;
 }
@@ -99,11 +101,11 @@ export const useAuth = create<AuthStore>()(
         }
       },
 
-      logout: () => {
-        tokenStorage.remove();
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem('user_data');
-        }
+      logout: (queryClient?: QueryClient) => {
+        // Clear all cache data including React Query cache, localStorage, and sockets
+        clearAllCacheData(queryClient);
+        
+        // Clear auth state
         set({
           user: null,
           token: null,

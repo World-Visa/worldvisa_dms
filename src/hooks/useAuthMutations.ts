@@ -1,6 +1,6 @@
 "use client";
 
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "./useAuth";
 import { AdminLoginRequest, ClientLoginRequest } from "@/types/auth";
 import { fetcher } from "@/lib/fetcher";
@@ -43,10 +43,11 @@ export function useClientLogin() {
 
 export function useLogout() {
   const { logout } = useAuth();
+  const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async () => {
-      logout();
+      logout(queryClient);
     },
   });
 }

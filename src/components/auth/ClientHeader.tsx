@@ -9,9 +9,11 @@ import { gsap } from "gsap";
 import Logo from "../../../public/logos/world-visa-logo.webp";
 import Image from "next/image";
 import { ResetClientPasswordDialog } from "./ResetClientPassword";
+import { useQueryClient } from '@tanstack/react-query';
 
 export function ClientHeader() {
   const { user, logout } = useAuth();
+  const queryClient = useQueryClient();
   const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isResetPassword, setIsResetPassword] = useState(false);
@@ -19,10 +21,10 @@ export function ClientHeader() {
   const menuItemsRef = useRef<HTMLDivElement[]>([]);
 
   const handleLogout = useCallback(() => {
-    logout();
+    logout(queryClient);
     router.push("/portal");
     setIsMobileMenuOpen(false);
-  }, [logout, router]);
+  }, [logout, queryClient, router]);
 
   const toggleMobileMenu = useCallback(() => {
     setIsMobileMenuOpen((prev) => !prev);

@@ -16,6 +16,7 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { NotificationPanel } from '@/components/notifications/NotificationPanel';
 import { ApplicationsDropdown } from './ApplicationsDropdown';
 import { ApplicationsDropdownMobile } from './ApplicationsDropdownMobile';
+import { useQueryClient } from '@tanstack/react-query';
 
 
 // Helper function to get portal title based on role
@@ -32,6 +33,7 @@ const getPortalTitle = (role: string | undefined): string => {
 
 export function AdminHeader() {
     const { user, logout } = useAuth();
+    const queryClient = useQueryClient();
     const router = useRouter();
     const pathname = usePathname();
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -45,14 +47,14 @@ export function AdminHeader() {
 
     // Get checklist requests count for real-time updates
     const { data: checklistRequestsCount = 0 } = useChecklistRequestsCount({
-        enabled: !!user && user.role !== 'supervisor', // Only fetch for roles that can see checklist requests
+        enabled: !!user && user.role !== 'supervisor', 
     });
 
     const handleLogout = useCallback(() => {
-        logout();
+        logout(queryClient);
         router.push('/portal');
         setIsMobileMenuOpen(false);
-    }, [logout, router]);
+    }, [logout, queryClient, router]);
 
     const isActiveTab = useCallback((href: string) => {
         if (href === '/admin/dashboard') {
@@ -270,7 +272,7 @@ export function AdminHeader() {
                                         ref={addToRefs}
                                         className="menu-item"
                                     >
-                                        <ApplicationsDropdownMobile 
+                                        <ApplicationsDropdownMobile
                                             onItemClick={() => setIsMobileMenuOpen(false)}
                                         />
                                     </div>
