@@ -232,6 +232,22 @@ const DocumentChecklistTableComponent = ({
     [checklistItems, selectedCategory]
   );
 
+  // Calculate document counts per document type
+  const documentCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    
+    if (documents && documents.length > 0) {
+      documents.forEach(doc => {
+        if (doc.document_name) {
+          const docType = doc.document_name;
+          counts[docType] = (counts[docType] || 0) + 1;
+        }
+      });
+    }
+    
+    return counts;
+  }, [documents]);
+
   // Apply search filtering with highlighting
   const filteredItems = useSearchMemo(
     categoryFilteredItems,
@@ -523,6 +539,7 @@ const DocumentChecklistTableComponent = ({
           isBatchDeleting={isBatchDeleting}
           applicationId={applicationId}
           isClientView={isClientView}
+          documentCounts={documentCounts}
         />
 
         <UploadDocumentsModal

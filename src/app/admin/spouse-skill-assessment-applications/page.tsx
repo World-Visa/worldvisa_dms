@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect, Suspense, lazy, memo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useSpouseApplications, useSearchSpouseApplications } from '@/hooks/useSpouseApplications';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
@@ -9,7 +10,7 @@ import { ApplicationsFilters } from '@/components/applications/ApplicationsFilte
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
 import { ApplicationsTableSkeleton, SearchResultsSkeleton } from '@/components/applications/ApplicationsTableSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText } from 'lucide-react';
+import { Users, FileText, RefreshCw } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 
@@ -22,12 +23,14 @@ const LazyApplicationsTable = lazy(() =>
 
 const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApplications() {
   const { queryParams, updateQuery } = useQueryString();
+  const queryClient = useQueryClient();
   
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'phone' | 'email'>('name');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Initialize recentActivity from URL params, default to false
   const [recentActivity, setRecentActivity] = useState(() => {
@@ -174,6 +177,38 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
     }
   }, [search, handleSearchClick]);
 
+  // Handle refresh functionality
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    
+    try {
+      // Clear all spouse application-related cache
+      await queryClient.invalidateQueries({
+        queryKey: ['spouse-applications']
+      });
+      
+      // Clear search spouse applications cache
+      await queryClient.invalidateQueries({
+        queryKey: ['search-spouse-applications']
+      });
+      
+      // Force refetch current queries
+      await Promise.all([
+        queryClient.refetchQueries({
+          queryKey: ['spouse-applications', filters]
+        }),
+        searchQuery.trim() && queryClient.refetchQueries({
+          queryKey: ['search-spouse-applications', searchParamsForAPI]
+        })
+      ].filter(Boolean));
+      
+    } catch (error) {
+      console.error('Error refreshing spouse applications:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [queryClient, filters, searchQuery, searchParamsForAPI]);
+
   const totalApplications = data?.pagination.totalRecords || 0;
   
   const displayError = isSearchMode ? searchQueryError : error;
@@ -244,6 +279,19 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
             Recent activities
           </Button>
         </div>
+
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-2 cursor-pointer"
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+          <span className="hidden sm:inline">Refresh</span>
+        </Button>
       </div>
 
       {/* Error State */}

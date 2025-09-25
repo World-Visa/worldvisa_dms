@@ -62,6 +62,8 @@ interface ChecklistTableBodyProps {
   isBatchDeleting?: boolean;
   applicationId: string;
   isClientView?: boolean;
+  // New prop for document counts
+  documentCounts?: Record<string, number>;
 }
 
 export const ChecklistTableBody = memo(function ChecklistTableBody({
@@ -97,6 +99,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
   isBatchDeleting = false,
   applicationId,
   isClientView = false,
+  documentCounts = {},
 }: ChecklistTableBodyProps) {
   const paginatedItems = filteredItems.slice(startIndex, endIndex);
 
@@ -139,6 +142,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                 <TableHead className="hidden sm:table-cell">Category</TableHead>
                 <TableHead>Document Name</TableHead>
                 <TableHead className="hidden md:table-cell">Status</TableHead>
+                <TableHead className="w-24 text-center">Count</TableHead>
                 <TableHead className="w-20">Comments</TableHead>
                 <TableHead className="text-right w-24">Action</TableHead>
               </TableRow>
@@ -146,7 +150,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
             <TableBody>
               {paginatedItems.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center py-8">
+                  <TableCell colSpan={6} className="text-center py-8">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">
                       {selectedCategory === 'submitted'
@@ -185,6 +189,7 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                     addedDocumentId={addedDocumentId}
                     isBatchDeleting={isBatchDeleting}
                     commentCounts={commentCounts}
+                    documentCounts={documentCounts}
                     applicationId={applicationId}
                     isClientView={isClientView}
                   />

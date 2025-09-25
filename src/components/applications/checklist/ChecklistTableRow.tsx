@@ -69,6 +69,8 @@ interface ChecklistTableRowProps {
   addedDocumentId?: string;
   // Comment counts
   commentCounts?: Record<string, number>;
+  // Document counts
+  documentCounts?: Record<string, number>;
 }
 
 export const ChecklistTableRow = memo(function ChecklistTableRow({
@@ -96,6 +98,8 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   addedDocumentId,
   // Comment counts
   commentCounts = {},
+  // Document counts
+  documentCounts = {},
   applicationId,
 }: ChecklistTableRowProps) {
 
@@ -303,6 +307,13 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                 />
               </div>
             )}
+          </div>
+        </TableCell>
+        <TableCell className="w-24 text-center">
+          <div className="flex items-center justify-center">
+            <span className="text-sm font-medium">
+              {documentCounts[item.documentType] || 0}
+            </span>
           </div>
         </TableCell>
         <TableCell className="w-20">

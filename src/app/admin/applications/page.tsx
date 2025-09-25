@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useMemo, useEffect, Suspense, lazy, memo } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { useApplications } from '@/hooks/useApplications';
 import { useSearchApplications } from '@/hooks/useSearchApplications';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -10,7 +11,7 @@ import { ApplicationsFilters } from '@/components/applications/ApplicationsFilte
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
 import { ApplicationsTableSkeleton, SearchResultsSkeleton } from '@/components/applications/ApplicationsTableSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, Users } from 'lucide-react';
+import { FileText, RefreshCw, Users } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 
@@ -23,18 +24,20 @@ const LazyApplicationsTable = lazy(() =>
 
 const AllApplicationsPage = memo(function AllApplicationsPage() {
   const { queryParams, updateQuery } = useQueryString();
+  const queryClient = useQueryClient();
   
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'phone' | 'email'>('name');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Initialize recentActivity from URL params, default to false
   const [recentActivity, setRecentActivity] = useState(() => {
     return queryParams.recentActivity === 'true' || queryParams.recentActivity === true;
   });
-
+  
   // Separate state for the actual search query that triggers API calls
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -98,7 +101,7 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
 
   const { data: searchData, isLoading: isSearchQueryLoading, error: searchQueryError } = useSearchApplications(searchParamsForAPI);
 
-
+  
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -156,7 +159,7 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
     setDateRange(undefined);
     setRecentActivity(false);
     setPage(1);
-    
+
     // Clear URL params when clearing filters
     updateQuery({ recentActivity: undefined });
   }, [updateQuery]);
@@ -165,7 +168,7 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
     const newRecentActivity = !recentActivity;
     setRecentActivity(newRecentActivity);
     setPage(1);
-    
+
     // Update URL params to persist the state
     updateQuery({ recentActivity: newRecentActivity ? 'true' : undefined });
   }, [recentActivity, updateQuery]);
@@ -176,6 +179,38 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
       handleSearchClick();
     }
   }, [search, handleSearchClick]);
+
+  // Handle refresh functionality
+  const handleRefresh = useCallback(async () => {
+    setIsRefreshing(true);
+    
+    try {
+      // Clear all application-related cache
+      await queryClient.invalidateQueries({
+        queryKey: ['applications']
+      });
+      
+      // Clear search applications cache
+      await queryClient.invalidateQueries({
+        queryKey: ['search-applications']
+      });
+      
+      // Force refetch current queries
+      await Promise.all([
+        queryClient.refetchQueries({
+          queryKey: ['applications', filters]
+        }),
+        searchQuery.trim() && queryClient.refetchQueries({
+          queryKey: ['search-applications', searchParamsForAPI]
+        })
+      ].filter(Boolean));
+      
+    } catch (error) {
+      console.error('Error refreshing applications:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  }, [queryClient, filters, searchQuery, searchParamsForAPI]);
 
   const totalApplications = data?.pagination.totalRecords || 0;
 
@@ -231,21 +266,37 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
           onClearFilters={handleClearFilters}
           onKeyPress={handleKeyPress}
         />
-        <div className='flex gap-2'>
-          <Button 
-            variant={!recentActivity ? "default" : "outline"} 
-            className='rounded-full py-6 px-6 cursor-pointer'
-            onClick={handleRecentActivityToggle}
+        <div className='flex justify-between gap-2'>
+          <div className='flex gap-2'>
+            <Button
+              variant={!recentActivity ? "default" : "outline"}
+              className='rounded-full py-6 px-6 cursor-pointer'
+              onClick={handleRecentActivityToggle}
+            >
+              All applications
+            </Button>
+            <Button
+              variant={recentActivity ? "default" : "outline"}
+              className='rounded-full py-6 px-6 cursor-pointer'
+              onClick={handleRecentActivityToggle}
+            >
+              Recent activities
+            </Button>
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 cursor-pointer"
           >
-            All applications
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            <span className="hidden sm:inline">Refresh</span>
           </Button>
-          <Button 
-            variant={recentActivity ? "default" : "outline"} 
-            className='rounded-full py-6 px-6 cursor-pointer'
-            onClick={handleRecentActivityToggle}
-          >
-            Recent activities
-          </Button>
+
         </div>
       </div>
 
