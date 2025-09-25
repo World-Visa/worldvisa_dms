@@ -4,7 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useChecklistRequestsCount } from '@/hooks/useChecklistRequestsCount';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Menu, X } from 'lucide-react';
+import { LogOut, Menu, X, User } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useCallback, useMemo, useState, useRef, useEffect } from 'react';
 import { gsap } from 'gsap';
@@ -47,7 +47,7 @@ export function AdminHeader() {
 
     // Get checklist requests count for real-time updates
     const { data: checklistRequestsCount = 0 } = useChecklistRequestsCount({
-        enabled: !!user && user.role !== 'supervisor', 
+        enabled: !!user && user.role !== 'supervisor',
     });
 
     const handleLogout = useCallback(() => {
@@ -148,61 +148,85 @@ export function AdminHeader() {
     }, []);
 
     return (
-        <header className="sticky top-0 z-50 bg-white shadow-sm border-b">
+        <header className="sticky top-0 z-50 bg-white/95  border-b border-gray-200/60 ">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 {/* Top Row - Logo and User Info */}
-                <div className="flex justify-between items-center h-16">
-                    <div className="flex items-center space-x-4">
-                        <div className='w-[120px] sm:w-[160px] text-center h-[60px] sm:h-[80px]'>
-                            <Image
-                                src={Logo}
-                                alt='WorldVisa Logo'
-                                height={1000}
-                                width={1000}
-                                className='w-full h-full object-contain'
-                                priority
-                            />
+                <div className="flex justify-between items-center h-[70px]">
+                    {/* Logo and Title Section */}
+                    <div className="flex items-center space-x-6">
+
+                        <div className="hidden sm:block">
+                            <div className="relative">
+                                <Image
+                                    src={Logo}
+                                    alt="WorldVisa Logo"
+                                    height={62}
+                                    width={102}
+                                    className="w-full h-full object-contain"
+                                    priority
+                                />
+                            </div>
+                            <p className="text-xs pl-2 pt-2 text-gray-500 font-medium uppercase tracking-wide">
+                                {getPortalTitle(user?.role).replace('- ', '')}
+                            </p>
                         </div>
-                        <h1 className="text-sm sm:text-base font-semibold text-gray-900 hidden sm:block">
-                            {getPortalTitle(user?.role)}
-                        </h1>
                     </div>
 
                     {/* Desktop User Info */}
-                    <div className="hidden md:flex items-center space-x-4">
-                        <span className="text-sm text-gray-600 font-lexend">
-                            Welcome, {user?.username || 'Admin'}
-                        </span>
-                        <NotificationBell />
+                    <div className="hidden md:flex items-center space-x-3">
+
+                        {/* Notification Bell */}
+                        <div className="relative">
+                            <NotificationBell />
+                        </div>
+
+
+                        {/* User Profile Section */}
+                        <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
+                            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                                <User className="h-4 w-4 text-gray-900" />
+                            </div>
+                            <div className="flex flex-col">
+                                <span className="text-sm font-medium text-gray-900">
+                                    {user?.username || 'Admin'}
+                                </span>
+                                <span className="text-xs text-gray-500 capitalize">
+                                    {user?.role?.replace('_', ' ') || 'Admin'}
+                                </span>
+                            </div>
+                        </div>
+
+
+                        {/* Logout Button */}
                         <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={handleLogout}
-                            className="flex items-center mx-2 cursor-pointer hover:bg-gray-50 transition-colors"
+                            className="flex items-center space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 rounded-lg"
                         >
-                            <LogOut className="h-4 w-4 mr-2 text-red-500" />
-                            Logout
+                            <LogOut className="h-4 w-4" />
+                            <span className="text-sm font-medium">Logout</span>
                         </Button>
                     </div>
 
                     {/* Mobile Menu Button */}
-                    <div className="md:hidden flex items-center gap-1">
+                    <div className="md:hidden flex items-center space-x-2">
                         <NotificationBell />
                         <Button
                             variant="ghost"
                             size="sm"
                             onClick={toggleMobileMenu}
-                            className="p-2 transition-transform duration-200 hover:scale-105"
+                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
                         >
                             <div className="relative w-6 h-6">
                                 <Menu
-                                    className={`h-6 w-6 absolute transition-all duration-300 ${isMobileMenuOpen
+                                    className={`h-5 w-5 absolute transition-all duration-300 ${isMobileMenuOpen
                                         ? 'opacity-0 rotate-180'
                                         : 'opacity-100 rotate-0'
                                         }`}
                                 />
                                 <X
-                                    className={`h-6 w-6 absolute transition-all duration-300 ${isMobileMenuOpen
+                                    className={`h-5 w-5 absolute transition-all duration-300 ${isMobileMenuOpen
                                         ? 'opacity-100 rotate-0'
                                         : 'opacity-0 -rotate-180'
                                         }`}
@@ -213,8 +237,8 @@ export function AdminHeader() {
                 </div>
 
                 {/* Desktop Navigation Tabs */}
-                <nav className="hidden md:block border-t border-gray-200">
-                    <div className="flex space-x-8">
+                <nav className="hidden md:block border-t border-gray-200/60 bg-gray-50/30">
+                    <div className="flex space-x-1 px-2">
                         {navigationTabs.map((tab) => {
                             // Handle Applications dropdown separately
                             if (tab.id === 'applications') {
@@ -232,22 +256,25 @@ export function AdminHeader() {
                                     key={tab.id}
                                     href={tab.href}
                                     className={`
-                                        flex items-center px-1 py-4 text-sm font-medium border-b-2 transition-colors
+                                        relative flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 group
                                         ${isActive
-                                            ? 'border-blue-500 text-blue-600'
-                                            : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                                            ? 'bg-white text-blue-600 shadow-sm border border-blue-200/50'
+                                            : 'text-gray-600 hover:text-gray-900 hover:bg-white/70 hover:shadow-sm'
                                         }
                                     `}
                                 >
-                                    <Icon className={`h-4 w-4 mr-2 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                                    {tab.label}
+                                    <Icon className={`h-4 w-4 mr-2 transition-colors ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                                    <span className="font-medium">{tab.label}</span>
                                     {showCount && (
                                         <Badge
                                             variant="secondary"
-                                            className="ml-2 bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5"
+                                            className="ml-2 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium"
                                         >
                                             {checklistRequestsCount}
                                         </Badge>
+                                    )}
+                                    {isActive && (
+                                        <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-1 h-1 bg-blue-600 rounded-full"></div>
                                     )}
                                 </Link>
                             );
@@ -258,10 +285,10 @@ export function AdminHeader() {
                 {/* Mobile Menu */}
                 <div
                     ref={mobileMenuRef}
-                    className="md:hidden border-t border-gray-200 bg-white overflow-hidden"
+                    className="md:hidden border-t border-gray-200/60 bg-white/95 backdrop-blur-md overflow-hidden"
                     style={{ height: 0, opacity: 0 }}
                 >
-                    <div className="px-2 pt-2 pb-3 space-y-1">
+                    <div className="px-4 py-4 space-y-2">
                         {/* Mobile Navigation Links */}
                         {navigationTabs.map((tab) => {
                             // Handle Applications dropdown separately
@@ -293,19 +320,19 @@ export function AdminHeader() {
                                         href={tab.href}
                                         onClick={() => setIsMobileMenuOpen(false)}
                                         className={`
-                                            flex items-center px-3 py-2 text-base font-medium rounded-md transition-colors
+                                            flex items-center px-4 py-3 text-base font-medium rounded-xl transition-all duration-200 group
                                             ${isActive
-                                                ? 'bg-blue-50 text-blue-600 border-l-4 border-blue-500'
-                                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                                ? 'bg-blue-50 text-blue-600 border border-blue-200/50 shadow-sm'
+                                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm'
                                             }
                                         `}
                                     >
-                                        <Icon className={`h-5 w-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
-                                        {tab.label}
+                                        <Icon className={`h-5 w-5 mr-3 transition-colors ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                                        <span className="font-medium">{tab.label}</span>
                                         {showCount && (
                                             <Badge
                                                 variant="secondary"
-                                                className="ml-auto bg-blue-100 text-blue-700 text-xs px-1.5 py-0.5"
+                                                className="ml-auto bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium"
                                             >
                                                 {checklistRequestsCount}
                                             </Badge>
@@ -318,21 +345,32 @@ export function AdminHeader() {
                         {/* Mobile User Info and Logout */}
                         <div
                             ref={addToRefs}
-                            className="border-t border-gray-200 pt-3 mt-3 menu-item"
+                            className="border-t border-gray-200/60 pt-4 mt-4 menu-item"
                         >
-                            <div className="px-3 py-2">
-                                <p className="text-sm text-gray-600 font-lexend">
-                                    Welcome, {user?.username || 'Admin'}
-                                </p>
+                            {/* User Profile Card */}
+                            <div className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-gray-50/50 mb-3">
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
+                                    <User className="h-5 w-5 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium text-gray-900">
+                                        {user?.username || 'Admin'}
+                                    </p>
+                                    <p className="text-xs text-gray-500 capitalize">
+                                        {user?.role?.replace('_', ' ') || 'Admin'}
+                                    </p>
+                                </div>
                             </div>
+
+                            {/* Logout Button */}
                             <Button
-                                variant="outline"
+                                variant="ghost"
                                 size="sm"
                                 onClick={handleLogout}
-                                className="w-full mx-3 cursor-pointer mb-2 flex items-center justify-center hover:bg-gray-50 transition-colors"
+                                className="w-full flex items-center justify-center space-x-2 px-4 py-3 text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 rounded-xl font-medium"
                             >
-                                <LogOut className="h-4 w-4 mr-2 text-red-500" />
-                                Logout
+                                <LogOut className="h-4 w-4" />
+                                <span>Logout</span>
                             </Button>
                         </div>
                     </div>
