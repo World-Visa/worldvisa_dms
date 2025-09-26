@@ -12,6 +12,7 @@ export interface ClientApplicationResponse {
     Name: string;
     AttachmentCount: number;
     DMS_Application_Status?: string;
+    Application_Stage?: string;
     leadId?: string;
     Checklist_Requested?: boolean;
     Checklist_Requested_At?: string;

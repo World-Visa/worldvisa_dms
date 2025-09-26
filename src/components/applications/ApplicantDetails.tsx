@@ -206,42 +206,53 @@ export function ApplicantDetails({
     }
   };
 
-
   return (
     <div className="space-y-6">
       {/* Deadline Card - Prominent Display */}
       {application.Deadline_For_Lodgment ? (
-        <Card className={`border-2 ${isDeadlinePassed(application.Deadline_For_Lodgment)
-          ? "border-red-500 bg-red-50"
-          : isDeadlineApproaching(application.Deadline_For_Lodgment)
-            ? "border-orange-500 bg-orange-50"
-            : "border-blue-500 bg-blue-50"
-          }`}>
+        <Card
+          className={`border-2 ${
+            isDeadlinePassed(application.Deadline_For_Lodgment)
+              ? "border-red-500 bg-red-50"
+              : isDeadlineApproaching(application.Deadline_For_Lodgment)
+              ? "border-orange-500 bg-orange-50"
+              : "border-blue-500 bg-blue-50"
+          }`}
+        >
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Clock className={`h-5 w-5 ${isDeadlinePassed(application.Deadline_For_Lodgment)
-                  ? "text-red-600"
-                  : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                    ? "text-orange-600"
-                    : "text-blue-600"
-                  }`} />
-                <span className={`${isDeadlinePassed(application.Deadline_For_Lodgment)
-                  ? "text-red-800"
-                  : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                    ? "text-orange-800"
-                    : "text-blue-800"
-                  }`}>
+                <Clock
+                  className={`h-5 w-5 ${
+                    isDeadlinePassed(application.Deadline_For_Lodgment)
+                      ? "text-red-600"
+                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                      ? "text-orange-600"
+                      : "text-blue-600"
+                  }`}
+                />
+                <span
+                  className={`${
+                    isDeadlinePassed(application.Deadline_For_Lodgment)
+                      ? "text-red-800"
+                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                      ? "text-orange-800"
+                      : "text-blue-800"
+                  }`}
+                >
                   Application Deadline
                 </span>
                 {isDeadlinePassed(application.Deadline_For_Lodgment) && (
                   <AlertTriangle className="h-4 w-4 text-red-600" />
                 )}
-                {isDeadlineApproaching(application.Deadline_For_Lodgment) && !isDeadlinePassed(application.Deadline_For_Lodgment) && (
-                  <AlertTriangle className="h-4 w-4 text-orange-600" />
-                )}
+                {isDeadlineApproaching(application.Deadline_For_Lodgment) &&
+                  !isDeadlinePassed(application.Deadline_For_Lodgment) && (
+                    <AlertTriangle className="h-4 w-4 text-orange-600" />
+                  )}
               </div>
-              {(user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin') && (
+              {(user?.role === "admin" ||
+                user?.role === "team_leader" ||
+                user?.role === "master_admin") && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -257,42 +268,53 @@ export function ApplicantDetails({
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
-                <p className={`text-2xl font-bold ${isDeadlinePassed(application.Deadline_For_Lodgment)
-                  ? "text-red-700"
-                  : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                    ? "text-orange-700"
-                    : "text-blue-700"
-                  }`}>
+                <p
+                  className={`text-2xl font-bold ${
+                    isDeadlinePassed(application.Deadline_For_Lodgment)
+                      ? "text-red-700"
+                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                      ? "text-orange-700"
+                      : "text-blue-700"
+                  }`}
+                >
                   {formatDate(application.Deadline_For_Lodgment)}
                 </p>
-                <p className={`text-sm mt-1 ${isDeadlinePassed(application.Deadline_For_Lodgment)
-                  ? "text-red-600"
-                  : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                    ? "text-orange-600"
-                    : "text-blue-600"
-                  }`}>
+                <p
+                  className={`text-sm mt-1 ${
+                    isDeadlinePassed(application.Deadline_For_Lodgment)
+                      ? "text-red-600"
+                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                      ? "text-orange-600"
+                      : "text-blue-600"
+                  }`}
+                >
                   {isDeadlinePassed(application.Deadline_For_Lodgment)
                     ? "⚠️ Deadline has passed"
                     : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                      ? "⚠️ Deadline approaching"
-                      : "Application lodgement deadline"}
+                    ? "⚠️ Deadline approaching"
+                    : "Application lodgement deadline"}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-sm text-muted-foreground">
-                  Days remaining:
-                </p>
-                <p className={`text-xl font-semibold ${isDeadlinePassed(application.Deadline_For_Lodgment)
-                  ? "text-red-600"
-                  : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                    ? "text-orange-600"
-                    : "text-blue-600"
-                  }`}>
+                <p className="text-sm text-muted-foreground">Days remaining:</p>
+                <p
+                  className={`text-xl font-semibold ${
+                    isDeadlinePassed(application.Deadline_For_Lodgment)
+                      ? "text-red-600"
+                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                      ? "text-orange-600"
+                      : "text-blue-600"
+                  }`}
+                >
                   {(() => {
-                    const deadlineDate = new Date(application.Deadline_For_Lodgment);
+                    const deadlineDate = new Date(
+                      application.Deadline_For_Lodgment
+                    );
                     const today = new Date();
                     const diffTime = deadlineDate.getTime() - today.getTime();
-                    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                    const diffDays = Math.ceil(
+                      diffTime / (1000 * 60 * 60 * 24)
+                    );
                     return diffDays < 0 ? "Overdue" : diffDays;
                   })()}
                 </p>
@@ -307,11 +329,11 @@ export function ApplicantDetails({
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-gray-600" />
-                <span className="text-gray-800">
-                  Application Deadline
-                </span>
+                <span className="text-gray-800">Application Deadline</span>
               </div>
-              {(user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin') && (
+              {(user?.role === "admin" ||
+                user?.role === "team_leader" ||
+                user?.role === "master_admin") && (
                 <Button
                   variant="outline"
                   size="sm"
@@ -354,34 +376,9 @@ export function ApplicantDetails({
               >
                 Application Status:
               </label>
-              {isStatusUpdating ? (
-                <div className="flex items-center justify-center w-[180px] border border-gray-300 rounded-lg bg-gray-100 animate-pulse">
-                  <span className="text-sm italic">Updating status...</span>
-                </div>
-              ) : (
-                <Select
-                  value={application?.DMS_Application_Status || ""}
-                  onValueChange={handleStatusChange}
-                  defaultValue={application?.DMS_Application_Status || ""}
-                >
-                  <SelectTrigger className="w-[180px] border border-gray-300 rounded-lg">
-                    <SelectValue placeholder="Select Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {applicationStatuses.map((status) => (
-                        <SelectItem
-                          className="capitalize italic"
-                          key={status.label}
-                          value={status.value}
-                        >
-                          {status.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              )}
+              <p className="font-semibold italic">
+                {application?.Application_Stage}
+              </p>
             </div>
           </CardTitle>
         </CardHeader>
