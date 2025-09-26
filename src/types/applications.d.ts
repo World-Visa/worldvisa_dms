@@ -22,9 +22,10 @@ export interface Application {
   Service_Finalized?: string;
   Suggested_Anzsco?: string;
   Send_Check_List?: string;
-  Assessing_Authority?:string;
-  DMS_Application_Status?:string;
-  Package_Finalize?:string;
+  Assessing_Authority?: string;
+  DMS_Application_Status?: string;
+  Application_Stage?: string;
+  Package_Finalize?: string;
   Deadline_For_Lodgment?: string;
   Record_Type?: string;
 }

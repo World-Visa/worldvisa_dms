@@ -33,6 +33,7 @@ export function useClientApplication() {
                     AttachmentCount: 0,
                     DMS_Application_Status:
                       user?.DMS_Application_Status || null,
+                    Application_Stage: user?.Application_Stage || "",
                   },
                 };
               }
