@@ -7,6 +7,7 @@ import { DocumentChecklistTable } from '@/components/applications/DocumentCheckl
 import { DocumentsTable } from '@/components/applications/DocumentsTable';
 import { QualityCheckModal } from '@/components/applications/QualityCheckModal';
 import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
+import { ResetPasswordModal } from '@/components/applications/ResetPasswordModal';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -23,7 +24,7 @@ import { useChecklistURLState } from '@/lib/urlState';
 import { ApplicationDetailsResponse, Document } from '@/types/applications';
 import { Company, DocumentCategory } from '@/types/documents';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, BadgeCheck, CheckCircle, RefreshCw } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, CheckCircle, RefreshCw, Key } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -76,6 +77,7 @@ export default function UnifiedApplicationDetailsPage({
   const [documentsPage, setDocumentsPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isQualityCheckModalOpen, setIsQualityCheckModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const maxCompanies = 10;
 
   // Check authentication
@@ -348,7 +350,12 @@ export default function UnifiedApplicationDetailsPage({
 
   const handleBack = () => {
     router.back();
-  }
+  };
+
+  const handleResetPasswordSuccess = () => {
+    // Optionally refresh data or show additional success message
+    console.log('Password reset successfully');
+  };
 
   if (applicationError || documentsError) {
     return (
@@ -423,32 +430,52 @@ export default function UnifiedApplicationDetailsPage({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            
+            {user?.role !== 'client' && (
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div>
-                    <Button
-                      variant={areAllDocumentsReviewed ? "default" : "outline"}
-                      size="sm"
-                      onClick={handlePushForQualityCheck}
-                      disabled={!areAllDocumentsReviewed}
-                      className={`flex items-center gap-2 cursor-pointer ${areAllDocumentsReviewed
-                        ? "bg-green-600 hover:bg-green-700 text-white"
-                        : "opacity-50 cursor-not-allowed"
-                        }`}
-                    >
-                      <CheckCircle className="h-4 w-4" />
-                      <span className="hidden sm:inline">
-                        Push for Quality Check
-                      </span>
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsResetPasswordModalOpen(true)}
+                    className="flex items-center gap-2 cursor-pointer"
+                  >
+                    <Key className="h-4 w-4" />
+                    <span className="hidden sm:inline">Reset Password</span>
+                  </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  {areAllDocumentsReviewed
-                    ? "All documents are approved. Ready for quality check."
-                    : "All submitted documents must be reviewed before pushing for quality check."}
+                  Reset client password
                 </TooltipContent>
               </Tooltip>
+            )}
+
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div>
+                  <Button
+                    variant={areAllDocumentsReviewed ? "default" : "outline"}
+                    size="sm"
+                    onClick={handlePushForQualityCheck}
+                    disabled={!areAllDocumentsReviewed}
+                    className={`flex items-center gap-2 cursor-pointer ${areAllDocumentsReviewed
+                      ? "bg-green-600 hover:bg-green-700 text-white"
+                      : "opacity-50 cursor-not-allowed"
+                      }`}
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    <span className="hidden sm:inline">
+                      Push for Quality Check
+                    </span>
+                  </Button>
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                {areAllDocumentsReviewed
+                  ? "All documents are approved. Ready for quality check."
+                  : "All submitted documents must be reviewed before pushing for quality check."}
+              </TooltipContent>
+            </Tooltip>
 
             <Button
               variant="outline"
@@ -625,6 +652,16 @@ export default function UnifiedApplicationDetailsPage({
           onOpenChange={setIsQualityCheckModalOpen}
           disabled={!areAllDocumentsReviewed}
           recordType={application?.Record_Type}
+        />
+      )}
+
+      {/* Reset Password Modal - For both regular and spouse applications, but not for client users */}
+      {user?.role !== 'client' && (
+        <ResetPasswordModal
+          isOpen={isResetPasswordModalOpen}
+          onOpenChange={setIsResetPasswordModalOpen}
+          leadId={application?.id || ''}
+          onSuccess={handleResetPasswordSuccess}
         />
       )}
     </div>
