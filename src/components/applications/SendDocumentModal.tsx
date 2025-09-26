@@ -43,20 +43,39 @@ export function SendDocumentModal({
   const [selectedDocuments, setSelectedDocuments] = useState<string[]>([selectedDocument._id]);
   const [selectedAdmins, setSelectedAdmins] = useState<string[]>([]);
 
-  // Memoize admin options for performance - filter to only show team_leader, supervisor, and master_admin
+  // Memoize admin options for performance - role-based filtering
   const adminOptions: MultiSelectOption[] = useMemo(() => {
-    if (!adminUsers) return [];
+    if (!adminUsers || !user?.role) return [];
     
-    const allowedRoles = ['team_leader', 'master_admin'];
+    // Define role-based permissions
+    const getRolePermissions = (userRole: string) => {
+      switch (userRole) {
+        case 'admin':
+          return ['team_leader', 'master_admin'];
+        case 'team_leader':
+          return ['master_admin', 'supervisor', 'admin'];
+        case 'master_admin':
+          return ['team_leader', 'supervisor', 'admin', 'master_admin'];
+        case 'supervisor':
+          return ['team_leader', 'master_admin', 'admin', 'supervisor'];
+        default:
+          return [];
+      }
+    };
+    
+    const allowedRoles = getRolePermissions(user.role);
     
     return adminUsers
-      .filter(admin => allowedRoles.includes(admin.role))
+      .filter(admin => 
+        allowedRoles.includes(admin.role) && 
+        admin.username !== user.username // Exclude current user
+      )
       .map(admin => ({
         value: admin.username,
         label: admin.username,
         role: admin.role
       }));
-  }, [adminUsers]);
+  }, [adminUsers, user?.role, user?.username]);
 
   const handleDocumentToggle = (documentId: string) => {
     setSelectedDocuments(prev => 
@@ -140,7 +159,6 @@ export function SendDocumentModal({
 
   const selectedCount = selectedDocuments.length;
   const isSubmitting = reviewRequestMutation.isPending;
-  const canSend = selectedCount > 0 && selectedAdmins.length > 0 && !isSubmitting && !!user?.username;
   
   // Enhanced validation states
   const hasValidSelection = selectedCount > 0 && selectedAdmins.length > 0;
