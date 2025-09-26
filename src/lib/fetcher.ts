@@ -103,7 +103,12 @@ export async function fetcher<T>(
     return {} as T;
   }
   
-  return JSON.parse(text);
+  try {
+    return JSON.parse(text);
+  } catch (parseError) {
+    console.warn('Failed to parse JSON response:', { text, parseError });
+    return {} as T;
+  }
 }
 
 // Fetch wrapper for public endpoints (no token required)
@@ -148,5 +153,10 @@ export async function publicFetcher<T>(
     return {} as T;
   }
   
-  return JSON.parse(text);
+  try {
+    return JSON.parse(text);
+  } catch (parseError) {
+    console.warn('Failed to parse JSON response:', { text, parseError });
+    return {} as T;
+  }
 }

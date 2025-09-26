@@ -178,9 +178,17 @@ export function DocumentListModal({
     setDocumentToDelete(null);
   };
   
+  // Calculate dynamic height based on document count
+  const getModalHeight = () => {
+    if (documents.length === 0) return 'h-auto max-h-[50vh]';
+    if (documents.length === 1) return 'h-auto max-h-[60vh]';
+    if (documents.length <= 3) return 'h-auto max-h-[70vh]';
+    return 'h-[80vh]'; // Fixed height for many documents
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl flex flex-col h-[80vh]">
+      <DialogContent className={`max-w-2xl flex flex-col ${getModalHeight()}`}>
         <DialogHeader className="flex-shrink-0">
           <DialogTitle>Documents - {documentType}</DialogTitle>
         </DialogHeader>

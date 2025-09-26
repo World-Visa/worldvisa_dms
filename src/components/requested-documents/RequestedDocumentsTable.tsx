@@ -23,6 +23,7 @@ import { RequestedDocumentType } from '@/types/common';
 
 import { cn } from '@/lib/utils';
 import { getCategoryDisplayProps } from '@/lib/utils/documentCategoryNormalizer';
+import { useRequestedDocumentRealtime } from '@/hooks/useRequestedDocumentRealtime';
 
 interface RequestedDocumentsTableProps {
   documents: RequestedDocument[];
@@ -37,6 +38,9 @@ export function RequestedDocumentsTable({
 }: RequestedDocumentsTableProps) {
   const [selectedDocument, setSelectedDocument] = useState<RequestedDocument | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
+
+  // Enable real-time updates for requested documents
+  useRequestedDocumentRealtime();
 
   const handleViewDocument = (document: RequestedDocument) => {
     setSelectedDocument(document);

@@ -48,26 +48,36 @@ export function useReviewRequest({ onSuccess, onError }: UseReviewRequestProps =
         const messagePromises: Promise<void>[] = [];
         const successfulReviewRequests: Array<{ _id: string; document_id: string }> = [];
         
-        results.forEach((result) => {
+        results.forEach((result, resultIndex) => {
           if (result.success && result.data) {
             // Ensure result.data is always treated as an array
             const reviewRequests = Array.isArray(result.data) ? result.data : [result.data];
             
             reviewRequests.forEach((reviewRequest) => {
               if (reviewRequest && reviewRequest._id) {
+                // Get the original document ID from the request
+                const originalRequest = requests[resultIndex];
+                const documentId = originalRequest?.documentId || reviewRequest.document_id;
+                
                 successfulReviewRequests.push({
                   _id: reviewRequest._id,
-                  document_id: reviewRequest.document_id
+                  document_id: documentId
                 });
                 
+                
+                if (reviewRequest._id.startsWith('temp-')) {
+                  console.log('Skipping message send for temporary review request ID:', reviewRequest._id);
+                  return;
+                }
+                
                 const messagePromise = sendRequestedDocumentMessage(
-                  reviewRequest.document_id,
+                  documentId,
                   reviewRequest._id,
                   { message: message }
                 ).catch((error) => {
                   console.warn('Failed to send message for review request:', {
                     reviewId: reviewRequest._id,
-                    documentId: reviewRequest.document_id,
+                    documentId: documentId,
                     error: error instanceof Error ? error.message : error
                   });
                 });
@@ -119,8 +129,7 @@ export function useReviewRequest({ onSuccess, onError }: UseReviewRequestProps =
         throw error;
       }
     },
-    onMutate: async ({ documentIds, requestedTo }) => {
-      // Cancel any outgoing refetches for these documents
+    onMutate: async ({ requestedTo }) => {
       await queryClient.cancelQueries({ queryKey: ['application-documents'] });
       await queryClient.cancelQueries({ queryKey: ['application-documents-paginated'] });
       
@@ -129,8 +138,8 @@ export function useReviewRequest({ onSuccess, onError }: UseReviewRequestProps =
         id: 'review-request-loading'
       });
     },
-    onSuccess: (data, variables) => {
-      const { documentIds, requestedTo, successfulRequests, totalRequests, successfulReviewRequests, failedMessages } = data;
+    onSuccess: (data) => {
+      const { documentIds, requestedTo, successfulRequests, totalRequests, failedMessages } = data;
       
       // Optimized query invalidation - only invalidate specific queries
       const invalidationPromises = [
@@ -175,7 +184,7 @@ export function useReviewRequest({ onSuccess, onError }: UseReviewRequestProps =
       onSuccess?.(documentIds, requestedTo);
     },
     onError: (error, variables) => {
-      const { documentIds, requestedTo } = variables;
+      const { documentIds } = variables;
       
       // Dismiss loading toast
       toast.dismiss('review-request-loading');
@@ -267,7 +276,7 @@ export function useSingleReviewRequest({ onSuccess, onError }: UseReviewRequestP
         id: 'single-review-request-loading'
       });
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (data) => {
       const { documentId, requestedTo } = data;
       
       queryClient.invalidateQueries({ queryKey: ['application-documents'] });

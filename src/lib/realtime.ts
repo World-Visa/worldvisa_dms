@@ -1,6 +1,15 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { CommentEvent, RealtimeConnectionState } from '@/types/comments';
 import { tokenStorage } from './auth';
 import * as Sentry from '@sentry/nextjs';
+
+export interface RequestedDocumentEvent {
+  type: 'requested_document_deleted' | 'requested_document_updated' | 'requested_document_created';
+  document_id: string;
+  document?: any;
+  requested_by?: string;
+  requested_to?: string;
+}
 
 export class RealtimeManager {
   private eventSource: EventSource | null = null;
@@ -9,7 +18,7 @@ export class RealtimeManager {
   private reconnectDelay = 1000; // Start with 1 second
   private maxReconnectDelay = 30000; // Max 30 seconds
   private isConnecting = false;
-  private listeners = new Map<string, Set<(event: CommentEvent) => void>>();
+  private listeners = new Map<string, Set<(event: CommentEvent | RequestedDocumentEvent) => void>>();
   private connectionState: RealtimeConnectionState = {
     isConnected: false,
     isConnecting: false,
@@ -29,13 +38,13 @@ export class RealtimeManager {
     }
   }
 
-  // Subscribe to comment events for a specific document
-  subscribe(documentId: string, callback: (event: CommentEvent) => void): () => void {
-    if (!this.listeners.has(documentId)) {
-      this.listeners.set(documentId, new Set());
+  // Subscribe to events for a specific document or general events
+  subscribe(subscriptionKey: string, callback: (event: CommentEvent | RequestedDocumentEvent) => void): () => void {
+    if (!this.listeners.has(subscriptionKey)) {
+      this.listeners.set(subscriptionKey, new Set());
     }
     
-    this.listeners.get(documentId)!.add(callback);
+    this.listeners.get(subscriptionKey)!.add(callback);
     
     // Connect if not already connected
     if (!this.isConnected() && !this.isConnecting) {
@@ -44,11 +53,11 @@ export class RealtimeManager {
 
     // Return unsubscribe function
     return () => {
-      const documentListeners = this.listeners.get(documentId);
+      const documentListeners = this.listeners.get(subscriptionKey);
       if (documentListeners) {
         documentListeners.delete(callback);
         if (documentListeners.size === 0) {
-          this.listeners.delete(documentId);
+          this.listeners.delete(subscriptionKey);
         }
       }
       
@@ -128,15 +137,24 @@ export class RealtimeManager {
 
       eventSource.onmessage = (event) => {
         try {
-          const commentEvent: CommentEvent = JSON.parse(event.data);
-          this.handleCommentEvent(commentEvent);
+          const eventData = JSON.parse(event.data);
+          
+          // Check if it's a comment event or requested document event
+          if (eventData.type && eventData.type.startsWith('comment_')) {
+            const commentEvent: CommentEvent = eventData;
+            this.handleCommentEvent(commentEvent);
+          } else if (eventData.type && eventData.type.startsWith('requested_document_')) {
+            const requestedDocumentEvent: RequestedDocumentEvent = eventData;
+            this.handleRequestedDocumentEvent(requestedDocumentEvent);
+          }
+          
           this.updateConnectionState({ 
             lastEvent: new Date().toISOString() 
           });
         } catch (error) {
-          console.error('Failed to parse comment event:', error);
+          console.error('Failed to parse real-time event:', error);
           Sentry.captureException(error, {
-            tags: { operation: 'parse_comment_event' },
+            tags: { operation: 'parse_realtime_event' },
             extra: { eventData: event.data }
           });
         }
@@ -169,6 +187,40 @@ export class RealtimeManager {
           console.error('Error in comment event callback:', error);
           Sentry.captureException(error, {
             tags: { operation: 'comment_event_callback' },
+            extra: { event }
+          });
+        }
+      });
+    }
+  }
+
+  private handleRequestedDocumentEvent(event: RequestedDocumentEvent): void {
+    // Notify all listeners for requested documents
+    const requestedDocumentListeners = this.listeners.get('requested-documents');
+    if (requestedDocumentListeners) {
+      requestedDocumentListeners.forEach(callback => {
+        try {
+          callback(event);
+        } catch (error) {
+          console.error('Error in requested document event callback:', error);
+          Sentry.captureException(error, {
+            tags: { operation: 'requested_document_event_callback' },
+            extra: { event }
+          });
+        }
+      });
+    }
+
+    // Also notify listeners for the specific document if it exists
+    const documentListeners = this.listeners.get(event.document_id);
+    if (documentListeners) {
+      documentListeners.forEach(callback => {
+        try {
+          callback(event);
+        } catch (error) {
+          console.error('Error in document-specific requested document event callback:', error);
+          Sentry.captureException(error, {
+            tags: { operation: 'document_specific_requested_document_event_callback' },
             extra: { event }
           });
         }

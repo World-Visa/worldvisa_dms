@@ -331,10 +331,23 @@ export function useDeleteRequestedDocument() {
       // Return context for potential rollback
       return { previousToMeData, previousMyRequestsData, previousAllRequestsData, previousDocumentData };
     },
-    onSuccess: () => {
-      // Dismiss loading toast
+    onSuccess: async () => {
       toast.dismiss('delete-requested-document');
       toast.success('Requested document deleted successfully!');
+      
+      // Invalidate and refetch all requested document queries to ensure consistency
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['requested-documents-to-me'] }),
+        queryClient.invalidateQueries({ queryKey: ['my-requested-documents'] }),
+        queryClient.invalidateQueries({ queryKey: ['all-requested-documents'] })
+      ]);
+
+      // Force refetch to ensure UI is up to date
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ['requested-documents-to-me'] }),
+        queryClient.refetchQueries({ queryKey: ['my-requested-documents'] }),
+        queryClient.refetchQueries({ queryKey: ['all-requested-documents'] })
+      ]);
     },
     onError: (error: Error, variables, context) => {
       const { documentId } = variables;

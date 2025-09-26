@@ -329,7 +329,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
         <TableCell className="w-24 text-center">
           <div className="flex items-center justify-center">
             <span className="text-sm font-medium">
-              {documentCounts[item.documentType] || 0}
+              {documentCounts[`${item.documentType}_${item.category || 'default'}`] || 0}
             </span>
           </div>
         </TableCell>

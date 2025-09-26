@@ -50,8 +50,8 @@ export async function deleteRequestedDocument(
   data: DeleteRequestedDocumentRequest
 ): Promise<DeleteRequestedDocumentResponse> {
   try {
-    // Use production server directly like Postman does
-    const response = await fetcher(`https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`, {
+    // Use local API route which handles real-time events
+    const response = await fetcher(`/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

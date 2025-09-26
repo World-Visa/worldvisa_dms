@@ -120,7 +120,7 @@ const DocumentChecklistTableComponent = ({
   const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
   const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
   const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
-  
+
   // Description dialog state
   const [isDescriptionDialogOpen, setIsDescriptionDialogOpen] = useState(false);
   const [selectedDescriptionDocumentType, setSelectedDescriptionDocumentType] = useState<string>('');
@@ -232,21 +232,6 @@ const DocumentChecklistTableComponent = ({
     [checklistItems, selectedCategory]
   );
 
-  // Calculate document counts per document type
-  const documentCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    
-    if (documents && documents.length > 0) {
-      documents.forEach(doc => {
-        if (doc.document_name) {
-          const docType = doc.document_name;
-          counts[docType] = (counts[docType] || 0) + 1;
-        }
-      });
-    }
-    
-    return counts;
-  }, [documents]);
 
   // Apply search filtering with highlighting
   const filteredItems = useSearchMemo(
@@ -391,6 +376,24 @@ const DocumentChecklistTableComponent = ({
       return false;
     });
   }, []);
+
+
+  // Calculate document counts per document type and company category
+  const documentCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+
+    if (documents && documents.length > 0) {
+      // For each checklist item, count documents that match both type and company
+      checklistItems.forEach(item => {
+        const key = `${item.documentType}_${item.category || 'default'}`;
+        const matchingDocuments = filterDocumentsByType(documents, item.documentType, item.category);
+        counts[key] = matchingDocuments.length;
+      });
+    }
+
+    return counts;
+  }, [documents, checklistItems, filterDocumentsByType]);
+
 
   const getLatestDocuments = useCallback((fallbackDocuments: Document[]): Document[] => {
     // Use the all documents query to get all documents, not just paginated ones
