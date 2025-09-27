@@ -14,6 +14,7 @@ export const EDUCATION_DOCUMENTS = [
   { "category": "Education Documents", "documentType": "10th" },
   { "category": "Education Documents", "documentType": "12th" },
   { "category": "Education Documents", "documentType": "Diploma Certificate" },
+  {"category" : "Education Documents", "documentType": "Diploma MarkSheet" },
   { "category": "Education Documents", "documentType": "Bachelors Degree Certificate" },
   { "category": "Education Documents", "documentType": "Bachelors Marksheet/ Transcripts" },
   { "category": "Education Documents", "documentType": "Masters Degree Certificate" },
