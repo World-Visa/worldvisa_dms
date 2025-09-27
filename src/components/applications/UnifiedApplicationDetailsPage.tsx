@@ -5,6 +5,7 @@ import { ApplicantDetails } from '@/components/applications/ApplicantDetails';
 import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
 import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
 import { DocumentsTable } from '@/components/applications/DocumentsTable';
+import { DownloadAllDocumentsModal } from '@/components/applications/DownloadAllDocumentsModal';
 import { QualityCheckModal } from '@/components/applications/QualityCheckModal';
 import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
 import { ResetPasswordModal } from '@/components/applications/ResetPasswordModal';
@@ -24,7 +25,7 @@ import { useChecklistURLState } from '@/lib/urlState';
 import { ApplicationDetailsResponse, Document } from '@/types/applications';
 import { Company, DocumentCategory } from '@/types/documents';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, BadgeCheck, CheckCircle, RefreshCw, Key } from 'lucide-react';
+import { ArrowLeft, BadgeCheck, CheckCircle, RefreshCw, Key, Download } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 
@@ -78,6 +79,7 @@ export default function UnifiedApplicationDetailsPage({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isQualityCheckModalOpen, setIsQualityCheckModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [isDownloadAllModalOpen, setIsDownloadAllModalOpen] = useState(false);
   const maxCompanies = 10;
 
   // Check authentication
@@ -169,13 +171,13 @@ export default function UnifiedApplicationDetailsPage({
   };
 
   // Check if all submitted documents are approved (only for regular applications)
-  const areAllDocumentsReviewed = useMemo(() => {
+  const areAllDocumentsApproved = useMemo(() => {
     if (isSpouseApplication || !allDocuments || allDocuments.length === 0) {
       return false;
     }
 
     // Check if all documents have approved status (check ALL documents, not just paginated ones)
-    return allDocuments.every((doc: Document) => doc.status === 'reviewed');
+    return allDocuments.every((doc: Document) => doc.status === 'approved');
   }, [allDocuments, isSpouseApplication]);
 
   // Handle push for quality check (only for regular applications)
@@ -430,6 +432,34 @@ export default function UnifiedApplicationDetailsPage({
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Download All Documents Button - Only for admin users and when all documents are approved */}
+            {user?.role !== 'client' && (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsDownloadAllModalOpen(true)}
+                      disabled={!areAllDocumentsApproved}
+                      className={`flex items-center gap-2 cursor-pointer ${
+                        areAllDocumentsApproved
+                          ? "hover:bg-blue-50 hover:border-blue-300"
+                          : "opacity-50 cursor-not-allowed"
+                      }`}
+                    >
+                      <Download className="h-4 w-4" />
+                      <span className="hidden sm:inline">Download All</span>
+                    </Button>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {areAllDocumentsApproved
+                    ? "Download all approved documents as ZIP"
+                    : "All documents must be approved before downloading"}
+                </TooltipContent>
+              </Tooltip>
+            )}
             
             {user?.role !== 'client' && (
               <Tooltip>
@@ -454,11 +484,11 @@ export default function UnifiedApplicationDetailsPage({
               <TooltipTrigger asChild>
                 <div>
                   <Button
-                    variant={areAllDocumentsReviewed ? "default" : "outline"}
+                    variant={areAllDocumentsApproved ? "default" : "outline"}
                     size="sm"
                     onClick={handlePushForQualityCheck}
-                    disabled={!areAllDocumentsReviewed}
-                    className={`flex items-center gap-2 cursor-pointer ${areAllDocumentsReviewed
+                    disabled={!areAllDocumentsApproved}
+                    className={`flex items-center gap-2 cursor-pointer ${areAllDocumentsApproved
                       ? "bg-green-600 hover:bg-green-700 text-white"
                       : "opacity-50 cursor-not-allowed"
                       }`}
@@ -471,9 +501,9 @@ export default function UnifiedApplicationDetailsPage({
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                {areAllDocumentsReviewed
+                {areAllDocumentsApproved
                   ? "All documents are approved. Ready for quality check."
-                  : "All submitted documents must be reviewed before pushing for quality check."}
+                  : "All submitted documents must be approved before pushing for quality check."}
               </TooltipContent>
             </Tooltip>
 
@@ -650,7 +680,7 @@ export default function UnifiedApplicationDetailsPage({
           leadId={application?.id || ''}
           isOpen={isQualityCheckModalOpen}
           onOpenChange={setIsQualityCheckModalOpen}
-          disabled={!areAllDocumentsReviewed}
+          disabled={!areAllDocumentsApproved}
           recordType={application?.Record_Type}
         />
       )}
@@ -662,6 +692,15 @@ export default function UnifiedApplicationDetailsPage({
           onOpenChange={setIsResetPasswordModalOpen}
           leadId={application?.id || ''}
           onSuccess={handleResetPasswordSuccess}
+        />
+      )}
+
+      {/* Download All Documents Modal - Only for regular applications and admin users */}
+      {user?.role !== 'client' && (
+        <DownloadAllDocumentsModal
+          isOpen={isDownloadAllModalOpen}
+          onOpenChange={setIsDownloadAllModalOpen}
+          leadId={application?.id || ''}
         />
       )}
     </div>
