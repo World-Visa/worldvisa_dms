@@ -1,78 +1,80 @@
-import { memo, useCallback, useEffect, useState, useMemo } from 'react';
-import { Check, X, Bell, Loader2 } from 'lucide-react';
-import { useNotifications, useNotificationMutations } from '@/hooks/useNotifications';
-import { useNotificationStore } from '@/store/notificationStore';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { NotificationItem } from './NotificationItem';
-
+import { memo, useCallback, useEffect, useState, useMemo } from "react";
+import { Check, X, Bell, Loader2 } from "lucide-react";
+import {
+  useNotifications,
+  useNotificationMutations,
+} from "@/hooks/useNotifications";
+import { useNotificationStore } from "@/store/notificationStore";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { NotificationItem } from "./NotificationItem";
 
 export const NotificationPanel = memo(() => {
-  const {
-    notifications,
-    isLoading,
-    unreadCount,
-  } = useNotifications();
+  const { notifications, isLoading, unreadCount } = useNotifications();
 
-  const {
-    updateReadStatus,
-    deleteNotification,
-    markAllAsRead,
-  } = useNotificationMutations();
+  const { updateReadStatus, deleteNotification, markAllAsRead } =
+    useNotificationMutations();
 
-  const { isNotificationPanelOpen, closeNotificationPanel, isNavigating } = useNotificationStore();
+  const { isNotificationPanelOpen, closeNotificationPanel, isNavigating } =
+    useNotificationStore();
 
   // Tab state
-  const [activeTab, setActiveTab] = useState<'all' | 'unread'>('all');
+  const [activeTab, setActiveTab] = useState<"all" | "unread">("all");
 
   // Prevent body scroll when panel is open
   useEffect(() => {
     if (isNotificationPanelOpen) {
-      document.body.style.overflow = 'hidden';
+      document.body.style.overflow = "hidden";
     } else {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     }
 
     // Cleanup function to restore scroll when component unmounts
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = "unset";
     };
   }, [isNotificationPanelOpen]);
 
-  const handleMarkAsRead = useCallback(async (notificationId: string) => {
-    try {
-      await updateReadStatus({ notificationId, isRead: true });
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error);
-    }
-  }, [updateReadStatus]);
+  const handleMarkAsRead = useCallback(
+    async (notificationId: string) => {
+      try {
+        await updateReadStatus({ notificationId, isRead: true });
+      } catch (error) {
+        console.error("Failed to mark notification as read:", error);
+      }
+    },
+    [updateReadStatus]
+  );
 
-  const handleDelete = useCallback(async (notificationId: string) => {
-    try {
-      await deleteNotification({ notificationId });
-    } catch (error) {
-      console.error('Failed to delete notification:', error);
-    }
-  }, [deleteNotification]);
+  const handleDelete = useCallback(
+    async (notificationId: string) => {
+      try {
+        await deleteNotification({ notificationId });
+      } catch (error) {
+        console.error("Failed to delete notification:", error);
+      }
+    },
+    [deleteNotification]
+  );
 
   const handleMarkAllAsRead = useCallback(async () => {
     try {
       await markAllAsRead();
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+      console.error("Failed to mark all notifications as read:", error);
     }
   }, [markAllAsRead]);
 
   // Memoized filtered notifications for better performance
   const filteredNotifications = useMemo(() => {
-    return activeTab === 'unread'
-      ? notifications.filter(n => !n.isRead)
+    return activeTab === "unread"
+      ? notifications.filter((n) => !n.isRead)
       : notifications;
   }, [notifications, activeTab]);
 
   // Memoized unread count check
   const hasUnreadNotifications = useMemo(() => {
-    return notifications.some(n => !n.isRead);
+    return notifications.some((n) => !n.isRead);
   }, [notifications]);
 
   if (!isNotificationPanelOpen) return null;
@@ -87,7 +89,7 @@ export const NotificationPanel = memo(() => {
           e.preventDefault();
         }}
       />
-      
+
       {/* Notification Panel */}
       <Card
         className="fixed right-4 top-16 z-50 w-[420px] max-h-[85vh] shadow-2xl border-0 bg-white rounded-lg"
@@ -99,7 +101,9 @@ export const NotificationPanel = memo(() => {
         <CardHeader className="px-4 border-b border-gray-200 bg-white">
           {/* Header with title and actions */}
           <div className="flex items-center justify-between mb-1">
-            <CardTitle className="text-lg font-semibold text-gray-900">Notifications</CardTitle>
+            <CardTitle className="text-lg font-semibold text-gray-900">
+              Notifications
+            </CardTitle>
             <div className="flex items-center space-x-1">
               {hasUnreadNotifications && (
                 <Button
@@ -127,21 +131,21 @@ export const NotificationPanel = memo(() => {
           <div className="flex items-center justify-between">
             <div className="flex space-x-2">
               <button
-                onClick={() => setActiveTab('unread')}
+                onClick={() => setActiveTab("unread")}
                 className={`px-3 py-1.5 cursor-pointer text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'unread'
-                    ? 'bg-gray-900 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  activeTab === "unread"
+                    ? "bg-gray-900 text-white shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                 }`}
               >
                 Unread {unreadCount}
               </button>
               <button
-                onClick={() => setActiveTab('all')}
+                onClick={() => setActiveTab("all")}
                 className={`px-3 py-1.5 cursor-pointer text-sm font-medium rounded-md transition-all duration-200 ${
-                  activeTab === 'all'
-                    ? 'bg-gray-900 text-white shadow-sm'
-                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                  activeTab === "all"
+                    ? "bg-gray-900 text-white shadow-sm"
+                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
                 }`}
               >
                 All {notifications.length}
@@ -162,13 +166,14 @@ export const NotificationPanel = memo(() => {
                 <Bell className="h-8 w-8 text-gray-400" />
               </div>
               <h3 className="font-semibold text-base mb-2 text-gray-900">
-                {activeTab === 'unread' ? 'No unread notifications' : 'No notifications yet'}
+                {activeTab === "unread"
+                  ? "No unread notifications"
+                  : "No notifications yet"}
               </h3>
               <p className="text-gray-500 text-sm max-w-xs">
-                {activeTab === 'unread'
-                  ? 'All caught up! No unread notifications.'
-                  : 'You\'ll see new notifications here when they arrive'
-                }
+                {activeTab === "unread"
+                  ? "All caught up! No unread notifications."
+                  : "You'll see new notifications here when they arrive"}
               </p>
             </div>
           ) : (
@@ -188,13 +193,15 @@ export const NotificationPanel = memo(() => {
             </div>
           )}
         </CardContent>
-        
+
         {/* Navigation Loading Overlay */}
         {isNavigating && (
           <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center z-10 rounded-lg">
             <div className="flex flex-col items-center gap-3">
               <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-              <p className="text-sm text-gray-600 font-medium">Navigating to application...</p>
+              <p className="text-sm text-gray-600 font-medium">
+                Navigating to application...
+              </p>
             </div>
           </div>
         )}
@@ -203,4 +210,4 @@ export const NotificationPanel = memo(() => {
   );
 });
 
-NotificationPanel.displayName = 'NotificationPanel';
+NotificationPanel.displayName = "NotificationPanel";
