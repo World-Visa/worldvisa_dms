@@ -1,9 +1,9 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useRef, useState } from 'react';
-import { fetcher } from '@/lib/fetcher';
-import { realtimeManager } from '@/lib/realtime';
-import { commentMonitor } from '@/lib/commentMonitoring';
-import { Comment, CommentEvent, GetCommentsResponse } from '@/types/comments';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useRef, useState } from "react";
+import { fetcher } from "@/lib/fetcher";
+import { realtimeManager } from "@/lib/realtime";
+import { commentMonitor } from "@/lib/commentMonitoring";
+import { Comment, CommentEvent, GetCommentsResponse } from "@/types/comments";
 
 export function useDocumentComments(documentId: string) {
   const queryClient = useQueryClient();
@@ -11,34 +11,38 @@ export function useDocumentComments(documentId: string) {
 
   // Query for fetching comments
   const query = useQuery({
-    queryKey: ['document-comments', documentId],
+    queryKey: ["document-comments", documentId],
     queryFn: async (): Promise<Comment[]> => {
       const startTime = Date.now();
-      
+
       try {
         const response = await fetcher<GetCommentsResponse>(
           `/api/zoho_dms/visa_applications/documents/${documentId}/comments`
         );
-        
+
         const responseTime = Date.now() - startTime;
-        
-        if (response.status === 'error') {
-          throw new Error(response.message || 'Failed to fetch comments');
+
+        if (response.status === "error") {
+          throw new Error(response.message || "Failed to fetch comments");
         }
-        
+
         const comments = response.data || [];
-        
+
         // Track comment fetch performance
-        commentMonitor.trackCommentFetch(documentId, responseTime, comments.length);
-        commentMonitor.reportPerformanceIssue('fetch_comments', responseTime);
-        
+        commentMonitor.trackCommentFetch(
+          documentId,
+          responseTime,
+          comments.length
+        );
+        commentMonitor.reportPerformanceIssue("fetch_comments", responseTime);
+
         return comments;
       } catch (error) {
         const responseTime = Date.now() - startTime;
         commentMonitor.trackCommentError(error as Error, {
           documentId,
-          operation: 'fetch_comments',
-          responseTime
+          operation: "fetch_comments",
+          responseTime,
         });
         throw error;
       }
@@ -58,37 +62,46 @@ export function useDocumentComments(documentId: string) {
 
     isSubscribedRef.current = true;
 
-    const unsubscribe = realtimeManager.subscribe(documentId, (event: CommentEvent) => {
-      
-      // Update the query cache with the new comment
-      queryClient.setQueryData(['document-comments', documentId], (oldData: Comment[] | undefined) => {
-        if (!oldData) return oldData;
+    const unsubscribe = realtimeManager.subscribe(
+      documentId,
+      (event: CommentEvent) => {
+        // Update the query cache with the new comment
+        queryClient.setQueryData(
+          ["document-comments", documentId],
+          (oldData: Comment[] | undefined) => {
+            if (!oldData) return oldData;
 
-        const existingComments = oldData || [];
-        
-        switch (event.type) {
-          case 'comment_added':
-            // Check if comment already exists to avoid duplicates
-            const commentExists = existingComments.some(c => c._id === event.comment._id);
-            if (!commentExists) {
-              // Add new comment and sort by priority (Moshin's comments first, then by date)
-              const newComments = [...existingComments, event.comment];
-              return sortCommentsByPriority(newComments);
+            const existingComments = oldData || [];
+
+            switch (event.type) {
+              case "comment_added":
+                // Check if comment already exists to avoid duplicates
+                const commentExists = existingComments.some(
+                  (c) => c._id === event.comment._id
+                );
+                if (!commentExists) {
+                  // Add new comment and sort by priority (Moshin's comments first, then by date)
+                  const newComments = [...existingComments, event.comment];
+                  return sortCommentsByPriority(newComments);
+                }
+                break;
+
+              case "comment_updated":
+                return existingComments.map((comment) =>
+                  comment._id === event.comment._id ? event.comment : comment
+                );
+
+              case "comment_deleted":
+                return existingComments.filter(
+                  (comment) => comment._id !== event.comment._id
+                );
             }
-            break;
-            
-          case 'comment_updated':
-            return existingComments.map(comment => 
-              comment._id === event.comment._id ? event.comment : comment
-            );
-            
-          case 'comment_deleted':
-            return existingComments.filter(comment => comment._id !== event.comment._id);
-        }
-        
-        return existingComments;
-      });
-    });
+
+            return existingComments;
+          }
+        );
+      }
+    );
 
     // Cleanup subscription on unmount
     return () => {
@@ -103,15 +116,15 @@ export function useDocumentComments(documentId: string) {
 
     const checkRealtimeStatus = () => {
       const isRealtimeConnected = realtimeManager.isConnected();
-      
+
       if (!isRealtimeConnected && query.data) {
         // Enable polling as fallback
-        queryClient.setQueryDefaults(['document-comments', documentId], {
+        queryClient.setQueryDefaults(["document-comments", documentId], {
           refetchInterval: 5000, // Poll every 5 seconds
         });
       } else if (isRealtimeConnected) {
         // Disable polling when real-time is connected
-        queryClient.setQueryDefaults(['document-comments', documentId], {
+        queryClient.setQueryDefaults(["document-comments", documentId], {
           refetchInterval: false,
         });
       }
@@ -141,12 +154,12 @@ export function useDocumentComments(documentId: string) {
 function sortCommentsByPriority(comments: Comment[]): Comment[] {
   return comments.sort((a, b) => {
     // Moshin's comments first
-    const aIsMoshin = a.added_by.toLowerCase().includes('moshin');
-    const bIsMoshin = b.added_by.toLowerCase().includes('moshin');
-    
+    const aIsMoshin = a.added_by.toLowerCase().includes("moshin");
+    const bIsMoshin = b.added_by.toLowerCase().includes("moshin");
+
     if (aIsMoshin && !bIsMoshin) return -1;
     if (!aIsMoshin && bIsMoshin) return 1;
-    
+
     // Then sort by creation date (newest first)
     // Note: Zoho uses 'added_at' but we map it to 'created_at' in our API
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
@@ -162,16 +175,16 @@ export function useRealtimeConnection() {
   useEffect(() => {
     const unsubscribe = realtimeManager.onStateChange((newState) => {
       setConnectionState(newState);
-      
+
       // Track connection state changes
       commentMonitor.trackRealtimeConnection(newState.isConnected);
-      
+
       // Report high error rate if needed
       if (newState.error) {
         commentMonitor.reportHighErrorRate();
       }
     });
-    
+
     return unsubscribe;
   }, []);
 
