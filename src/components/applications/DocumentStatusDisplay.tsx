@@ -78,7 +78,7 @@ const DocumentStatusDisplay: React.FC<DocumentStatusDisplayProps> = ({
           </div>
 
           {/* Show Timeline */}
-          <DocumentTimeline documentId={document._id} />
+          {/* <DocumentTimeline documentId={document._id} /> */}
         </div>
 
         {lastStatusChange && (
