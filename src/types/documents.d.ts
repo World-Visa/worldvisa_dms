@@ -1,4 +1,11 @@
-export type DocumentCategory = 'submitted' | 'all' | 'identity' | 'education' | 'other' | 'self_employment' | string;
+export type DocumentCategory =
+  | "submitted"
+  | "all"
+  | "identity"
+  | "education"
+  | "other"
+  | "self_employment"
+  | string;
 
 export interface DocumentCategoryInfo {
   id: DocumentCategory;
@@ -31,7 +38,7 @@ export interface DocumentCategoryFilterProps {
   categoryCounts?: Partial<Record<DocumentCategory, number>>;
 }
 
-import { Document as ApplicationDocument } from './applications';
+import { Document as ApplicationDocument } from "./applications";
 
 export interface DocumentChecklistTableProps {
   documents: ApplicationDocument[] | undefined;
@@ -95,4 +102,17 @@ export interface TablePaginationProps {
   startIndex: number;
   endIndex: number;
   onPageChange: (page: number) => void;
+}
+
+export interface Timeline {
+  _id: string;
+  event: string;
+  timestamp: string;
+  details?: string;
+  triggered_by: string;
+}
+
+export interface GetTimelineResponse {
+  status: "success" | "error";
+  timeline?: Timeline[];
 }
