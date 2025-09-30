@@ -60,23 +60,11 @@ const DocumentTimeline: React.FC<Props> = ({ documentId }) => {
                       <div className="absolute left-0 top-[10px] w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow"></div>
                       <div className="ml-2">
                         <div className="flex gap-[16px] items-start justify-between">
-                          <p className="font-semibold text-gray-900">
-                            {data.event}
-                          </p>
-                          {/* {data.details && (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <span className="ml-1 text-gray-400 cursor-pointer">
-                                  <Info className="w-4 h-4" />
-                                </span>
-                              </TooltipTrigger>
-                              <TooltipContent className="bg-black text-white">
-                                <span className="whitespace-pre-line">
-                                  {data.details}
-                                </span>
-                              </TooltipContent>
-                            </Tooltip>
-                          )} */}
+                          <div className="flex gap-[4px]">
+                            <p className="font-semibold text-gray-900">
+                              {data.event}
+                            </p>
+                          </div>
                           <div className="flex items-center gap-[4px] font-semibold text-gray-600 capitalize">
                             <MousePointerClick className="w-[15px] h-[15px]" />
                             {data.triggered_by}
@@ -85,6 +73,21 @@ const DocumentTimeline: React.FC<Props> = ({ documentId }) => {
                         <p className="text-xs text-gray-500">
                           {new Date(data.timestamp).toLocaleString()}
                         </p>
+                        {data.details && (
+                          <Tooltip>
+                            <TooltipTrigger asChild className="w-fit">
+                              <div className="flex items-center gap-[4px] cursor-pointer mt-[4px] text-blue-700">
+                                <Info className="w-[15px] h-[15px]" />
+                                <p>Details</p>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent className="bg-black text-white max-w-[200px]">
+                              <span className="whitespace-pre-line">
+                                {data.details}
+                              </span>
+                            </TooltipContent>
+                          </Tooltip>
+                        )}
                       </div>
                     </div>
                   ))
