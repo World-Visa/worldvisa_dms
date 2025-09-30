@@ -13,10 +13,12 @@ import DocumentTimeline from "./DocumentTimeline";
 
 interface DocumentStatusDisplayProps {
   document: Document;
+  isClientView: boolean;
 }
 
 const DocumentStatusDisplay: React.FC<DocumentStatusDisplayProps> = ({
   document,
+  isClientView,
 }) => {
   const getStatusConfig = (status: Document["status"]) => {
     switch (status) {
@@ -78,7 +80,7 @@ const DocumentStatusDisplay: React.FC<DocumentStatusDisplayProps> = ({
           </div>
 
           {/* Show Timeline */}
-          {/* <DocumentTimeline documentId={document._id} /> */}
+          {!isClientView && <DocumentTimeline documentId={document._id} />}
         </div>
 
         {lastStatusChange && (
