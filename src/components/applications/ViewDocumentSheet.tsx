@@ -171,7 +171,10 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                 <DocumentPreview document={displayDoc} />
 
                 {/* Status Display */}
-                <DocumentStatusDisplay document={displayDoc} />
+                <DocumentStatusDisplay
+                  document={displayDoc}
+                  isClientView={isClientView}
+                />
 
                 {/* Reupload Button for Rejected Documents */}
                 {displayDoc.status === "rejected" && onReuploadDocument && (
