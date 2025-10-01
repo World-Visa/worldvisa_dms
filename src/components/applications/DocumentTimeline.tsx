@@ -65,9 +65,9 @@ const DocumentTimeline: React.FC<Props> = ({ documentId }) => {
                               {data.event}
                             </p>
                           </div>
-                          <div className="flex items-center gap-[4px] font-semibold text-gray-600 capitalize">
+                          <div className="flex items-start gap-[4px] font-semibold text-gray-600 capitalize">
                             <MousePointerClick className="w-[15px] h-[15px]" />
-                            {data.triggered_by}
+                            <p className="text-[14px]">{data.triggered_by}</p>
                           </div>
                         </div>
                         <p className="text-xs text-gray-500">
