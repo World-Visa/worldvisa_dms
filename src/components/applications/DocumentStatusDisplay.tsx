@@ -10,6 +10,7 @@ import {
   MessageSquare,
 } from "lucide-react";
 import DocumentTimeline from "./DocumentTimeline";
+import DocumentMovedFiles from "./DocumentMovedFiles";
 
 interface DocumentStatusDisplayProps {
   document: Document;
@@ -81,6 +82,8 @@ const DocumentStatusDisplay: React.FC<DocumentStatusDisplayProps> = ({
 
           {/* Show Timeline */}
           {!isClientView && <DocumentTimeline documentId={document._id} />}
+
+          {!isClientView && <DocumentMovedFiles documentId={document._id} />}
         </div>
 
         {lastStatusChange && (
