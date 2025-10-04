@@ -5,7 +5,8 @@ import {
   GetMovedDocsResponse,
   MovedDocument,
 } from "@/types/documents";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 /**
  * Fetches all moved documents for a given document ID.
@@ -84,4 +85,85 @@ export function useDocumentMovedDocs(documentId: string) {
     refetch: query.refetch,
     getDocumentLink: getDocumentLink,
   };
+}
+
+/**
+ * Moves a document by making a PATCH request to the move endpoint.
+ *
+ * @returns {object} - The mutation object from react-query.
+ */
+export function useMoveDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (documentId: string): Promise<any> => {
+      if (!documentId) throw new Error("documentId is required");
+
+      const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/clients/documents/${documentId}/move`;
+
+      return fetcher<any>(url, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+    },
+    onSuccess: () => {
+      // Invalidate and refetch relevant queries
+      queryClient.invalidateQueries({ queryKey: ["client-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["client-documents-all"] });
+      queryClient.invalidateQueries({ queryKey: ["client-checklist"] });
+      queryClient.invalidateQueries({ queryKey: ["application-documents"] });
+      queryClient.invalidateQueries({
+        queryKey: ["application-documents-all"],
+      });
+
+      toast.success("Document deleted successfully");
+    },
+    onError: (error: any) => {
+      console.error("Failed to deleted document:", error);
+      toast.error(`Failed to deleted document: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Moves an agent document by making a PATCH request to the agent move endpoint.
+ *
+ * @returns {object} - The mutation object from react-query.
+ */
+export function useMoveDocumentAgent() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (documentId: string): Promise<any> => {
+      if (!documentId) throw new Error("documentId is required");
+
+      const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/move`;
+
+      return fetcher<any>(url, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          // Authorization header will be set by fetcher if needed
+        },
+      });
+    },
+    onSuccess: () => {
+      // Invalidate and refetch relevant queries
+      queryClient.invalidateQueries({ queryKey: ["client-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["client-documents-all"] });
+      queryClient.invalidateQueries({ queryKey: ["client-checklist"] });
+      queryClient.invalidateQueries({ queryKey: ["application-documents"] });
+      queryClient.invalidateQueries({
+        queryKey: ["application-documents-all"],
+      });
+
+      toast.success("Document deleted successfully");
+    },
+    onError: (error: any) => {
+      console.error("Failed to delete document:", error);
+      toast.error(`Failed to delete document: ${error.message}`);
+    },
+  });
 }
