@@ -1,36 +1,51 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-  FileText, 
-  ChevronLeft, 
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  FileText,
+  ChevronLeft,
   ChevronRight,
   Trash2,
   CheckCircle,
   XCircle,
-  Clock
-} from 'lucide-react';
-import { getCategoryDisplayProps } from '@/lib/utils/documentCategoryNormalizer';
-import { ClientDocumentsResponse, ClientDocument } from '@/types/client';
-import { Document } from '@/types/applications';
-import { format } from 'date-fns';
-import ViewDocumentSheet from './ViewDocumentSheet';
+  Clock,
+} from "lucide-react";
+import { getCategoryDisplayProps } from "@/lib/utils/documentCategoryNormalizer";
+import { ClientDocumentsResponse, ClientDocument } from "@/types/client";
+import { Document } from "@/types/applications";
+import { format } from "date-fns";
+import ViewDocumentSheet from "./ViewDocumentSheet";
 
 // Helper function to convert ClientDocument to Document
-const convertClientDocumentToDocument = (clientDoc: ClientDocument): Document => ({
+const convertClientDocumentToDocument = (
+  clientDoc: ClientDocument
+): Document => ({
   ...clientDoc,
-  comments: clientDoc.comments.map(comment => ({
+  comments: clientDoc.comments.map((comment) => ({
     _id: comment._id,
     comment: comment.comment,
     added_by: comment.added_by,
-    added_at: comment.created_at || new Date().toISOString()
-  }))
+    added_at: comment.created_at || new Date().toISOString(),
+  })),
 });
 
 interface ClientDocumentsTableProps {
@@ -43,14 +58,15 @@ interface ClientDocumentsTableProps {
   availableCategories?: string[];
 }
 
-export function ClientDocumentsTable({ 
-  data, 
-  isLoading, 
-  error, 
-  currentPage, 
+export function ClientDocumentsTable({
+  data,
+  isLoading,
+  error,
+  currentPage,
   onPageChange,
 }: ClientDocumentsTableProps) {
-  const [selectedDocument, setSelectedDocument] = useState<ClientDocument | null>(null);
+  const [selectedDocument, setSelectedDocument] =
+    useState<ClientDocument | null>(null);
   const [isViewSheetOpen, setIsViewSheetOpen] = useState(false);
 
   const handleViewDocument = (document: ClientDocument) => {
@@ -58,37 +74,37 @@ export function ClientDocumentsTable({
     setIsViewSheetOpen(true);
   };
 
-
   const handleDownloadDocument = (document: ClientDocument) => {
     if (document.download_url) {
-      window.open(document.download_url, '_blank');
+      window.open(document.download_url, "_blank");
     }
   };
 
-
   const getStatusConfig = (status: string) => {
     switch (status) {
-      case 'approved':
+      case "approved":
         return {
           icon: <CheckCircle className="h-3 w-3" />,
-          label: 'Approved',
-          className: 'bg-green-50 text-green-700 border-green-200 hover:bg-green-100',
-          iconClassName: 'text-green-600'
+          label: "Approved",
+          className:
+            "bg-green-50 text-green-700 border-green-200 hover:bg-green-100",
+          iconClassName: "text-green-600",
         };
-      case 'rejected':
+      case "rejected":
         return {
           icon: <XCircle className="h-3 w-3" />,
-          label: 'Rejected',
-          className: 'bg-red-50 text-red-700 border-red-200 hover:bg-red-100',
-          iconClassName: 'text-red-600'
+          label: "Rejected",
+          className: "bg-red-50 text-red-700 border-red-200 hover:bg-red-100",
+          iconClassName: "text-red-600",
         };
-      case 'pending':
+      case "pending":
       default:
         return {
           icon: <Clock className="h-3 w-3" />,
-          label: 'Pending',
-          className: 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100',
-          iconClassName: 'text-gray-600'
+          label: "Pending",
+          className:
+            "bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100",
+          iconClassName: "text-gray-600",
         };
     }
   };
@@ -151,9 +167,12 @@ export function ClientDocumentsTable({
           {documents.length === 0 ? (
             <div className="text-center py-8">
               <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">No documents submitted</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                No documents submitted
+              </h3>
               <p className="text-gray-600 mb-4">
-                You haven&apos;t uploaded any documents yet. Click the upload button to get started.
+                You haven&apos;t uploaded any documents yet. Click the upload
+                button to get started.
               </p>
             </div>
           ) : (
@@ -175,29 +194,42 @@ export function ClientDocumentsTable({
                     {documents.map((document, index) => (
                       <TableRow key={document._id}>
                         <TableCell className="font-medium">
-                          {((currentPage - 1) * 10) + index + 1}
+                          {(currentPage - 1) * 10 + index + 1}
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center space-x-2">
                             <FileText className="h-4 w-4 text-muted-foreground" />
-                            <span className="truncate max-w-[150px]" title={document.file_name}>
-                              {document.file_name.length > 20 
-                                ? `${document.file_name.substring(0, 20)}...` 
+                            <span
+                              className="truncate max-w-[150px]"
+                              title={document.file_name}
+                            >
+                              {document.file_name.length > 20
+                                ? `${document.file_name.substring(0, 20)}...`
                                 : document.file_name}
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className='font-lexend'>
-                          <Badge variant="outline" className="text-xs text-muted-foreground">
+                        <TableCell className="font-lexend">
+                          <Badge
+                            variant="outline"
+                            className="text-xs text-muted-foreground"
+                          >
                             Not specified
                           </Badge>
                         </TableCell>
-                        <TableCell className='font-lexend'>
+                        <TableCell className="font-lexend">
                           {(() => {
                             if (document.document_category) {
-                              const { category, badgeVariant, badgeClassName, displayText } = getCategoryDisplayProps(document.document_category);
+                              const {
+                                category,
+                                badgeVariant,
+                                badgeClassName,
+                                displayText,
+                              } = getCategoryDisplayProps(
+                                document.document_category
+                              );
                               return (
-                                <Badge 
+                                <Badge
                                   variant={badgeVariant}
                                   className={`text-xs max-w-[140px] font-medium truncate ${badgeClassName}`}
                                   title={category}
@@ -207,7 +239,10 @@ export function ClientDocumentsTable({
                               );
                             } else {
                               return (
-                                <Badge variant="outline" className="text-xs text-muted-foreground">
+                                <Badge
+                                  variant="outline"
+                                  className="text-xs text-muted-foreground"
+                                >
                                   Not specified
                                 </Badge>
                               );
@@ -216,20 +251,29 @@ export function ClientDocumentsTable({
                         </TableCell>
                         <TableCell>
                           {(() => {
-                            const statusConfig = getStatusConfig(document.status);
+                            const statusConfig = getStatusConfig(
+                              document.status
+                            );
                             return (
-                              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${statusConfig.className}`}>
+                              <div
+                                className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${statusConfig.className}`}
+                              >
                                 <span className={statusConfig.iconClassName}>
                                   {statusConfig.icon}
                                 </span>
-                                <span className='font-lexend'>{statusConfig.label}</span>
+                                <span className="font-lexend">
+                                  {statusConfig.label}
+                                </span>
                               </div>
                             );
                           })()}
                         </TableCell>
                         <TableCell>
                           <div className="text-sm text-gray-600">
-                            {format(new Date(document.uploaded_at), 'MMM dd, yyyy, h:mm a')}
+                            {format(
+                              new Date(document.uploaded_at),
+                              "MMM dd, yyyy, h:mm a"
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
@@ -262,9 +306,12 @@ export function ClientDocumentsTable({
               {pagination && pagination.totalPages > 1 && (
                 <div className="flex items-center justify-between mt-6">
                   <div className="text-sm text-gray-600">
-                    Showing {((currentPage - 1) * pagination.limit) + 1} to{' '}
-                    {Math.min(currentPage * pagination.limit, pagination.totalRecords)} of{' '}
-                    {pagination.totalRecords} documents
+                    Showing {(currentPage - 1) * pagination.limit + 1} to{" "}
+                    {Math.min(
+                      currentPage * pagination.limit,
+                      pagination.totalRecords
+                    )}{" "}
+                    of {pagination.totalRecords} documents
                   </div>
                   <div className="flex items-center space-x-2">
                     <Button

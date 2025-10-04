@@ -1,6 +1,7 @@
-import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -9,31 +10,34 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DeleteDocumentDialog } from "./DeleteDocumentDialog";
-import { formatDate } from "@/utils/format";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
-import { useDeleteDocument } from "@/hooks/useMutationsDocuments";
 import { useApplicationDocumentsPaginated } from "@/hooks/useApplicationDocumentsPaginated";
-import { UploadDocumentsModal } from "./UploadDocumentsModal";
-import { ApplicationsPagination } from "./ApplicationsPagination";
+import { useClientDeleteDocument } from "@/hooks/useClientDeleteDocument";
+import { useDocumentCommentCounts } from "@/hooks/useDocumentCommentCounts";
 import {
-  Trash2,
-  FileText,
+  useMoveDocument,
+  useMoveDocumentAgent,
+} from "@/hooks/useDocumentMovedDocs";
+import { useDeleteDocument } from "@/hooks/useMutationsDocuments";
+import { getCategoryDisplayProps } from "@/lib/utils/documentCategoryNormalizer";
+import { Document as ApplicationDocument } from "@/types/applications";
+import { ClientDocumentsResponse } from "@/types/client";
+import { formatDate } from "@/utils/format";
+import {
+  AlertCircle,
   CheckCircle,
   Clock,
   Eye,
+  FileText,
+  Trash2,
   XCircle,
-  AlertCircle,
 } from "lucide-react";
-import { getCategoryDisplayProps } from "@/lib/utils/documentCategoryNormalizer";
-import ViewDocumentSheet from "./ViewDocumentSheet";
-import { Document as ApplicationDocument } from "@/types/applications";
-import { ClientDocumentsResponse } from "@/types/client";
-import { useClientDeleteDocument } from "@/hooks/useClientDeleteDocument";
+import { useState } from "react";
+import { ApplicationsPagination } from "./ApplicationsPagination";
 import { CommentIcon } from "./CommentIcon";
-import { useDocumentCommentCounts } from "@/hooks/useDocumentCommentCounts";
+import { DeleteDocumentDialog } from "./DeleteDocumentDialog";
 import { ReuploadDocumentModal } from "./ReuploadDocumentModal";
+import { UploadDocumentsModal } from "./UploadDocumentsModal";
+import ViewDocumentSheet from "./ViewDocumentSheet";
 
 interface DocumentsTableProps {
   applicationId: string;
@@ -89,6 +93,8 @@ export function DocumentsTable({
 
   const deleteDocumentMutation = useDeleteDocument();
   const clientDeleteDocumentMutation = useClientDeleteDocument();
+  const clientMoveDocumentMutation = useMoveDocument();
+  const agentMoveDocumentMutation = useMoveDocumentAgent();
 
   const {
     data: adminDocumentsData,
@@ -158,12 +164,14 @@ export function DocumentsTable({
     if (!documentToDelete) return;
     try {
       if (isClientView) {
-        await clientDeleteDocumentMutation.mutateAsync({
-          documentId: documentToDelete.id,
-        });
+        // await clientDeleteDocumentMutation.mutateAsync({
+        //   documentId: documentToDelete.id,
+        // });
+        await clientMoveDocumentMutation.mutateAsync(documentToDelete.id);
         onClientDeleteSuccess?.();
       } else {
-        await deleteDocumentMutation.mutateAsync(documentToDelete.id);
+        // await deleteDocumentMutation.mutateAsync(documentToDelete.id);
+        await agentMoveDocumentMutation.mutateAsync(documentToDelete.id);
         refetch();
       }
       setDeleteDialogOpen(false);
