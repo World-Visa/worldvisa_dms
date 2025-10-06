@@ -92,13 +92,13 @@ export function useNotifications() {
    useEffect(() => {
       console.log('🔔 useNotifications: Setting up event listeners');
       console.log('🔔 useNotifications: Hook is running, queryClient:', !!queryClient);
-      
+
       const unsubscribeNew = notificationSocket.onNotificationNew(
          (newNotification) => {
             console.log('🔔 useNotifications: Received new notification:', newNotification);
             console.log('🔔 useNotifications: Callback function called successfully');
             console.log('🔔 useNotifications: Current cache before update:', queryClient.getQueryData(NOTIFICATION_KEYS.lists()));
-            
+
             queryClient.setQueryData(
                NOTIFICATION_KEYS.lists(),
                (old: Notification[] = []) => {
@@ -125,9 +125,9 @@ export function useNotifications() {
                   return old + 1;
                }
             );
-            
+
             console.log('🔔 useNotifications: Cache after update:', queryClient.getQueryData(NOTIFICATION_KEYS.lists()));
-            
+
             // Force invalidation to trigger re-render
             queryClient.invalidateQueries({ queryKey: NOTIFICATION_KEYS.lists() });
             console.log('🔔 useNotifications: Cache invalidated to trigger re-render');
@@ -154,10 +154,10 @@ export function useNotifications() {
                   const notifications = queryClient.getQueryData(NOTIFICATION_KEYS.lists()) as Notification[] || [];
                   const notification = notifications.find((n: Notification) => n._id === _id);
                   if (!notification) return old;
-                  
+
                   const wasUnread = !notification.isRead;
                   const isNowUnread = !isRead;
-                  
+
                   if (wasUnread && !isNowUnread) return old - 1;
                   if (!wasUnread && isNowUnread) return old + 1;
                   return old;
@@ -173,7 +173,7 @@ export function useNotifications() {
                (old: Notification[] = []) => {
                   const deletedNotification = old.find(n => n._id === _id);
                   const updated = old.filter((notification) => notification._id !== _id);
-                  
+
                   // Update unread count if deleted notification was unread
                   if (deletedNotification && !deletedNotification.isRead) {
                      queryClient.setQueryData(
@@ -181,7 +181,7 @@ export function useNotifications() {
                         (old: number = 0) => Math.max(0, old - 1)
                      );
                   }
-                  
+
                   return updated;
                }
             );
@@ -206,14 +206,14 @@ export function useNotifications() {
 
       // Monitor connection state
       const unsubscribeConnection = notificationSocket.onConnectionStateChange((state) => {
-         
+
          // If socket connection fails, set up polling as fallback
          if (state.error && !state.isConnected) {
             // Poll for new notifications every 30 seconds as fallback
             const pollInterval = setInterval(() => {
                refetch();
             }, 30000);
-            
+
             return () => clearInterval(pollInterval);
          }
       });
@@ -304,7 +304,7 @@ export function useNotificationMutations() {
          if (notification) {
             const wasUnread = !notification.isRead;
             const isNowUnread = !isRead;
-            
+
             if (wasUnread && !isNowUnread) {
                queryClient.setQueryData(
                   NOTIFICATION_KEYS.unreadCount(),

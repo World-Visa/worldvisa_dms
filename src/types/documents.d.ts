@@ -1,4 +1,11 @@
-export type DocumentCategory = 'submitted' | 'all' | 'identity' | 'education' | 'other' | 'self_employment' | string;
+export type DocumentCategory =
+  | "submitted"
+  | "all"
+  | "identity"
+  | "education"
+  | "other"
+  | "self_employment"
+  | string;
 
 export interface DocumentCategoryInfo {
   id: DocumentCategory;
@@ -31,7 +38,7 @@ export interface DocumentCategoryFilterProps {
   categoryCounts?: Partial<Record<DocumentCategory, number>>;
 }
 
-import { Document as ApplicationDocument } from './applications';
+import { Document as ApplicationDocument } from "./applications";
 
 export interface DocumentChecklistTableProps {
   documents: ApplicationDocument[] | undefined;
@@ -95,4 +102,45 @@ export interface TablePaginationProps {
   startIndex: number;
   endIndex: number;
   onPageChange: (page: number) => void;
+}
+
+export interface Timeline {
+  _id: string;
+  event: string;
+  timestamp: string;
+  details?: string;
+  triggered_by: string;
+}
+
+export interface GetTimelineResponse {
+  status: "success" | "error";
+  timeline?: Timeline[];
+}
+
+export interface MovedDocument {
+  _id: string;
+  file_name: string;
+  file_id: string;
+  moved_by?: string;
+  moved_at: string;
+}
+
+export interface GetMovedDocsResponse {
+  status: "success" | "error";
+  moved_files?: MovedDocument[];
+}
+
+export interface DocumentLink {
+  link: string;
+  download_url: string;
+  resource_id: string;
+}
+
+export interface GetDocumentLinkResponse {
+  status: "success" | "error";
+  data: {
+    data: {
+      attributes: DocumentLink;
+    };
+  };
 }
