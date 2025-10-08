@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, memo, useMemo } from 'react';
-import { useChecklistRequests } from '@/hooks/useChecklistRequests';
-import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
-import { ChecklistRequestsTable } from '@/components/applications/ChecklistRequestsTable';
-import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
-import { Card, CardContent } from '@/components/ui/card';
-import { FileText, CheckCircle, RefreshCw } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useCallback, memo, useMemo } from "react";
+import { useChecklistRequests } from "@/hooks/useChecklistRequests";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
+import { ChecklistRequestsTable } from "@/components/applications/ChecklistRequestsTable";
+import { ApplicationsPagination } from "@/components/applications/ApplicationsPagination";
+import { Card, CardContent } from "@/components/ui/card";
+import { FileText, CheckCircle, RefreshCw } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
   const [page, setPage] = useState(1);
@@ -15,40 +15,38 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   // Performance monitoring
-  const { measureAsync } = usePerformanceMonitor('ChecklistRequestsPage');
+  const { measureAsync } = usePerformanceMonitor("ChecklistRequestsPage");
 
   // Fetch checklist requests data with optimized settings
-  const { 
-    data, 
-    isLoading, 
-    error, 
-    refetch 
-  } = useChecklistRequests({
+  const { data, isLoading, error, refetch } = useChecklistRequests({
     page,
     limit,
     staleTime: 5 * 60 * 1000, // 5 minutes - increased for better performance
   });
 
   // Memoized page change handler with debouncing
-  const handlePageChange = useCallback(async (newPage: number) => {
-    if (newPage === page) return; // Prevent unnecessary calls
-    
-    await measureAsync(async () => {
-      setPage(newPage);
-      // Smooth scroll to top
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, 'pageChange');
-  }, [measureAsync, page]);
+  const handlePageChange = useCallback(
+    async (newPage: number) => {
+      if (newPage === page) return; // Prevent unnecessary calls
+
+      await measureAsync(async () => {
+        setPage(newPage);
+        // Smooth scroll to top
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }, "pageChange");
+    },
+    [measureAsync, page]
+  );
 
   // Optimized refresh handler with loading state
   const handleRefresh = useCallback(async () => {
     if (isRefreshing) return; // Prevent multiple simultaneous refreshes
-    
+
     setIsRefreshing(true);
     try {
       await measureAsync(async () => {
         await refetch();
-      }, 'refresh');
+      }, "refresh");
     } finally {
       setIsRefreshing(false);
     }
@@ -57,30 +55,32 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
   // Memoized calculations with early returns for better performance
   const { totalRequests, currentRequests } = useMemo(() => {
     const rawRequests = data?.data || [];
-    
+
     // Early return if no data
     if (rawRequests.length === 0) {
       return {
         totalRequests: 0,
-        currentRequests: []
+        currentRequests: [],
       };
     }
 
     // Filter valid requests in a single pass
-    const valid = rawRequests.filter(req => 
-      req.id && 
-      req.id.trim() !== '' && 
-      req.Checklist_Requested === true
+    const valid = rawRequests.filter(
+      (req) =>
+        req.id && req.id.trim() !== "" && req.Checklist_Requested === true
     );
 
     return {
       totalRequests: valid.length,
-      currentRequests: valid
+      currentRequests: valid,
     };
   }, [data?.data]);
 
   // Memoized loading state
-  const isDataLoading = useMemo(() => isLoading || isRefreshing, [isLoading, isRefreshing]);
+  const isDataLoading = useMemo(
+    () => isLoading || isRefreshing,
+    [isLoading, isRefreshing]
+  );
 
   return (
     <main className="min-h-screen bg-gray-50/50">
@@ -94,7 +94,8 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
                 Checklist Requests
               </h2>
               <p className="text-gray-600">
-                Applications that have requested document checklists for processing.
+                Applications that have requested document checklists for
+                processing.
               </p>
             </div>
 
@@ -107,17 +108,21 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
                 disabled={isDataLoading}
                 className="flex items-center gap-2 self-start sm:self-center"
               >
-                <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                <RefreshCw
+                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+                />
                 <span>Refresh</span>
               </Button>
-              
+
               <Card className="w-full sm:w-64 border-0 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600 mb-1">Total Requests</p>
+                      <p className="text-sm font-medium text-gray-600 mb-1">
+                        Total Requests
+                      </p>
                       <p className="text-2xl font-bold text-gray-900">
-                        {isDataLoading ? '...' : totalRequests.toLocaleString()}
+                        {isDataLoading ? "..." : totalRequests.toLocaleString()}
                       </p>
                     </div>
                     <div className="p-3 bg-blue-100 rounded-full">
@@ -129,7 +134,6 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
             </div>
           </div>
         </div>
-
 
         {/* Error State */}
         {error && (
@@ -143,14 +147,20 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
                   Loading Error
                 </h3>
                 <p className="text-red-700 mb-4">
-                  {error instanceof Error ? error.message : 'Failed to load checklist requests'}
+                  {error instanceof Error
+                    ? error.message
+                    : "Failed to load checklist requests"}
                 </p>
                 <Button
                   onClick={handleRefresh}
                   disabled={isDataLoading}
                   className="inline-flex items-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                 >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw
+                    className={`h-4 w-4 mr-2 ${
+                      isRefreshing ? "animate-spin" : ""
+                    }`}
+                  />
                   Retry
                 </Button>
               </div>
@@ -170,7 +180,8 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
                   No Checklist Requests
                 </h3>
                 <p className="text-blue-700">
-                  There are currently no checklist requests to display. Applications will appear here once they request checklists.
+                  There are currently no checklist requests to display.
+                  Applications will appear here once they request checklists.
                 </p>
               </div>
             </CardContent>
@@ -185,6 +196,7 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
               currentPage={page}
               limit={limit}
               isLoading={isDataLoading}
+              refetch={refetch}
             />
           </div>
         )}
