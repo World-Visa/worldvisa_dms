@@ -23,6 +23,13 @@ import {
   generateCurrentEmploymentDescription, 
   generatePastEmploymentDescription 
 } from '@/utils/dateCalculations';
+import {
+  IDENTITY_DOCUMENTS,
+  EDUCATION_DOCUMENTS,
+  OTHER_DOCUMENTS,
+  COMPANY_DOCUMENTS,
+  SELF_EMPLOYMENT_DOCUMENTS,
+} from '@/lib/documents/checklist';
 
 
 export function UploadDocumentsModal({ 
@@ -85,8 +92,75 @@ export function UploadDocumentsModal({
     }
   }, [propSelectedDocumentType, propSelectedDocumentCategory]);
 
+  // Validation function for allowedDocument limit
+  const validateAllowedDocumentLimit = (fileCount: number): boolean => {
+    if (!selectedDocumentType || !selectedDocumentCategory) {
+      return true; // Skip validation if no document type selected
+    }
+
+    // Get allowedDocument count for this document type
+    const allowedDocument = getAllowedDocumentCount(selectedDocumentCategory, selectedDocumentType);
+    
+    // If allowedDocument is undefined, it means multiple documents are allowed
+    if (allowedDocument === undefined) {
+      return true; 
+    }
+
+    // Check if adding these files would exceed the limit
+    const currentUploadedCount = uploadedFiles.length;
+    const totalCount = currentUploadedCount + fileCount;
+
+    if (totalCount > allowedDocument) {
+      toast.error(
+        `Maximum ${allowedDocument} file${allowedDocument === 1 ? '' : 's'} allowed for "${selectedDocumentType}". ` +
+        `You are trying to upload ${fileCount} file${fileCount === 1 ? '' : 's'}, ` +
+        `but you already have ${currentUploadedCount} file${currentUploadedCount === 1 ? '' : 's'} selected.`
+      );
+      return false;
+    }
+
+    return true;
+  };
+
+  // Helper function to get allowedDocument count from base document types
+  const getAllowedDocumentCount = (category: string, documentType: string): number | undefined => {
+    const allBaseDocuments = [
+      ...IDENTITY_DOCUMENTS,
+      ...EDUCATION_DOCUMENTS,
+      ...OTHER_DOCUMENTS,
+      ...COMPANY_DOCUMENTS,
+      ...SELF_EMPLOYMENT_DOCUMENTS,
+    ];
+
+    // Handle company-specific categories
+    if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents', 'Self Employment/Freelance'].includes(category)) {
+      // Check against company documents for company-specific categories
+      const foundDoc = allBaseDocuments.find(doc => 
+        doc.category === "Company" && doc.documentType === documentType
+      );
+      if (foundDoc && 'allowedDocument' in foundDoc && typeof foundDoc.allowedDocument === 'number') {
+        return foundDoc.allowedDocument;
+      }
+      return undefined;
+    }
+
+    const foundDoc = allBaseDocuments.find(doc => 
+      doc.category === category && doc.documentType === documentType
+    );
+
+    if (foundDoc && 'allowedDocument' in foundDoc && typeof foundDoc.allowedDocument === 'number') {
+      return foundDoc.allowedDocument;
+    }
+    return undefined;
+  };
+
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
+    
+    // Check allowedDocument limit first
+    if (!validateAllowedDocumentLimit(files.length)) {
+      return;
+    }
     
     // Validate files
     const validFiles = files.filter(file => {
@@ -185,6 +259,11 @@ export function UploadDocumentsModal({
     }
     
     const files = Array.from(event.dataTransfer.files);
+    
+    // Check allowedDocument limit first
+    if (!validateAllowedDocumentLimit(files.length)) {
+      return;
+    }
     
     // Create a fake event object to reuse the existing validation logic
     const fakeEvent = {
@@ -457,6 +536,22 @@ export function UploadDocumentsModal({
               <label className="text-sm font-medium">Document Type</label>
               <div className="p-3 bg-muted rounded-lg">
                 <p className="text-sm font-medium">{selectedDocumentType}</p>
+                {(() => {
+                  const allowedDocument = getAllowedDocumentCount(selectedDocumentCategory, selectedDocumentType);
+                  if (allowedDocument !== undefined) {
+                    return (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Maximum {allowedDocument} file{allowedDocument === 1 ? '' : 's'} allowed
+                      </p>
+                    );
+                  } else {
+                    return (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Multiple files allowed
+                      </p>
+                    );
+                  }
+                })()}
               </div>
             </div>
           )}

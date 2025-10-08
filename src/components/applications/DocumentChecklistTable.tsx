@@ -34,6 +34,8 @@ interface DocumentType {
   category: string;
   documentType: string;
   companyName?: string;
+  allowedDocument?: number;
+  instruction?: string;
 }
 
 interface ChecklistTableItem {
@@ -46,6 +48,7 @@ interface ChecklistTableItem {
   company_name?: string;
   checklist_id?: string;
   description?: string;
+  instruction?: string;
 }
 
 interface ExtendedDocumentChecklistTableProps extends DocumentChecklistTableProps {

@@ -24,6 +24,7 @@ interface DocumentType {
   category: string;
   documentType: string;
   companyName?: string;
+  allowedDocument?: number;
 }
 
 interface UseDocumentChecklistLogicProps {
