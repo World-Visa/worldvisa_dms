@@ -27,6 +27,24 @@ const DocumentMovedFiles: React.FC<Props> = ({ documentId }) => {
     }
   };
 
+  const formattedDate = (moved_at: string) => {
+    const date = new Date(moved_at);
+    const options: Intl.DateTimeFormatOptions = {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    };
+    const datePart = date.toLocaleDateString(undefined, options);
+    let hours = date.getHours();
+    const minutes = date.getMinutes();
+    const ampm = hours >= 12 ? "pm" : "am";
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const minutesStr = minutes < 10 ? "0" + minutes : minutes;
+    const timePart = `${hours}:${minutesStr} ${ampm}`;
+    return `${datePart}, ${timePart}`;
+  };
+
   return (
     <>
       {movedDocs && movedDocs.length > 0 ? (
@@ -88,7 +106,7 @@ const DocumentMovedFiles: React.FC<Props> = ({ documentId }) => {
                                 </p>
                                 <p className="text-xs text-gray-400">
                                   {file.moved_at
-                                    ? new Date(file.moved_at).toLocaleString()
+                                    ? formattedDate(file.moved_at)
                                     : ""}
                                 </p>
                               </div>
