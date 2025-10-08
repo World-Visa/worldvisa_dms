@@ -37,6 +37,7 @@ interface ChecklistTableItem {
   rejectedRemark?: string;
   documentStatus?: string;
   description?: string;
+  instruction?: string;
 }
 
 interface ChecklistTableRowProps {
@@ -177,6 +178,15 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                 />
               </div>  
             </div>
+            
+            {/* Instruction section */}
+            {item.instruction && item.instruction.trim() && (
+              <div className="ml-6 mt-1">
+                <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
+                  <strong>Note:</strong> {item.instruction}
+                </div>
+              </div>
+            )}
             
             {/* Description section */}
             {item.description && item.description.trim() && (

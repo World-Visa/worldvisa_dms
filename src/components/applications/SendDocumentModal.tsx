@@ -51,7 +51,7 @@ export function SendDocumentModal({
     const getRolePermissions = (userRole: string) => {
       switch (userRole) {
         case 'admin':
-          return ['team_leader', 'master_admin'];
+          return ['team_leader'];
         case 'team_leader':
           return ['master_admin', 'supervisor', 'admin'];
         case 'master_admin':

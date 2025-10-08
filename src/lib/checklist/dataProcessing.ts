@@ -19,6 +19,8 @@ interface DocumentType {
   category: string;
   documentType: string;
   companyName?: string;
+  allowedDocument?: number;
+  instruction?: string;
 }
 
 interface ChecklistTableItem {
@@ -33,6 +35,52 @@ interface ChecklistTableItem {
   rejectedRemark?: string;
   documentStatus?: string;
   description?: string;
+  instruction?: string;
+}
+
+
+function getAllowedDocumentCount(category: string, documentType: string): number | undefined {
+  const allBaseDocuments = [
+    ...IDENTITY_DOCUMENTS,
+    ...EDUCATION_DOCUMENTS,
+    ...OTHER_DOCUMENTS,
+    ...SELF_EMPLOYMENT_DOCUMENTS,
+    ...COMPANY_DOCUMENTS,
+  ];
+
+  const foundDoc = allBaseDocuments.find(doc => 
+    doc.category === category && doc.documentType === documentType
+  );
+
+  // Return undefined if allowedDocument is not specified (allows multiple uploads)
+  // Return the specific number if allowedDocument is specified (limits uploads)
+  if (foundDoc && 'allowedDocument' in foundDoc && typeof foundDoc.allowedDocument === 'number') {
+    return foundDoc.allowedDocument;
+  }
+  return undefined;
+}
+
+/**
+ * Helper function to get instruction from base document types
+ */
+function getInstruction(category: string, documentType: string): string | undefined {
+  const allBaseDocuments = [
+    ...IDENTITY_DOCUMENTS,
+    ...EDUCATION_DOCUMENTS,
+    ...OTHER_DOCUMENTS,
+    ...SELF_EMPLOYMENT_DOCUMENTS,
+    ...COMPANY_DOCUMENTS,
+  ];
+
+  const foundDoc = allBaseDocuments.find(doc => 
+    doc.category === category && doc.documentType === documentType
+  );
+
+  // Return instruction if it exists
+  if (foundDoc && 'instruction' in foundDoc && typeof foundDoc.instruction === 'string') {
+    return foundDoc.instruction;
+  }
+  return undefined;
 }
 
 export function generateAllDocumentTypes(
@@ -56,9 +104,15 @@ export function generateAllDocumentTypes(
           categoryLabel = "Company Documents";
         }
 
+        // Get allowedDocument and instruction from the base document types
+        const allowedDocument = getAllowedDocumentCount(categoryLabel, item.document_type);
+        const instruction = getInstruction(categoryLabel, item.document_type);
+
         return {
           documentType: item.document_type,
           category: categoryLabel,
+          allowedDocument,
+          instruction,
         };
       }
     );
@@ -191,6 +245,7 @@ export function generateCreatingItems(
       requirement,
       isSelected,
       company_name: docType.companyName,
+      instruction: docType.instruction,
     };
   });
 }
@@ -236,6 +291,7 @@ export function generateEditingAvailableItems(
       requirement: requirement as DocumentRequirement,
       isSelected: false,
       company_name: docType.companyName,
+      instruction: docType.instruction,
     };
   });
 }
@@ -507,6 +563,7 @@ export function generateDefaultItems(
       uploadedDocument: uploadedDoc,
       rejectedRemark: uploadedDoc?.reject_message,
       documentStatus: uploadedDoc?.status,
+      instruction: docType.instruction,
     };
   });
 }
@@ -651,6 +708,9 @@ export function generateSavedItems(
       return false;
     });
 
+    // Get instruction from base document types
+    const instruction = getInstruction(categoryLabel, checklistItem.document_type);
+
     return {
       category: categoryLabel,
       documentType: checklistItem.document_type,
@@ -663,6 +723,7 @@ export function generateSavedItems(
       rejectedRemark: uploadedDoc?.reject_message,
       documentStatus: uploadedDoc?.status,
       description: checklistItem.description,
+      instruction,
     };
   });
 }
