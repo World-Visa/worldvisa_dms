@@ -235,7 +235,9 @@ export default function ClientApplicationDetailsPage() {
 
   // Check if checklist has company documents
   const hasCompanyDocuments =
-    checklistData?.data?.some((item) => item.document_category === "Company") ||
+    checklistData?.data?.some((item) => 
+      item.document_category === "Company" || item.document_category === "Company Documents"
+    ) ||
     false;
 
   if (
