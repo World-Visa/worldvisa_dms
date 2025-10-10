@@ -31,7 +31,9 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({ document }) => {
                     <div className="text-center">
                         <FileText className="h-16 w-16 lg:block hidden mx-auto mb-4 text-gray-400" />
                         <h3 className="text-sm lg:text-lg font-medium text-gray-900 mb-2">
-                            {document.file_name}
+                            {document.file_name?.length > 15 
+                              ? document.file_name.slice(0, 15) + "…" 
+                              : document.file_name}
                         </h3>
                         <p className="text-xs lg:text-sm text-gray-600 mb-4">
                             Click the button below to view the document

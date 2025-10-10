@@ -204,7 +204,7 @@ export function SendDocumentModal({
                   <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                      {document.file_name}
+                      {document.file_name?.slice(0, 15)}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
                       Uploaded by {document.uploaded_by} • {new Date(document.uploaded_at).toLocaleDateString()}

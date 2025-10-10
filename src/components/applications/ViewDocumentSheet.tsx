@@ -156,7 +156,9 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                     <div className="flex items-center space-x-1 sm:space-x-2">
                       <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
                       <span className="max-w-[120px] sm:max-w-none truncate">
-                        {doc.file_name}
+                        {doc.file_name?.length > 15 
+                          ? doc.file_name.slice(0, 15) + "…" 
+                          : doc.file_name}
                       </span>
                     </div>
                   </button>
