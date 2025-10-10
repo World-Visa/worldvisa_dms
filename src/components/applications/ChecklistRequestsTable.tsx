@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useCallback, memo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useEffect, useRef, useCallback, memo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -9,19 +9,36 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { ChecklistRequestItem } from '@/lib/api/checklistRequests';
-import { gsap } from 'gsap';
-import { Eye, FileText } from 'lucide-react';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  ChecklistRequestItem,
+  ChecklistRequestsResponse,
+} from "@/lib/api/checklistRequests";
+import { gsap } from "gsap";
+import { Eye, FileText, Loader, Trash } from "lucide-react";
+import { updateChecklistRequested } from "@/lib/api/getApplicationById";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogFooter,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
+import { QueryObserverResult, RefetchOptions } from "@tanstack/react-query";
 
 interface ChecklistRequestsTableProps {
   requests: ChecklistRequestItem[];
   currentPage: number;
   limit: number;
   isLoading?: boolean;
+  refetch: (
+    options?: RefetchOptions
+  ) => Promise<QueryObserverResult<ChecklistRequestsResponse, Error>>;
 }
 
 export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
@@ -29,52 +46,85 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
   currentPage,
   limit,
   isLoading = false,
+  refetch,
 }: ChecklistRequestsTableProps) {
   const tableRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Filter out empty or invalid records
-  const validRequests = requests ? requests.filter(req => req.id && req.id.trim() !== '' && req.Checklist_Requested === true) : [];
+  const validRequests = requests
+    ? requests.filter(
+        (req) =>
+          req.id && req.id.trim() !== "" && req.Checklist_Requested === true
+      )
+    : [];
 
-  const getSerialNumber = useCallback((index: number) => {
-    return (currentPage - 1) * limit + index + 1;
-  }, [currentPage, limit]);
+  const getSerialNumber = useCallback(
+    (index: number) => {
+      return (currentPage - 1) * limit + index + 1;
+    },
+    [currentPage, limit]
+  );
 
   const getRecordTypeBadgeVariant = useCallback((recordType?: string) => {
     switch (recordType) {
-      case 'spouse_skill_assessment':
-        return 'default'; // Blue badge for spouse applications
-      case 'visa_application':
-        return 'secondary'; // Gray badge for regular visa applications
+      case "spouse_skill_assessment":
+        return "default"; // Blue badge for spouse applications
+      case "visa_application":
+        return "secondary"; // Gray badge for regular visa applications
       default:
-        return 'outline'; // Default outline badge
+        return "outline"; // Default outline badge
     }
   }, []);
 
   const getRecordTypeDisplayName = useCallback((recordType?: string) => {
     switch (recordType) {
-      case 'spouse_skill_assessment':
-        return 'Spouse Assessment';
-      case 'visa_application':
-        return 'Visa Application';
+      case "spouse_skill_assessment":
+        return "Spouse Assessment";
+      case "visa_application":
+        return "Visa Application";
       default:
-        return recordType || 'Unknown';
+        return recordType || "Unknown";
     }
   }, []);
 
-  const handleRowClick = useCallback((applicationId: string, recordType?: string) => {
-    // Route based on Record_Type
-    if (recordType === 'spouse_skill_assessment') {
-      router.push(`/admin/spouse-skill-assessment-applications/${applicationId}`);
-    } else {
-      router.push(`/admin/applications/${applicationId}`);
-    }
-  }, [router]);
+  const handleRowClick = useCallback(
+    (applicationId: string, recordType?: string) => {
+      // Route based on Record_Type
+      if (recordType === "spouse_skill_assessment") {
+        router.push(
+          `/admin/spouse-skill-assessment-applications/${applicationId}`
+        );
+      } else {
+        router.push(`/admin/applications/${applicationId}`);
+      }
+    },
+    [router]
+  );
 
+  const handleRemoveFromReqChecklist = async (
+    e: React.MouseEvent<HTMLButtonElement>,
+    reqChecklistId: string,
+    recordType: string | undefined
+  ) => {
+    e.stopPropagation();
+    if (recordType) {
+      try {
+        setIsDeleting(true);
+        await updateChecklistRequested(reqChecklistId, false, recordType);
+        refetch();
+      } catch (error) {
+        console.log("error: ", error);
+      } finally {
+        setIsDeleting(false);
+      }
+    }
+  };
 
   useEffect(() => {
     if (tableRef.current && requests.length > 0) {
-      const rows = tableRef.current.querySelectorAll('tbody tr');
+      const rows = tableRef.current.querySelectorAll("tbody tr");
 
       // Set initial state
       gsap.set(rows, { opacity: 0, y: 20 });
@@ -119,7 +169,8 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
           <FileText className="h-5 w-5" />
           Checklist Requests
           <Badge variant="secondary" className="ml-2">
-            {validRequests.length} request{validRequests.length !== 1 ? 's' : ''}
+            {validRequests.length} request
+            {validRequests.length !== 1 ? "s" : ""}
           </Badge>
         </CardTitle>
       </CardHeader>
@@ -140,7 +191,10 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
             <TableBody>
               {validRequests.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                  <TableCell
+                    colSpan={7}
+                    className="text-center py-8 text-muted-foreground"
+                  >
                     <div className="flex flex-col items-center gap-2">
                       <FileText className="h-8 w-8 text-gray-400" />
                       <p>No checklist requests found</p>
@@ -154,8 +208,10 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                 validRequests.map((request, index) => (
                   <TableRow
                     key={request.id}
-                    className='cursor-pointer hover:bg-muted/50 transition-colors'
-                    onClick={() => handleRowClick(request.id, request.Record_Type)}
+                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() =>
+                      handleRowClick(request.id, request.Record_Type)
+                    }
                   >
                     <TableCell className="font-medium">
                       {getSerialNumber(index)}
@@ -163,12 +219,8 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                     <TableCell className="font-medium">
                       {request.Name}
                     </TableCell>
-                    <TableCell>
-                      {request.Email}
-                    </TableCell>
-                    <TableCell>
-                      {request.Phone}
-                    </TableCell>
+                    <TableCell>{request.Email}</TableCell>
+                    <TableCell>{request.Phone}</TableCell>
                     <TableCell>
                       <Badge
                         variant={getRecordTypeBadgeVariant(request.Record_Type)}
@@ -179,11 +231,11 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                     </TableCell>
                     <TableCell>
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {request.Application_Handled_By || 'N/A'}
+                        {request.Application_Handled_By || "N/A"}
                       </span>
                     </TableCell>
                     <TableCell className="text-center">
-                      <div className="flex justify-center">
+                      <div className="flex justify-center gap-[8px]">
                         <Button
                           variant="outline"
                           size="sm"
@@ -196,6 +248,53 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                           <Eye className="h-4 w-4" />
                           View
                         </Button>
+                        <div onClick={(e) => e.stopPropagation()}>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                variant="outline"
+                                className="cursor-pointer"
+                                onClick={(e) => e.stopPropagation()}
+                              >
+                                <Trash />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <AlertDialogTitle>
+                                Are you sure you want to Delete this checklist
+                                request?
+                              </AlertDialogTitle>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  Cancel
+                                </AlertDialogCancel>
+                                <AlertDialogAction
+                                  disabled={isDeleting}
+                                  onClick={(e) =>
+                                    handleRemoveFromReqChecklist(
+                                      e,
+                                      request.id,
+                                      request.Record_Type
+                                    )
+                                  }
+                                >
+                                  {isDeleting ? (
+                                    <div className="flex items-center gap-[8px]">
+                                      <Loader className="animate-spin" />
+                                      <p>Continuing...</p>
+                                    </div>
+                                  ) : (
+                                    "Continue"
+                                  )}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
                       </div>
                     </TableCell>
                   </TableRow>
