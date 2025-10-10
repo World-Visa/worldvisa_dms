@@ -119,7 +119,10 @@ export function RequestedDocumentsTable({
                     </div>
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-gray-900 truncate">
-                        {document.document_name || document.file_name}
+                        {(document.document_name || document.file_name).length > 15
+                          ? (document.document_name || document.file_name).substring(0, 15) + '...'
+                          : (document.document_name || document.file_name)
+                        }
                       </p>
                       <p className="text-xs text-gray-500 truncate">
                         {document.document_category 
