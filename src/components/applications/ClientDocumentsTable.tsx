@@ -230,11 +230,12 @@ export function ClientDocumentsTable({
                               );
                               return (
                                 <Badge
-                                  variant={badgeVariant}
+                                  variant={badgeVariant as "default" | "destructive" | "outline" | "secondary" | null | undefined}
                                   className={`text-xs max-w-[140px] font-medium truncate ${badgeClassName}`}
                                   title={category}
                                 >
                                   {displayText}
+                              );
                                 </Badge>
                               );
                             } else {
