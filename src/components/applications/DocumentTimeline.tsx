@@ -20,6 +20,23 @@ type Props = {
 const DocumentTimeline: React.FC<Props> = ({ documentId }) => {
   const { timeline, isLoading, error } = useDocumentTimeline(documentId);
 
+  // Function to format a timestamp into "DD/MM/YYYY  hh:mm am/pm"
+  function formatTimelineTimestamp(timestamp: string): string {
+    const d = new Date(timestamp);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = d.getFullYear();
+    let hours = d.getHours();
+    const minutes = String(d.getMinutes()).padStart(2, "0");
+    // You may also want to use seconds if needed
+    // const seconds = String(d.getSeconds()).padStart(2, "0");
+    const ampm = hours >= 12 ? "pm" : "am";
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const hourStr = String(hours).padStart(2, "0");
+    return `${day}/${month}/${year}  ${hourStr}:${minutes} ${ampm}`;
+  }
+
   return (
     <div>
       <Sheet>
@@ -71,7 +88,9 @@ const DocumentTimeline: React.FC<Props> = ({ documentId }) => {
                           </div>
                         </div>
                         <p className="text-xs text-gray-500">
-                          {new Date(data.timestamp).toLocaleString()}
+                          {data?.timestamp
+                            ? formatTimelineTimestamp(data.timestamp)
+                            : "N/A"}
                         </p>
                         {data.details && (
                           <Tooltip>
