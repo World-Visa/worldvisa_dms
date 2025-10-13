@@ -95,7 +95,7 @@ const DocumentMovedFiles: React.FC<Props> = ({ documentId }) => {
                                   onClick={() =>
                                     handleOpenDocument(file.file_id)
                                   }
-                                  className="font-semibold text-blue-700 border-b border-b-blue-700 cursor-pointer hover:text-blue-900 hover:border-b-blue-900 truncate max-w-[200px]"
+                                  className="font-semibold text-blue-700 border-b border-b-blue-700 cursor-pointer hover:text-blue-900 hover:border-b-blue-900 truncate max-w-[180px]"
                                   title={file.file_name || "Unnamed File"}
                                 >
                                   {file.file_name || "Unnamed File"}
@@ -105,7 +105,7 @@ const DocumentMovedFiles: React.FC<Props> = ({ documentId }) => {
                                 <p className="text-[13px] text-gray-600">
                                   {file.moved_by || "Unknown"}
                                 </p>
-                                <p className="text-xs text-gray-400">
+                                <p className="text-xs text-gray-400 truncate">
                                   {file.moved_at
                                     ? formattedDate(file.moved_at)
                                     : ""}
