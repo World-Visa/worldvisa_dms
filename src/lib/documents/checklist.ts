@@ -37,7 +37,7 @@ export const EDUCATION_DOCUMENTS = [
 
 export const OTHER_DOCUMENTS = [
   { "category": "Other Documents", "documentType": "RPL (Only for ACS)", "allowedDocument": 1 },
-  { "category": "Other Documents", "documentType": "CDR (Only for Engineers Australia)", "allowedDocument": 1 },
+  { "category": "Other Documents", "documentType": "CDR (Only for Engineers Australia)", "allowedDocument": 3 },
   { "category": "Other Documents", "documentType": "Project list (only for Vetassess)", "allowedDocument": 1 },
   { "category": "Other Documents", "documentType": "Portfolio (only for Vetassess)", "allowedDocument": 1 },
   { "category": "Other Documents", "documentType": "English langugae test", "allowedDocument": 1 },
