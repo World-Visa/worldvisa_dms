@@ -77,6 +77,7 @@ export interface UploadDocumentsModalProps {
   company?: Company;
   documents?: ApiDocument[];
   isClientView?: boolean;
+  instruction?: string;
   onSuccess?: () => void;
 }
 

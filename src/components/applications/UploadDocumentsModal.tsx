@@ -41,6 +41,7 @@ export function UploadDocumentsModal({
   company,
   documents,
   isClientView = false,
+  instruction,
   onSuccess,
 }: UploadDocumentsModalProps) {
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>(propSelectedDocumentType || '');
@@ -528,6 +529,13 @@ export function UploadDocumentsModal({
         <DialogHeader>
           <DialogTitle>Upload Documents</DialogTitle>
         </DialogHeader>
+
+        {/* Instruction Note */}
+        {instruction && instruction.trim() && (
+          <div className="text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded border border-blue-200">
+            <strong>Note:</strong> {instruction}
+          </div>
+        )}
 
         <div className="space-y-6">
           {/* Document Type Display (if pre-selected) */}

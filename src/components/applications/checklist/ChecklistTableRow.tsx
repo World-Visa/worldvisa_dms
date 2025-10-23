@@ -136,6 +136,25 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
     return text.slice(0, length) + "...";
   };
 
+  const getStatusBadgeStyle = (status: string): string => {
+    switch (status) {
+      case 'pending':
+        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
+      case 'reviewed':
+        return "bg-blue-100 text-blue-800 hover:bg-blue-200";
+      case 'approved':
+        return "bg-green-600 text-white hover:bg-green-700";
+      case 'rejected':
+        return "bg-red-100 text-red-800 hover:bg-red-200";
+      default:
+        return "bg-gray-100 text-gray-800 hover:bg-gray-200";
+    }
+  };
+
+  const capitalize = (text: string): string => {
+    return text.charAt(0).toUpperCase() + text.slice(1);
+  };
+
   // Check if this document type has a sample document available
   const { data: hasSampleDocument = false } = useHasSampleDocument({
     documentType: item.documentType,
@@ -179,14 +198,6 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
               </div>  
             </div>
             
-            {/* Instruction section */}
-            {item.instruction && item.instruction.trim() && (
-              <div className="ml-6 mt-1">
-                <div className="text-xs text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">
-                  <strong>Note:</strong> {item.instruction}
-                </div>
-              </div>
-            )}
             
             {/* Description section */}
             {item.description && item.description.trim() && (
@@ -275,6 +286,20 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   {item.requirement === 'mandatory' ? 'Mandatory' : 'Optional'}
                 </Badge>
               )}
+              {/* Show document status when count equals 1 */}
+              {(() => {
+                const documentCount = documentCounts[`${item.documentType}_${item.category || 'default'}`] || 0;
+                const shouldShowStatus = documentCount === 1 && item.isUploaded && item.documentStatus;
+                
+                return shouldShowStatus && item.documentStatus && item.documentStatus !== 'rejected' ? (
+                  <Badge
+                    variant="default"
+                    className={cn("text-xs px-1.5 py-0.5 w-fit", getStatusBadgeStyle(item.documentStatus))}
+                  >
+                    {capitalize(item.documentStatus)}
+                  </Badge>
+                ) : null;
+              })()}
             </div>
           </div>
         </TableCell>
@@ -315,6 +340,20 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   {item.requirement === 'mandatory' ? 'Mandatory' : 'Optional'}
                 </Badge>
               )}
+              {/* Show document status when count equals 1 */}
+              {(() => {
+                const documentCount = documentCounts[`${item.documentType}_${item.category || 'default'}`] || 0;
+                const shouldShowStatus = documentCount === 1 && item.isUploaded && item.documentStatus;
+                
+                return shouldShowStatus && item.documentStatus && item.documentStatus !== 'rejected' ? (
+                  <Badge
+                    variant="default"
+                    className={cn("text-xs px-1.5 py-0.5 w-fit", getStatusBadgeStyle(item.documentStatus))}
+                  >
+                    {capitalize(item.documentStatus)}
+                  </Badge>
+                ) : null;
+              })()}
             </div>
             {/* Show rejected remark on desktop */}
             {item.documentStatus === 'rejected' && item.rejectedRemark && (
@@ -334,13 +373,6 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                 />
               </div>
             )}
-          </div>
-        </TableCell>
-        <TableCell className="w-24 text-center">
-          <div className="flex items-center justify-center">
-            <span className="text-sm font-medium">
-              {documentCounts[`${item.documentType}_${item.category || 'default'}`] || 0}
-            </span>
           </div>
         </TableCell>
         <TableCell className="w-20">
@@ -480,7 +512,9 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                       className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
                     >
                       <Eye className="h-3 w-3" />
-                      <span className="hidden sm:inline">View</span>
+                      <span className="hidden sm:inline">
+                        View{documentCounts[`${item.documentType}_${item.category || 'default'}`] > 0 ? ` (${documentCounts[`${item.documentType}_${item.category || 'default'}`]})` : ''}
+                      </span>
                     </Button>
                     <Button
                       variant="outline"
@@ -507,7 +541,9 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                       className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
                     >
                       <Eye className="h-3 w-3" />
-                      <span className="hidden sm:inline">View</span>
+                      <span className="hidden sm:inline">
+                        View{documentCounts[`${item.documentType}_${item.category || 'default'}`] > 0 ? ` (${documentCounts[`${item.documentType}_${item.category || 'default'}`]})` : ''}
+                      </span>
                     </Button>
                     <Button
                       variant="outline"

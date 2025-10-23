@@ -97,7 +97,6 @@ const DocumentChecklistTableComponent = ({
   // Pending changes props
   pendingAdditions = [],
   pendingDeletions = [],
-  pendingUpdates = [],
   onAddToPendingChanges,
   onRemoveFromPendingChanges,
   onAddToPendingDeletions,
@@ -123,11 +122,7 @@ const DocumentChecklistTableComponent = ({
   const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
   const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
   const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
-
-  // Description dialog state
-  const [isDescriptionDialogOpen, setIsDescriptionDialogOpen] = useState(false);
-  const [selectedDescriptionDocumentType, setSelectedDescriptionDocumentType] = useState<string>('');
-  const [selectedDescriptionText, setSelectedDescriptionText] = useState<string>('');
+  const [selectedInstruction, setSelectedInstruction] = useState<string>('');
 
   // Reupload mutation
   const reuploadMutation = useReuploadDocument();
@@ -252,6 +247,12 @@ const DocumentChecklistTableComponent = ({
   const handleUploadClick = useCallback((documentType: string, category: string) => {
     setSelectedDocumentType(documentType);
 
+    // Find instruction from checklistItems
+    const instruction = checklistItems.find(
+      item => item.documentType === documentType && item.category === category
+    )?.instruction;
+    setSelectedInstruction(instruction || '');
+
     if (category.includes('Documents') &&
       !['Identity Documents', 'Education Documents', 'Other Documents'].includes(category)) {
       let company = extractedCompanies.find(c => c.category === category);
@@ -268,7 +269,7 @@ const DocumentChecklistTableComponent = ({
     }
 
     setIsModalOpen(true);
-  }, [extractedCompanies, currentCompany]);
+  }, [extractedCompanies, currentCompany, checklistItems]);
 
   const handleReuploadClick = useCallback((documentId: string, documentType: string, category: string) => {
     // Find the document to reupload
@@ -278,11 +279,17 @@ const DocumentChecklistTableComponent = ({
       return;
     }
 
+    // Find instruction from checklistItems
+    const instruction = checklistItems.find(
+      item => item.documentType === documentType && item.category === category
+    )?.instruction;
+    setSelectedInstruction(instruction || '');
+
     setSelectedReuploadDocument(documentToReupload);
     setSelectedReuploadDocumentType(documentType);
     setSelectedReuploadDocumentCategory(category);
     setIsReuploadModalOpen(true);
-  }, [documents]);
+  }, [documents, checklistItems]);
 
   const handleViewRejectionDetails = useCallback((document: Document, documentType: string, category: string) => {
     setSelectedRejectedDocument(document);
@@ -318,6 +325,7 @@ const DocumentChecklistTableComponent = ({
     setSelectedDocumentType('');
     setSelectedDocumentCategory('');
     setSelectedCompany(undefined);
+    setSelectedInstruction('');
   }, []);
 
 
@@ -412,6 +420,7 @@ const DocumentChecklistTableComponent = ({
     setSelectedReuploadDocument(null);
     setSelectedReuploadDocumentType('');
     setSelectedReuploadDocumentCategory('');
+    setSelectedInstruction('');
 
     // Refresh the document list modal if it's open to show the reuploaded document
     if (isDocumentListModalOpen && selectedDocumentTypeForView) {
@@ -557,6 +566,7 @@ const DocumentChecklistTableComponent = ({
           company={selectedCompany}
           documents={documents as ApiDocument[]}
           isClientView={isClientView}
+          instruction={selectedInstruction}
         />
       </Card>
 
@@ -598,6 +608,7 @@ const DocumentChecklistTableComponent = ({
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}
         isClientView={isClientView}
+        instruction={selectedInstruction}
       />
     </div>
   );

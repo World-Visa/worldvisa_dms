@@ -26,6 +26,7 @@ interface ReuploadDocumentModalProps {
   documentType: string;
   category: string;
   isClientView?: boolean;
+  instruction?: string;
 }
 
 interface UploadedFile {
@@ -41,7 +42,8 @@ export function ReuploadDocumentModal({
   document,
   documentType,
   category,
-  isClientView = false
+  isClientView = false,
+  instruction
 }: ReuploadDocumentModalProps) {
   const finalDocumentType = documentType || document?.document_type || 'Document';
   const finalCategory = category || document?.document_category || 'Other Documents';
@@ -243,6 +245,13 @@ export function ReuploadDocumentModal({
             Reupload Document
           </DialogTitle>
         </DialogHeader>
+
+        {/* Instruction Note */}
+        {instruction && instruction.trim() && (
+          <div className="text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded border border-blue-200">
+            <strong>Note:</strong> {instruction}
+          </div>
+        )}
 
         <div className="space-y-4">
           {/* Current Document Info */}

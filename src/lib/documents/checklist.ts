@@ -36,6 +36,7 @@ export const EDUCATION_DOCUMENTS = [
 ];
 
 export const OTHER_DOCUMENTS = [
+  { "category": "Other Documents", "documentType": "Updated Resume", "allowedDocument": 1 },
   { "category": "Other Documents", "documentType": "RPL (Only for ACS)", "allowedDocument": 1 },
   { "category": "Other Documents", "documentType": "CDR (Only for Engineers Australia)", "allowedDocument": 6 },
   { "category": "Other Documents", "documentType": "Project list (only for Vetassess)", "allowedDocument": 1 },
@@ -48,7 +49,7 @@ export const OTHER_DOCUMENTS = [
   { "category": "Other Documents", "documentType": "Supervised Teaching Practice (AITSL)", "allowedDocument": 1 },
   { "category": "Other Documents", "documentType": "Org chart (only for Vetassess)", "allowedDocument": 1 },
   { "category": "Other Documents", "documentType": "ACS Skill Select Sheet (Only for ACS)", "allowedDocument": 1 },
-  { "category": "Other Documents", "documentType": "Other Certification", "allowedDocument": 1 }
+  { "category": "Other Documents", "documentType": "Other Certification", "allowedDocument": 1 },
 ];
 
 export const COMPANY_DOCUMENTS = [
@@ -57,7 +58,6 @@ export const COMPANY_DOCUMENTS = [
   { "category": "Company", "documentType": "Promotion Letters", "allowedDocument": 1 },
   { "category": "Company", "documentType": "Reference Letter", "sampleDocument": "/sample_documents/Reference letter format.docx", "allowedDocument": 1 },
   { "category": "Company", "documentType": "Statutory Decleration", "sampleDocument": "/sample_documents/Stat Dec sample.docx", "allowedDocument": 1 },
-  { "category": "Company", "documentType": "Updated Resume", "allowedDocument": 1 },
   { "category": "Company", "documentType": "Payslips" },
   { "category": "Company", "documentType": "Bank Statement" },
   { "category": "Company", "documentType": "Taxation (Form 16/26 AS)", "allowedDocument": 1 },
