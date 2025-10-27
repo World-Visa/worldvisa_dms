@@ -25,11 +25,11 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({ document }) => {
     };
 
     return (
-        <div className="bg-white rounded-lg shadow-sm border h-[50%] lg:h-[40%] overflow-hidden relative">
+        <div className="bg-white rounded-lg shadow-sm border h-[50%] lg:h-[40%] overflow-hidden relative p-2">
             {document.document_link || document.download_url ? (
                 <div className="w-full h-full flex items-center lg:py-0 py-4 justify-center">
                     <div className="text-center">
-                        <FileText className="h-16 w-16 lg:block hidden mx-auto mb-4 text-gray-400" />
+                        <FileText className="h-8 w-8 lg:block hidden mx-auto mb-4 text-gray-400" />
                         <h3 className="text-sm lg:text-lg font-medium text-gray-900 mb-2">
                             {document.file_name?.length > 15 
                               ? document.file_name.slice(0, 15) + "…" 

@@ -1,11 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from '@/components/ui/accordion';
 import { Badge } from '@/components/ui/badge';
-import { User, Mail, Globe, Target, FileText, ChevronDown, ChevronUp, Briefcase, Library } from 'lucide-react';
+import { User, Mail, Globe, Target, FileText, Briefcase, Library } from 'lucide-react';
 import { Application } from '@/types/applications';
-import { Button } from '@/components/ui/button';
 
 interface ApplicationDetailsAccordionProps {
   application: Application | undefined;
@@ -35,27 +39,21 @@ export function ApplicationDetailsAccordion({
   };
 
   return (
-    <Card className="mb-4">
-      <CardHeader className="pb-3">
-        <Button
-          variant="ghost"
-          onClick={onToggle}
-          className="flex items-center justify-between w-full p-0 h-auto hover:bg-transparent"
-        >
-          <CardTitle className="flex items-center gap-2 text-sm">
+    <Accordion
+      type="single"
+      collapsible
+      value={isOpen ? "application-details" : ""}
+      onValueChange={() => onToggle()}
+      className="mb-4 cursor-pointer"
+    >
+      <AccordionItem value="application-details" className="border rounded-lg">
+        <AccordionTrigger className="px-4 ">
+          <div className="flex items-center gap-2 text-sm font-medium">
             <User className="h-4 w-4" />
             Application Details
-          </CardTitle>
-          {isOpen ? (
-            <ChevronUp className="h-4 w-4" />
-          ) : (
-            <ChevronDown className="h-4 w-4" />
-          )}
-        </Button>
-      </CardHeader>
-
-      {isOpen && (
-        <CardContent className="space-y-3 pt-0">
+          </div>
+        </AccordionTrigger>
+        <AccordionContent className="px-4 pb-4">
           {isLoading ? (
             <div className="space-y-2">
               <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
@@ -63,7 +61,7 @@ export function ApplicationDetailsAccordion({
               <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
             </div>
           ) : application ? (
-            <>
+            <div className="space-y-3">
               {/* Personal Information */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="space-y-1">
@@ -137,14 +135,14 @@ export function ApplicationDetailsAccordion({
                   </p>
                 </div>
               </div>
-            </>
+            </div>
           ) : (
             <div className="text-center py-4">
               <p className="text-sm text-muted-foreground">Application details not available</p>
             </div>
           )}
-        </CardContent>
-      )}
-    </Card>
+        </AccordionContent>
+      </AccordionItem>
+    </Accordion>
   );
 }
