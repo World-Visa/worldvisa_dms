@@ -222,6 +222,11 @@ export function useUpdateRequestedDocumentStatus() {
 
 // Helper functions
 function isDocumentOverdue(doc: RequestedDocument, userRole?: string): boolean {
+  // Only pending documents can be overdue
+  if (doc.requested_review.status !== 'pending') {
+    return false;
+  }
+  
   const requestDate = new Date(doc.requested_review.requested_at);
   const now = new Date();
   const daysDiff = Math.floor((now.getTime() - requestDate.getTime()) / (1000 * 60 * 60 * 24));

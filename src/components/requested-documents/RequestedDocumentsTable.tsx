@@ -81,9 +81,6 @@ export function RequestedDocumentsTable({
     );
   }
 
-  console.log('Documents:', documents);
-  console.log('First document requested_at:', documents[0]?.requested_review?.requested_at);
-  console.log('Parsed date:', documents[0]?.requested_review?.requested_at ? new Date(documents[0].requested_review.requested_at) : 'No date');
 
     return (
       <>
