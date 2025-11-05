@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, RefreshCw, Users } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 // Lazy load heavy components for better performance
 const LazyApplicationsTable = lazy(() =>
@@ -25,19 +26,19 @@ const LazyApplicationsTable = lazy(() =>
 const AllApplicationsPage = memo(function AllApplicationsPage() {
   const { queryParams, updateQuery } = useQueryString();
   const queryClient = useQueryClient();
-  
+
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'phone' | 'email'>('name');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isRefreshing, setIsRefreshing] = useState(false);
-  
+
   // Initialize recentActivity from URL params, default to false
   const [recentActivity, setRecentActivity] = useState(() => {
     return queryParams.recentActivity === 'true' || queryParams.recentActivity === true;
   });
-  
+
   // Separate state for the actual search query that triggers API calls
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -101,7 +102,7 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
 
   const { data: searchData, isLoading: isSearchQueryLoading, error: searchQueryError } = useSearchApplications(searchParamsForAPI);
 
-  
+
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -183,18 +184,18 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
   // Handle refresh functionality
   const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
-    
+
     try {
       // Clear all application-related cache
       await queryClient.invalidateQueries({
         queryKey: ['applications']
       });
-      
+
       // Clear search applications cache
       await queryClient.invalidateQueries({
         queryKey: ['search-applications']
       });
-      
+
       // Force refetch current queries
       await Promise.all([
         queryClient.refetchQueries({
@@ -204,7 +205,7 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
           queryKey: ['search-applications', searchParamsForAPI]
         })
       ].filter(Boolean));
-      
+
     } catch (error) {
       console.error('Error refreshing applications:', error);
     } finally {
@@ -220,64 +221,55 @@ const AllApplicationsPage = memo(function AllApplicationsPage() {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       {/* Header */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-gray-900 font-lexend mb-2 flex items-center gap-2">
-          <FileText className="h-6 w-6" />
-          Visa Applications
-        </h2>
-        <p className="text-gray-600">
-          Manage and review all visa applications assigned to you.
-        </p>
-      </div>
-
-      {/* Total Applications Count */}
-      <div className='flex justify-end'>
-        <Card className="mb-6 max-w-xs w-full">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Total Applications
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-primary">
+      <div className="flex flex-col w-full sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900 font-lexend mb-2 flex items-center gap-2">
+            Visa Applications
+          </h2>
+          <p className="text-gray-600">
+            Manage and review all visa applications assigned to you.
+          </p>
+        </div>
+        <div className="w-full sm:w-auto sm:max-w-lg">
+          <ApplicationsFilters
+            search={search}
+            searchType={searchType}
+            dateRange={dateRange}
+            limit={limit}
+            isSearchMode={isSearchMode}
+            onSearchChange={handleSearchChange}
+            onSearchTypeChange={handleSearchTypeChange}
+            onSearchClick={handleSearchClick}
+            onDateRangeChange={handleDateRangeChange}
+            onLimitChange={handleLimitChange}
+            onClearFilters={handleClearFilters}
+            onKeyPress={handleKeyPress}
+          />
+          <div className="mt-2">
+            <Badge variant="outline">
+              Total applications:&nbsp;
               {displayLoading ? '...' : totalApplications.toLocaleString()}
-            </div>
-            <p className="text-sm text-muted-foreground mt-1">
-              {displayLoading ? 'Loading...' : 'Applications assigned to you'}
-            </p>
-          </CardContent>
-        </Card>
+            </Badge>
+          </div>
+        </div>
+
       </div>
 
       {/* Filters */}
       <div className="mb-6">
-        <ApplicationsFilters
-          search={search}
-          searchType={searchType}
-          dateRange={dateRange}
-          limit={limit}
-          isSearchMode={isSearchMode}
-          onSearchChange={handleSearchChange}
-          onSearchTypeChange={handleSearchTypeChange}
-          onSearchClick={handleSearchClick}
-          onDateRangeChange={handleDateRangeChange}
-          onLimitChange={handleLimitChange}
-          onClearFilters={handleClearFilters}
-          onKeyPress={handleKeyPress}
-        />
+
         <div className='flex justify-between gap-2'>
           <div className='flex gap-2'>
             <Button
               variant={!recentActivity ? "default" : "outline"}
-              className='rounded-full py-6 px-6 cursor-pointer'
+              className='rounded-full py-3 px-6 cursor-pointer'
               onClick={handleRecentActivityToggle}
             >
               All applications
             </Button>
             <Button
               variant={recentActivity ? "default" : "outline"}
-              className='rounded-full py-6 px-6 cursor-pointer'
+              className='rounded-full py-3 px-6 cursor-pointer'
               onClick={handleRecentActivityToggle}
             >
               Recent activities

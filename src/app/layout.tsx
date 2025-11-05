@@ -4,9 +4,7 @@ import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "sonner";
 import { NotificationProvider } from '@/components/notifications/NotificationProvider';
-import { NotificationDebugger } from '@/components/notifications/NotificationDebugger';
-import { NotificationTestButton } from '@/components/notifications/NotificationTestButton';
-import { LocalNotificationTestButton } from '@/components/notifications/LocalNotificationTestButton';
+
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

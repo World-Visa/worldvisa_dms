@@ -21,14 +21,6 @@ import {
   Library,
 } from "lucide-react";
 import { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "../ui/select";
 import { DocumentsSummary } from "./DocumentsSummary";
 import { DeadlineUpdateModal } from "./DeadlineUpdateModal";
 
@@ -51,33 +43,7 @@ export function ApplicantDetails({
   allDocumentsError,
   user,
 }: ApplicantDetailsProps) {
-  const [applicationStatuses] = useState([
-    {
-      label: "Pending",
-      value: "pending",
-    },
-    {
-      label: "Reviewed",
-      value: "reviewed",
-    },
-    {
-      label: "Lodged",
-      value: "lodged",
-    },
-    {
-      label: "Visa Received",
-      value: "visa_received",
-    },
-    {
-      label: "Visa Rejected",
-      value: "visa_rejected",
-    },
-  ]);
-  const [isStatusUpdating, setIsStatusUpdating] = useState(false);
   const [isDeadlineModalOpen, setIsDeadlineModalOpen] = useState(false);
-  const queryClient = useQueryClient();
-  const updateApplicationFields = useUpdateApplicationFields();
-
   if (isLoading) {
     return (
       <div className="flex flex-col lg:flex-row justify-between w-full gap-6 lg:gap-8 lg:items-end">
@@ -184,61 +150,37 @@ export function ApplicantDetails({
     return deadlineDate < today;
   };
 
-  const handleStatusChange = async (newStatus: string) => {
-    try {
-      const fields = {
-        DMS_Application_Status: newStatus,
-      };
-      setIsStatusUpdating(true);
-
-      await updateApplicationFields.mutateAsync({
-        leadId: application.id,
-        fieldsToUpdate: fields,
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: ["application", application.id],
-      });
-    } catch (error) {
-      console.error("Error updating application status: ", error);
-    } finally {
-      setIsStatusUpdating(false);
-    }
-  };
 
   return (
     <div className="space-y-6">
       {/* Deadline Card - Prominent Display */}
       {application.Deadline_For_Lodgment ? (
         <Card
-          className={`border-2 ${
-            isDeadlinePassed(application.Deadline_For_Lodgment)
+          className={`border-2 ${isDeadlinePassed(application.Deadline_For_Lodgment)
               ? "border-red-500 bg-red-50"
               : isDeadlineApproaching(application.Deadline_For_Lodgment)
-              ? "border-orange-500 bg-orange-50"
-              : "border-blue-500 bg-blue-50"
-          }`}
+                ? "border-orange-500 bg-orange-50"
+                : "border-blue-500 bg-blue-50"
+            }`}
         >
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Clock
-                  className={`h-5 w-5 ${
-                    isDeadlinePassed(application.Deadline_For_Lodgment)
+                  className={`h-5 w-5 ${isDeadlinePassed(application.Deadline_For_Lodgment)
                       ? "text-red-600"
                       : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                      ? "text-orange-600"
-                      : "text-blue-600"
-                  }`}
+                        ? "text-orange-600"
+                        : "text-blue-600"
+                    }`}
                 />
                 <span
-                  className={`${
-                    isDeadlinePassed(application.Deadline_For_Lodgment)
+                  className={`${isDeadlinePassed(application.Deadline_For_Lodgment)
                       ? "text-red-800"
                       : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                      ? "text-orange-800"
-                      : "text-blue-800"
-                  }`}
+                        ? "text-orange-800"
+                        : "text-blue-800"
+                    }`}
                 >
                   Application Deadline
                 </span>
@@ -253,58 +195,55 @@ export function ApplicantDetails({
               {(user?.role === "admin" ||
                 user?.role === "team_leader" ||
                 user?.role === "master_admin") && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsDeadlineModalOpen(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Edit3 className="h-4 w-4" />
-                  Edit Deadline
-                </Button>
-              )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsDeadlineModalOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                    Edit Deadline
+                  </Button>
+                )}
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="flex items-center justify-between">
               <div>
                 <p
-                  className={`text-2xl font-bold ${
-                    isDeadlinePassed(application.Deadline_For_Lodgment)
+                  className={`text-2xl font-bold ${isDeadlinePassed(application.Deadline_For_Lodgment)
                       ? "text-red-700"
                       : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                      ? "text-orange-700"
-                      : "text-blue-700"
-                  }`}
+                        ? "text-orange-700"
+                        : "text-blue-700"
+                    }`}
                 >
                   {formatDate(application.Deadline_For_Lodgment)}
                 </p>
                 <p
-                  className={`text-sm mt-1 ${
-                    isDeadlinePassed(application.Deadline_For_Lodgment)
+                  className={`text-sm mt-1 ${isDeadlinePassed(application.Deadline_For_Lodgment)
                       ? "text-red-600"
                       : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                      ? "text-orange-600"
-                      : "text-blue-600"
-                  }`}
+                        ? "text-orange-600"
+                        : "text-blue-600"
+                    }`}
                 >
                   {isDeadlinePassed(application.Deadline_For_Lodgment)
                     ? "⚠️ Deadline has passed"
                     : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                    ? "⚠️ Deadline approaching"
-                    : "Application lodgement deadline"}
+                      ? "⚠️ Deadline approaching"
+                      : "Application lodgement deadline"}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Days remaining:</p>
                 <p
-                  className={`text-xl font-semibold ${
-                    isDeadlinePassed(application.Deadline_For_Lodgment)
+                  className={`text-xl font-semibold ${isDeadlinePassed(application.Deadline_For_Lodgment)
                       ? "text-red-600"
                       : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                      ? "text-orange-600"
-                      : "text-blue-600"
-                  }`}
+                        ? "text-orange-600"
+                        : "text-blue-600"
+                    }`}
                 >
                   {(() => {
                     const deadlineDate = new Date(
@@ -334,16 +273,16 @@ export function ApplicantDetails({
               {(user?.role === "admin" ||
                 user?.role === "team_leader" ||
                 user?.role === "master_admin") && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => setIsDeadlineModalOpen(true)}
-                  className="flex items-center gap-2"
-                >
-                  <Edit3 className="h-4 w-4" />
-                  Set Deadline
-                </Button>
-              )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsDeadlineModalOpen(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Edit3 className="h-4 w-4" />
+                    Set Deadline
+                  </Button>
+                )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -369,16 +308,16 @@ export function ApplicantDetails({
               <User className="h-4 w-4" />
               Application Information
             </div>
-            <div className="flex gap-[8px] items-center">
+            <div className="flex gap-2 items-center">
               <label
                 htmlFor="applicationStatus"
                 className="text-sm font-medium"
               >
                 Application Status:
               </label>
-              <p className="font-semibold italic">
+              <Badge variant="secondary" className="py-2 border">
                 {application?.Application_Stage}
-              </p>
+              </Badge>
             </div>
           </CardTitle>
         </CardHeader>

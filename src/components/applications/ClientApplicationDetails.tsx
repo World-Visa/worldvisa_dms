@@ -13,6 +13,10 @@ import {
   FileText,
   Clock,
   AlertTriangle,
+  Briefcase,
+  Globe,
+  Target,
+  Library,
 } from "lucide-react";
 import { formatDate } from "@/utils/format";
 import { Badge } from "@/components/ui/badge";
@@ -26,22 +30,18 @@ interface ClientApplicationDetailsProps {
   error: Error | null;
 }
 
-function getStatusTailwindClasses(status: string | undefined): string {
-  switch (status) {
-    case "pending":
-      return "text-blue-500";
-    case "reviewed":
-      return "text-purple-500";
-    case "lodged":
-      return "text-green-500"; // Chose green for lodged
-    case "visa_received":
-      return "text-teal-500";
-    case "visa_rejected":
-      return "text-red-500";
+const getServiceBadgeVariant = (service: string) => {
+  switch (service?.toLowerCase()) {
+    case "permanent residency":
+      return "default";
+    case "work visa":
+      return "secondary";
+    case "student visa":
+      return "outline";
     default:
-      return "text-gray-500"; // Default color for unknown status
+      return "secondary";
   }
-}
+};
 
 export function ClientApplicationDetails({
   data,
@@ -156,33 +156,30 @@ export function ClientApplicationDetails({
       {/* Deadline Card - Prominent Display */}
       {application.Deadline_For_Lodgment ? (
         <Card
-          className={`border-2 ${
-            isDeadlinePassed(application.Deadline_For_Lodgment)
-              ? "border-red-500 bg-red-50"
-              : isDeadlineApproaching(application.Deadline_For_Lodgment)
+          className={`border-2 ${isDeadlinePassed(application.Deadline_For_Lodgment)
+            ? "border-red-500 bg-red-50"
+            : isDeadlineApproaching(application.Deadline_For_Lodgment)
               ? "border-orange-500 bg-orange-50"
               : "border-blue-500 bg-blue-50"
-          }`}
+            }`}
         >
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock
-                className={`h-5 w-5 ${
-                  isDeadlinePassed(application.Deadline_For_Lodgment)
-                    ? "text-red-600"
-                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                className={`h-5 w-5 ${isDeadlinePassed(application.Deadline_For_Lodgment)
+                  ? "text-red-600"
+                  : isDeadlineApproaching(application.Deadline_For_Lodgment)
                     ? "text-orange-600"
                     : "text-blue-600"
-                }`}
+                  }`}
               />
               <span
-                className={`${
-                  isDeadlinePassed(application.Deadline_For_Lodgment)
-                    ? "text-red-800"
-                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                className={`${isDeadlinePassed(application.Deadline_For_Lodgment)
+                  ? "text-red-800"
+                  : isDeadlineApproaching(application.Deadline_For_Lodgment)
                     ? "text-orange-800"
                     : "text-blue-800"
-                }`}
+                  }`}
               >
                 Application Deadline
               </span>
@@ -199,42 +196,39 @@ export function ClientApplicationDetails({
             <div className="flex items-center justify-between">
               <div>
                 <p
-                  className={`text-2xl font-bold ${
-                    isDeadlinePassed(application.Deadline_For_Lodgment)
-                      ? "text-red-700"
-                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                  className={`text-2xl font-bold ${isDeadlinePassed(application.Deadline_For_Lodgment)
+                    ? "text-red-700"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
                       ? "text-orange-700"
                       : "text-blue-700"
-                  }`}
+                    }`}
                 >
                   {formatDate(application.Deadline_For_Lodgment)}
                 </p>
                 <p
-                  className={`text-sm mt-1 ${
-                    isDeadlinePassed(application.Deadline_For_Lodgment)
-                      ? "text-red-600"
-                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                  className={`text-sm mt-1 ${isDeadlinePassed(application.Deadline_For_Lodgment)
+                    ? "text-red-600"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
                       ? "text-orange-600"
                       : "text-blue-600"
-                  }`}
+                    }`}
                 >
                   {isDeadlinePassed(application.Deadline_For_Lodgment)
                     ? "⚠️ Deadline has passed"
                     : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                    ? "⚠️ Deadline approaching"
-                    : "Application lodgement deadline"}
+                      ? "⚠️ Deadline approaching"
+                      : "Application lodgement deadline"}
                 </p>
               </div>
               <div className="text-right">
                 <p className="text-sm text-muted-foreground">Days remaining:</p>
                 <p
-                  className={`text-xl font-semibold ${
-                    isDeadlinePassed(application.Deadline_For_Lodgment)
-                      ? "text-red-600"
-                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                  className={`text-xl font-semibold ${isDeadlinePassed(application.Deadline_For_Lodgment)
+                    ? "text-red-600"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
                       ? "text-orange-600"
                       : "text-blue-600"
-                  }`}
+                    }`}
                 >
                   {(() => {
                     const deadlineDate = new Date(
@@ -275,31 +269,28 @@ export function ClientApplicationDetails({
           </CardContent>
         </Card>
       )}
-
-      {/* All Application Information in Single Card */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <div className="flex items-center justify-between gap-2 text-base w-full">
-              <div className="flex items-center gap-[6px]">
-                <User className="h-4 w-4" />
-                Application Information
-              </div>
-              {data?.data.DMS_Application_Status && (
-                <div>
-                  <p>
-                    Application Status:{" "}
-                    <span className={`capitalize italic font-semibold`}>
-                      {data?.data.Application_Stage}
-                    </span>
-                  </p>
-                </div>
-              )}
+          <CardTitle className="flex md:flex-row flex-col items-center md:justify-between gap-2 text-base">
+            <div className="flex items-center gap-2 text-base">
+              <User className="h-4 w-4" />
+              Application Information
+            </div>
+            <div className="flex gap-2 items-center">
+              <label
+                htmlFor="applicationStatus"
+                className="text-sm font-medium"
+              >
+                Application Status:
+              </label>
+              <Badge variant="secondary" className="py-2 border">
+                {application?.Application_Stage}
+              </Badge>
             </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {/* Personal Information */}
+
           <div className="space-y-3">
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Personal Information
@@ -340,12 +331,62 @@ export function ClientApplicationDetails({
             </div>
           </div>
 
+          <div className="space-y-3">
+            <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+              Visa Information
+            </h4>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <Globe className="h-3 w-3" />
+                  Target Country
+                </label>
+                <p className="text-sm">
+                  {formatValue(application.Qualified_Country || "")}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <Target className="h-3 w-3" />
+                  Service Type
+                </label>
+                <Badge
+                  variant={getServiceBadgeVariant(
+                    application.Service_Finalized || ""
+                  )}
+                  className="text-xs"
+                >
+                  {formatValue(application.Service_Finalized || "")}
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <Briefcase className="h-3 w-3" />
+                  Suggested ANZSCO
+                </label>
+                <p className="text-sm">
+                  {formatValue(application.Suggested_Anzsco || "")}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <FileText className="h-3 w-3" />
+                  Assessing Authority
+                </label>
+                <p className="text-xs">
+                  {formatValue(application.Assessing_Authority || "")}
+                </p>
+              </div>
+            </div>
+          </div>
+
+
           {/* Application Management */}
           <div className="space-y-3">
             <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
               Application Management
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                   <User className="h-3 w-3" />
@@ -364,6 +405,15 @@ export function ClientApplicationDetails({
                   {application.Created_Time
                     ? formatDate(application.Created_Time, "time")
                     : "Not available"}
+                </p>
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
+                  <Library className="h-3 w-3" />
+                  Record Type
+                </label>
+                <p className="text-sm">
+                  {formatValue(application.Record_Type || "")}
                 </p>
               </div>
               <div className="space-y-1">

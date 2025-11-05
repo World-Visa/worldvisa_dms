@@ -48,7 +48,6 @@ export default function UnifiedApplicationDetailsPage({
 
   const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(
     () => {
-      // Use URL state first, then fallback to localStorage
       const savedCategory = localStorageUtils.loadCategory(
         applicationId,
         urlCategory
@@ -255,24 +254,19 @@ export default function UnifiedApplicationDetailsPage({
     setSelectedReuploadDocumentCategory("");
   };
 
-  // Enhanced cancel function that also resets category
   const handleCancelChecklist = async () => {
     setIsCategoryChanging(true);
     try {
       checklistState.cancelChecklistOperation();
-      // Reset to submitted documents when canceling
       setSelectedCategory("submitted");
       setURLCategory("submitted");
       localStorageUtils.saveCategory(applicationId, "submitted");
-
-      // Add a small delay to show the loading state
       await new Promise((resolve) => setTimeout(resolve, 300));
     } finally {
       setIsCategoryChanging(false);
     }
   };
 
-  // Enhanced category change handler that also updates checklist state
   const handleCategoryChangeWithChecklist = async (
     category: DocumentCategory
   ) => {
@@ -289,17 +283,13 @@ export default function UnifiedApplicationDetailsPage({
     }
   };
 
-  // Enhanced start creating checklist function
   const handleStartCreatingChecklist = async () => {
     setIsCategoryChanging(true);
     try {
       checklistState.startCreatingChecklist();
-      // Set the category to 'all' to show all documents
       setSelectedCategory("all");
       setURLCategory("all");
       localStorageUtils.saveCategory(applicationId, "all");
-
-      // Add a small delay to show the loading state
       await new Promise((resolve) => setTimeout(resolve, 300));
     } finally {
       setIsCategoryChanging(false);

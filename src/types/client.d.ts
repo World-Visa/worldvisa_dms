@@ -17,6 +17,11 @@ export interface ClientApplicationResponse {
     Checklist_Requested?: boolean;
     Checklist_Requested_At?: string;
     Deadline_For_Lodgment?: string;
+    Qualified_Country?: string;
+    Service_Finalized?: string;
+    Suggested_Anzsco?: string;
+    Assessing_Authority?: string;
+    Record_Type?: string;
   };
 }
 
