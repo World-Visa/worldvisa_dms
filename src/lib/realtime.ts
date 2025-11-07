@@ -114,7 +114,7 @@ export class RealtimeManager {
       }
 
       // Create SSE connection to our API endpoint
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || window.location.origin;
+      const baseUrl = process.env.NEXT_PUBLIC_API_BASE_URLL || window.location.origin;
       const eventSource = new EventSource(
         `${baseUrl}/api/realtime/comments?token=${encodeURIComponent(token)}${roleParam}`,
         {
