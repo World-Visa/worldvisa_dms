@@ -43,7 +43,7 @@ export const CategoryButton = memo(function CategoryButton({
         key={category.id}
         disabled={disabled}
         className={cn(
-          'relative inline-flex flex-col items-center gap-1 px-4 py-2.5 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
+          'relative inline-flex flex-col items-center gap-1 px-3 py-1.5 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
           'border-2 focus:outline-none focus:ring-0',
           disabled 
             ? 'cursor-not-allowed opacity-50'

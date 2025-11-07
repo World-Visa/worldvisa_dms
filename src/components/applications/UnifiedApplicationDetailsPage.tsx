@@ -2,32 +2,44 @@
 
 import { AddCompanyDialog } from '@/components/applications/AddCompanyDialog';
 import { ApplicantDetails } from '@/components/applications/ApplicantDetails';
-import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
-import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
-import { DocumentsTable } from '@/components/applications/DocumentsTable';
+import { ApplicationDetailsHeader } from '@/components/applications/ApplicationDetailsHeader';
 import { DownloadAllDocumentsModal } from '@/components/applications/DownloadAllDocumentsModal';
 import { QualityCheckModal } from '@/components/applications/QualityCheckModal';
 import { ReuploadDocumentModal } from '@/components/applications/ReuploadDocumentModal';
 import { ResetPasswordModal } from '@/components/applications/ResetPasswordModal';
+import { LayoutChips } from '@/components/applications/layouts/LayoutChips';
+import { SkillAssessmentLayout } from '@/components/applications/layouts/SkillAssessmentLayout';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useApplicationDetails } from '@/hooks/useApplicationDetails';
 import { useSpouseApplicationDetails } from '@/hooks/useSpouseApplicationDetails';
 import { useAllApplicationDocuments, useApplicationDocuments } from '@/hooks/useApplicationDocuments';
 import { useAuth } from '@/hooks/useAuth';
 import { useChecklistState } from '@/hooks/useChecklistState';
-import { localStorageUtils } from '@/lib/localStorage';
-import { parseCompaniesFromDocuments } from '@/utils/companyParsing';
+import { useApplicationState } from '@/hooks/useApplicationState';
+import { useApplicationModals } from '@/hooks/useApplicationModals';
+import { useLayoutState } from '@/hooks/useLayoutState';
 import { useChecklistURLState } from '@/lib/urlState';
 import { ApplicationDetailsResponse, Document } from '@/types/applications';
-import { Company, DocumentCategory } from '@/types/documents';
 import { useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, BadgeCheck, CheckCircle, RefreshCw, Key, Download } from 'lucide-react';
+import { ArrowLeft, BadgeCheck } from 'lucide-react';
 import { useParams, useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useCallback, lazy, Suspense, useState } from 'react';
+import { useApplicationDetails } from '@/hooks/useApplicationDetails';
+import { TooltipProvider } from '../ui/tooltip';
+import type { DocumentCategory } from '@/types/documents';
+import { areAllMandatoryDocumentsReviewed } from '@/utils/checklistValidation';
+
+const OutcomeLayout = lazy(() => 
+  import('@/components/applications/layouts/OutcomeLayout').then(mod => ({ default: mod.OutcomeLayout }))
+);
+const EOILayout = lazy(() => 
+  import('@/components/applications/layouts/EOILayout').then(mod => ({ default: mod.EOILayout }))
+);
+const InvitationLayout = lazy(() => 
+  import('@/components/applications/layouts/InvitationLayout').then(mod => ({ default: mod.InvitationLayout }))
+);
 
 interface UnifiedApplicationDetailsPageProps {
   isSpouseApplication?: boolean;
@@ -42,56 +54,13 @@ export default function UnifiedApplicationDetailsPage({
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
 
-  // URL state management
-  const { category: urlCategory, setCategory: setURLCategory } =
-    useChecklistURLState(applicationId);
+  const { category: urlCategory } = useChecklistURLState(applicationId);
 
-  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(
-    () => {
-      const savedCategory = localStorageUtils.loadCategory(
-        applicationId,
-        urlCategory
-      ) as DocumentCategory;
-      return savedCategory;
-    }
-  );
+  const layoutState = useLayoutState();
+  const modals = useApplicationModals();
 
-  const [isCategoryChanging, setIsCategoryChanging] = useState(false);
-
-  // Initialize companies from localStorage or empty array
-  const [companies, setCompanies] = useState<Company[]>(() => {
-    const savedCompanies = localStorageUtils.loadCompanies(applicationId, []);
-    return savedCompanies;
-  });
-
-  const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
-  const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
-  const [selectedReuploadDocument, setSelectedReuploadDocument] =
-    useState<Document | null>(null);
-  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] =
-    useState<string>("");
-  const [
-    selectedReuploadDocumentCategory,
-    setSelectedReuploadDocumentCategory,
-  ] = useState<string>("");
-  const [documentsPage, setDocumentsPage] = useState(1);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isQualityCheckModalOpen, setIsQualityCheckModalOpen] = useState(false);
-  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
-  const [isDownloadAllModalOpen, setIsDownloadAllModalOpen] = useState(false);
-  const maxCompanies = 10;
-
-  // Check authentication
-  useEffect(() => {
-    if (!isAuthLoading && (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'team_leader' && user?.role !== 'master_admin' && user?.role !== 'supervisor'))) {
-      router.push('/admin-login');
-    }
-  }, [isAuthenticated, isAuthLoading, user?.role, router]);
-
-  // Use both hooks but only use the appropriate one based on application type
   const spouseApplicationQuery = useSpouseApplicationDetails(applicationId);
   const regularApplicationQuery = useApplicationDetails(applicationId);
-
   const applicationData = isSpouseApplication ? spouseApplicationQuery.data : regularApplicationQuery.data;
   const isApplicationLoading = isSpouseApplication ? spouseApplicationQuery.isLoading : regularApplicationQuery.isLoading;
   const applicationError = isSpouseApplication ? spouseApplicationQuery.error : regularApplicationQuery.error;
@@ -102,7 +71,6 @@ export default function UnifiedApplicationDetailsPage({
     error: documentsError,
   } = useApplicationDocuments(applicationId);
 
-  // Fetch all documents for checklist matching (not paginated)
   const {
     data: allDocumentsData,
     isLoading: isAllDocumentsLoading,
@@ -113,51 +81,62 @@ export default function UnifiedApplicationDetailsPage({
   const documents = documentsData?.data;
   const allDocuments = allDocumentsData?.data;
 
+  const appState = useApplicationState({
+    applicationId,
+    urlCategory,
+    allDocuments,
+  });
+
   const checklistState = useChecklistState({
     applicationId,
     documents: allDocuments,
-    companies,
+    companies: appState.companies,
     recordType: application?.Record_Type,
   });
 
-  // Refresh function
-  const handleRefresh = async () => {
+  const areAllDocumentsApproved = useMemo(() => {
+    if (isSpouseApplication) {
+      return false;
+    }
+    return areAllMandatoryDocumentsReviewed(
+      checklistState.checklistData?.data,
+      allDocuments
+    );
+  }, [allDocuments, isSpouseApplication, checklistState.checklistData]);
+
+  const [documentsPage, setDocumentsPage] = useState(1);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const maxCompanies = 10;
+
+  useEffect(() => {
+    setDocumentsPage(1);
+  }, [appState.selectedCategory]);
+
+  useEffect(() => {
+    if (!isAuthLoading && (!isAuthenticated || (user?.role !== 'admin' && user?.role !== 'team_leader' && user?.role !== 'master_admin' && user?.role !== 'supervisor'))) {
+      router.push('/admin-login');
+    }
+  }, [isAuthenticated, isAuthLoading, user?.role, router]);
+
+  const handleRefresh = useCallback(async () => {
     setIsRefreshing(true);
     try {
-      // Invalidate all relevant queries based on application type
       const queries = [
-        queryClient.invalidateQueries({
-          queryKey: ["application-documents", applicationId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["application-documents-all", applicationId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["application-documents-paginated", applicationId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["checklist", applicationId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["document-comment-counts"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["application"],
-        }),
+        queryClient.invalidateQueries({ queryKey: ["application-documents", applicationId] }),
+        queryClient.invalidateQueries({ queryKey: ["application-documents-all", applicationId] }),
+        queryClient.invalidateQueries({ queryKey: ["application-documents-paginated", applicationId] }),
+        queryClient.invalidateQueries({ queryKey: ["checklist", applicationId] }),
+        queryClient.invalidateQueries({ queryKey: ["document-comment-counts"] }),
+        queryClient.invalidateQueries({ queryKey: ["application"] }),
       ];
 
-      // Add application-specific query
       if (isSpouseApplication) {
         queries.push(
-          queryClient.invalidateQueries({
-            queryKey: ["spouse-application-details", applicationId],
-          })
+          queryClient.invalidateQueries({ queryKey: ["spouse-application-details", applicationId] })
         );
       } else {
         queries.push(
-          queryClient.invalidateQueries({
-            queryKey: ["application-details", applicationId],
-          })
+          queryClient.invalidateQueries({ queryKey: ["application-details", applicationId] })
         );
       }
 
@@ -167,199 +146,101 @@ export default function UnifiedApplicationDetailsPage({
     } finally {
       setIsRefreshing(false);
     }
-  };
+  }, [applicationId, isSpouseApplication, queryClient]);
 
-  // Check if all submitted documents are approved (only for regular applications)
-  const areAllDocumentsApproved = useMemo(() => {
-    if (isSpouseApplication || !allDocuments || allDocuments.length === 0) {
-      return false;
-    }
-
-    // Check if all documents have approved status (check ALL documents, not just paginated ones)
-    return allDocuments.every((doc: Document) => doc.status === 'approved');
-  }, [allDocuments, isSpouseApplication]);
-
-  // Handle push for quality check (only for regular applications)
-  const handlePushForQualityCheck = () => {
+  const handlePushForQualityCheck = useCallback(() => {
     if (isSpouseApplication || !user?.username || !application?.id) {
       console.error('Missing user or application data, or spouse application');
       return;
     }
+    modals.openQualityCheckModal();
+  }, [isSpouseApplication, user?.username, application?.id, modals]);
 
-    setIsQualityCheckModalOpen(true);
-  };
-
-  // Populate companies state from existing documents with company information
-  useEffect(() => {
-    if (allDocuments && allDocuments.length > 0) {
-      const parsedCompanies = parseCompaniesFromDocuments(allDocuments);
-      if (parsedCompanies.length > 0) {
-        setCompanies(parsedCompanies);
-      }
-    }
-  }, [allDocuments]);
-
-  const handleAddCompany = (company: Company) => {
-    // Don't override the category - it's already set correctly in AddCompanyDialog
-    const newCompanies = [...companies, company];
-    setCompanies(newCompanies);
-    localStorageUtils.saveCompanies(applicationId, newCompanies);
-  };
-
-  const handleRemoveCompany = (companyName: string) => {
-    const newCompanies = companies.filter(
-      (company) => company.name.toLowerCase() !== companyName.toLowerCase()
-    );
-    setCompanies(newCompanies);
-    localStorageUtils.saveCompanies(applicationId, newCompanies);
-    if (selectedCategory === `company-${companyName}`) {
-      setSelectedCategory("all");
-    }
-  };
-
-  const handleOpenAddCompanyDialog = () => {
-    setIsAddCompanyDialogOpen(true);
-  };
-
-  const handleCloseAddCompanyDialog = () => {
-    setIsAddCompanyDialogOpen(false);
-  };
-
-  const handleDocumentsPageChange = (page: number) => {
-    setDocumentsPage(page);
-  };
-
-  const handleReuploadDocument = (
+  const handleReuploadDocument = useCallback((
     documentId: string,
     documentType: string,
     category: string
   ) => {
-    // Find the document to reupload
     const documentToReupload = documents?.find((doc) => doc._id === documentId);
     if (!documentToReupload) {
       console.error("Document not found for reupload:", documentId);
       return;
     }
+    modals.openReuploadModal(documentToReupload, documentType, category);
+  }, [documents, modals]);
 
-    setSelectedReuploadDocument(documentToReupload);
-    setSelectedReuploadDocumentType(documentType);
-    setSelectedReuploadDocumentCategory(category);
-    setIsReuploadModalOpen(true);
-  };
-
-  const handleReuploadModalClose = () => {
-    setIsReuploadModalOpen(false);
-    setSelectedReuploadDocument(null);
-    setSelectedReuploadDocumentType("");
-    setSelectedReuploadDocumentCategory("");
-  };
-
-  const handleCancelChecklist = async () => {
-    setIsCategoryChanging(true);
+  const handleCancelChecklist = useCallback(async () => {
+    appState.setIsCategoryChanging(true);
     try {
       checklistState.cancelChecklistOperation();
-      setSelectedCategory("submitted");
-      setURLCategory("submitted");
-      localStorageUtils.saveCategory(applicationId, "submitted");
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await appState.handleCategoryChange("submitted");
     } finally {
-      setIsCategoryChanging(false);
+      appState.setIsCategoryChanging(false);
     }
-  };
+  }, [appState, checklistState]);
 
-  const handleCategoryChangeWithChecklist = async (
-    category: DocumentCategory
-  ) => {
-    setIsCategoryChanging(true);
-    try {
-      setSelectedCategory(category);
-      setURLCategory(category);
-      localStorageUtils.saveCategory(applicationId, category);
+  const handleCategoryChangeWithChecklist = useCallback(async (category: DocumentCategory) => {
+    await appState.handleCategoryChange(category);
+  }, [appState]);
 
-      // Add a small delay to show the loading state
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    } finally {
-      setIsCategoryChanging(false);
-    }
-  };
-
-  const handleStartCreatingChecklist = async () => {
-    setIsCategoryChanging(true);
+  const handleStartCreatingChecklist = useCallback(async () => {
+    appState.setIsCategoryChanging(true);
     try {
       checklistState.startCreatingChecklist();
-      setSelectedCategory("all");
-      setURLCategory("all");
-      localStorageUtils.saveCategory(applicationId, "all");
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await appState.handleCategoryChange("all");
     } finally {
-      setIsCategoryChanging(false);
+      appState.setIsCategoryChanging(false);
     }
-  };
+  }, [appState, checklistState]);
 
-  // Enhanced start editing checklist function
-  const handleStartEditingChecklist = async () => {
-    setIsCategoryChanging(true);
+  const handleStartEditingChecklist = useCallback(async () => {
+    appState.setIsCategoryChanging(true);
     try {
       checklistState.startEditingChecklist();
-
-      // Determine the correct category to switch to based on current selection
       let targetCategory: DocumentCategory = "checklist";
-
-      // If we're on a company-specific category, maintain it
-      if (selectedCategory.includes("_company_documents")) {
-        targetCategory = selectedCategory as DocumentCategory;
-      } else if (selectedCategory === "submitted") {
-        // If on submitted, switch to the first available checklist category
+      if (appState.selectedCategory.includes("_company_documents")) {
+        targetCategory = appState.selectedCategory as DocumentCategory;
+      } else if (appState.selectedCategory === "submitted") {
         const firstCategory = checklistState.checklistCategories[0];
         if (firstCategory) {
           targetCategory = firstCategory.id as DocumentCategory;
         }
       }
-
-      setSelectedCategory(targetCategory);
-      setURLCategory(targetCategory);
-      localStorageUtils.saveCategory(applicationId, targetCategory);
-
-      // Add a small delay to show the loading state
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await appState.handleCategoryChange(targetCategory);
     } finally {
-      setIsCategoryChanging(false);
+      appState.setIsCategoryChanging(false);
     }
-  };
+  }, [appState, checklistState]);
 
-  // Sync URL state with local state on mount
-  useEffect(() => {
-    if (urlCategory && urlCategory !== selectedCategory) {
-      setSelectedCategory(urlCategory as DocumentCategory);
-      localStorageUtils.saveCategory(applicationId, urlCategory);
-    }
-  }, [urlCategory, selectedCategory, applicationId]);
+  const backPath = useMemo(() => 
+    isSpouseApplication
+      ? '/admin/spouse-skill-assessment-applications'
+      : '/admin/applications',
+    [isSpouseApplication]
+  );
 
-  // Reset documents page when category changes
-  useEffect(() => {
-    setDocumentsPage(1);
-  }, [selectedCategory]);
+  const pageTitle = useMemo(() =>
+    isSpouseApplication
+      ? 'Spouse Application Details'
+      : 'Application Details',
+    [isSpouseApplication]
+  );
 
-  const handleBack = () => {
-    router.back();
-  };
-
-  const handleResetPasswordSuccess = () => {
-    // Optionally refresh data or show additional success message
-    console.log('Password reset successfully');
-  };
+  const isAuthorized = useMemo(() => 
+    !isAuthLoading && isAuthenticated && 
+    (user?.role === 'admin' || user?.role === 'team_leader' || 
+     user?.role === 'master_admin' || user?.role === 'supervisor'),
+    [isAuthLoading, isAuthenticated, user?.role]
+  );
 
   if (applicationError || documentsError) {
     return (
       <div className="container mx-auto p-6 space-y-6">
         <div className="flex items-center space-x-4">
-          <div className="items-center flex">
-            <Button variant="outline" size="sm" onClick={handleBack}>
-              <ArrowLeft className="h-4 w-4 mr-2" />
-            </Button>
-          </div>
+          <Button variant="outline" size="sm" onClick={() => router.back()}>
+            <ArrowLeft className="h-4 w-4 mr-2" />
+          </Button>
         </div>
-
         <Alert variant="destructive">
           <AlertDescription>
             Failed to load application details. Please try again later.
@@ -369,32 +250,20 @@ export default function UnifiedApplicationDetailsPage({
     );
   }
 
-  // Determine the back navigation path
-  const backPath = isSpouseApplication
-    ? '/admin/spouse-skill-assessment-applications'
-    : '/admin/applications';
-
-  // Determine the page title
-  const pageTitle = isSpouseApplication
-    ? 'Spouse Application Details'
-    : 'Application Details';
-
   return (
     <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
       {/* Header */}
       <TooltipProvider>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
-            <div className="items-center flex">
-              <Button
-                variant="outline"
-                className="rounded-full w-8 h-8 cursor-pointer "
-                size="sm"
-                onClick={() => router.push(backPath)}
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              className="rounded-full w-8 h-8 cursor-pointer"
+              size="sm"
+              onClick={() => router.push(backPath)}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
             <div>
               <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-lexend font-bold">
                 {pageTitle}
@@ -410,7 +279,7 @@ export default function UnifiedApplicationDetailsPage({
                   </Badge>
                 )}
               </h1>
-              <div className="text-muted-foreground ">
+              <div className="text-muted-foreground">
                 {isApplicationLoading ? (
                   <Skeleton className="h-4 w-32" />
                 ) : application ? (
@@ -421,99 +290,18 @@ export default function UnifiedApplicationDetailsPage({
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            {/* Download All Documents Button - Only for admin users and when all documents are approved */}
-            {user?.role !== 'client' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setIsDownloadAllModalOpen(true)}
-                      disabled={!areAllDocumentsApproved}
-                      className={`flex items-center gap-2 cursor-pointer ${
-                        areAllDocumentsApproved
-                          ? "hover:bg-blue-50 hover:border-blue-300"
-                          : "opacity-50 cursor-not-allowed"
-                      }`}
-                    >
-                      <Download className="h-4 w-4" />
-                      <span className="hidden sm:inline">Download All</span>
-                    </Button>
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {areAllDocumentsApproved
-                    ? "Download all approved documents as ZIP"
-                    : "All documents must be approved before downloading"}
-                </TooltipContent>
-              </Tooltip>
-            )}
-            
-            {user?.role !== 'client' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setIsResetPasswordModalOpen(true)}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <Key className="h-4 w-4" />
-                    <span className="hidden sm:inline">Reset Password</span>
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  Reset client password
-                </TooltipContent>
-              </Tooltip>
-            )}
-
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div>
-                  <Button
-                    variant={areAllDocumentsApproved ? "default" : "outline"}
-                    size="sm"
-                    onClick={handlePushForQualityCheck}
-                    disabled={!areAllDocumentsApproved}
-                    className={`flex items-center gap-2 cursor-pointer ${areAllDocumentsApproved
-                      ? "bg-green-600 hover:bg-green-700 text-white"
-                      : "opacity-50 cursor-not-allowed"
-                      }`}
-                  >
-                    <CheckCircle className="h-4 w-4" />
-                    <span className="hidden sm:inline">
-                      Push for Quality Check
-                    </span>
-                  </Button>
-                </div>
-              </TooltipTrigger>
-              <TooltipContent>
-                {areAllDocumentsApproved
-                  ? "All documents are approved. Ready for quality check."
-                  : "All submitted documents must be approved before pushing for quality check."}
-              </TooltipContent>
-            </Tooltip>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
-          </div>
+          <ApplicationDetailsHeader
+            areAllDocumentsApproved={areAllDocumentsApproved}
+            onPushForQualityCheck={handlePushForQualityCheck}
+            onRefresh={handleRefresh}
+            isRefreshing={isRefreshing}
+            onDownloadAll={modals.openDownloadAllModal}
+            onResetPassword={modals.openResetPasswordModal}
+            userRole={user?.role}
+          />
         </div>
       </TooltipProvider>
 
-      {/* Loading State */}
       {isAuthLoading || isApplicationLoading || isDocumentsLoading ? (
         <div className="space-y-6">
           <div className="flex justify-between w-full gap-8 items-end">
@@ -536,162 +324,107 @@ export default function UnifiedApplicationDetailsPage({
           </div>
           <Skeleton className="h-96 w-full rounded-xl" />
         </div>
-      ) : !isAuthLoading && isAuthenticated && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin' || user?.role === 'supervisor') ? (
+      ) : isAuthorized ? (
         <div className="space-y-6">
-          {/* Applicant Details */}
           <ApplicantDetails
             application={application}
             isLoading={isApplicationLoading}
             error={applicationError}
-            allDocuments={allDocuments}
-            isAllDocumentsLoading={isAllDocumentsLoading}
-            allDocumentsError={allDocumentsError}
             user={user}
           />
 
-          {/* Documents Section */}
-          <div className="space-y-6">
-            {/* Category Filter */}
-            <DocumentCategoryFilter
-              selectedCategory={selectedCategory}
+          <LayoutChips
+            selectedLayout={layoutState.selectedLayout}
+            onLayoutChange={layoutState.handleLayoutChange}
+          />
+
+          {layoutState.selectedLayout === 'skill-assessment' ? (
+            <SkillAssessmentLayout
+              allDocuments={allDocuments}
+              isAllDocumentsLoading={isAllDocumentsLoading}
+              allDocumentsError={allDocumentsError}
+              selectedCategory={appState.selectedCategory}
               onCategoryChange={handleCategoryChangeWithChecklist}
-              companies={companies}
-              onAddCompany={handleOpenAddCompanyDialog}
-              onRemoveCompany={handleRemoveCompany}
+              companies={appState.companies}
+              onAddCompany={modals.openAddCompanyDialog}
+              onRemoveCompany={appState.handleRemoveCompany}
               maxCompanies={maxCompanies}
-              // Checklist props
-              checklistState={checklistState.state}
-              checklistCategories={checklistState.checklistCategories}
-              hasCompanyDocuments={checklistState.hasCompanyDocuments}
+              checklistState={checklistState}
               onStartCreatingChecklist={handleStartCreatingChecklist}
               onStartEditingChecklist={handleStartEditingChecklist}
-              onSaveChecklist={
-                checklistState.state === "editing"
-                  ? checklistState.savePendingChanges
-                  : checklistState.saveChecklist
-              }
+              onSaveChecklist={checklistState.saveChecklist}
               onCancelChecklist={handleCancelChecklist}
-              isSavingChecklist={checklistState.isBatchSaving}
-              // Loading state
-              isCategoryChanging={isCategoryChanging}
+              isCategoryChanging={appState.isCategoryChanging}
+              applicationId={applicationId}
+              documentsPage={documentsPage}
+              onDocumentsPageChange={setDocumentsPage}
+              onReuploadDocument={handleReuploadDocument}
             />
-
-            {/* Conditional Rendering */}
-            {selectedCategory === "submitted" ? (
-              <DocumentsTable
-                applicationId={applicationId}
-                currentPage={documentsPage}
-                limit={10}
-                onPageChange={handleDocumentsPageChange}
-                onReuploadDocument={handleReuploadDocument}
-                isClientView={false}
-              />
-            ) : (
-              <DocumentChecklistTable
-                documents={allDocuments}
-                isLoading={isAllDocumentsLoading}
-                error={allDocumentsError}
-                applicationId={applicationId}
-                selectedCategory={selectedCategory}
-                companies={companies}
-                onRemoveCompany={handleRemoveCompany}
-                isClientView={false}
-                // Checklist props
-                checklistState={checklistState.state}
-                filteredDocuments={checklistState.filteredDocuments}
-                currentChecklistDocuments={
-                  checklistState.currentChecklistDocuments
-                }
-                availableDocumentsForEditing={
-                  checklistState.availableDocumentsForEditing
-                }
-                selectedDocuments={checklistState.selectedDocuments}
-                requirementMap={checklistState.requirementMap}
-                onSelectDocument={checklistState.selectDocument}
-                onUpdateDocumentRequirement={
-                  checklistState.updateDocumentRequirement
-                }
-                onUpdateChecklist={checklistState.updateChecklist}
-                checklistData={checklistState.checklistData}
-                // Pending changes props
-                pendingAdditions={checklistState.pendingAdditions}
-                pendingDeletions={checklistState.pendingDeletions}
-                pendingUpdates={[]}
-                onAddToPendingChanges={checklistState.addToPendingChanges}
-                onRemoveFromPendingChanges={
-                  checklistState.removeFromPendingChanges
-                }
-                onAddToPendingDeletions={checklistState.addToPendingDeletions}
-                onRemoveFromPendingDeletions={
-                  checklistState.removeFromPendingDeletions
-                }
-                onSavePendingChanges={checklistState.savePendingChanges}
-                onClearPendingChanges={checklistState.clearPendingChanges}
-                isBatchDeleting={checklistState.isBatchDeleting}
-              />
-            )}
-          </div>
+          ) : layoutState.selectedLayout === 'outcome' ? (
+            <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
+              <OutcomeLayout applicationId={applicationId} />
+            </Suspense>
+          ) : layoutState.selectedLayout === 'eoi' ? (
+            <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
+              <EOILayout applicationId={applicationId} />
+            </Suspense>
+          ) : layoutState.selectedLayout === 'invitation' ? (
+            <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
+              <InvitationLayout applicationId={applicationId} />
+            </Suspense>
+          ) : null}
         </div>
       ) : (
         <div className="text-center py-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Access Denied
-          </h2>
-          <p className="text-gray-600">
-            You don&apos;t have permission to access this page.
-          </p>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Access Denied</h2>
+          <p className="text-gray-600">You don&apos;t have permission to access this page.</p>
         </div>
       )}
 
-      {/* Add Company Dialog */}
       <AddCompanyDialog
-        isOpen={isAddCompanyDialogOpen}
-        onClose={handleCloseAddCompanyDialog}
-        onAddCompany={handleAddCompany}
-        existingCompanies={companies}
+        isOpen={modals.isAddCompanyDialogOpen}
+        onClose={modals.closeAddCompanyDialog}
+        onAddCompany={appState.handleAddCompany}
+        existingCompanies={appState.companies}
         maxCompanies={maxCompanies}
       />
 
-      {/* Reupload Document Modal */}
       <ReuploadDocumentModal
-        isOpen={isReuploadModalOpen}
-        onClose={handleReuploadModalClose}
+        isOpen={modals.isReuploadModalOpen}
+        onClose={modals.closeReuploadModal}
         applicationId={applicationId}
-        document={selectedReuploadDocument}
-        documentType={selectedReuploadDocumentType}
-        category={selectedReuploadDocumentCategory}
+        document={modals.selectedReuploadDocument}
+        documentType={modals.selectedReuploadDocumentType}
+        category={modals.selectedReuploadDocumentCategory}
         isClientView={false}
       />
 
-      {/* Quality Check Modal - Only for regular applications */}
       {!isSpouseApplication && (
         <QualityCheckModal
           applicationId={applicationId}
           leadId={application?.id || ''}
-          isOpen={isQualityCheckModalOpen}
-          onOpenChange={setIsQualityCheckModalOpen}
+          isOpen={modals.isQualityCheckModalOpen}
+          onOpenChange={modals.setQualityCheckModalOpen}
           disabled={!areAllDocumentsApproved}
           recordType={application?.Record_Type}
         />
       )}
 
-      {/* Reset Password Modal - For both regular and spouse applications, but not for client users */}
       {user?.role !== 'client' && (
-        <ResetPasswordModal
-          isOpen={isResetPasswordModalOpen}
-          onOpenChange={setIsResetPasswordModalOpen}
-          leadId={application?.id || ''}
-          onSuccess={handleResetPasswordSuccess}
-        />
-      )}
+        <>
+          <ResetPasswordModal
+            isOpen={modals.isResetPasswordModalOpen}
+            onOpenChange={modals.setResetPasswordModalOpen}
+            leadId={application?.id || ''}
+            onSuccess={() => console.log('Password reset successfully')}
+          />
 
-      {/* Download All Documents Modal - Only for regular applications and admin users */}
-      {user?.role !== 'client' && (
-        <DownloadAllDocumentsModal
-          isOpen={isDownloadAllModalOpen}
-          onOpenChange={setIsDownloadAllModalOpen}
-          leadId={application?.id || ''}
-        />
+          <DownloadAllDocumentsModal
+            isOpen={modals.isDownloadAllModalOpen}
+            onOpenChange={modals.setDownloadAllModalOpen}
+            leadId={application?.id || ''}
+          />
+        </>
       )}
     </div>
   );

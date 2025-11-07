@@ -45,7 +45,7 @@ export function TablePagination({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+    <div className="flex flex-col px-4 py-2 sm:flex-row items-center justify-between gap-4">
       <div className="text-sm text-muted-foreground text-center sm:text-left">
         Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} items
       </div>

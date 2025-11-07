@@ -53,7 +53,7 @@ const DocumentTimeline: React.FC<Props> = ({ documentId }) => {
               <div className="overflow-auto">
                 {timeline && timeline.length > 0 ? (
                   timeline.map((data) => (
-                    <div className="relative pl-8 pb-8 last:pb-0 group">
+                    <div key={data._id} className="relative pl-8 pb-8 last:pb-0 group">
                       {/* Vertical line */}
                       <div className="absolute left-2 top-[10px] h-full w-0.5 bg-gray-200 group-last:hidden"></div>
                       {/* Timeline dot */}

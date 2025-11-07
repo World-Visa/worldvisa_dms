@@ -2,6 +2,7 @@
 
 import { useAuth } from '@/hooks/useAuth';
 import { useChecklistRequestsCount } from '@/hooks/useChecklistRequestsCount';
+import { useQualityCheckCount } from '@/hooks/useQualityCheckCount';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { LogOut, Menu, X, User } from 'lucide-react';
@@ -48,6 +49,11 @@ export function AdminHeader() {
     // Get checklist requests count for real-time updates
     const { data: checklistRequestsCount = 0 } = useChecklistRequestsCount({
         enabled: !!user && user.role !== 'supervisor',
+    });
+
+    // Get quality check applications count for real-time updates
+    const { data: qualityCheckCount = 0 } = useQualityCheckCount({
+        enabled: !!user,
     });
 
     const handleLogout = useCallback(() => {
@@ -249,7 +255,10 @@ export function AdminHeader() {
 
                             const Icon = tab.icon;
                             const isActive = activeTabId === tab.id;
-                            const showCount = tab.id === 'checklist-requests' && checklistRequestsCount > 0;
+                            const showCount = (tab.id === 'checklist-requests' && checklistRequestsCount > 0) || 
+                                           (tab.id === 'quality-check' && qualityCheckCount > 0);
+                            const countValue = tab.id === 'checklist-requests' ? checklistRequestsCount : 
+                                             tab.id === 'quality-check' ? qualityCheckCount : 0;
 
                             return (
                                 <Link
@@ -270,7 +279,7 @@ export function AdminHeader() {
                                             variant="secondary"
                                             className="ml-2 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium"
                                         >
-                                            {checklistRequestsCount}
+                                            {countValue}
                                         </Badge>
                                     )}
                                     {isActive && (
@@ -308,7 +317,10 @@ export function AdminHeader() {
 
                             const Icon = tab.icon;
                             const isActive = activeTabId === tab.id;
-                            const showCount = tab.id === 'checklist-requests' && checklistRequestsCount > 0;
+                            const showCount = (tab.id === 'checklist-requests' && checklistRequestsCount > 0) || 
+                                           (tab.id === 'quality-check' && qualityCheckCount > 0);
+                            const countValue = tab.id === 'checklist-requests' ? checklistRequestsCount : 
+                                             tab.id === 'quality-check' ? qualityCheckCount : 0;
 
                             return (
                                 <div
@@ -334,7 +346,7 @@ export function AdminHeader() {
                                                 variant="secondary"
                                                 className="ml-auto bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full font-medium"
                                             >
-                                                {checklistRequestsCount}
+                                                {countValue}
                                             </Badge>
                                         )}
                                     </Link>

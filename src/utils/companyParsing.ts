@@ -13,10 +13,7 @@ function parseDateString(dateStr: string): string {
   return `${year}-${month}-${day}`;
 }
 
-/**
- * Parse company data from document description
- * Handles both current and past employment formats
- */
+
 export function parseCompanyFromDescription(
   documentCategory: string,
   description?: string
@@ -25,60 +22,79 @@ export function parseCompanyFromDescription(
     return null;
   }
 
-  // Extract company name from category
   const companyName = documentCategory
     .replace(' Company Documents', '')
     .toLowerCase();
 
-  // Default fallback values
-  let fromDate = '2024-01-01';
-  let toDate: string | null = '2025-12-31';
+  // Don't use default dates - return null if we can't parse dates from description
+  let fromDate: string | null = null;
+  let toDate: string | null = null;
   let isCurrentEmployment = false;
 
   if (description) {
-    // Try to parse current employment format: "Working at Google since Jul 04, 2023 (2 years 1 month)"
+    
     const currentMatch = description.match(
-      /Working at ([^\s]+(?:\s+[^\s]+)*) since (\w+\s+\d{2},\s+\d{4})\s+\(([^)]+)\)/i
+      /Working at ([^\s]+(?:\s+[^\s]+)*) since (\w+\s+\d{1,2},\s+\d{4})\s+\(([^)]+)\)/i
     );
 
     if (currentMatch) {
       const [, , fromDateStr] = currentMatch;
       try {
-        // Parse dates without timezone conversion to avoid day shifts
         fromDate = parseDateString(fromDateStr);
         toDate = null;
         isCurrentEmployment = true;
       } catch {
-        // Failed to parse date, use defaults
+        return null;
       }
     } else {
-      // Try to parse past employment format: "Worked at Google from Jul 04, 2023 to Aug 26, 2025 (2 years 1 month)"
       const pastMatch = description.match(
-        /Worked at ([^\s]+(?:\s+[^\s]+)*) from (\w+\s+\d{2},\s+\d{4})\s+to\s+(\w+\s+\d{2},\s+\d{4})\s+\(([^)]+)\)/i
+        /Worked at ([^\s]+(?:\s+[^\s]+)*) from (\w+\s+\d{1,2},\s+\d{4})\s+to\s+(\w+\s+\d{1,2},\s+\d{4})\s+\(([^)]+)\)/i
       );
 
       if (pastMatch) {
         const [, , fromDateStr, toDateStr] = pastMatch;
         try {
-          // Parse dates without timezone conversion to avoid day shifts
           fromDate = parseDateString(fromDateStr);
           toDate = parseDateString(toDateStr);
           isCurrentEmployment = false;
         } catch {
-          // Failed to parse dates, use defaults
+          return null;
+        }
+      } else {
+        const legacyMatch = description.match(
+          /From (\w+\s+\d{1,2},\s+\d{4})\s+to\s+(\w+\s+\d{1,2},\s+\d{4})\s+\(([^)]+)\)/i
+        );
+
+        if (legacyMatch) {
+          const [, fromDateStr, toDateStr] = legacyMatch;
+          try {
+            fromDate = parseDateString(fromDateStr);
+            toDate = parseDateString(toDateStr);
+            isCurrentEmployment = false;
+          } catch {
+            return null;
+          }
+        } else {
+          return null;
         }
       }
     }
+  } else {
+    return null;
   }
 
-  return {
-    name: companyName,
-    fromDate,
-    toDate,
-    isCurrentEmployment,
-    category: documentCategory,
-    description: description || ''
-  };
+  if (fromDate) {
+    return {
+      name: companyName,
+      fromDate,
+      toDate,
+      isCurrentEmployment,
+      category: documentCategory,
+      description: description || ''
+    };
+  }
+
+  return null;
 }
 
 /**
@@ -93,7 +109,6 @@ export function parseCompaniesFromDocuments(documents: any[]): Company[] {
     if (doc.document_category && doc.document_category.includes('Company Documents')) {
       const company = parseCompanyFromDescription(doc.document_category, doc.description);
       if (company) {
-        // Use the first occurrence or the one with the most complete description
         const existing = companyMap.get(company.name);
         if (!existing || (!existing.description && company.description)) {
           companyMap.set(company.name, company);
@@ -105,16 +120,11 @@ export function parseCompaniesFromDocuments(documents: any[]): Company[] {
   return Array.from(companyMap.values());
 }
 
-/**
- * Migrate existing company data to new format
- */
 export function migrateCompanyData(company: any): Company {
-  // If already in new format, return as is
   if (typeof company.isCurrentEmployment === 'boolean') {
     return company as Company;
   }
 
-  // Legacy format migration
   const toDate = company.toDate;
   const isCurrent = toDate && new Date(toDate) > new Date();
 

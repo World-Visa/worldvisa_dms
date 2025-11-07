@@ -6,19 +6,32 @@ import { fetcher } from "@/lib/fetcher";
 import { ApplicationsResponse, ApplicationsFilters } from "@/types/applications";
 
 export const useApplications = (filters: ApplicationsFilters) => {
-  const query = qs.stringify(filters, { skipNull: true, skipEmptyString: true });
+  const transformedFilters = {
+    ...filters,
+    handledBy: filters.handledBy && filters.handledBy.length > 0 
+      ? filters.handledBy.join(',') 
+      : undefined,
+  };  
+  
+  const query = qs.stringify(transformedFilters, { skipNull: true, skipEmptyString: true });
   const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications?${query}`;
 
-  // Disable cache for recent activities to ensure real-time data
   const isRecentActivity = filters.recentActivity === true;
+  
+  const hasActiveFilters = Boolean(
+    (filters.handledBy && filters.handledBy.length > 0) ||
+    filters.startDate ||
+    filters.endDate
+  );
 
   return useQuery<ApplicationsResponse>({
     queryKey: ["applications", filters],
     queryFn: () => fetcher<ApplicationsResponse>(url),
-    placeholderData: isRecentActivity ? undefined : (prev) => prev, 
-    staleTime: isRecentActivity ? 0 : 1000 * 60, // No cache for recent activities
-    gcTime: isRecentActivity ? 0 : 5 * 60 * 1000, // No garbage collection time for recent activities
+    placeholderData: (isRecentActivity || hasActiveFilters) ? undefined : (prev) => prev, 
+    staleTime: (isRecentActivity || hasActiveFilters) ? 0 : 1000 * 60, 
+    gcTime: isRecentActivity ? 0 : 5 * 60 * 1000, 
     retry: 2,
-    refetchOnWindowFocus: isRecentActivity, // Refetch on focus for recent activities
+    refetchOnWindowFocus: isRecentActivity,
+    refetchOnMount: hasActiveFilters || isRecentActivity,
   });
 };

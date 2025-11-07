@@ -112,8 +112,8 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
   const { data: commentCounts = {} } = useDocumentCommentCounts(documentIds);
 
   return (
-    <CardContent>
-      <div className="space-y-4">
+    <CardContent className='p-0'>
+      <div className="">
         {/* Search Results Indicator */}
         {searchQuery && (
           <div

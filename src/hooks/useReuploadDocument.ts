@@ -3,6 +3,7 @@ import { reuploadDocument, ReuploadDocumentRequest, ReuploadDocumentResponse } f
 import { Document } from '@/types/applications';
 import { ClientDocument } from '@/types/client';
 import { toast } from 'sonner';
+import { revalidateDocumentsCache } from '@/lib/actions/cache-actions';
 
 export function useReuploadDocument() {
   const queryClient = useQueryClient();
@@ -168,7 +169,8 @@ export function useReuploadDocument() {
         queryClient.invalidateQueries({ 
           queryKey: ['checklist', variables.applicationId] 
         }),
-      ]).then(() => {
+      ]).then(async () => {
+        await revalidateDocumentsCache(variables.applicationId);
         toast.success('Document reuploaded successfully!');
       }).catch((error) => {
         console.error('Error invalidating queries after reupload:', error);

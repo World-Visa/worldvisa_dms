@@ -501,7 +501,7 @@ const DocumentChecklistTableComponent = ({
   }
 
   return (
-    <div className="w-full space-y-6">
+    <div className="w-full ">
       <Card className="w-full">
         <ChecklistTableHeader
           title="Document Checklist"

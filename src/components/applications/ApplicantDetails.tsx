@@ -2,10 +2,8 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { useUpdateApplicationFields } from "@/hooks/useApplicationDetails";
-import { Application, Document } from "@/types/applications";
+import { Application } from "@/types/applications";
 import { formatDate } from "@/utils/format";
-import { useQueryClient } from "@tanstack/react-query";
 import {
   Briefcase,
   Calendar,
@@ -21,16 +19,12 @@ import {
   Library,
 } from "lucide-react";
 import { useState } from "react";
-import { DocumentsSummary } from "./DocumentsSummary";
 import { DeadlineUpdateModal } from "./DeadlineUpdateModal";
 
 interface ApplicantDetailsProps {
   application: Application | undefined;
   isLoading: boolean;
   error: Error | null;
-  allDocuments: Document[] | undefined;
-  isAllDocumentsLoading: boolean;
-  allDocumentsError: Error | null;
   user: { role?: string } | null;
 }
 
@@ -38,9 +32,6 @@ export function ApplicantDetails({
   application,
   isLoading,
   error,
-  allDocuments,
-  isAllDocumentsLoading,
-  allDocumentsError,
   user,
 }: ApplicantDetailsProps) {
   const [isDeadlineModalOpen, setIsDeadlineModalOpen] = useState(false);
@@ -464,13 +455,6 @@ export function ApplicantDetails({
           </div>
         </CardContent>
       </Card>
-
-      {/* Documents Summary */}
-      <DocumentsSummary
-        documents={allDocuments}
-        isLoading={isAllDocumentsLoading}
-        error={allDocumentsError}
-      />
 
       {/* Deadline Update Modal */}
       <DeadlineUpdateModal

@@ -115,34 +115,30 @@ export function DocumentsSummary({ documents, isLoading, error }: DocumentsSumma
     ];
 
     return (
-        <div className="space-y-4 w-full">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                <h3 className="text-lg font-semibold">Documents Summary</h3>
-                <Badge variant="outline" className="text-sm w-fit">
-                    Total: {totalCount} documents
-                </Badge>
+        <section className="w-full space-y-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
+                <h3 className="font-medium text-base text-gray-900">Documents Summary</h3>
+                <span className="text-xs text-gray-500 border rounded px-2 py-0.5">
+                    {totalCount} total
+                </span>
             </div>
-
-            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 sm:gap-4 w-full">
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 w-full">
                 {summaryCards.map((card) => {
                     const Icon = card.icon;
                     return (
-                        <Card key={card.title} className="hover:shadow-md w-full transition-shadow">
-                            <CardContent className="p-3 sm:p-4">
-                                <div className="flex flex-col items-center text-center space-y-3 justify-center">
-                                    <div className={`p-2  rounded-full ${card.bgColor} flex-shrink-0`}>
-                                        <Icon className={`h-4 w-4 ${card.color}`} />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="text-xs sm:text-sm font-medium text-muted-foreground truncate">{card.title}</p>
-                                        <p className="text-lg sm:text-2xl font-bold">{card.count}</p>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
+                        <div
+                            key={card.title}
+                            className="flex flex-col items-center bg-white border rounded-md px-2 py-3 text-center"
+                        >
+                            <div className={`flex items-center justify-center h-8 w-8 rounded-full ${card.bgColor} mb-1`}>
+                                <Icon className={`h-4 w-4 ${card.color}`} />
+                            </div>
+                            <span className="text-xs text-gray-500">{card.title}</span>
+                            <span className="text-lg font-semibold text-gray-900">{card.count}</span>
+                        </div>
                     );
                 })}
             </div>
-        </div>
+        </section>
     );
 }

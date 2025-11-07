@@ -97,6 +97,7 @@ export interface ApplicationsFilters {
   endDate?: string;
   search?: string;
   recentActivity?: boolean;
+  handledBy?: string[];
 }
 
 export interface SearchParams {

@@ -47,13 +47,15 @@ export function QualityCheckModal({
   const [notes, setNotes] = useState('');
 
   // Filter admin users to show only team_leader, master_admin, and supervisor
+  // Exclude the currently logged-in user
   const eligibleUsers = useMemo(() => {
     if (!adminUsers) return [];
     
     return adminUsers.filter(admin => 
-      ['team_leader', 'master_admin', 'supervisor'].includes(admin.role)
+      ['team_leader', 'master_admin', 'supervisor'].includes(admin.role) &&
+      admin.username !== user?.username
     );
-  }, [adminUsers]);
+  }, [adminUsers, user?.username]);
 
   const handleSend = async () => {
     if (!selectedUser || !user?.username) return;

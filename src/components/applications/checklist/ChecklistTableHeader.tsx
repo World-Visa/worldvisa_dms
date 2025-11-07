@@ -46,9 +46,9 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
   extractedCompanies
 }: ChecklistTableHeaderProps) {
   return (
-    <CardHeader className="pb-4">
+    <CardHeader className="">
       <div className="flex flex-col gap-4">
-        <CardTitle className="text-lg sm:text-xl">{title}</CardTitle>
+        <CardTitle className="text-base">{title}</CardTitle>
 
         {/* Show tabs for editing mode when not on "All" category */}
         {checklistState === 'editing' && selectedCategory !== 'all' && (

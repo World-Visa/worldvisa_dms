@@ -1,5 +1,5 @@
 import { fetcher } from "../fetcher";
-import { ApplicationsResponse, ApplicationsFilters } from "@/types/applications";
+import { ApplicationsResponse, ApplicationsFilters, ApplicationDetailsResponse } from "@/types/applications";
 
 const ZOHO_BASE_URL = "https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms";
 
@@ -44,15 +44,13 @@ export async function searchSpouseApplications(
   return fetcher<ApplicationsResponse>(url);
 }
 
-/**
- * Fetches a specific spouse application by ID with additional query parameter
- */
-export async function getSpouseApplicationById(id: string, queryId?: string): Promise<ApplicationsResponse> {
+
+export async function getSpouseApplicationById(id: string, queryId?: string): Promise<ApplicationDetailsResponse> {
   let url = `${ZOHO_BASE_URL}/visa_applications/spouse/applications/${id}`;
   
   if (queryId) {
     url += `?id=${queryId}`;
   }
   
-  return fetcher<ApplicationsResponse>(url);
+  return fetcher<ApplicationDetailsResponse>(url);
 }

@@ -8,7 +8,8 @@ export interface QualityCheckApplication {
   Created_Time: string;
   Application_Handled_By: string;
   id: string;
-  DMS_Application_Status: string;
+  DMS_Application_Status?: string | null;
+  Application_Stage?: string | null;
   Name: string;
 }
 

@@ -38,7 +38,7 @@ export function ApplicationsPagination({
   }
 
   return (
-    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col px-4 py-2 gap-4 sm:flex-row sm:items-center sm:justify-between">
       {/* Results info */}
       <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
         Showing {startIndex} to {endIndex} of {totalRecords} results

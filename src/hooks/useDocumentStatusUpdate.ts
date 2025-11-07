@@ -4,6 +4,7 @@ import { Document } from '@/types/applications';
 import { toast } from 'sonner';
 import * as Sentry from '@sentry/nextjs';
 import { useAddComment } from './useCommentMutations';
+import { revalidateDocumentsCache } from '@/lib/actions/cache-actions';
 
 interface PaginationInfo {
   currentPage: number;
@@ -459,6 +460,13 @@ export function useDocumentStatusUpdate({
           }
         };
       });
+
+      // Revalidate Next.js cache after successful update
+      if (applicationId) {
+        revalidateDocumentsCache(applicationId).catch((error) => {
+          console.error('Error revalidating documents cache:', error);
+        });
+      }
 
       // Show success toast
       const statusMessages = {

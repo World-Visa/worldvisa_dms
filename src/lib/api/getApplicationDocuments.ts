@@ -3,13 +3,30 @@ import { DocumentsResponse } from '@/types/applications';
 
 const ZOHO_BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms';
 
-export async function getApplicationDocuments(id: string): Promise<DocumentsResponse> {
-  return fetcher<DocumentsResponse>(`${ZOHO_BASE_URL}/visa_applications/${id}/documents`);
+/**
+ * Get application documents
+ * Note: This function is used in client components via React Query
+ * Client-side caching is handled by React Query
+ * Server-side cache revalidation is handled via revalidateTag in server actions
+ */
+export async function getApplicationDocuments(
+  id: string
+): Promise<DocumentsResponse> {
+  return fetcher<DocumentsResponse>(
+    `${ZOHO_BASE_URL}/visa_applications/${id}/documents`
+  );
 }
 
-export async function getAllApplicationDocuments(id: string): Promise<DocumentsResponse> {
-  // Fetch all documents by setting a high limit to get all pages
-  // For better performance with large datasets, consider implementing pagination
-  // or server-side filtering for checklist matching
-  return fetcher<DocumentsResponse>(`${ZOHO_BASE_URL}/visa_applications/${id}/documents?limit=1000`);
+/**
+ * Get all application documents
+ * Note: This function is used in client components via React Query
+ * Client-side caching is handled by React Query
+ * Server-side cache revalidation is handled via revalidateTag in server actions
+ */
+export async function getAllApplicationDocuments(
+  id: string
+): Promise<DocumentsResponse> {
+  return fetcher<DocumentsResponse>(
+    `${ZOHO_BASE_URL}/visa_applications/${id}/documents?limit=1000`
+  );
 }

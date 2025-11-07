@@ -284,13 +284,8 @@ export function DocumentsTable({
   return (
     <>
       <Card className="w-full">
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>Submitted Documents</CardTitle>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <Table>
+        <CardContent className="p-0">
+          <Table className="w-full">
             <TableHeader>
               <TableRow>
                 <TableHead>S.No</TableHead>

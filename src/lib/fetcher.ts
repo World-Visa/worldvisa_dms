@@ -1,9 +1,18 @@
 import { tokenStorage } from './auth';
 
+// Extend RequestInit to include Next.js specific options
+// Note: cacheLife and cacheTag are now handled via "use cache" directive and cacheTag() function
+// revalidate is still supported for backward compatibility
+interface NextFetchOptions {
+  next?: {
+    revalidate?: number;
+  };
+}
+
 // Generic fetch wrapper with automatic token attachment
 export async function fetcher<T>(
   url: string,
-  options: RequestInit = {}
+  options: RequestInit & NextFetchOptions = {}
 ): Promise<T> {
   const token = tokenStorage.get();
   
@@ -32,10 +41,21 @@ export async function fetcher<T>(
 
 
 
-  const response = await fetch(url, {
-    ...options,
+  // Extract next config if provided (for server-side caching)
+  const { next, ...fetchOptions } = options;
+  
+  // Merge headers and other options
+  const finalOptions: RequestInit & NextFetchOptions = {
+    ...fetchOptions,
     headers,
-  });
+  };
+  
+  // Only add next config in server-side context (not in browser)
+  if (next && typeof window === 'undefined') {
+    (finalOptions as NextFetchOptions).next = next;
+  }
+
+  const response = await fetch(url, finalOptions);
 
   if (!response.ok) {
     let errorData: { message?: string; error?: string } = {};

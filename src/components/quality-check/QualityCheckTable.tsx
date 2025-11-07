@@ -48,7 +48,10 @@ export function QualityCheckTable({
     router.push(`/admin/applications/${applicationId}`);
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string | null | undefined) => {
+    if (!status) {
+      return <Clock className="h-4 w-4 text-gray-500" />;
+    }
     switch (status.toLowerCase()) {
       case "lodged":
         return <CheckCircle className="h-4 w-4 text-green-500" />;
@@ -61,7 +64,10 @@ export function QualityCheckTable({
     }
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | null | undefined) => {
+    if (!status) {
+      return "text-gray-700 bg-gray-50 border-gray-200";
+    }
     switch (status.toLowerCase()) {
       case "lodged":
         return "text-green-700 bg-green-50 border-green-200";
@@ -157,9 +163,6 @@ export function QualityCheckTable({
             >
               <TableCell>
                 <div className="flex items-center space-x-3">
-                  <div className="flex-shrink-0">
-                    <User className="h-8 w-8 text-blue-600" />
-                  </div>
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium text-gray-900 truncate">
                       {application.Name}
@@ -196,13 +199,12 @@ export function QualityCheckTable({
                   )}
                 >
                   {getStatusIcon(application.DMS_Application_Status)}
-                  {application.DMS_Application_Status}
+                  {application.DMS_Application_Status || 'N/A'}
                 </div>
               </TableCell>
 
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-400" />
                   <span className="text-sm text-gray-900">
                     {application.Application_Handled_By}
                   </span>
@@ -211,7 +213,6 @@ export function QualityCheckTable({
 
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-400" />
                   <span className="text-sm text-gray-900">
                     {application.Quality_Check_From}
                   </span>
@@ -220,7 +221,6 @@ export function QualityCheckTable({
 
               <TableCell>
                 <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-400" />
                   <div>
                     <div className="text-sm text-gray-900">
                       {formatDate(application.Created_Time)}

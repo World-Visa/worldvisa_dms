@@ -58,7 +58,7 @@ export function SearchBox({
   }, [handleClear]);
 
   return (
-    <div className={cn('relative', className)}>
+    <div className={cn('relative max-w-md', className)}>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -71,7 +71,7 @@ export function SearchBox({
           aria-label={ariaLabel}
           aria-describedby={localValue ? 'search-results' : undefined}
           role="searchbox"
-          className="pl-10 pr-10 h-11 border border-gray-300 focus:ring-0 focus:outline-none focus:border-primary text-base"
+          className="pl-10 pr-10 h-10 border border-gray-300 focus:ring-0 focus:outline-none focus:border-primary text-base"
         />
         {showClearButton && localValue && (
           <Button

@@ -7,6 +7,7 @@ import {
 } from "@/lib/documents/checklist";
 import { Document } from "@/types/applications";
 import { Company } from "@/types/documents";
+import { parseCompaniesFromDocuments } from "@/utils/companyParsing";
 
 import type {
   ChecklistState,
@@ -150,26 +151,10 @@ export function extractCompaniesFromDocuments(
 ): Company[] {
   if (!documents || documents.length === 0) return [];
 
-  const companyCategories = new Set<string>();
-  documents.forEach((doc) => {
-    if (
-      doc.document_category &&
-      doc.document_category.includes("Company Documents")
-    ) {
-      companyCategories.add(doc.document_category);
-    }
-  });
-
-  return Array.from(companyCategories).map((category) => {
-    const companyName = category.split(" ")[0].toLowerCase();
-    return {
-      name: companyName,
-      category: category,
-      fromDate: "2024-01",
-      toDate: "2025-12",
-      isCurrentEmployment: false,
-    };
-  });
+  // Use parseCompaniesFromDocuments instead of hardcoding dates
+  // This will properly parse dates from document descriptions or return empty array
+  // if dates cannot be parsed (avoiding default dates)
+  return parseCompaniesFromDocuments(documents);
 }
 
 export function mapCategoryLabel(category: string): string {
@@ -179,9 +164,8 @@ export function mapCategoryLabel(category: string): string {
   if (category === "Self Employment/Freelance") return "Self Employment/Freelance";
   if (category === "Company") return "Company Documents";
   
-  // Handle company-specific categories (e.g., "radicalstart infolab pvt.ltd Company Documents")
   if (category.includes("Company Documents")) {
-    return category; // Return as-is for company-specific categories
+    return category; 
   }
   
   return category;

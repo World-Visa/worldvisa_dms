@@ -56,9 +56,7 @@ export default function PortalPage() {
             className="w-full h-full object-cover"
             priority
           />
-          <div className=" absolute top-5 left-5 p-2 rounded-2xl 
-                bg-white/70 border border-white/20 
-                backdrop-blur-md shadow-lg">
+          <div className="absolute top-5 left-5 p-2 rounded-2xl bg-white/70 border border-white/20 backdrop-blur-md shadow-lg">
             <div className="relative h-12 w-48">
               <Image
                 src="/logos/world-visa-logo.webp"

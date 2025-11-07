@@ -64,7 +64,7 @@ export default function RootLayout({
         {/* <NotificationDebugger /> */}
         {/* <NotificationTestButton /> */}
         {/* <LocalNotificationTestButton /> */}
-        <Toaster />
+        <Toaster position="top-center" richColors  />
       </Providers>
     </body>
     </html >

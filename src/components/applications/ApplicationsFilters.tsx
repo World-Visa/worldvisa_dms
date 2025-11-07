@@ -1,10 +1,10 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
-import { Search, User, Phone, Mail, Filter, X, Calendar } from "lucide-react";
+import { Search, User, Phone, Mail, Filter, X, Calendar, Users } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import {
   Select,
@@ -22,18 +22,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useAdminUsers } from "@/hooks/useAdminUsers";
+import { useAuth } from "@/hooks/useAuth";
+import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
 
 interface ApplicationsFiltersProps {
   search: string;
   searchType: "name" | "phone" | "email";
   dateRange: DateRange | undefined;
   limit: number;
+  handledBy?: string[];
   isSearchMode?: boolean;
   onSearchChange: (value: string) => void;
   onSearchTypeChange: (type: "name" | "phone" | "email") => void;
   onSearchClick: () => void;
   onDateRangeChange: (range: DateRange | undefined) => void;
   onLimitChange: (value: number) => void;
+  onHandledByChange?: (value: string[]) => void;
   onClearFilters: () => void;
   onKeyPress?: (e: React.KeyboardEvent) => void;
 }
@@ -43,18 +48,43 @@ export function ApplicationsFilters({
   searchType,
   dateRange,
   limit,
-  isSearchMode = false,
+  handledBy = [],
   onSearchChange,
   onSearchTypeChange,
   onSearchClick,
   onDateRangeChange,
   onLimitChange,
+  onHandledByChange,
   onClearFilters,
   onKeyPress,
 }: ApplicationsFiltersProps) {
-  const hasActiveFilters = dateRange?.from || dateRange?.to;
+  const { user } = useAuth();
+  const { data: adminUsers, isLoading: isLoadingAdmins } = useAdminUsers();
+
+  const canViewHandledByFilter = useMemo(() => {
+    if (!user?.role) return false;
+    return ['master_admin', 'supervisor',].includes(user.role);
+  }, [user?.role]);
+
+  const adminOptions: MultiSelectOption[] = useMemo(() => {
+    if (!adminUsers) return [];
+    return adminUsers
+      .filter((admin) => admin.role === "admin")
+      .map((admin) => ({
+        value: admin.username,
+        label: admin.username,
+        role: admin.role,
+      }));
+  }, [adminUsers]);
+
+  const hasActiveFilters = dateRange?.from || dateRange?.to || (handledBy && handledBy.length > 0);
   
-  const activeFilterCount = (dateRange?.from || dateRange?.to) ? 1 : 0;
+  const activeFilterCount = useMemo(() => {
+    let count = 0;
+    if (dateRange?.from || dateRange?.to) count++;
+    if (handledBy && handledBy.length > 0) count++;
+    return count;
+  }, [dateRange, handledBy]);
 
   const getSearchIcon = () => {
     switch (searchType) {
@@ -71,12 +101,9 @@ export function ApplicationsFilters({
 
   return (
     <div className="w-full max-w-lg">
-      {/* Compact Horizontal Layout */}
       <div className="flex items-center gap-3">
-        {/* Compact Search Bar */}
         <div className="flex-1 bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
           <div className="flex items-center divide-x divide-gray-300">
-            {/* Search Type */}
             <div className="relative flex-shrink-0">
               <Select value={searchType} onValueChange={onSearchTypeChange}>
                 <SelectTrigger className="border-0 bg-transparent h-10 px-4 rounded-l-lg focus:ring-0 focus:ring-offset-0 hover:bg-gray-50 transition-colors min-w-[100px]">
@@ -110,7 +137,6 @@ export function ApplicationsFilters({
               </Select>
             </div>
 
-            {/* Search Input */}
             <div className="flex-1 relative">
               <Input
                 placeholder={`Search by ${searchType}...`}
@@ -121,7 +147,6 @@ export function ApplicationsFilters({
               />
             </div>
 
-            {/* Search Button */}
             <div className="flex-shrink-0 p-1.5">
               <Button
                 onClick={onSearchClick}
@@ -139,7 +164,6 @@ export function ApplicationsFilters({
           </div>
         </div>
 
-        {/* Filter Icon Button with Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
@@ -163,7 +187,6 @@ export function ApplicationsFilters({
             <DropdownMenuSeparator className="mb-4" />
             
             <DropdownMenuGroup>
-              {/* Date Range Filter */}
               <div className="space-y-2 mb-4">
                 <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-gray-600" />
@@ -177,7 +200,24 @@ export function ApplicationsFilters({
                 />
               </div>
 
-              {/* Results Per Page */}
+              {canViewHandledByFilter && onHandledByChange && (
+                <div className="space-y-2 mb-4">
+                  <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                    <Users className="h-4 w-4 text-gray-600" />
+                    Handled By
+                  </label>
+                  <MultiSelect
+                    options={adminOptions}
+                    value={handledBy}
+                    onChange={onHandledByChange}
+                    placeholder="Select admins..."
+                    disabled={isLoadingAdmins}
+                    loading={isLoadingAdmins}
+                    className="w-full"
+                  />
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">Results per page</label>
                 <Select
@@ -199,7 +239,6 @@ export function ApplicationsFilters({
               </div>
             </DropdownMenuGroup>
 
-            {/* Clear Filters Button */}
             {hasActiveFilters && (
               <>
                 <DropdownMenuSeparator className="my-4" />
@@ -216,7 +255,6 @@ export function ApplicationsFilters({
         </DropdownMenu>
       </div>
 
-      {/* Compact Active Filter Pills - Only show if filters are active */}
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-2 mt-3">
           {dateRange?.from && dateRange?.to && (
@@ -228,6 +266,23 @@ export function ApplicationsFilters({
                 onClick={() => onDateRangeChange(undefined)}
                 className="hover:bg-white rounded-full p-0.5 transition-colors ml-1"
                 aria-label="Remove date filter"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          )}
+          {handledBy && handledBy.length > 0 && onHandledByChange && (
+            <div className="flex items-center gap-1.5 bg-gray-100 hover:bg-gray-200 transition-colors text-gray-800 px-3 py-1.5 rounded-md text-sm font-medium">
+              <Users className="h-3 w-3" />
+              <span>
+                {handledBy.length === 1 
+                  ? `Handled by: ${handledBy[0]}` 
+                  : `Handled by: ${handledBy.length} admins`}
+              </span>
+              <button
+                onClick={() => onHandledByChange([])}
+                className="hover:bg-white rounded-full p-0.5 transition-colors ml-1"
+                aria-label="Remove handled by filter"
               >
                 <X className="h-3 w-3" />
               </button>
