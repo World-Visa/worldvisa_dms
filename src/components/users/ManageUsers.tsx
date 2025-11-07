@@ -57,15 +57,6 @@ const ManageUsers = memo(function ManageUsers() {
     return (
       <div className="space-y-6">
         <div className="flex justify-between items-center">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 font-lexend mb-2 flex items-center gap-2">
-              <Users className="h-6 w-6" />
-              User Management
-            </h2>
-            <p className="text-gray-600">
-              Manage system users, roles, and permissions.
-            </p>
-          </div>
           <CreateUserDialog
             onCreateUser={handleCreateUser}
             isCreating={isCreatingUser}
@@ -80,16 +71,6 @@ const ManageUsers = memo(function ManageUsers() {
     <div className="space-y-6">
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 font-lexend mb-2 flex items-center gap-2">
-            <Users className="h-6 w-6" />
-            User Management
-          </h2>
-          <p className="text-gray-600">
-            Manage system users, roles, and permissions.
-          </p>
-        </div>
-
         <div className="flex items-center gap-4">
           <Button
             variant="outline"
@@ -101,7 +82,7 @@ const ManageUsers = memo(function ManageUsers() {
             <RefreshCw className={`h-4 w-4 ${isLoadingAdmins ? 'animate-spin' : ''}`} />
             <span>Refresh</span>
           </Button>
-          
+
           <CreateUserDialog
             onCreateUser={handleCreateUser}
             isCreating={isCreatingUser}
