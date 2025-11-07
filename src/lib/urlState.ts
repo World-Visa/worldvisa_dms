@@ -5,8 +5,8 @@
  * It allows for deep linking, browser back/forward navigation, and state persistence.
  */
 
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useMemo } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 export interface URLStateConfig {
   defaultValues?: Record<string, string>;
@@ -17,67 +17,134 @@ export interface URLStateConfig {
  * Hook for managing URL state parameters
  */
 export function useURLState(config: URLStateConfig = {}) {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  
   const { defaultValues = {} } = config;
 
-  // Get current URL state
-  const urlState = useMemo(() => {
-    const state: Record<string, string> = {};
-    
-    // Get values from URL params
-    searchParams.forEach((value, key) => {
-      state[key] = value;
-    });
-    
-    // Apply default values for missing keys
-    Object.entries(defaultValues).forEach(([key, defaultValue]) => {
-      if (!(key in state)) {
-        state[key] = defaultValue;
-      }
-    });
-    
-    return state;
-  }, [searchParams, defaultValues]);
+  const parseParams = useCallback(
+    (params: URLSearchParams | null): Record<string, string> => {
+      const state: Record<string, string> = {};
 
-  // Update URL state
-  const updateURLState = useCallback((updates: Record<string, string | null>) => {
-    const newSearchParams = new URLSearchParams(searchParams.toString());
-    
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === null || value === undefined || value === '') {
-        newSearchParams.delete(key);
+      if (params) {
+        params.forEach((value, key) => {
+          state[key] = value;
+        });
+      }
+
+      Object.entries(defaultValues).forEach(([key, defaultValue]) => {
+        if (!(key in state)) {
+          state[key] = defaultValue;
+        }
+      });
+
+      return state;
+    },
+    [defaultValues]
+  );
+
+  const initialStateRef = useRef<null | Record<string, string>>(null);
+  if (initialStateRef.current === null) {
+    const params = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search)
+      : new URLSearchParams(searchParams.toString());
+    initialStateRef.current = parseParams(params);
+  }
+
+  const [urlState, setUrlState] = useState<Record<string, string>>(
+    () => initialStateRef.current ?? {}
+  );
+
+  const syncState = useCallback(
+    (params: URLSearchParams) => {
+      const nextState = parseParams(params);
+      setUrlState(prevState => {
+        const keys = new Set([...Object.keys(prevState), ...Object.keys(nextState)]);
+        const isSame = Array.from(keys).every(key => prevState[key] === nextState[key]);
+        return isSame ? prevState : nextState;
+      });
+    },
+    [parseParams]
+  );
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    syncState(params);
+  }, [searchParams, syncState]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handlePopState = () => {
+      syncState(new URLSearchParams(window.location.search));
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [syncState]);
+
+  const updateURLState = useCallback(
+    (updates: Record<string, string | null>) => {
+      if (typeof window === 'undefined') {
+        return;
+      }
+
+      const currentParams = new URLSearchParams(window.location.search);
+
+      Object.entries(updates).forEach(([key, value]) => {
+        if (value === null || value === undefined || value === '') {
+          currentParams.delete(key);
+        } else {
+          currentParams.set(key, value);
+        }
+      });
+
+      const query = currentParams.toString();
+      const pathname = window.location.pathname;
+      const newUrl = query ? `${pathname}?${query}` : pathname;
+
+      const currentRelativeUrl = `${pathname}${window.location.search}`;
+      if (currentRelativeUrl !== newUrl) {
+        window.history.replaceState(null, '', newUrl);
+        syncState(currentParams);
       } else {
-        newSearchParams.set(key, value);
+        // Even if URL is identical we may have removed keys that resulted in defaults
+        syncState(currentParams);
       }
-    });
-    
-    const newURL = `${window.location.pathname}?${newSearchParams.toString()}`;
-    router.replace(newURL, { scroll: false });
-  }, [router, searchParams]);
+    },
+    [syncState]
+  );
 
-  // Get specific parameter value
-  const getParam = useCallback((key: string): string | null => {
-    return searchParams.get(key);
-  }, [searchParams]);
+  const getParam = useCallback(
+    (key: string): string | null => {
+      return urlState[key] ?? null;
+    },
+    [urlState]
+  );
 
-  // Set specific parameter value
-  const setParam = useCallback((key: string, value: string | null) => {
-    updateURLState({ [key]: value });
-  }, [updateURLState]);
+  const setParam = useCallback(
+    (key: string, value: string | null) => {
+      updateURLState({ [key]: value });
+    },
+    [updateURLState]
+  );
 
-  // Clear all parameters
   const clearParams = useCallback(() => {
-    router.replace(window.location.pathname, { scroll: false });
-  }, [router]);
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const pathname = window.location.pathname;
+    window.history.replaceState(null, '', pathname);
+    syncState(new URLSearchParams());
+  }, [syncState]);
 
   return {
     urlState,
     updateURLState,
     getParam,
     setParam,
-    clearParams
+    clearParams,
   };
 }
 

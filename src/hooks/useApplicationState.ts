@@ -124,6 +124,10 @@ export function useApplicationState({
    // Memoized handlers
    const handleCategoryChange = useCallback(
       async (category: DocumentCategory) => {
+         if (category === selectedCategory) {
+            return;
+         }
+
          setIsCategoryChanging(true);
          try {
             setSelectedCategory(category);
@@ -134,7 +138,7 @@ export function useApplicationState({
             setIsCategoryChanging(false);
          }
       },
-      [applicationId, setURLCategory]
+      [applicationId, selectedCategory, setURLCategory]
    );
 
    const handleAddCompany = useCallback(
