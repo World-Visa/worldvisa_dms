@@ -115,11 +115,11 @@ export function ClientSkillAssessmentLayout({
 
   return (
     <div className="space-y-6">
-      <DocumentsSummary
+      {/* <DocumentsSummary
         documents={allDocuments}
         isLoading={isAllDocumentsLoading}
         error={allDocumentsError}
-      />
+      /> */}
 
       <div className="space-y-6">
         <DocumentCategoryFilter

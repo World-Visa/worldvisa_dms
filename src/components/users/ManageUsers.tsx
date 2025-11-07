@@ -8,7 +8,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Users, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
-// Import our new components
 import { UserTable } from './UserTable';
 import { CreateUserDialog } from './CreateUserDialog';
 import { DeleteUserDialog } from './DeleteUserDialog';
