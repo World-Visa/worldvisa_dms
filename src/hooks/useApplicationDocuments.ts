@@ -14,11 +14,20 @@ export function useApplicationDocuments(id: string) {
   });
 }
 
-export function useAllApplicationDocuments(id: string) {
+interface UseAllApplicationDocumentsOptions {
+  enabled?: boolean;
+}
+
+export function useAllApplicationDocuments(
+  id: string,
+  options: UseAllApplicationDocumentsOptions = {}
+) {
+  const { enabled = true } = options;
+
   return useQuery({
     queryKey: ['application-documents-all', id],
     queryFn: () => getAllApplicationDocuments(id),
-    enabled: !!id,
+    enabled: enabled && !!id,
     staleTime: 5 * 60 * 1000, 
     gcTime: 15 * 60 * 1000, 
     refetchOnWindowFocus: false,

@@ -24,7 +24,7 @@ import { useChecklistURLState } from '@/lib/urlState';
 import { ApplicationDetailsResponse, Document } from '@/types/applications';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, BadgeCheck } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useCallback, lazy, Suspense, useState } from 'react';
 import { useApplicationDetails } from '@/hooks/useApplicationDetails';
 import { TooltipProvider } from '../ui/tooltip';
@@ -42,15 +42,20 @@ const InvitationLayout = lazy(() =>
 );
 
 interface UnifiedApplicationDetailsPageProps {
+  applicationId: string;
   isSpouseApplication?: boolean;
 }
 
+type ExtendedWindow = Window & {
+  requestIdleCallback?: (callback: IdleRequestCallback, options?: IdleRequestOptions) => number;
+  cancelIdleCallback?: (handle: number) => void;
+};
+
 export default function UnifiedApplicationDetailsPage({
+  applicationId,
   isSpouseApplication = false
 }: UnifiedApplicationDetailsPageProps) {
-  const params = useParams();
   const router = useRouter();
-  const applicationId = params.id as string;
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
 
@@ -71,11 +76,48 @@ export default function UnifiedApplicationDetailsPage({
     error: documentsError,
   } = useApplicationDocuments(applicationId);
 
+  const shouldEagerLoadAllDocuments = useMemo(() => urlCategory && urlCategory !== 'submitted', [urlCategory]);
+  const [shouldLoadAllDocuments, setShouldLoadAllDocuments] = useState<boolean>(
+    () => Boolean(shouldEagerLoadAllDocuments)
+  );
+
+  useEffect(() => {
+    if (shouldEagerLoadAllDocuments) {
+      setShouldLoadAllDocuments(true);
+      return;
+    }
+
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const extendedWindow = window as ExtendedWindow;
+    let idleHandle: number | null = null;
+    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
+
+    const triggerFetch = () => setShouldLoadAllDocuments(true);
+
+    if (extendedWindow.requestIdleCallback) {
+      idleHandle = extendedWindow.requestIdleCallback(triggerFetch, { timeout: 1500 });
+    } else {
+      timeoutHandle = setTimeout(triggerFetch, 200);
+    }
+
+    return () => {
+      if (idleHandle !== null && extendedWindow.cancelIdleCallback) {
+        extendedWindow.cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle) {
+        clearTimeout(timeoutHandle);
+      }
+    };
+  }, [shouldEagerLoadAllDocuments]);
+
   const {
     data: allDocumentsData,
     isLoading: isAllDocumentsLoading,
     error: allDocumentsError,
-  } = useAllApplicationDocuments(applicationId);
+  } = useAllApplicationDocuments(applicationId, { enabled: shouldLoadAllDocuments });
 
   const application = (applicationData as ApplicationDetailsResponse)?.data || applicationData;
   const documents = documentsData?.data;
