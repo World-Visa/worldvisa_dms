@@ -310,8 +310,8 @@ export default function UnifiedApplicationDetailsPage({
               <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-lexend font-bold">
                 {pageTitle}
                 {!isSpouseApplication && (
-                  <Badge variant="default" className='bg-gradient-to-r from-blue-500/10 to-blue-500/20 text-blue-600 border border-blue-200 shadow-sm hover:shadow-md transition-all duration-200 md:mb-0 mb-2 md:h-8 flex items-center gap-2 px-3 py-1 rounded-full font-medium'>
-                    <BadgeCheck size={16} className="text-blue-500" />
+                  <Badge variant="default" className='bg-linear-to-r from-blue-500/10 to-blue-500/20 text-white border border-blue-200 shadow-sm hover:shadow-md transition-all duration-200 md:mb-0 mb-2 md:h-8 flex items-center gap-2 px-3 py-1 rounded-full font-medium'>
+                    <BadgeCheck size={16} className="text-white" />
                     {application?.Package_Finalize || 'Not provided'}
                   </Badge>
                 )}

@@ -19,6 +19,21 @@ function mapCategoryLabel(category: string): string {
 }
 
 
+function normalizeCompanyName(name: string | null | undefined): string | null {
+  if (!name) return null;
+  return name.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function extractCompanyNameFromLabel(label: string | null | undefined): string | null {
+  if (!label) return null;
+  const suffixPattern = /\s*company documents$/i;
+  if (!suffixPattern.test(label)) {
+    return null;
+  }
+  const stripped = label.replace(suffixPattern, "");
+  return normalizeCompanyName(stripped);
+}
+
 function matchesCompanyRequirement(
   doc: Document,
   checklistItem: ChecklistItem,
@@ -31,14 +46,21 @@ function matchesCompanyRequirement(
   }
 
   const normalizedOriginalCategory = originalCategory.toLowerCase();
-  const docCategory = doc.document_category?.toLowerCase() ?? "";
+  const docCategoryRaw = doc.document_category ?? "";
+  const docCategory = docCategoryRaw.toLowerCase();
   if (!docCategory.includes("company documents")) {
     return false;
   }
 
-  const requiredCompanyName = checklistItem.company_name?.trim().toLowerCase();
+  const requiredCompanyName =
+    normalizeCompanyName(checklistItem.company_name) ??
+    extractCompanyNameFromLabel(categoryLabel) ??
+    extractCompanyNameFromLabel(originalCategory);
+
+  const docCompanyName =
+    normalizeCompanyName(doc.company_name) ?? extractCompanyNameFromLabel(doc.document_category);
+
   if (requiredCompanyName) {
-    const docCompanyName = doc.company_name?.trim().toLowerCase();
     if (docCompanyName && docCompanyName === requiredCompanyName) {
       return true;
     }
@@ -48,9 +70,11 @@ function matchesCompanyRequirement(
     return false;
   }
 
-  const normalizedDocCategory = doc.document_category?.toLowerCase();
-  if (normalizedDocCategory === normalizedCategoryLabel) {
-    return true;
+  if (docCompanyName) {
+    const categoryCompanyName = extractCompanyNameFromLabel(categoryLabel);
+    if (categoryCompanyName && docCompanyName === categoryCompanyName) {
+      return true;
+    }
   }
 
   if (normalizedOriginalCategory === "company" || normalizedCategoryLabel === "company documents") {
@@ -228,16 +252,15 @@ export function areAllMandatoryDocumentsReviewed(
   );
 
   for (const mandatoryItem of mandatoryItems) {
-    const matchingDoc = validDocuments.find((doc) =>
-      matchDocumentToChecklistItem(doc, mandatoryItem)
-    );
+    const matchingDoc = validDocuments.find((doc) => {
+      if (!matchDocumentToChecklistItem(doc, mandatoryItem)) {
+        return false;
+      }
+      const docStatus = doc.status?.toLowerCase();
+      return docStatus === "reviewed" || docStatus === "approved";
+    });
 
     if (!matchingDoc) {
-      return false;
-    }
-
-    const docStatus = matchingDoc.status?.toLowerCase();
-    if (docStatus !== "reviewed" && docStatus !== "approved") {
       return false;
     }
   }

@@ -4,10 +4,7 @@ interface UseClientApplicationStateProps {
   initialCategory?: string;
 }
 
-/**
- * Hook to manage client application state
- * Handles category selection, pagination, and UI state
- */
+
 export function useClientApplicationState({
   initialCategory = "submitted",
 }: UseClientApplicationStateProps = {}) {
@@ -48,6 +45,7 @@ export function useClientApplicationState({
     setRefreshing,
   };
 }
+
 
 
 

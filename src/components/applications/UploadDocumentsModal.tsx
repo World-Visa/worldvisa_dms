@@ -302,8 +302,14 @@ export function UploadDocumentsModal({
     setIsUploading(true);
 
     try {
+      const clientId = user?._id || user?.lead_id;
+      if (isClientView && !clientId) {
+        toast.error('Client information not available. Please login again.');
+        return;
+      }
+
       // Simulate progress updates for all files
-      const progressInterval = setInterval(() => {
+      const progressInterval = window.setInterval(() => {
         setUploadedFiles(prev => 
           prev.map(file => 
             ({ ...file, progress: Math.min(file.progress + 5, 90) })
@@ -312,7 +318,6 @@ export function UploadDocumentsModal({
       }, 200);
 
       try {
-        // Get description - use company description for company documents, otherwise use user input
         const finalDescription = getCompanyDescription(selectedDocumentCategory) || description;
         const finalCategory = getDocumentCategory(selectedDocumentType, selectedDocumentCategory);
         
@@ -320,7 +325,7 @@ export function UploadDocumentsModal({
         // Upload all files at once with the appropriate API
         const uploadResult = isClientView 
           ? await clientUploadDocumentMutation.mutateAsync({
-              clientId: applicationId, // Use applicationId as clientId for client uploads
+              clientId: clientId!,
               files: uploadedFiles.map(uf => uf.file),
               document_name: selectedDocumentType,
               document_category: finalCategory,
@@ -435,6 +440,9 @@ export function UploadDocumentsModal({
       setSelectedDocumentCategory('');
       setUploadedFiles([]);
     } catch (error) {
+      setUploadedFiles(prev =>
+        prev.map(file => ({ ...file, progress: 0 }))
+      );
       console.error('Upload error:', error);
       const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
       toast.error(`Failed to upload documents: ${errorMessage}`);
@@ -652,11 +660,11 @@ export function UploadDocumentsModal({
                       const fileName = uploadedFile.file.name.toLowerCase();
                       
                       if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
-                        return <File className="h-5 w-5 text-green-600 flex-shrink-0" />;
+                        return <File className="h-5 w-5 text-green-600 shrink-0" />;
                       } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
-                        return <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />;
+                        return <FileText className="h-5 w-5 text-blue-600 shrink-0" />;
                       } else if (fileName.endsWith('.txt')) {
-                        return <File className="h-5 w-5 text-gray-600 flex-shrink-0" />;
+                        return <File className="h-5 w-5 text-gray-600 shrink-0" />;
                       } else {
                         return (
                           <Image
@@ -664,7 +672,7 @@ export function UploadDocumentsModal({
                             alt="PDF Icon"
                             width={20}
                             height={20}
-                            className="flex-shrink-0"
+                            className="shrink-0"
                           />
                         );
                       }

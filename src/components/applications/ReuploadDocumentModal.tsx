@@ -180,8 +180,15 @@ export function ReuploadDocumentModal({
     setIsUploading(true);
 
     try {
+      const clientId = user?._id || user?.lead_id;
+      
+      if (isClientView && !clientId) {
+        toast.error('Client information not available. Please login again.');
+        return;
+      }
+
       // Simulate progress updates
-      const progressInterval = setInterval(() => {
+      const progressInterval = window.setInterval(() => {
         setUploadedFile(prev => 
           prev ? { ...prev, progress: Math.min(prev.progress + 5, 90) } : null
         );
@@ -191,7 +198,7 @@ export function ReuploadDocumentModal({
         // Use the appropriate reupload API
         if (isClientView) {
           await clientReuploadMutation.mutateAsync({
-            clientId: applicationId, // Use applicationId as clientId for client uploads
+            clientId: clientId!,
             documentId: displayDocument._id,
             file: uploadedFile.file,
             document_name: finalDocumentType,
@@ -228,6 +235,9 @@ export function ReuploadDocumentModal({
       }
 
     } catch {
+      setUploadedFile(prev =>
+        prev ? { ...prev, progress: 0 } : null
+      );
       toast.error('Failed to reupload document. Please try again.');
     } finally {
       setIsUploading(false);
@@ -338,11 +348,11 @@ export function ReuploadDocumentModal({
                       const fileName = uploadedFile.file.name.toLowerCase();
                       
                       if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) {
-                        return <File className="h-5 w-5 text-green-600 flex-shrink-0" />;
+                        return <File className="h-5 w-5 text-green-600 shrink-0" />;
                       } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
-                        return <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />;
+                        return <FileText className="h-5 w-5 text-blue-600 shrink-0" />;
                       } else if (fileName.endsWith('.txt')) {
-                        return <File className="h-5 w-5 text-gray-600 flex-shrink-0" />;
+                        return <File className="h-5 w-5 text-gray-600 shrink-0" />;
                       } else {
                         return (
                           <div className="w-5 h-5 bg-red-100 rounded flex items-center justify-center">
