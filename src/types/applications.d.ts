@@ -28,6 +28,7 @@ export interface Application {
   Package_Finalize?: string;
   Deadline_For_Lodgment?: string;
   Record_Type?: string;
+  Main_Applicant?: string;
 }
 
 export interface Document {

@@ -148,10 +148,10 @@ export function ApplicantDetails({
       {application.Deadline_For_Lodgment ? (
         <Card
           className={`border-2 ${isDeadlinePassed(application.Deadline_For_Lodgment)
-              ? "border-red-500 bg-red-50"
-              : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                ? "border-orange-500 bg-orange-50"
-                : "border-blue-500 bg-blue-50"
+            ? "border-red-500 bg-red-50"
+            : isDeadlineApproaching(application.Deadline_For_Lodgment)
+              ? "border-orange-500 bg-orange-50"
+              : "border-blue-500 bg-blue-50"
             }`}
         >
           <CardHeader>
@@ -159,18 +159,18 @@ export function ApplicantDetails({
               <div className="flex items-center gap-2">
                 <Clock
                   className={`h-5 w-5 ${isDeadlinePassed(application.Deadline_For_Lodgment)
-                      ? "text-red-600"
-                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                        ? "text-orange-600"
-                        : "text-blue-600"
+                    ? "text-red-600"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                      ? "text-orange-600"
+                      : "text-blue-600"
                     }`}
                 />
                 <span
                   className={`${isDeadlinePassed(application.Deadline_For_Lodgment)
-                      ? "text-red-800"
-                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                        ? "text-orange-800"
-                        : "text-blue-800"
+                    ? "text-red-800"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                      ? "text-orange-800"
+                      : "text-blue-800"
                     }`}
                 >
                   Application Deadline
@@ -203,20 +203,20 @@ export function ApplicantDetails({
               <div>
                 <p
                   className={`text-2xl font-bold ${isDeadlinePassed(application.Deadline_For_Lodgment)
-                      ? "text-red-700"
-                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                        ? "text-orange-700"
-                        : "text-blue-700"
+                    ? "text-red-700"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                      ? "text-orange-700"
+                      : "text-blue-700"
                     }`}
                 >
                   {formatDate(application.Deadline_For_Lodgment)}
                 </p>
                 <p
                   className={`text-sm mt-1 ${isDeadlinePassed(application.Deadline_For_Lodgment)
-                      ? "text-red-600"
-                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                        ? "text-orange-600"
-                        : "text-blue-600"
+                    ? "text-red-600"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                      ? "text-orange-600"
+                      : "text-blue-600"
                     }`}
                 >
                   {isDeadlinePassed(application.Deadline_For_Lodgment)
@@ -230,10 +230,10 @@ export function ApplicantDetails({
                 <p className="text-sm text-muted-foreground">Days remaining:</p>
                 <p
                   className={`text-xl font-semibold ${isDeadlinePassed(application.Deadline_For_Lodgment)
-                      ? "text-red-600"
-                      : isDeadlineApproaching(application.Deadline_For_Lodgment)
-                        ? "text-orange-600"
-                        : "text-blue-600"
+                    ? "text-red-600"
+                    : isDeadlineApproaching(application.Deadline_For_Lodgment)
+                      ? "text-orange-600"
+                      : "text-blue-600"
                     }`}
                 >
                   {(() => {
@@ -344,11 +344,11 @@ export function ApplicantDetails({
               </div>
               <div className="space-y-1">
                 <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
-                  <Calendar className="h-3 w-3" />
-                  Application ID
+                  <User className="h-3 w-3" />
+                  Main Applicant
                 </label>
-                <p className="text-xs font-mono">
-                  {formatValue(application.id)}
+                <p className="text-sm">
+                  {formatValue(application.Main_Applicant || "")}
                 </p>
               </div>
             </div>
