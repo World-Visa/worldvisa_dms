@@ -146,6 +146,9 @@ export async function uploadStage2Document(
    if (request.outcome_date) {
       formData.append("outcome_date", request.outcome_date);
    }
+  if (request.outcome) {
+     formData.append("outcome", request.outcome);
+  }
 
    const token = tokenStorage.get();
 
@@ -208,6 +211,9 @@ export async function updateStage2Document(
    if (request.metadata.outcome_date !== undefined && request.metadata.outcome_date !== null && String(request.metadata.outcome_date).trim() !== '') {
       metadata.outcome_date = String(request.metadata.outcome_date).trim();
    }
+  if (request.metadata.outcome !== undefined && request.metadata.outcome !== null && String(request.metadata.outcome).trim() !== '') {
+     metadata.outcome = String(request.metadata.outcome).trim();
+  }
 
    const headers: Record<string, string> = {
       'Content-Type': 'application/json',

@@ -1,7 +1,12 @@
+'use client';
+
+import { useState } from 'react';
 import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
 import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
 import { DocumentsSummary } from '@/components/applications/DocumentsSummary';
 import { DocumentsTable } from '@/components/applications/DocumentsTable';
+import { Button } from '@/components/ui/button';
+import { SampleDocumentsTable } from '@/components/applications/sample-documents/SampleDocumentsTable';
 import { Document } from '@/types/applications';
 import { Company, DocumentCategory } from '@/types/documents';
 
@@ -51,84 +56,110 @@ export function SkillAssessmentLayout({
   onReuploadDocument,
   isClientView = false,
 }: SkillAssessmentLayoutProps) {
+  const [showSampleDocuments, setShowSampleDocuments] = useState(false);
+
   return (
-    <div className="space-y-6">
-      {/* Documents Summary */}
-      <DocumentsSummary
-        documents={allDocuments}
-        isLoading={isAllDocumentsLoading}
-        error={allDocumentsError}
-      />
-
-      {/* Documents Section */}
-      <div className="space-y-6">
-        {/* Category Filter */}
-        <DocumentCategoryFilter
-          selectedCategory={selectedCategory}
-          onCategoryChange={onCategoryChange}
-          companies={companies}
-          onAddCompany={onAddCompany}
-          onRemoveCompany={onRemoveCompany}
-          maxCompanies={maxCompanies}
-          checklistState={checklistState.state}
-          checklistCategories={checklistState.checklistCategories}
-          hasCompanyDocuments={checklistState.hasCompanyDocuments}
-          onStartCreatingChecklist={onStartCreatingChecklist}
-          onStartEditingChecklist={onStartEditingChecklist}
-          onSaveChecklist={
-            checklistState.state === "editing"
-              ? checklistState.savePendingChanges
-              : onSaveChecklist
-          }
-          onCancelChecklist={onCancelChecklist}
-          isSavingChecklist={checklistState.isBatchSaving}
-          isCategoryChanging={isCategoryChanging}
-        />
-
-        {/* Conditional Rendering */}
-        {selectedCategory === "submitted" ? (
-          <DocumentsTable
-            applicationId={applicationId}
-            currentPage={documentsPage}
-            limit={10}
-            onPageChange={onDocumentsPageChange}
-            onReuploadDocument={onReuploadDocument}
-            isClientView={isClientView}
-          />
+    <>
+      <div className="flex items-center justify-end">
+        {showSampleDocuments ? (
+          <Button
+            className="cursor-pointer active:scale-95 transition-transform"
+            variant="secondary"
+            size="sm"
+            onClick={() => setShowSampleDocuments(false)}
+          >
+            Back to checklist
+          </Button>
         ) : (
-          <DocumentChecklistTable
+          <Button
+            className="cursor-pointer active:scale-95 transition-transform"
+            variant="outline"
+            size="sm"
+            onClick={() => setShowSampleDocuments(true)}
+          >
+            Sample documents
+          </Button>
+        )}
+      </div>
+
+      {showSampleDocuments ? (
+        <SampleDocumentsTable applicationId={applicationId} isClientView={isClientView} />
+      ) : (
+        <div className="space-y-6">
+          <DocumentsSummary
             documents={allDocuments}
             isLoading={isAllDocumentsLoading}
             error={allDocumentsError}
-            applicationId={applicationId}
-            selectedCategory={selectedCategory}
-            companies={companies}
-            onRemoveCompany={onRemoveCompany}
-            isClientView={isClientView}
-            checklistState={checklistState.state}
-            filteredDocuments={checklistState.filteredDocuments}
-            currentChecklistDocuments={checklistState.currentChecklistDocuments}
-            availableDocumentsForEditing={checklistState.availableDocumentsForEditing}
-            selectedDocuments={checklistState.selectedDocuments}
-            requirementMap={checklistState.requirementMap}
-            onSelectDocument={checklistState.selectDocument}
-            onUpdateDocumentRequirement={checklistState.updateDocumentRequirement}
-            onUpdateChecklist={checklistState.updateChecklist}
-            checklistData={checklistState.checklistData}
-            pendingAdditions={checklistState.pendingAdditions}
-            pendingDeletions={checklistState.pendingDeletions}
-            pendingUpdates={[]}
-            onAddToPendingChanges={checklistState.addToPendingChanges}
-            onRemoveFromPendingChanges={checklistState.removeFromPendingChanges}
-            onAddToPendingDeletions={checklistState.addToPendingDeletions}
-            onRemoveFromPendingDeletions={checklistState.removeFromPendingDeletions}
-            onSavePendingChanges={checklistState.savePendingChanges}
-            onClearPendingChanges={checklistState.clearPendingChanges}
-            isBatchDeleting={checklistState.isBatchDeleting}
           />
-        )}
-      </div>
-    </div>
+
+          <div className="space-y-6">
+            <DocumentCategoryFilter
+              selectedCategory={selectedCategory}
+              onCategoryChange={onCategoryChange}
+              companies={companies}
+              onAddCompany={onAddCompany}
+              onRemoveCompany={onRemoveCompany}
+              maxCompanies={maxCompanies}
+              checklistState={checklistState.state}
+              checklistCategories={checklistState.checklistCategories}
+              hasCompanyDocuments={checklistState.hasCompanyDocuments}
+              onStartCreatingChecklist={onStartCreatingChecklist}
+              onStartEditingChecklist={onStartEditingChecklist}
+              onSaveChecklist={
+                checklistState.state === 'editing'
+                  ? checklistState.savePendingChanges
+                  : onSaveChecklist
+              }
+              onCancelChecklist={onCancelChecklist}
+              isSavingChecklist={checklistState.isBatchSaving}
+              isCategoryChanging={isCategoryChanging}
+            />
+
+            {selectedCategory === 'submitted' ? (
+              <DocumentsTable
+                applicationId={applicationId}
+                currentPage={documentsPage}
+                limit={10}
+                onPageChange={onDocumentsPageChange}
+                onReuploadDocument={onReuploadDocument}
+                isClientView={isClientView}
+              />
+            ) : (
+              <DocumentChecklistTable
+                documents={allDocuments}
+                isLoading={isAllDocumentsLoading}
+                error={allDocumentsError}
+                applicationId={applicationId}
+                selectedCategory={selectedCategory}
+                companies={companies}
+                onRemoveCompany={onRemoveCompany}
+                isClientView={isClientView}
+                checklistState={checklistState.state}
+                filteredDocuments={checklistState.filteredDocuments}
+                currentChecklistDocuments={checklistState.currentChecklistDocuments}
+                availableDocumentsForEditing={checklistState.availableDocumentsForEditing}
+                selectedDocuments={checklistState.selectedDocuments}
+                requirementMap={checklistState.requirementMap}
+                onSelectDocument={checklistState.selectDocument}
+                onUpdateDocumentRequirement={checklistState.updateDocumentRequirement}
+                onUpdateChecklist={checklistState.updateChecklist}
+                checklistData={checklistState.checklistData}
+                pendingAdditions={checklistState.pendingAdditions}
+                pendingDeletions={checklistState.pendingDeletions}
+                pendingUpdates={[]}
+                onAddToPendingChanges={checklistState.addToPendingChanges}
+                onRemoveFromPendingChanges={checklistState.removeFromPendingChanges}
+                onAddToPendingDeletions={checklistState.addToPendingDeletions}
+                onRemoveFromPendingDeletions={checklistState.removeFromPendingDeletions}
+                onSavePendingChanges={checklistState.savePendingChanges}
+                onClearPendingChanges={checklistState.clearPendingChanges}
+                isBatchDeleting={checklistState.isBatchDeleting}
+              />
+            )}
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

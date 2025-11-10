@@ -1,13 +1,15 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useEffect, useState } from 'react';
 
 import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
 import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
-import { DocumentsSummary } from '@/components/applications/DocumentsSummary';
 import { DocumentsTable } from '@/components/applications/DocumentsTable';
 import { ChecklistRequestSuccessCard } from '@/components/applications/ChecklistRequestSuccessCard';
 import { RequestChecklistCard } from '@/components/applications/RequestChecklistCard';
+import { Button } from '@/components/ui/button';
+import { SampleDocumentsTable } from '@/components/applications/sample-documents/SampleDocumentsTable';
+import { useSampleDocuments } from '@/hooks/useSampleDocuments';
 import type { Document } from '@/types/applications';
 import type { ClientDocumentsResponse } from '@/types/client';
 import type { Company, DocumentCategory } from '@/types/documents';
@@ -84,6 +86,21 @@ export function ClientSkillAssessmentLayout({
   const hasChecklist = Array.isArray(checklistData?.data) && checklistData.data.length > 0;
   const hasSubmittedDocuments = submittedDocumentsCount > 0;
 
+  const [showSampleDocuments, setShowSampleDocuments] = useState(false);
+
+  const {
+    data: sampleDocumentsData,
+    isLoading: isSampleDocumentsLoading,
+  } = useSampleDocuments(applicationId);
+
+  const hasSampleDocuments = (sampleDocumentsData?.data?.length ?? 0) > 0;
+
+  useEffect(() => {
+    if (!hasSampleDocuments) {
+      setShowSampleDocuments(false);
+    }
+  }, [hasSampleDocuments]);
+
   const checklistCategories = useMemo(
     () => generateChecklistCategories(checklistData, allDocumentsResponse, companies),
     [checklistData, allDocumentsResponse, companies]
@@ -115,100 +132,120 @@ export function ClientSkillAssessmentLayout({
 
   return (
     <div className="space-y-6">
-      {/* <DocumentsSummary
-        documents={allDocuments}
-        isLoading={isAllDocumentsLoading}
-        error={allDocumentsError}
-      /> */}
+      {(hasSampleDocuments || showSampleDocuments) && (
+        <div className="flex items-center justify-end">
+          {showSampleDocuments ? (
+            <Button
+              className="cursor-pointer active:scale-95 transition-transform"
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowSampleDocuments(false)}
+            >
+              Back to checklist
+            </Button>
+          ) : (
+            <Button
+              className="cursor-pointer active:scale-95 transition-transform"
+              variant="outline"
+              size="sm"
+              disabled={isSampleDocumentsLoading}
+              onClick={() => setShowSampleDocuments(true)}
+            >
+              Sample documents
+            </Button>
+          )}
+        </div>
+      )}
 
-      <div className="space-y-6">
-        <DocumentCategoryFilter
-          selectedCategory={selectedCategory as string}
-          onCategoryChange={onCategoryChange}
-          companies={companies}
-          onAddCompany={onAddCompany}
-          onRemoveCompany={onRemoveCompany}
-          maxCompanies={maxCompanies}
-          isClientView
-          submittedDocumentsCount={submittedDocumentsCount}
-          checklistState={checklistState}
-          checklistCategories={checklistCategories}
-          hasCompanyDocuments={hasCompanyDocuments}
-          isCategoryChanging={isCategoryChanging}
-        />
+      {showSampleDocuments ? (
+        <SampleDocumentsTable applicationId={applicationId} isClientView />
+      ) : (
+        <div className="space-y-6">
+          <DocumentCategoryFilter
+            selectedCategory={selectedCategory as string}
+            onCategoryChange={onCategoryChange}
+            companies={companies}
+            onAddCompany={onAddCompany}
+            onRemoveCompany={onRemoveCompany}
+            maxCompanies={maxCompanies}
+            isClientView
+            submittedDocumentsCount={submittedDocumentsCount}
+            checklistState={checklistState}
+            checklistCategories={checklistCategories}
+            hasCompanyDocuments={hasCompanyDocuments}
+            isCategoryChanging={isCategoryChanging}
+          />
 
-        {(() => {
-          if (checklistRequested && !hasChecklist) {
+          {(() => {
+            if (checklistRequested && !hasChecklist) {
+              return (
+                <ChecklistRequestSuccessCard
+                  onRefresh={handleChecklistRefresh}
+                  requestedAt={checklistRequestedAt}
+                />
+              );
+            }
+
+            if (!hasChecklist && !hasSubmittedDocuments && !checklistRequested && leadId) {
+              return (
+                <RequestChecklistCard leadId={leadId} onRequestSuccess={handleChecklistRequestSuccess} />
+              );
+            }
+
+            if (!hasChecklist && hasSubmittedDocuments) {
+              return (
+                <DocumentsTable
+                  applicationId={applicationId}
+                  currentPage={documentsPage}
+                  limit={documentsLimit}
+                  onPageChange={onDocumentsPageChange}
+                  isClientView
+                  clientDocumentsData={documentsResponse}
+                  clientIsLoading={isDocumentsLoading}
+                  clientError={documentsError}
+                  onClientDeleteSuccess={onClientDeleteSuccess}
+                  onReuploadDocument={onReuploadDocument}
+                  onUploadSuccess={onUploadSuccess}
+                />
+              );
+            }
+
+            if (selectedCategory === 'submitted') {
+              return (
+                <DocumentsTable
+                  applicationId={applicationId}
+                  currentPage={documentsPage}
+                  limit={documentsLimit}
+                  onPageChange={onDocumentsPageChange}
+                  isClientView
+                  clientDocumentsData={documentsResponse}
+                  clientIsLoading={isDocumentsLoading}
+                  clientError={documentsError}
+                  onClientDeleteSuccess={onClientDeleteSuccess}
+                  onReuploadDocument={onReuploadDocument}
+                  onUploadSuccess={onUploadSuccess}
+                />
+              );
+            }
+
             return (
-              <ChecklistRequestSuccessCard
-                onRefresh={handleChecklistRefresh}
-                requestedAt={checklistRequestedAt}
-              />
-            );
-          }
-
-          if (!hasChecklist && !hasSubmittedDocuments && !checklistRequested && leadId) {
-            return (
-              <RequestChecklistCard
-                leadId={leadId}
-                onRequestSuccess={handleChecklistRequestSuccess}
-              />
-            );
-          }
-
-          if (!hasChecklist && hasSubmittedDocuments) {
-            return (
-              <DocumentsTable
+              <DocumentChecklistTable
+                documents={allDocuments}
+                isLoading={isChecklistLoading}
+                error={checklistError}
                 applicationId={applicationId}
-                currentPage={documentsPage}
-                limit={documentsLimit}
-                onPageChange={onDocumentsPageChange}
+                selectedCategory={selectedCategory as DocumentCategory}
+                companies={companies}
                 isClientView
-                clientDocumentsData={documentsResponse}
-                clientIsLoading={isDocumentsLoading}
-                clientError={documentsError}
-                onClientDeleteSuccess={onClientDeleteSuccess}
-                onReuploadDocument={onReuploadDocument}
-                onUploadSuccess={onUploadSuccess}
+                checklistData={checklistData}
+                checklistState={checklistState}
+                onAddCompany={onAddCompany}
+                onRemoveCompany={onRemoveCompany}
               />
             );
-          }
-
-          if (selectedCategory === 'submitted') {
-            return (
-              <DocumentsTable
-                applicationId={applicationId}
-                currentPage={documentsPage}
-                limit={documentsLimit}
-                onPageChange={onDocumentsPageChange}
-                isClientView
-                clientDocumentsData={documentsResponse}
-                clientIsLoading={isDocumentsLoading}
-                clientError={documentsError}
-                onClientDeleteSuccess={onClientDeleteSuccess}
-                onReuploadDocument={onReuploadDocument}
-                onUploadSuccess={onUploadSuccess}
-              />
-            );
-          }
-
-          return (
-            <DocumentChecklistTable
-              documents={allDocuments}
-              isLoading={isChecklistLoading}
-              error={checklistError}
-              applicationId={applicationId}
-              selectedCategory={selectedCategory as DocumentCategory}
-              companies={companies}
-              isClientView
-              checklistData={checklistData}
-              checklistState={checklistState}
-              onAddCompany={onAddCompany}
-              onRemoveCompany={onRemoveCompany}
-            />
-          );
-        })()}
-      </div>
+          })()}
+        </div>
+      )}
     </div>
   );
 }

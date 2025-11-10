@@ -26,6 +26,7 @@ export interface Stage2Document {
   deadline?: string;
   // Optional field for Outcome
   outcome_date?: string;
+  outcome?: string;
 }
 
 export interface CreateStage2DocumentRequest {
@@ -43,6 +44,7 @@ export interface CreateStage2DocumentRequest {
   date?: string;
   deadline?: string;
   outcome_date?: string;
+  outcome?: string;
 }
 
 export interface UpdateStage2DocumentRequest {
@@ -56,6 +58,7 @@ export interface UpdateStage2DocumentRequest {
     date?: string;
     deadline?: string;
     outcome_date?: string;
+    outcome?: string;
   };
 }
 

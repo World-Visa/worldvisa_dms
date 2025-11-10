@@ -21,6 +21,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUploadStage2Document, useUpdateStage2Document } from '@/hooks/useStage2Documents';
 import { Combobox } from '@/components/ui/combobox';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   AUSTRALIAN_VISA_SUBCLASSES,
   AUSTRALIAN_STATES,
 } from '@/lib/constants/australianData';
@@ -54,7 +61,9 @@ export function InvitationModal({
   const updateMutation = useUpdateStage2Document();
 
   // Prepare combobox options
-  const subclassOptions = AUSTRALIAN_VISA_SUBCLASSES.map((s) => ({
+  const subclassOptions = AUSTRALIAN_VISA_SUBCLASSES.filter((s) =>
+    ['189', '190', '491'].includes(s.code)
+  ).map((s) => ({
     value: s.code,
     label: s.label,
   }));
@@ -63,6 +72,10 @@ export function InvitationModal({
     value: s.code,
     label: `${s.code} - ${s.name}`,
   }));
+
+  const pointOptions = Array.from({ length: Math.floor((110 - 65) / 5) + 1 }, (_, index) =>
+    (65 + index * 5).toString()
+  );
 
   // Pre-fill form in edit mode
   useEffect(() => {
@@ -182,8 +195,8 @@ export function InvitationModal({
       return;
     }
 
-    if (!point || isNaN(Number(point))) {
-      toast.error('Please enter valid points.');
+    if (!point) {
+      toast.error('Please select points.');
       return;
     }
 
@@ -333,15 +346,22 @@ export function InvitationModal({
           {/* Points */}
           <div className="space-y-2">
             <Label htmlFor="point">Points *</Label>
-            <Input
-              id="point"
-              type="number"
+            <Select
               value={point}
-              onChange={(e) => setPoint(e.target.value)}
-              placeholder="Enter points"
+              onValueChange={setPoint}
               disabled={isUploading}
-              min="0"
-            />
+            >
+              <SelectTrigger id="point">
+                <SelectValue placeholder="Select points" />
+              </SelectTrigger>
+              <SelectContent>
+                {pointOptions.map((value) => (
+                  <SelectItem key={value} value={value}>
+                    {value}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Date */}
@@ -407,7 +427,7 @@ export function InvitationModal({
             <div className="space-y-2">
               <Label>Current File</Label>
               <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted">
-                <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                <FileText className="h-5 w-5 text-blue-600 shrink-0" />
                 <span className="text-sm font-medium">{document.file_name}</span>
               </div>
             </div>
@@ -423,9 +443,9 @@ export function InvitationModal({
                     {(() => {
                       const fileName = uploadedFile.file.name.toLowerCase();
                       if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png')) {
-                        return <File className="h-5 w-5 text-green-600 flex-shrink-0" />;
+                        return <File className="h-5 w-5 text-green-600 shrink-0" />;
                       } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
-                        return <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />;
+                        return <FileText className="h-5 w-5 text-blue-600 shrink-0" />;
                       } else {
                         return (
                           <Image
@@ -433,7 +453,7 @@ export function InvitationModal({
                             alt="PDF Icon"
                             width={20}
                             height={20}
-                            className="flex-shrink-0"
+                            className="shrink-0"
                           />
                         );
                       }

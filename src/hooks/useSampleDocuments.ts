@@ -1,12 +1,82 @@
-/**
- * Sample Documents Hook
- * 
- * This hook provides optimized access to sample documents with caching,
- * error handling, and loading states.
- */
-
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
+import {
+  fetchSampleDocuments,
+  uploadSampleDocument,
+  updateSampleDocument,
+  deleteSampleDocument,
+} from '@/lib/api/sampleDocuments';
+import type {
+  UploadSampleDocumentRequest,
+  UpdateSampleDocumentRequest,
+} from '@/types/sampleDocuments';
 import { sampleDocumentService } from '@/lib/samples/sampleService';
+
+const queryKey = (applicationId: string) => ['sample-documents', applicationId];
+
+export function useSampleDocuments(applicationId: string) {
+  return useQuery({
+    queryKey: queryKey(applicationId),
+    queryFn: () => fetchSampleDocuments(applicationId),
+    enabled: !!applicationId,
+    staleTime: 30_000,
+  });
+}
+
+export function useUploadSampleDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UploadSampleDocumentRequest) => uploadSampleDocument(data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKey(variables.applicationId),
+      });
+      toast.success('Sample document uploaded successfully!');
+    },
+    onError: (error: Error) => {
+      console.error('Upload sample document error:', error);
+      toast.error(`Failed to upload sample document: ${error.message}`);
+    },
+  });
+}
+
+export function useUpdateSampleDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateSampleDocumentRequest) => updateSampleDocument(data),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKey(variables.applicationId),
+      });
+      toast.success('Sample document updated successfully!');
+    },
+    onError: (error: Error) => {
+      console.error('Update sample document error:', error);
+      toast.error(`Failed to update sample document: ${error.message}`);
+    },
+  });
+}
+
+export function useDeleteSampleDocument() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ applicationId, documentId }: { applicationId: string; documentId: string }) =>
+      deleteSampleDocument(applicationId, documentId),
+    onSuccess: (_data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: queryKey(variables.applicationId),
+      });
+      toast.success('Sample document deleted successfully!');
+    },
+    onError: (error: Error) => {
+      console.error('Delete sample document error:', error);
+      toast.error(`Failed to delete sample document: ${error.message}`);
+    },
+  });
+}
 
 interface UseSampleDocumentOptions {
   documentType: string;

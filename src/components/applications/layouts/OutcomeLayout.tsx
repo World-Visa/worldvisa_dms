@@ -155,6 +155,7 @@ export function OutcomeLayout({ applicationId, isClientView = false }: OutcomeLa
                       <TableHead>Document Name</TableHead>
                       <TableHead>Uploaded By</TableHead>
                       <TableHead>Uploaded At</TableHead>
+                      <TableHead>Outcome</TableHead>
                       <TableHead>Outcome Date</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -167,6 +168,7 @@ export function OutcomeLayout({ applicationId, isClientView = false }: OutcomeLa
                         </TableCell>
                         <TableCell>{document.uploaded_by}</TableCell>
                         <TableCell>{formatDate(document.uploaded_at, 'short')}</TableCell>
+                        <TableCell>{document.outcome || 'N/A'}</TableCell>
                         <TableCell>
                           {document.outcome_date
                             ? formatDate(document.outcome_date, 'short')

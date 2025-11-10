@@ -13,6 +13,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import { DatePicker } from '@/components/ui/date-picker';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Upload, X, FileText, File } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
@@ -37,6 +44,7 @@ export function OutcomeModal({
   const { user } = useAuth();
   const [documentName, setDocumentName] = useState('');
   const [outcomeDate, setOutcomeDate] = useState<Date | undefined>(undefined);
+  const [outcome, setOutcome] = useState('');
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -49,9 +57,11 @@ export function OutcomeModal({
     if (mode === 'edit' && document) {
       setDocumentName(document.document_name || '');
       setOutcomeDate(document.outcome_date ? new Date(document.outcome_date) : undefined);
+      setOutcome(document.outcome || '');
     } else {
       setDocumentName('');
       setOutcomeDate(undefined);
+      setOutcome('');
       setUploadedFiles([]);
     }
   }, [mode, document, isOpen]);
@@ -149,6 +159,11 @@ export function OutcomeModal({
       return;
     }
 
+    if (!outcome.trim()) {
+      toast.error('Please select an outcome.');
+      return;
+    }
+
     const formattedOutcomeDate = format(outcomeDate, 'yyyy-MM-dd');
 
     if (mode === 'create' && uploadedFiles.length === 0) {
@@ -172,6 +187,7 @@ export function OutcomeModal({
           metadata: {
             document_name: documentName,
             outcome_date: formattedOutcomeDate,
+            outcome,
           },
         });
       } else {
@@ -193,6 +209,7 @@ export function OutcomeModal({
             uploaded_by: user.username,
             type: 'outcome',
             outcome_date: formattedOutcomeDate,
+            outcome,
           });
 
           setUploadedFiles((prev) => prev.map((file) => ({ ...file, progress: 100 })));
@@ -215,6 +232,7 @@ export function OutcomeModal({
     if (!isUploading) {
       setDocumentName('');
       setOutcomeDate(undefined);
+      setOutcome('');
       setUploadedFiles([]);
       onClose();
     }
@@ -240,6 +258,27 @@ export function OutcomeModal({
               placeholder="Enter document name"
               disabled={isUploading}
             />
+          </div>
+
+          {/* Outcome */}
+          <div className="space-y-2">
+            <Label htmlFor="outcome">Outcome *</Label>
+            <Select
+              value={outcome}
+              onValueChange={setOutcome}
+              disabled={isUploading}
+            >
+              <SelectTrigger id="outcome">
+                <SelectValue placeholder="Select outcome" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Skill Assessment Outcome">Skill Assessment Outcome</SelectItem>
+                <SelectItem value="APHRA">APHRA</SelectItem>
+                <SelectItem value="ECA">ECA</SelectItem>
+                <SelectItem value="Visa grant">Visa grant</SelectItem>
+                <SelectItem value="License/ Registration">License/ Registration</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Outcome Date */}
@@ -294,7 +333,7 @@ export function OutcomeModal({
             <div className="space-y-2">
               <Label>Current File</Label>
               <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted">
-                <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                <FileText className="h-5 w-5 text-blue-600 shrink-0" />
                 <span className="text-sm font-medium">{document.file_name}</span>
               </div>
             </div>
@@ -310,9 +349,9 @@ export function OutcomeModal({
                     {(() => {
                       const fileName = uploadedFile.file.name.toLowerCase();
                       if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png')) {
-                        return <File className="h-5 w-5 text-green-600 flex-shrink-0" />;
+                        return <File className="h-5 w-5 text-green-600 shrink-0" />;
                       } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
-                        return <FileText className="h-5 w-5 text-blue-600 flex-shrink-0" />;
+                        return <FileText className="h-5 w-5 text-blue-600 shrink-0" />;
                       } else {
                         return (
                           <Image
@@ -320,7 +359,7 @@ export function OutcomeModal({
                             alt="PDF Icon"
                             width={20}
                             height={20}
-                            className="flex-shrink-0"
+                            className="shrink-0"
                           />
                         );
                       }

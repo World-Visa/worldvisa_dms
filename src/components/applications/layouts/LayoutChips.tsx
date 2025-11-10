@@ -29,11 +29,10 @@ export function LayoutChips({ selectedLayout, onLayoutChange, availableLayouts }
           <Button
             key={chip.id}
             variant={isActive ? "default" : "outline"}
-            size="sm"
             onClick={() => onLayoutChange(chip.id)}
-            className={`transition-all duration-200 cursor-pointer ${
+            className={`px-8 py-5 duration-200 active:scale-95 transition-transform cursor-pointer ${
               isActive
-                ? "bg-blue-600 hover:bg-blue-700 text-white shadow-sm"
+                ? "bg-blue-600 hover:bg-blue-700  text-white shadow-sm"
                 : "hover:bg-gray-50"
             }`}
           >
