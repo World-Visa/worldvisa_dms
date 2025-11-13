@@ -197,13 +197,13 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
               {/* Document Section - Top on mobile, Left on desktop */}
               <div className="flex-1 p-2 sm:p-4 relative order-1 lg:order-1">
                 {checklistMeta?.importantNote && (
-                  <Alert className="mb-4 border-orange-200 bg-orange-50 text-orange-900">
+                  <Alert className="mb-4 border-red-200 bg-red-50 text-red-600">
                     <AlertCircle className="h-5 w-5" />
                     <AlertDescription className="space-y-1">
-                      <p className="text-xs font-semibold uppercase tracking-wide">
+                      <p className="text-xs font-medium uppercase tracking-wide">
                         Important
                       </p>
-                      <p className="text-xs whitespace-pre-line">
+                      <p className="text-xs font-bold whitespace-pre-line">
                         {checklistMeta.importantNote}
                       </p>
                     </AlertDescription>

@@ -536,11 +536,11 @@ export function UploadDocumentsModal({
                 )}
               </div>
               {selectedDocumentMeta?.importantNote && (
-                <Alert className="border-orange-200 bg-orange-50 text-orange-900">
-                  <AlertCircle className="h-4 w-4 text-orange-900" />
+                <Alert className="border-red-200 bg-red-50 text-red-600">
+                  <AlertCircle className="h-4 w-4 text-red-600" />
                   <AlertDescription className="space-y-1">
-                    <p className="text-xs font-semibold uppercase tracking-wide">Important</p>
-                    <p className="text-xs whitespace-pre-line">
+                    <p className="text-xs font-medium uppercase tracking-wide">Important</p>
+                    <p className="text-xs font-bold whitespace-pre-line">
                       {selectedDocumentMeta.importantNote}
                     </p>
                   </AlertDescription>

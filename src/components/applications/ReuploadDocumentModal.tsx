@@ -289,13 +289,13 @@ export function ReuploadDocumentModal({
           </div>
 
           {documentMeta?.importantNote && (
-            <Alert className="border-orange-200 bg-orange-50 text-orange-900">
+            <Alert className="border-red-200 bg-red-50 text-red-600">
               <AlertCircle className="h-5 w-5" />
               <AlertDescription className="space-y-1">
-                <p className="text-sm font-semibold uppercase tracking-wide">
+                <p className="text-sm font-medium uppercase tracking-wide">
                   Important
                 </p>
-                <p className="text-sm whitespace-pre-line">
+                <p className="text-sm font-bold whitespace-pre-line">
                   {documentMeta.importantNote}
                 </p>
               </AlertDescription>
