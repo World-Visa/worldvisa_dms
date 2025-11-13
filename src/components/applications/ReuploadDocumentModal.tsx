@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useReuploadDocument } from '@/hooks/useReuploadDocument';
 import { useClientReuploadDocument } from '@/hooks/useClientDocumentMutations';
 import { useDocumentData } from '@/hooks/useDocumentData';
@@ -17,6 +18,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
 import { Upload, X, AlertCircle, FileText, File } from 'lucide-react';
 import { Document } from '@/types/applications';
+import { getChecklistDocumentMeta } from '@/lib/documents/metadata';
 
 interface ReuploadDocumentModalProps {
   isOpen: boolean;
@@ -59,6 +61,10 @@ export function ReuploadDocumentModal({
   
   // Use the current document from cache, fallback to prop
   const displayDocument = currentDocument || document;
+  const documentMeta = useMemo(
+    () => getChecklistDocumentMeta(finalCategory, finalDocumentType),
+    [finalCategory, finalDocumentType]
+  );
 
   // Reset state when modal opens/closes
   useEffect(() => {
@@ -281,6 +287,20 @@ export function ReuploadDocumentModal({
               </div>
             )}
           </div>
+
+          {documentMeta?.importantNote && (
+            <Alert className="border-orange-200 bg-orange-50 text-orange-900">
+              <AlertCircle className="h-5 w-5" />
+              <AlertDescription className="space-y-1">
+                <p className="text-sm font-semibold uppercase tracking-wide">
+                  Important
+                </p>
+                <p className="text-sm whitespace-pre-line">
+                  {documentMeta.importantNote}
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* File Upload Area */}
           <div className="space-y-4">

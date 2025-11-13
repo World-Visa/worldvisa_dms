@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Sheet,
   SheetContent,
@@ -7,16 +7,18 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "../ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import DocumentComments from "./DocumentComments";
 import CommentErrorBoundary from "./CommentErrorBoundary";
 import DocumentPreview from "./DocumentPreview";
 import DocumentStatusButtons from "./DocumentStatusButtons";
 import DocumentStatusDisplay from "./DocumentStatusDisplay";
 import { SendDocumentModal } from "./SendDocumentModal";
-import { User, Clock, FileText, Upload } from "lucide-react";
+import { User, Clock, FileText, Upload, AlertCircle } from "lucide-react";
 import { Document } from "@/types/applications";
 import { useDocumentData } from "@/hooks/useDocumentData";
 import { useQueryClient } from "@tanstack/react-query";
+import { getChecklistDocumentMeta } from "@/lib/documents/metadata";
 
 interface ViewDocumentSheetProps {
   document: Document;
@@ -65,6 +67,30 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   const displayDoc = currentDoc || selectedDocument;
 
   const queryClient = useQueryClient();
+  const checklistMeta = useMemo(() => {
+    const candidateCategory =
+      displayDoc?.document_category || category || finalCategory;
+
+    const candidateType =
+      displayDoc?.document_name ||
+      documentType ||
+      finalDocumentType ||
+      displayDoc?.document_type;
+
+    if (!candidateCategory || !candidateType) {
+      return undefined;
+    }
+
+    return getChecklistDocumentMeta(candidateCategory, candidateType);
+  }, [
+    displayDoc?.document_category,
+    displayDoc?.document_name,
+    displayDoc?.document_type,
+    category,
+    documentType,
+    finalCategory,
+    finalDocumentType,
+  ]);
 
   // Ensure the document is cached for real-time updates
   useEffect(() => {
@@ -170,6 +196,19 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
             <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto">
               {/* Document Section - Top on mobile, Left on desktop */}
               <div className="flex-1 p-2 sm:p-4 relative order-1 lg:order-1">
+                {checklistMeta?.importantNote && (
+                  <Alert className="mb-4 border-orange-200 bg-orange-50 text-orange-900">
+                    <AlertCircle className="h-5 w-5" />
+                    <AlertDescription className="space-y-1">
+                      <p className="text-xs font-semibold uppercase tracking-wide">
+                        Important
+                      </p>
+                      <p className="text-xs whitespace-pre-line">
+                        {checklistMeta.importantNote}
+                      </p>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 <DocumentPreview document={displayDoc} />
 
                 {/* Status Display */}

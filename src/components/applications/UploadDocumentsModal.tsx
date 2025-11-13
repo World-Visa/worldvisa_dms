@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -10,12 +10,13 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAddDocument } from '@/hooks/useMutationsDocuments';
 import { useClientUploadDocument } from '@/hooks/useClientDocumentMutations';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Upload, X, FileText, File } from 'lucide-react';
+import { Upload, X, FileText, File, AlertCircle } from 'lucide-react';
 import Image from 'next/image';
 import { UploadDocumentsModalProps, UploadedFile, ApiDocument } from '@/types/documents';
 import { 
@@ -23,13 +24,7 @@ import {
   generateCurrentEmploymentDescription, 
   generatePastEmploymentDescription 
 } from '@/utils/dateCalculations';
-import {
-  IDENTITY_DOCUMENTS,
-  EDUCATION_DOCUMENTS,
-  OTHER_DOCUMENTS,
-  COMPANY_DOCUMENTS,
-  SELF_EMPLOYMENT_DOCUMENTS,
-} from '@/lib/documents/checklist';
+import { getChecklistDocumentMeta } from '@/lib/documents/metadata';
 
 
 export function UploadDocumentsModal({ 
@@ -54,6 +49,10 @@ export function UploadDocumentsModal({
   const clientUploadDocumentMutation = useClientUploadDocument();
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const selectedDocumentMeta = useMemo(
+    () => getChecklistDocumentMeta(selectedDocumentCategory, selectedDocumentType),
+    [selectedDocumentCategory, selectedDocumentType]
+  );
 
   // Auto-set description when modal opens or category changes
   useEffect(() => {
@@ -125,34 +124,7 @@ export function UploadDocumentsModal({
 
   // Helper function to get allowedDocument count from base document types
   const getAllowedDocumentCount = (category: string, documentType: string): number | undefined => {
-    const allBaseDocuments = [
-      ...IDENTITY_DOCUMENTS,
-      ...EDUCATION_DOCUMENTS,
-      ...OTHER_DOCUMENTS,
-      ...COMPANY_DOCUMENTS,
-      ...SELF_EMPLOYMENT_DOCUMENTS,
-    ];
-
-    // Handle company-specific categories
-    if (category.includes('Documents') && !['Identity Documents', 'Education Documents', 'Other Documents', 'Self Employment/Freelance'].includes(category)) {
-      // Check against company documents for company-specific categories
-      const foundDoc = allBaseDocuments.find(doc => 
-        doc.category === "Company" && doc.documentType === documentType
-      );
-      if (foundDoc && 'allowedDocument' in foundDoc && typeof foundDoc.allowedDocument === 'number') {
-        return foundDoc.allowedDocument;
-      }
-      return undefined;
-    }
-
-    const foundDoc = allBaseDocuments.find(doc => 
-      doc.category === category && doc.documentType === documentType
-    );
-
-    if (foundDoc && 'allowedDocument' in foundDoc && typeof foundDoc.allowedDocument === 'number') {
-      return foundDoc.allowedDocument;
-    }
-    return undefined;
+    return getChecklistDocumentMeta(category, documentType)?.allowedDocument;
   };
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -552,23 +524,28 @@ export function UploadDocumentsModal({
               <label className="text-sm font-medium">Document Type</label>
               <div className="p-3 bg-muted rounded-lg">
                 <p className="text-sm font-medium">{selectedDocumentType}</p>
-                {(() => {
-                  const allowedDocument = getAllowedDocumentCount(selectedDocumentCategory, selectedDocumentType);
-                  if (allowedDocument !== undefined) {
-                    return (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Maximum {allowedDocument} file{allowedDocument === 1 ? '' : 's'} allowed
-                      </p>
-                    );
-                  } else {
-                    return (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Multiple files allowed
-                      </p>
-                    );
-                  }
-                })()}
+                {selectedDocumentMeta?.allowedDocument !== undefined ? (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Maximum {selectedDocumentMeta.allowedDocument} file
+                    {selectedDocumentMeta.allowedDocument === 1 ? '' : 's'} allowed
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Multiple files allowed
+                  </p>
+                )}
               </div>
+              {selectedDocumentMeta?.importantNote && (
+                <Alert className="border-orange-200 bg-orange-50 text-orange-900">
+                  <AlertCircle className="h-4 w-4 text-orange-900" />
+                  <AlertDescription className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide">Important</p>
+                    <p className="text-xs whitespace-pre-line">
+                      {selectedDocumentMeta.importantNote}
+                    </p>
+                  </AlertDescription>
+                </Alert>
+              )}
             </div>
           )}
 
