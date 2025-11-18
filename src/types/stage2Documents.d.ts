@@ -27,6 +27,7 @@ export interface Stage2Document {
   // Optional field for Outcome
   outcome_date?: string;
   outcome?: string;
+  skill_assessing_body?: string;
 }
 
 export interface CreateStage2DocumentRequest {
@@ -45,6 +46,7 @@ export interface CreateStage2DocumentRequest {
   deadline?: string;
   outcome_date?: string;
   outcome?: string;
+  skill_assessing_body?: string;
 }
 
 export interface UpdateStage2DocumentRequest {
@@ -59,6 +61,7 @@ export interface UpdateStage2DocumentRequest {
     deadline?: string;
     outcome_date?: string;
     outcome?: string;
+    skill_assessing_body?: string;
   };
 }
 

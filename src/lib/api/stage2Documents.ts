@@ -149,6 +149,9 @@ export async function uploadStage2Document(
   if (request.outcome) {
      formData.append("outcome", request.outcome);
   }
+  if (request.skill_assessing_body) {
+     formData.append("skill_assessing_body", request.skill_assessing_body);
+  }
 
    const token = tokenStorage.get();
 
@@ -213,6 +216,9 @@ export async function updateStage2Document(
    }
   if (request.metadata.outcome !== undefined && request.metadata.outcome !== null && String(request.metadata.outcome).trim() !== '') {
      metadata.outcome = String(request.metadata.outcome).trim();
+  }
+  if (request.metadata.skill_assessing_body !== undefined && request.metadata.skill_assessing_body !== null && String(request.metadata.skill_assessing_body).trim() !== '') {
+     metadata.skill_assessing_body = String(request.metadata.skill_assessing_body).trim();
   }
 
    const headers: Record<string, string> = {

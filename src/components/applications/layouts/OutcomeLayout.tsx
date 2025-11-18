@@ -28,6 +28,7 @@ import { useStage2Documents, useDeleteStage2Document } from '@/hooks/useStage2Do
 import { OutcomeModal } from '@/components/applications/modals/OutcomeModal';
 import { formatDate } from '@/utils/format';
 import type { OutcomeLayoutProps, Stage2Document } from '@/types/stage2Documents';
+import { getAnzscoCodeByCode } from '@/lib/constants/australianData';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -157,6 +158,7 @@ export function OutcomeLayout({ applicationId, isClientView = false }: OutcomeLa
                       <TableHead>Uploaded At</TableHead>
                       <TableHead>Outcome</TableHead>
                       <TableHead>Outcome Date</TableHead>
+                      <TableHead>Skill Assessing Body</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -173,6 +175,17 @@ export function OutcomeLayout({ applicationId, isClientView = false }: OutcomeLa
                           {document.outcome_date
                             ? formatDate(document.outcome_date, 'short')
                             : 'N/A'}
+                        </TableCell>
+                        <TableCell>
+                          {(() => {
+                            const anzscoCode = document.skill_assessing_body;
+                            if (!anzscoCode) return 'N/A';
+                            const codeData = getAnzscoCodeByCode(anzscoCode);
+                            if (codeData) {
+                              return `${codeData.anzsco_code} - ${codeData.name} (${codeData.assessing_authority})`;
+                            }
+                            return anzscoCode;
+                          })()}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">

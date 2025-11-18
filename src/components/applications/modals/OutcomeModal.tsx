@@ -20,13 +20,15 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Upload, X, FileText, File } from 'lucide-react';
+import { Upload, X, FileText, File, Plus } from 'lucide-react';
 import Image from 'next/image';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { useAuth } from '@/hooks/useAuth';
 import { useUploadStage2Document, useUpdateStage2Document } from '@/hooks/useStage2Documents';
 import type { OutcomeModalProps } from '@/types/stage2Documents';
+import { Combobox } from '@/components/ui/combobox';
+import { ANZSCO_CODES, getAnzscoCodeByCode } from '@/lib/constants/australianData';
 
 interface UploadedFile {
   file: File;
@@ -45,6 +47,17 @@ export function OutcomeModal({
   const [documentName, setDocumentName] = useState('');
   const [outcomeDate, setOutcomeDate] = useState<Date | undefined>(undefined);
   const [outcome, setOutcome] = useState('');
+  const [selectedAnzscoCode, setSelectedAnzscoCode] = useState('');
+  const [isCustomMode, setIsCustomMode] = useState(false);
+  const [customAnzscoCode, setCustomAnzscoCode] = useState('');
+  const [customAnzscoName, setCustomAnzscoName] = useState('');
+  const [customAssessingAuthority, setCustomAssessingAuthority] = useState('');
+  const [availableOptions, setAvailableOptions] = useState(
+    ANZSCO_CODES.map((code) => ({
+      value: code.anzsco_code,
+      label: `${code.anzsco_code} - ${code.name} (${code.assessing_authority})`,
+    }))
+  );
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,10 +71,41 @@ export function OutcomeModal({
       setDocumentName(document.document_name || '');
       setOutcomeDate(document.outcome_date ? new Date(document.outcome_date) : undefined);
       setOutcome(document.outcome || '');
+      // skill_assessing_body contains the anzsco_code
+      const skillBody = document.skill_assessing_body || '';
+      if (skillBody) {
+        // Check if it's a valid ANZSCO code
+        const matchingCode = getAnzscoCodeByCode(skillBody);
+        if (matchingCode) {
+          setSelectedAnzscoCode(skillBody);
+        } else {
+          // If not found, it might be a custom value - add it as a custom option
+          setSelectedAnzscoCode(skillBody);
+          setAvailableOptions((prev) => {
+            const exists = prev.some((opt) => opt.value === skillBody);
+            if (!exists) {
+              return [...prev, { value: skillBody, label: `Custom - ${skillBody}` }];
+            }
+            return prev;
+          });
+        }
+      } else {
+        setSelectedAnzscoCode('');
+      }
+      
+      setIsCustomMode(false);
+      setCustomAnzscoCode('');
+      setCustomAnzscoName('');
+      setCustomAssessingAuthority('');
     } else {
       setDocumentName('');
       setOutcomeDate(undefined);
       setOutcome('');
+      setSelectedAnzscoCode('');
+      setIsCustomMode(false);
+      setCustomAnzscoCode('');
+      setCustomAnzscoName('');
+      setCustomAssessingAuthority('');
       setUploadedFiles([]);
     }
   }, [mode, document, isOpen]);
@@ -127,6 +171,37 @@ export function OutcomeModal({
     setUploadedFiles((prev) => prev.filter((file) => file.id !== fileId));
   };
 
+  const handleAddCustomAnzscoCode = () => {
+    if (customAnzscoCode.trim() && customAnzscoName.trim() && customAssessingAuthority.trim()) {
+      const customCode = customAnzscoCode.trim();
+      const customName = customAnzscoName.trim();
+      const customAuthority = customAssessingAuthority.trim();
+      
+      // Check if it already exists
+      if (!availableOptions.some((opt) => opt.value === customCode)) {
+        setAvailableOptions((prev) => [
+          ...prev,
+          { value: customCode, label: `${customCode} - ${customName} (${customAuthority})` },
+        ]);
+      }
+      setSelectedAnzscoCode(customCode);
+      setCustomAnzscoCode('');
+      setCustomAnzscoName('');
+      setCustomAssessingAuthority('');
+      setIsCustomMode(false);
+    }
+  };
+
+  const handleToggleCustomMode = () => {
+    setIsCustomMode(!isCustomMode);
+    setCustomAnzscoCode('');
+    setCustomAnzscoName('');
+    setCustomAssessingAuthority('');
+    if (!isCustomMode) {
+      setSelectedAnzscoCode('');
+    }
+  };
+
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -179,6 +254,9 @@ export function OutcomeModal({
     setIsUploading(true);
 
     try {
+      // Pass the anzsco_code directly to skill_assessing_body
+      const anzscoCodeValue = selectedAnzscoCode || undefined;
+
       if (mode === 'edit' && document) {
         // Update existing document metadata
         await updateMutation.mutateAsync({
@@ -188,6 +266,7 @@ export function OutcomeModal({
             document_name: documentName,
             outcome_date: formattedOutcomeDate,
             outcome,
+            skill_assessing_body: anzscoCodeValue,
           },
         });
       } else {
@@ -210,6 +289,7 @@ export function OutcomeModal({
             type: 'outcome',
             outcome_date: formattedOutcomeDate,
             outcome,
+            skill_assessing_body: anzscoCodeValue,
           });
 
           setUploadedFiles((prev) => prev.map((file) => ({ ...file, progress: 100 })));
@@ -233,6 +313,11 @@ export function OutcomeModal({
       setDocumentName('');
       setOutcomeDate(undefined);
       setOutcome('');
+      setSelectedAnzscoCode('');
+      setIsCustomMode(false);
+      setCustomAnzscoCode('');
+      setCustomAnzscoName('');
+      setCustomAssessingAuthority('');
       setUploadedFiles([]);
       onClose();
     }
@@ -290,6 +375,104 @@ export function OutcomeModal({
               placeholder="Select outcome date"
               disabled={isUploading}
             />
+          </div>
+
+          {/* Skill Assessing Body (ANZSCO Code) */}
+          <div className="space-y-2">
+            <Label>Skill Assessing Body (ANZSCO Code)</Label>
+            {!isCustomMode ? (
+              <div className="space-y-2">
+                <Combobox
+                  options={availableOptions}
+                  value={selectedAnzscoCode}
+                  onValueChange={setSelectedAnzscoCode}
+                  placeholder="Select ANZSCO code..."
+                  searchPlaceholder="Search ANZSCO code or occupation..."
+                  emptyMessage="No ANZSCO code found."
+                  disabled={isUploading}
+                />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t border-gray-200"></span>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-background px-2 text-muted-foreground">or</span>
+                  </div>
+                </div>
+                <Button
+                  variant="link"
+                  size="sm"
+                  onClick={handleToggleCustomMode}
+                  disabled={isUploading}
+                  className="text-sm underline p-0 h-auto"
+                >
+                  Add new ANZSCO code
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-anzsco-code">ANZSCO Code *</Label>
+                    <Input
+                      id="custom-anzsco-code"
+                      type="text"
+                      placeholder="e.g., 121111"
+                      value={customAnzscoCode}
+                      onChange={(e) => setCustomAnzscoCode(e.target.value)}
+                      disabled={isUploading}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-assessing-authority">Assessing Authority *</Label>
+                    <Input
+                      id="custom-assessing-authority"
+                      type="text"
+                      placeholder="e.g., VETASSESS"
+                      value={customAssessingAuthority}
+                      onChange={(e) => setCustomAssessingAuthority(e.target.value)}
+                      disabled={isUploading}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="custom-anzsco-name">Occupation Name *</Label>
+                  <Input
+                    id="custom-anzsco-name"
+                    type="text"
+                    placeholder="e.g., Aquaculture Farmer"
+                    value={customAnzscoName}
+                    onChange={(e) => setCustomAnzscoName(e.target.value)}
+                    disabled={isUploading}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddCustomAnzscoCode();
+                      }
+                    }}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleAddCustomAnzscoCode}
+                    disabled={!customAnzscoCode.trim() || !customAnzscoName.trim() || !customAssessingAuthority.trim() || isUploading}
+                    className="flex items-center gap-1"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleToggleCustomMode}
+                    disabled={isUploading}
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* File Upload - Only in create mode */}
