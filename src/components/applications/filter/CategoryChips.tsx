@@ -46,8 +46,7 @@ export const CategoryChips = memo(function CategoryChips({
   onCancelChecklist,
   isSavingChecklist
 }: CategoryChipsProps) {
-  console.log('categories', categories);
-  console.log("isClientView", isClientView);
+
   return (
     <div className="hidden md:flex flex-wrap items-center gap-3">
       {categories.map((category) => (

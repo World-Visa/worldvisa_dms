@@ -389,7 +389,7 @@ export default function ClientApplicationDetailsPageContent() {
               documentsLimit={documentsLimit}
               onDocumentsPageChange={handleDocumentsPageChange}
               isCategoryChanging={isCategoryChanging}
-              maxCompanies={5}
+              maxCompanies={10}
               companies={finalCompanies}
               onAddCompany={() => setIsAddCompanyDialogOpen(true)}
               onRemoveCompany={handleRemoveCompany}
@@ -448,7 +448,7 @@ export default function ClientApplicationDetailsPageContent() {
         onClose={() => setIsAddCompanyDialogOpen(false)}
         onAddCompany={handleAddCompany}
         existingCompanies={finalCompanies}
-        maxCompanies={5}
+        maxCompanies={10}
       />
 
       {/* Reupload Document Modal */}

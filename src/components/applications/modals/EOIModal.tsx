@@ -187,11 +187,6 @@ export function EOIModal({
       return;
     }
 
-    if (!state) {
-      toast.error('Please select a state.');
-      return;
-    }
-
     if (!point) {
       toast.error('Please select points.');
       return;
@@ -319,7 +314,7 @@ export function EOIModal({
 
           {/* State */}
           <div className="space-y-2">
-            <Label>State *</Label>
+            <Label>State</Label>
             <Combobox
               options={stateOptions}
               value={state}
