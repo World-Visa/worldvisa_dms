@@ -119,11 +119,12 @@ export async function deleteSampleDocument(
     headers.Authorization = `Bearer ${token}`;
   }
 
-  const url = `${ZOHO_BASE_URL}/visa_applications/${applicationId}/sample/${documentId}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/${applicationId}`;
 
   const response = await fetch(url, {
     method: 'DELETE',
     headers,
+    body: JSON.stringify({ document_id: documentId }),
   });
 
   return handleResponse<DeleteSampleDocumentResponse>(response);
