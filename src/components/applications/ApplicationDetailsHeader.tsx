@@ -3,7 +3,10 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import {
     DropdownMenu,
     DropdownMenuContent,
+    DropdownMenuGroup,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CheckCircle, RefreshCw, Download, Key, MoreVertical } from 'lucide-react';
@@ -15,6 +18,7 @@ interface ApplicationDetailsHeaderProps {
     isRefreshing: boolean;
     onDownloadAll: () => void;
     onResetPassword: () => void;
+    onActivateAccount?: () => void;
     userRole?: string;
 }
 
@@ -25,6 +29,7 @@ export function ApplicationDetailsHeader({
     isRefreshing,
     onDownloadAll,
     onResetPassword,
+    onActivateAccount,
     userRole,
 }: ApplicationDetailsHeaderProps) {
     const isAdmin = userRole !== 'client';
@@ -42,8 +47,8 @@ export function ApplicationDetailsHeader({
                             onClick={onPushForQualityCheck}
                             disabled={!areAllDocumentsApproved}
                             className={`flex items-center gap-2 cursor-pointer ${areAllDocumentsApproved
-                                    ? "bg-green-600 hover:bg-green-700 text-white"
-                                    : "opacity-50 cursor-not-allowed"
+                                ? "bg-green-600 hover:bg-green-700 text-white"
+                                : "opacity-50 cursor-not-allowed"
                                 }`}
                         >
                             <CheckCircle className="h-4 w-4" />
@@ -79,25 +84,39 @@ export function ApplicationDetailsHeader({
                             className="flex items-center gap-2 cursor-pointer"
                         >
                             <MoreVertical className="h-4 w-4" />
-                            <span className="hidden sm:inline">More</span>
+                            <span className="hidden sm:inline">Actions</span>
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                            onClick={onDownloadAll}
-                            disabled={!areAllDocumentsApproved}
-                            className="cursor-pointer"
-                        >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download All Documents
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                            onClick={onResetPassword}
-                            className="cursor-pointer"
-                        >
-                            <Key className="h-4 w-4 mr-2" />
-                            Reset Password
-                        </DropdownMenuItem>
+                    <DropdownMenuContent className="w-44 mt-1" align="end">
+                        <DropdownMenuGroup>
+                            <DropdownMenuLabel>Account</DropdownMenuLabel>
+                            <DropdownMenuItem
+                                onClick={onResetPassword}
+                                className="cursor-pointer hover:bg-gray-100"
+                            >
+                                Reset Password
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                                onClick={onActivateAccount ? () => onActivateAccount() : undefined}
+                                className="cursor-pointer hover:bg-gray-100"
+                            >
+                                Activate Account
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+
+                        <DropdownMenuGroup>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuLabel>Documents</DropdownMenuLabel>
+                            <DropdownMenuItem
+                                onClick={onDownloadAll}
+                                disabled={!areAllDocumentsApproved}
+                                className="cursor-pointer hover:bg-gray-100"
+                            >
+                                Download Documents
+                            </DropdownMenuItem>
+                        </DropdownMenuGroup>
+
+
                     </DropdownMenuContent>
                 </DropdownMenu>
             )}

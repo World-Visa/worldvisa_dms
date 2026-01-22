@@ -11,6 +11,7 @@ export function useApplicationModals() {
   const [isQualityCheckModalOpen, setIsQualityCheckModalOpen] = useState(false);
   const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
   const [isDownloadAllModalOpen, setIsDownloadAllModalOpen] = useState(false);
+  const [isActivateAccountSheetOpen, setIsActivateAccountSheetOpen] = useState(false);
 
   // Memoized handlers
   const openAddCompanyDialog = useCallback(() => {
@@ -63,6 +64,14 @@ export function useApplicationModals() {
     setIsDownloadAllModalOpen(false);
   }, []);
 
+  const openActivateAccountSheet = useCallback(() => {
+    setIsActivateAccountSheetOpen(true);
+  }, []);
+
+  const closeActivateAccountSheet = useCallback(() => {
+    setIsActivateAccountSheetOpen(false);
+  }, []);
+
   // Handlers for onOpenChange pattern (accept boolean)
   const setQualityCheckModalOpen = useCallback((open: boolean) => {
     setIsQualityCheckModalOpen(open);
@@ -76,6 +85,10 @@ export function useApplicationModals() {
     setIsDownloadAllModalOpen(open);
   }, []);
 
+  const setActivateAccountSheetOpen = useCallback((open: boolean) => {
+    setIsActivateAccountSheetOpen(open);
+  }, []);
+
   return {
     // States
     isAddCompanyDialogOpen,
@@ -86,7 +99,8 @@ export function useApplicationModals() {
     isQualityCheckModalOpen,
     isResetPasswordModalOpen,
     isDownloadAllModalOpen,
-    
+    isActivateAccountSheetOpen,
+
     // Handlers
     openAddCompanyDialog,
     closeAddCompanyDialog,
@@ -98,11 +112,14 @@ export function useApplicationModals() {
     closeResetPasswordModal,
     openDownloadAllModal,
     closeDownloadAllModal,
-    
+    openActivateAccountSheet,
+    closeActivateAccountSheet,
+
     // Setters for onOpenChange pattern
     setQualityCheckModalOpen,
     setResetPasswordModalOpen,
     setDownloadAllModalOpen,
+    setActivateAccountSheetOpen,
   };
 }
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { ActivateAccountSheet } from '@/components/applications/ActivateAccountSheet';
 import { AddCompanyDialog } from '@/components/applications/AddCompanyDialog';
 import { ApplicantDetails } from '@/components/applications/ApplicantDetails';
 import { ApplicationDetailsHeader } from '@/components/applications/ApplicationDetailsHeader';
@@ -339,6 +340,7 @@ export default function UnifiedApplicationDetailsPage({
             isRefreshing={isRefreshing}
             onDownloadAll={modals.openDownloadAllModal}
             onResetPassword={modals.openResetPasswordModal}
+            onActivateAccount={modals.openActivateAccountSheet}
             userRole={user?.role}
           />
         </div>
@@ -465,6 +467,13 @@ export default function UnifiedApplicationDetailsPage({
             isOpen={modals.isDownloadAllModalOpen}
             onOpenChange={modals.setDownloadAllModalOpen}
             leadId={application?.id || ''}
+          />
+
+          <ActivateAccountSheet
+            open={modals.isActivateAccountSheetOpen}
+            onOpenChange={modals.setActivateAccountSheetOpen}
+            leadId={application?.id || ''}
+            application={application}
           />
         </>
       )}
