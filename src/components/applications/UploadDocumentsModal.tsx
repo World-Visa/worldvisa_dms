@@ -292,7 +292,6 @@ export function UploadDocumentsModal({
       try {
         const finalDescription = getCompanyDescription(selectedDocumentCategory) || description;
         const finalCategory = getDocumentCategory(selectedDocumentType, selectedDocumentCategory);
-        
 
         // Upload all files at once with the appropriate API
         const uploadResult = isClientView 
