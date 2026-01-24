@@ -58,7 +58,7 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
 }: ChecklistTableHeaderProps) {
   return (
     <div className="flex flex-col gap-4">
-      <h2 className="text-base font-semibold">{title}</h2>
+      {/* <h2 className="text-base font-semibold">{title}</h2> */}
 
       {/* Show tabs for editing mode when not on "All" category */}
       {checklistState === 'editing' && selectedCategory !== 'all' && (
@@ -96,7 +96,7 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
             extractedCompanies={extractedCompanies}
           />
           
-          <DropdownMenu>
+          {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="ml-auto">
                 Columns <ChevronDown className="ml-2 h-4 w-4" />
@@ -108,14 +108,21 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
                   .getAllColumns()
                   .filter((column) => column.getCanHide())
                   .map((column) => {
+                    const canHide = column.getCanHide();
+                    const isVisible = column.getIsVisible();
+                    
                     return (
                       <DropdownMenuCheckboxItem
                         key={column.id}
                         className="capitalize"
-                        checked={column.getIsVisible()}
-                        onCheckedChange={(value) =>
-                          column.toggleVisibility(!!value)
-                        }
+                        checked={isVisible}
+                        disabled={!canHide}
+                        onCheckedChange={(value) => {
+                          // Safety check: only allow toggling if column can be hidden
+                          if (canHide) {
+                            column.toggleVisibility(!!value);
+                          }
+                        }}
                       >
                         {column.id === 'sno' ? 'S.No' :
                          column.id === 'category' ? 'Category' :
@@ -130,7 +137,7 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
                   })}
               </DropdownMenuGroup>
             </DropdownMenuContent>
-          </DropdownMenu>
+          </DropdownMenu> */}
         </div>
       </div>
     </div>

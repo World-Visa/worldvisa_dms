@@ -12,6 +12,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useDocumentStatusUpdate } from '@/hooks/useDocumentStatusUpdate';
 import { useAuth } from '@/hooks/useAuth';
 import { ReuploadDocumentModal } from './ReuploadDocumentModal';
+import { ReviewedDocumentAlertDialog } from './ReviewedDocumentAlertDialog';
 
 interface DocumentListModalProps {
   isOpen: boolean;
@@ -47,7 +48,13 @@ export function DocumentListModal({
   const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
   const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
   const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
-  
+  const [reviewedAlertOpen, setReviewedAlertOpen] = useState(false);
+  const [reviewedAlertDocument, setReviewedAlertDocument] = useState<{
+    id: string;
+    documentType: string;
+    category: string;
+  } | null>(null);
+
   const deleteDocumentMutation = useDeleteDocument();
   const queryClient = useQueryClient();
   const { user } = useAuth();
@@ -83,6 +90,8 @@ export function DocumentListModal({
       setSelectedReuploadDocument(null);
       setSelectedReuploadDocumentType('');
       setSelectedReuploadDocumentCategory('');
+      setReviewedAlertOpen(false);
+      setReviewedAlertDocument(null);
     }
   }, [isOpen]);
 
@@ -141,6 +150,28 @@ export function DocumentListModal({
     setSelectedReuploadDocumentCategory('');
   };
 
+  const handleClientReviewedDeleteClick = (doc: Document) => {
+    setReviewedAlertDocument({
+      id: doc._id,
+      documentType: doc.document_name || doc.document_type || 'Document',
+      category: doc.document_category || 'Other Documents',
+    });
+    setReviewedAlertOpen(true);
+  };
+
+  const handleReviewedAlertClose = () => {
+    setReviewedAlertOpen(false);
+    setReviewedAlertDocument(null);
+  };
+
+  const handleReviewedAlertReupload = () => {
+    const doc = reviewedAlertDocument;
+    handleReviewedAlertClose();
+    if (doc) {
+      handleOpenReuploadModal(doc.id, doc.documentType, doc.category);
+    }
+  };
+
   const handleCloseViewSheet = () => {
     setViewSheetOpen(false);
     setSelectedDocument(null);
@@ -189,7 +220,7 @@ export function DocumentListModal({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className={`max-w-2xl flex flex-col ${getModalHeight()}`}>
-        <DialogHeader className="flex-shrink-0">
+        <DialogHeader className="shrink-0">
           <DialogTitle>Documents - {documentType}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-y-auto space-y-4">
@@ -212,6 +243,9 @@ export function DocumentListModal({
                   onPatchToPending={(documentId) => handlePatchToPending(documentId)}
                   isPatching={patchingDocumentId === document._id}
                   onOpenReuploadModal={handleOpenReuploadModal}
+                  onClientReviewedDeleteClick={
+                    isClientView ? handleClientReviewedDeleteClick : undefined
+                  }
                 />
               ))}
             </div>
@@ -226,6 +260,13 @@ export function DocumentListModal({
         onConfirm={confirmDelete}
         documentName={documentToDelete?.name || ''}
         isDeleting={deletingDocumentId === documentToDelete?.id}
+      />
+
+      {/* Reviewed document alert (client): cannot delete, reupload instead */}
+      <ReviewedDocumentAlertDialog
+        isOpen={reviewedAlertOpen}
+        onClose={handleReviewedAlertClose}
+        onReupload={handleReviewedAlertReupload}
       />
 
       {/* View Document Sheet */}

@@ -22,7 +22,7 @@ export function useDocumentCommentCounts(documentIds: string[]) {
         const promises = documentIds.map(async (documentId) => {
           try {
             const response = await fetcher<GetCommentsResponse>(
-              `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/comments`
+              `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/comment`
             );
             
             if (response.status === 'error') {

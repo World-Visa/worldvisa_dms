@@ -40,7 +40,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
 
   return (
     <div
-      className={`w-96 border-l bg-gradient-to-b from-gray-50 to-white flex flex-col h-full ${className}`}
+      className={`w-96 border-l bg-linear-to-b from-gray-50 to-white flex flex-col h-full ${className}`}
     >
       {/* Header */}
       <div className="px-2 py-1 bg-white border-b">
@@ -130,7 +130,9 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
               </div>
             ) : (
               [...comments]
-                .sort((a, b) => b.created_at.localeCompare(a.created_at))
+                .sort((a, b) =>
+                  (b.created_at ?? "").localeCompare(a.created_at ?? "")
+                )
                 .map((comment) => (
                   <CommentItem
                     key={comment._id}

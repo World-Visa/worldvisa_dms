@@ -174,7 +174,7 @@ export async function GET(
   }
 }
 
-// POST /api/zoho_dms/visa_applications/documents/[documentId]/comments
+// POST /api/zoho_dms/visa_applications/documents/[documentId]/comment
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ documentId: string }> }
@@ -293,11 +293,7 @@ export async function POST(
     }
 
     // Create comment via Zoho API
-    // Based on the user's curl example, the correct endpoint is:
-    // /api/zoho_dms/visa_applications/documents/{documentId}/comment
     const zohoCommentUrl = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/comment`;
-
-
 
     try {
       const zohoResponse = await authenticatedFetch<{
@@ -371,21 +367,18 @@ export async function POST(
     } catch (zohoError) {
       console.error("Zoho API error during comment creation:", zohoError);
 
-      // If Zoho API is not available, we can't actually persist the comment
-      // Return a more specific error message
       return NextResponse.json(
         {
           status: "error",
           message:
             "Comment creation service is currently unavailable. Please try again later or contact support.",
         },
-        { status: 503 } // Service Unavailable
+        { status: 503 }
       );
     }
   } catch (error) {
     console.error("Add comment API error:", error);
 
-    // Log to Sentry
     Sentry.captureException(error, {
       tags: {
         operation: "add_document_comment",
@@ -407,7 +400,7 @@ export async function POST(
   }
 }
 
-// DELETE /api/zoho_dms/visa_applications/documents/[documentId]/comments
+// DELETE /api/zoho_dms/visa_applications/documents/[documentId]/comment
 export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ documentId: string }> }
@@ -438,7 +431,6 @@ export async function DELETE(
 
     const token = authHeader.substring(7);
 
-    // Parse and validate token
     const payload = parseToken(token);
     if (!payload) {
       return NextResponse.json(
@@ -450,7 +442,6 @@ export async function DELETE(
       );
     }
 
-    // Check if token is expired
     if (isTokenExpired(token)) {
       return NextResponse.json(
         {
@@ -461,11 +452,9 @@ export async function DELETE(
       );
     }
 
-    // Verify user role for comment deletion
     const role = getUserRole(token);
     const headerRole = request.headers.get("x-user-role");
 
-    // Check role from JWT token or custom header - allow admin, team_leader, master_admin, and client
     const isAuthorized =
       role === "admin" ||
       role === "team_leader" ||
@@ -486,11 +475,9 @@ export async function DELETE(
       );
     }
 
-    // Parse request body
     const body = await request.json();
     const { commentId, addedBy } = body as { commentId: string; addedBy?: string };
 
-    // Validate required fields
     if (!commentId) {
       return NextResponse.json(
         {
@@ -501,7 +488,6 @@ export async function DELETE(
       );
     }
 
-    // For client users, verify they can only delete their own comments
     if (role === "client" || headerRole === "client") {
       if (!addedBy) {
         return NextResponse.json(
@@ -513,7 +499,6 @@ export async function DELETE(
         );
       }
 
-      // Get current user info from token payload
       const currentUser = payload.username;
       if (addedBy !== currentUser) {
         return NextResponse.json(
@@ -526,8 +511,6 @@ export async function DELETE(
       }
     }
 
-    // Delete comment via Zoho API
-    // Based on the user's curl example: DELETE /visa_applications/documents/{documentId}/comment
     const zohoDeleteUrl = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/comment`;
 
     try {
@@ -545,12 +528,10 @@ export async function DELETE(
       });
 
       if (zohoResponse.success) {
-        const response = {
+        return NextResponse.json({
           status: "success" as const,
           message: "Comment deleted successfully",
-        };
-
-        return NextResponse.json(response);
+        });
       } else {
         return NextResponse.json(
           {
@@ -569,13 +550,12 @@ export async function DELETE(
           message:
             "Comment deletion service is currently unavailable. Please try again later or contact support.",
         },
-        { status: 503 } // Service Unavailable
+        { status: 503 }
       );
     }
   } catch (error) {
     console.error("Delete comment API error:", error);
 
-    // Log to Sentry
     Sentry.captureException(error, {
       tags: {
         operation: "delete_document_comment",
