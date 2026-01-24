@@ -88,6 +88,8 @@ export function SkillAssessmentLayout({
               }
               onCancelChecklist={onCancelChecklist}
               isSavingChecklist={checklistState.isBatchSaving}
+              checklistActions="link"
+              applicationId={applicationId}
             />
 
             {selectedCategory === 'submitted' ? (

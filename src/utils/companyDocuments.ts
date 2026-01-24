@@ -1,12 +1,5 @@
 import type { Document } from '@/types/applications';
 
-/**
- * Get all documents that belong to a specific company category.
- * 
- * @param companyCategory - The company category to match (e.g., "Oracle Company Documents")
- * @param documents - Array of documents to filter
- * @returns Array of documents that match the company category
- */
 export function getCompanyDocuments(
   companyCategory: string,
   documents: Document[]
@@ -24,5 +17,17 @@ export function getCompanyDocuments(
 
     // Exact match for company category
     return doc.document_category === companyCategory;
+  });
+}
+
+export function filterDocumentsWithValidIds(documents: Document[]): Document[] {
+  if (!Array.isArray(documents)) {
+    return [];
+  }
+
+  return documents.filter((doc) => {
+    return doc?._id && 
+           typeof doc._id === 'string' && 
+           doc._id.trim() !== '';
   });
 }

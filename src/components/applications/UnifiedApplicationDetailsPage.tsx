@@ -32,7 +32,7 @@ import { TooltipProvider } from '../ui/tooltip';
 import type { DocumentCategory } from '@/types/documents';
 import { areAllMandatoryDocumentsReviewed } from '@/utils/checklistValidation';
 import { useDeleteDocument } from '@/hooks/useMutationsDocuments';
-import { getCompanyDocuments } from '@/utils/companyDocuments';
+import { getCompanyDocuments, filterDocumentsWithValidIds } from '@/utils/companyDocuments';
 import { RemoveCompanyDialog } from '@/components/applications/RemoveCompanyDialog';
 import { toast } from 'sonner';
 import type { Company } from '@/types/documents';
@@ -314,76 +314,107 @@ export default function UnifiedApplicationDetailsPage({
     const companyDocuments = getCompanyDocuments(companyCategory, allDocuments || []);
 
     if (companyDocuments.length === 0) {
-      console.log('[RemoveCompany] No documents found, removing company directly');
       appState.handleRemoveCompany(company.name);
       setRemoveCompanyDialog({ isOpen: false, company: null, hasDocuments: false, documentCount: 0 });
       toast.success('Company removed successfully');
       return;
     }
 
-    console.log('[RemoveCompany] Starting deletion of', companyDocuments.length, 'documents');
+    // Filter out documents without valid IDs
+    const validDocuments = filterDocumentsWithValidIds(companyDocuments);
+    const invalidDocumentCount = companyDocuments.length - validDocuments.length;
+
+    if (invalidDocumentCount > 0) {
+      console.warn(`[RemoveCompany] Skipping ${invalidDocumentCount} document(s) with invalid or missing IDs`);
+    }
+
+    if (validDocuments.length === 0) {
+      appState.handleRemoveCompany(company.name);
+      setRemoveCompanyDialog({ isOpen: false, company: null, hasDocuments: false, documentCount: 0 });
+      toast.success('Company removed successfully');
+      return;
+    }
 
     // Set deleting state
     setIsDeletingDocuments(true);
 
     try {
-      // Delete documents sequentially
-      const deletionResults: Array<{ success: boolean; documentId: string; error?: string }> = [];
+      // Process each document individually, tracking results
+      const deletionResults: Array<{ success: boolean; documentId: string; fileName?: string; error?: string }> = [];
 
-      for (const doc of companyDocuments) {
+      for (const doc of validDocuments) {
+        // Additional inline validation right before mutation call
+        if (!doc._id || typeof doc._id !== 'string' || doc._id.trim() === '') {
+          deletionResults.push({
+            success: false,
+            documentId: doc._id || 'unknown',
+            fileName: doc.file_name,
+            error: 'Invalid document ID'
+          });
+          continue;
+        }
+
         try {
-          console.log('[RemoveCompany] Deleting document:', doc._id, doc.file_name);
           await deleteDocumentMutation.mutateAsync(doc._id);
-          deletionResults.push({ success: true, documentId: doc._id });
+          deletionResults.push({
+            success: true,
+            documentId: doc._id,
+            fileName: doc.file_name
+          });
         } catch (error) {
+          // Log but continue with other documents
           const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error('[RemoveCompany] Failed to delete document:', doc._id, errorMessage);
-          deletionResults.push({ success: false, documentId: doc._id, error: errorMessage });
-          
-          // Stop on first failure
-          throw new Error(`Failed to delete document "${doc.file_name}": ${errorMessage}`);
+          deletionResults.push({
+            success: false,
+            documentId: doc._id,
+            fileName: doc.file_name,
+            error: errorMessage
+          });
         }
       }
+      const successCount = deletionResults.filter(r => r.success).length;
+      const failureCount = deletionResults.filter(r => !r.success).length;
 
-      // All documents deleted successfully
-      console.log('[RemoveCompany] All documents deleted successfully, removing company');
-      
-      // Remove company
+      if (successCount === 0 && validDocuments.length > 0) {
+        setIsDeletingDocuments(false);
+        toast.error(
+          'Failed to delete all documents. Company was not removed. Please try again.'
+        );
+        return;
+      }
+
+      if (failureCount > 0) {
+        toast.warning(
+          `Company removed. ${successCount} document${successCount !== 1 ? 's' : ''} deleted successfully, but ${failureCount} document${failureCount !== 1 ? 's' : ''} could not be deleted.`
+        );
+      } else {
+        toast.success(`Company and ${successCount} document${successCount !== 1 ? 's' : ''} removed successfully`);
+      }
+
       appState.handleRemoveCompany(company.name);
 
-      // Close dialog and reset state
       setRemoveCompanyDialog({ isOpen: false, company: null, hasDocuments: false, documentCount: 0 });
       setIsDeletingDocuments(false);
-
-      // Show success toast
-      toast.success(`Company and ${documentCount} document${documentCount !== 1 ? 's' : ''} removed successfully`);
     } catch (error) {
-      // Error occurred during deletion
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[RemoveCompany] Error during document deletion:', errorMessage);
-      
       setIsDeletingDocuments(false);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[RemoveCompany] Unexpected error during document deletion:', errorMessage);
       
-      // Keep dialog open, show error
-      toast.error(`Failed to delete some documents. Company was not removed. Please try again.`);
+      toast.error('An unexpected error occurred. Company was not removed. Please try again.');
     }
   }, [removeCompanyDialog, allDocuments, appState, deleteDocumentMutation]);
 
-  // Handler to close remove company dialog
   const handleCloseRemoveCompanyDialog = useCallback(() => {
     if (isDeletingDocuments) {
-      // Prevent close during deletion
       return;
     }
     setRemoveCompanyDialog({ isOpen: false, company: null, hasDocuments: false, documentCount: 0 });
   }, [isDeletingDocuments]);
 
-  // Handler for direct company removal (no documents)
   const handleRemoveCompanyDirect = useCallback(() => {
     const { company } = removeCompanyDialog;
     if (!company) return;
 
-    console.log('[RemoveCompany] Removing company directly (no documents)');
     appState.handleRemoveCompany(company.name);
     setRemoveCompanyDialog({ isOpen: false, company: null, hasDocuments: false, documentCount: 0 });
     toast.success('Company removed successfully');

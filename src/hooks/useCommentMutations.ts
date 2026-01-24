@@ -5,6 +5,7 @@ import { tokenStorage } from '@/lib/auth';
 import { commentMonitor } from '@/lib/commentMonitoring';
 import * as Sentry from '@sentry/nextjs';
 import { toast } from 'sonner';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export function useAddComment(documentId: string) {
   const queryClient = useQueryClient();
@@ -15,7 +16,7 @@ export function useAddComment(documentId: string) {
       
       try {
         const response = await fetcher<AddCommentResponse>(
-          `/api/zoho_dms/visa_applications/documents/${documentId}/comments`,
+          `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/comments`,
           {
             method: 'POST',
             body: JSON.stringify({

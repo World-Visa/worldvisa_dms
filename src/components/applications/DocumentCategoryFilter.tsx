@@ -96,6 +96,9 @@ interface ExtendedDocumentCategoryFilterProps extends DocumentCategoryFilterProp
   onSaveChecklist?: () => void;
   onCancelChecklist?: () => void;
   isSavingChecklist?: boolean;
+  /** When 'link', show Create/Edit checklist links to /checklist instead of inline actions */
+  checklistActions?: 'inline' | 'link';
+  applicationId?: string;
 }
 
 export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
@@ -118,7 +121,9 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
   onStartEditingChecklist,
   onSaveChecklist,
   onCancelChecklist,
-  isSavingChecklist = false
+  isSavingChecklist = false,
+  checklistActions = 'inline',
+  applicationId,
 }: ExtendedDocumentCategoryFilterProps) {
   const categories = useMemo(
     () =>
@@ -178,6 +183,8 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
           onSaveChecklist={onSaveChecklist}
           onCancelChecklist={onCancelChecklist}
           isSavingChecklist={isSavingChecklist}
+          checklistActions={checklistActions}
+          applicationId={applicationId}
         />
       </div>
 
@@ -198,6 +205,8 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
         onSaveChecklist={onSaveChecklist}
         onCancelChecklist={onCancelChecklist}
         isSavingChecklist={isSavingChecklist}
+        checklistActions={checklistActions}
+        applicationId={applicationId}
       />
     </div>
   );

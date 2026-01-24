@@ -305,7 +305,7 @@ const DocumentChecklistTableComponent = ({
   );
 
   // Get document IDs for comment counts
-  const documentIds = useMemo(() => 
+  const documentIds = useMemo(() =>
     filteredItems
       .filter(item => item.isUploaded && item.uploadedDocument)
       .map(item => (item.uploadedDocument as Document)?._id)
@@ -646,7 +646,7 @@ const DocumentChecklistTableComponent = ({
                 />
               </div>
             </div>
-            
+
             {item.description && item.description.trim() && (
               <div className="ml-6">
                 {checklistState === "editing" ? (
@@ -674,7 +674,7 @@ const DocumentChecklistTableComponent = ({
                 )}
               </div>
             )}
-            
+
             {checklistState === "editing" && (!item.description || !item.description.trim()) && (
               <div className="ml-6">
                 <Button
@@ -975,7 +975,7 @@ const DocumentChecklistTableComponent = ({
                   </div>
                 )
               ) : (
-                <div 
+                <div
                   className="flex items-center justify-end"
                   onClick={(e) => e.stopPropagation()}
                 >
@@ -1159,9 +1159,9 @@ const DocumentChecklistTableComponent = ({
                       {header.isPlaceholder
                         ? null
                         : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
                     </TableHead>
                   );
                 })}
@@ -1260,8 +1260,8 @@ const DocumentChecklistTableComponent = ({
         const parts = key.split('-');
         const checklistId = parts.slice(2, -1).join('-'); // Handle cases where category or documentType contains dashes
         const item = filteredItems.find(
-          i => `${i.category}-${i.documentType}-${i.checklist_id || 'new'}` === key.replace(/-\d+$/, '') || 
-          (i.checklist_id === checklistId && i.category === parts[0] && i.documentType === parts[1])
+          i => `${i.category}-${i.documentType}-${i.checklist_id || 'new'}` === key.replace(/-\d+$/, '') ||
+            (i.checklist_id === checklistId && i.category === parts[0] && i.documentType === parts[1])
         );
         if (!item) return null;
         return (

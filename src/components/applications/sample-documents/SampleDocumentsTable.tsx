@@ -111,16 +111,15 @@ export function SampleDocumentsTable({ applicationId, isClientView = false }: Sa
 
   return (
     <>
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle>Sample Documents</CardTitle>
-          {!isClientView && groupedDocuments.length > 1 &&(
+      <div className='space-y-8'>
+        <div className="flex flex-row items-center justify-between">
+          <p className="text-base font-bold">Sample Documents</p>
+          {!isClientView && (
             <Button variant="default" size="sm" onClick={() => setIsUploadOpen(true)}>
               Upload Sample Document
             </Button>
           )}
-        </CardHeader>
-        <CardContent>
+        </div>
           {isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
@@ -195,8 +194,7 @@ export function SampleDocumentsTable({ applicationId, isClientView = false }: Sa
               </Table>
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       <SampleDocumentsUploadModal applicationId={applicationId} isOpen={isUploadOpen} onClose={() => setIsUploadOpen(false)} />
 

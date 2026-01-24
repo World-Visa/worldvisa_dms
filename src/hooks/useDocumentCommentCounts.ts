@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetcher } from '@/lib/fetcher';
 import { GetCommentsResponse } from '@/types/comments';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 interface DocumentCommentCountsResponse {
   status: 'success' | 'error';
@@ -21,7 +22,7 @@ export function useDocumentCommentCounts(documentIds: string[]) {
         const promises = documentIds.map(async (documentId) => {
           try {
             const response = await fetcher<GetCommentsResponse>(
-              `/api/zoho_dms/visa_applications/documents/${documentId}/comments`
+              `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/comments`
             );
             
             if (response.status === 'error') {
