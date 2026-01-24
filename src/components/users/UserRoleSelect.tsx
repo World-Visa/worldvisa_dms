@@ -15,7 +15,7 @@ interface UserRoleSelectProps {
   disabled?: boolean;
 }
 
-const ROLE_OPTIONS = [
+export const ROLE_OPTIONS = [
   { value: 'master_admin', label: 'Master Admin' },
   { value: 'admin', label: 'Admin' },
   { value: 'team_leader', label: 'Team Leader' },

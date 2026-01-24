@@ -1,33 +1,44 @@
 'use client';
 
-import React, { memo, useState } from 'react';
+import React, { memo, useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface ResetPasswordDialogProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
   username: string;
   onResetPassword: (username: string, newPassword: string) => void;
   isResetting?: boolean;
 }
 
 export const ResetPasswordDialog = memo(function ResetPasswordDialog({
+  open,
+  onOpenChange,
   username,
   onResetPassword,
   isResetting = false,
 }: ResetPasswordDialogProps) {
-  const [isOpen, setIsOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  useEffect(() => {
+    if (!open) {
+      setNewPassword('');
+      setConfirmPassword('');
+      setShowNewPassword(false);
+      setShowConfirmPassword(false);
+    }
+  }, [open]);
 
   const handleReset = () => {
     if (newPassword !== confirmPassword) {
@@ -38,32 +49,23 @@ export const ResetPasswordDialog = memo(function ResetPasswordDialog({
       console.error('Password cannot be empty');
       return;
     }
-    
+
     onResetPassword(username, newPassword);
     handleClose();
   };
 
   const handleClose = () => {
-    setIsOpen(false);
     setNewPassword('');
     setConfirmPassword('');
     setShowNewPassword(false);
     setShowConfirmPassword(false);
+    onOpenChange(false);
   };
 
   const isFormValid = newPassword.trim() && confirmPassword.trim() && newPassword === confirmPassword;
 
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
-      <DialogTrigger asChild>
-        <Button 
-          variant="outline" 
-          size="sm"
-          disabled={isResetting}
-        >
-          Reset Password
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>
@@ -97,7 +99,7 @@ export const ResetPasswordDialog = memo(function ResetPasswordDialog({
               </Button>
             </div>
           </div>
-          
+
           <div className="space-y-2">
             <label className="text-sm font-medium">Confirm Password</label>
             <div className="relative">

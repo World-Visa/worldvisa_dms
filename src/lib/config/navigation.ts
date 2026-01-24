@@ -1,4 +1,4 @@
-import { FileText, FileCheck, ClipboardList } from 'lucide-react';
+import { FileText, FileCheck, ClipboardList, Users } from 'lucide-react';
 
 export interface NavigationTab {
   id: string;
@@ -10,10 +10,10 @@ export interface NavigationTab {
 // Define all available navigation items
 export const NAVIGATION_ITEMS = {
   DASHBOARD: {
-    id: 'dashboard',
-    label: 'Dashboard',
-    href: '/admin/dashboard',
-    icon: FileText,
+    id: 'manage-users',
+    label: 'Manage Admins',
+    href: '/admin/manage-users',
+    icon: Users,
   },
   APPLICATIONS: {
     id: 'applications',
@@ -23,7 +23,7 @@ export const NAVIGATION_ITEMS = {
   },
   REQUESTED_DOCS: {
     id: 'requested-docs',
-    label: 'Review-Requested Docs',
+    label: 'Review Requested Docs',
     href: '/admin/requested-docs',
     icon: FileText,
   },

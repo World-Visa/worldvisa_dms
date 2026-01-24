@@ -1,6 +1,6 @@
 'use client';
 
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useState } from 'react';
 import { useAdminUsers } from '@/hooks/useAdminUsers';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserManagement } from '@/hooks/useUserManagement';
@@ -11,10 +11,12 @@ import { Button } from '@/components/ui/button';
 import { UserTable } from './UserTable';
 import { CreateUserDialog } from './CreateUserDialog';
 import { DeleteUserDialog } from './DeleteUserDialog';
+import { ResetPasswordDialog } from './ResetPasswordDialog';
 import { LoadingState, ErrorState, EmptyState } from './UserManagementStates';
 
 const ManageUsers = memo(function ManageUsers() {
   const { user } = useAuth();
+  const [userToResetPassword, setUserToResetPassword] = useState<string | null>(null);
   const {
     data: adminUsers,
     isLoading: isLoadingAdmins,
@@ -69,50 +71,53 @@ const ManageUsers = memo(function ManageUsers() {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-        <div className="flex items-center gap-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isLoadingAdmins}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw className={`h-4 w-4 ${isLoadingAdmins ? 'animate-spin' : ''}`} />
-            <span>Refresh</span>
-          </Button>
+      <div className="flex items-center gap-4 justify-end">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isLoadingAdmins}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isLoadingAdmins ? 'animate-spin' : ''}`} />
+          <span>Refresh</span>
+        </Button>
 
-          <CreateUserDialog
-            onCreateUser={handleCreateUser}
-            isCreating={isCreatingUser}
-          />
-        </div>
+        <CreateUserDialog
+          onCreateUser={handleCreateUser}
+          isCreating={isCreatingUser}
+        />
       </div>
 
       {/* User Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            System Users
-            <span className="ml-2 text-sm font-normal text-muted-foreground">
-              ({adminUsers.length} user{adminUsers.length !== 1 ? 's' : ''})
-            </span>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <UserTable
-            users={adminUsers}
-            currentUser={user}
-            onRoleChange={handleRoleChange}
-            onResetPassword={handleResetPassword}
-            onDeleteUser={openDeleteDialog}
-            isUpdatingRole={isUpdatingRole}
-            isResettingPassword={isResettingPassword}
-            isDeletingUser={isDeletingUser}
-          />
-        </CardContent>
-      </Card>
+      <div className="space-y-6">
+        <h2 className="text-xl font-bold text-gray-900 mb-2">
+          Admin Users
+          <span className="ml-2 text-sm font-normal text-muted-foreground">
+            ({adminUsers.length} user{adminUsers.length !== 1 ? 's' : ''})
+          </span>
+        </h2>
+        <UserTable
+          users={adminUsers}
+          currentUser={user}
+          onRoleChange={handleRoleChange}
+          onResetPassword={handleResetPassword}
+          onDeleteUser={openDeleteDialog}
+          onOpenResetPassword={(username: string) => setUserToResetPassword(username)}
+          isUpdatingRole={isUpdatingRole}
+          isResettingPassword={isResettingPassword}
+          isDeletingUser={isDeletingUser}
+        />
+      </div>
+
+      {/* Reset Password Dialog */}
+      <ResetPasswordDialog
+        open={!!userToResetPassword}
+        onOpenChange={(open) => { if (!open) setUserToResetPassword(null); }}
+        username={userToResetPassword ?? ''}
+        onResetPassword={handleResetPassword}
+        isResetting={isResettingPassword}
+      />
 
       {/* Delete User Dialog */}
       <DeleteUserDialog

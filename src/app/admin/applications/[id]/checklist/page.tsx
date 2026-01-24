@@ -4,7 +4,7 @@ import { getApplicationById } from '@/lib/api/getApplicationById';
 import { getAllApplicationDocuments } from '@/lib/api/getApplicationDocuments';
 import { getChecklist } from '@/lib/api/checklist';
 import { createServerQueryClient } from '@/lib/react-query/server';
-import { ChecklistPage } from '@/features/checklist/ChecklistPage';
+import { ChecklistPage } from '@/components/checklist/ChecklistPage';
 
 interface ChecklistRoutePageProps {
   params: Promise<{ id: string }>;
