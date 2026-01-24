@@ -31,6 +31,11 @@ import { useApplicationDetails } from '@/hooks/useApplicationDetails';
 import { TooltipProvider } from '../ui/tooltip';
 import type { DocumentCategory } from '@/types/documents';
 import { areAllMandatoryDocumentsReviewed } from '@/utils/checklistValidation';
+import { useDeleteDocument } from '@/hooks/useMutationsDocuments';
+import { getCompanyDocuments } from '@/utils/companyDocuments';
+import { RemoveCompanyDialog } from '@/components/applications/RemoveCompanyDialog';
+import { toast } from 'sonner';
+import type { Company } from '@/types/documents';
 
 const OutcomeLayout = lazy(() => 
   import('@/components/applications/layouts/OutcomeLayout').then(mod => ({ default: mod.OutcomeLayout }))
@@ -149,7 +154,23 @@ export default function UnifiedApplicationDetailsPage({
 
   const [documentsPage, setDocumentsPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showSampleDocuments, setShowSampleDocuments] = useState(false);
   const maxCompanies = 10;
+
+  // State for remove company dialog with document check
+  const [removeCompanyDialog, setRemoveCompanyDialog] = useState<{
+    isOpen: boolean;
+    company: Company | null;
+    hasDocuments: boolean;
+    documentCount: number;
+  }>({
+    isOpen: false,
+    company: null,
+    hasDocuments: false,
+    documentCount: 0,
+  });
+  const [isDeletingDocuments, setIsDeletingDocuments] = useState(false);
+  const deleteDocumentMutation = useDeleteDocument();
 
   useEffect(() => {
     setDocumentsPage(1);
@@ -212,48 +233,161 @@ export default function UnifiedApplicationDetailsPage({
     modals.openReuploadModal(documentToReupload, documentType, category);
   }, [documents, modals]);
 
-  const handleCancelChecklist = useCallback(async () => {
-    appState.setIsCategoryChanging(true);
-    try {
-      checklistState.cancelChecklistOperation();
-      await appState.handleCategoryChange("submitted");
-    } finally {
-      appState.setIsCategoryChanging(false);
-    }
+  const handleCancelChecklist = useCallback(() => {
+    checklistState.cancelChecklistOperation();
+    appState.handleCategoryChange("submitted");
   }, [appState, checklistState]);
 
-  const handleCategoryChangeWithChecklist = useCallback(async (category: DocumentCategory) => {
-    await appState.handleCategoryChange(category);
+  const handleCategoryChangeWithChecklist = useCallback((category: DocumentCategory) => {
+    appState.handleCategoryChange(category);
   }, [appState]);
 
-  const handleStartCreatingChecklist = useCallback(async () => {
-    appState.setIsCategoryChanging(true);
-    try {
-      checklistState.startCreatingChecklist();
-      await appState.handleCategoryChange("all");
-    } finally {
-      appState.setIsCategoryChanging(false);
-    }
+  const handleStartCreatingChecklist = useCallback(() => {
+    checklistState.startCreatingChecklist();
+    appState.handleCategoryChange("all");
   }, [appState, checklistState]);
 
-  const handleStartEditingChecklist = useCallback(async () => {
-    appState.setIsCategoryChanging(true);
+  const handleStartEditingChecklist = useCallback(() => {
+    checklistState.startEditingChecklist();
+    let targetCategory: DocumentCategory = "checklist";
+    if (appState.selectedCategory.includes("_company_documents")) {
+      targetCategory = appState.selectedCategory as DocumentCategory;
+    } else if (appState.selectedCategory === "submitted") {
+      const firstCategory = checklistState.checklistCategories[0];
+      if (firstCategory) {
+        targetCategory = firstCategory.id as DocumentCategory;
+      }
+    }
+    appState.handleCategoryChange(targetCategory);
+  }, [appState, checklistState]);
+
+  // Handler to check for documents and open remove company dialog
+  const handleRemoveCompanyWithDocuments = useCallback((companyName: string, companyCategory: string) => {
+    
+    // Find the company object
+    const company = appState.companies.find(
+      (c) => c.name.toLowerCase() === companyName.toLowerCase()
+    );
+
+    if (!company) {
+      console.error('[RemoveCompany] Company not found:', companyName);
+      toast.error('Company not found');
+      return;
+    }
+
+    // Check if company has documents
+    const companyDocuments = getCompanyDocuments(companyCategory, allDocuments || []);
+    const hasDocuments = companyDocuments.length > 0;
+    const documentCount = companyDocuments.length;
+
+    console.log('[RemoveCompany] Company documents found:', documentCount);
+
+    // Open dialog with company info
+    setRemoveCompanyDialog({
+      isOpen: true,
+      company,
+      hasDocuments,
+      documentCount,
+    });
+  }, [appState.companies, allDocuments]);
+
+  // Handler to delete all documents and then remove company
+  const handleRemoveDocumentsAndCompany = useCallback(async () => {
+    const { company, hasDocuments, documentCount } = removeCompanyDialog;
+    
+    if (!company) {
+      console.error('[RemoveCompany] No company selected');
+      return;
+    }
+
+    if (!hasDocuments || documentCount === 0) {
+      // No documents, just remove company
+      console.log('[RemoveCompany] No documents, removing company directly');
+      appState.handleRemoveCompany(company.name);
+      setRemoveCompanyDialog({ isOpen: false, company: null, hasDocuments: false, documentCount: 0 });
+      toast.success('Company removed successfully');
+      return;
+    }
+
+    // Find company category
+    const companyCategory = company.category || `${company.name} Company Documents`;
+    const companyDocuments = getCompanyDocuments(companyCategory, allDocuments || []);
+
+    if (companyDocuments.length === 0) {
+      console.log('[RemoveCompany] No documents found, removing company directly');
+      appState.handleRemoveCompany(company.name);
+      setRemoveCompanyDialog({ isOpen: false, company: null, hasDocuments: false, documentCount: 0 });
+      toast.success('Company removed successfully');
+      return;
+    }
+
+    console.log('[RemoveCompany] Starting deletion of', companyDocuments.length, 'documents');
+
+    // Set deleting state
+    setIsDeletingDocuments(true);
+
     try {
-      checklistState.startEditingChecklist();
-      let targetCategory: DocumentCategory = "checklist";
-      if (appState.selectedCategory.includes("_company_documents")) {
-        targetCategory = appState.selectedCategory as DocumentCategory;
-      } else if (appState.selectedCategory === "submitted") {
-        const firstCategory = checklistState.checklistCategories[0];
-        if (firstCategory) {
-          targetCategory = firstCategory.id as DocumentCategory;
+      // Delete documents sequentially
+      const deletionResults: Array<{ success: boolean; documentId: string; error?: string }> = [];
+
+      for (const doc of companyDocuments) {
+        try {
+          console.log('[RemoveCompany] Deleting document:', doc._id, doc.file_name);
+          await deleteDocumentMutation.mutateAsync(doc._id);
+          deletionResults.push({ success: true, documentId: doc._id });
+        } catch (error) {
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error('[RemoveCompany] Failed to delete document:', doc._id, errorMessage);
+          deletionResults.push({ success: false, documentId: doc._id, error: errorMessage });
+          
+          // Stop on first failure
+          throw new Error(`Failed to delete document "${doc.file_name}": ${errorMessage}`);
         }
       }
-      await appState.handleCategoryChange(targetCategory);
-    } finally {
-      appState.setIsCategoryChanging(false);
+
+      // All documents deleted successfully
+      console.log('[RemoveCompany] All documents deleted successfully, removing company');
+      
+      // Remove company
+      appState.handleRemoveCompany(company.name);
+
+      // Close dialog and reset state
+      setRemoveCompanyDialog({ isOpen: false, company: null, hasDocuments: false, documentCount: 0 });
+      setIsDeletingDocuments(false);
+
+      // Show success toast
+      toast.success(`Company and ${documentCount} document${documentCount !== 1 ? 's' : ''} removed successfully`);
+    } catch (error) {
+      // Error occurred during deletion
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[RemoveCompany] Error during document deletion:', errorMessage);
+      
+      setIsDeletingDocuments(false);
+      
+      // Keep dialog open, show error
+      toast.error(`Failed to delete some documents. Company was not removed. Please try again.`);
     }
-  }, [appState, checklistState]);
+  }, [removeCompanyDialog, allDocuments, appState, deleteDocumentMutation]);
+
+  // Handler to close remove company dialog
+  const handleCloseRemoveCompanyDialog = useCallback(() => {
+    if (isDeletingDocuments) {
+      // Prevent close during deletion
+      return;
+    }
+    setRemoveCompanyDialog({ isOpen: false, company: null, hasDocuments: false, documentCount: 0 });
+  }, [isDeletingDocuments]);
+
+  // Handler for direct company removal (no documents)
+  const handleRemoveCompanyDirect = useCallback(() => {
+    const { company } = removeCompanyDialog;
+    if (!company) return;
+
+    console.log('[RemoveCompany] Removing company directly (no documents)');
+    appState.handleRemoveCompany(company.name);
+    setRemoveCompanyDialog({ isOpen: false, company: null, hasDocuments: false, documentCount: 0 });
+    toast.success('Company removed successfully');
+  }, [removeCompanyDialog, appState]);
 
   const backPath = useMemo(() => 
     isSpouseApplication
@@ -380,6 +514,8 @@ export default function UnifiedApplicationDetailsPage({
           <LayoutChips
             selectedLayout={layoutState.selectedLayout}
             onLayoutChange={layoutState.handleLayoutChange}
+            showSampleDocuments={showSampleDocuments}
+            onToggleSampleDocuments={() => setShowSampleDocuments(!showSampleDocuments)}
           />
 
           {layoutState.selectedLayout === 'skill-assessment' ? (
@@ -392,17 +528,17 @@ export default function UnifiedApplicationDetailsPage({
               companies={appState.companies}
               onAddCompany={modals.openAddCompanyDialog}
               onRemoveCompany={appState.handleRemoveCompany}
+              onRemoveCompanyWithCheck={handleRemoveCompanyWithDocuments}
               maxCompanies={maxCompanies}
               checklistState={checklistState}
               onStartCreatingChecklist={handleStartCreatingChecklist}
               onStartEditingChecklist={handleStartEditingChecklist}
               onSaveChecklist={checklistState.saveChecklist}
               onCancelChecklist={handleCancelChecklist}
-              isCategoryChanging={appState.isCategoryChanging}
               applicationId={applicationId}
-              documentsPage={documentsPage}
-              onDocumentsPageChange={setDocumentsPage}
               onReuploadDocument={handleReuploadDocument}
+              showSampleDocuments={showSampleDocuments}
+              onToggleSampleDocuments={() => setShowSampleDocuments(!showSampleDocuments)}
             />
           ) : layoutState.selectedLayout === 'outcome' ? (
             <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
@@ -432,6 +568,19 @@ export default function UnifiedApplicationDetailsPage({
         existingCompanies={appState.companies}
         maxCompanies={maxCompanies}
       />
+
+      {removeCompanyDialog.company && (
+        <RemoveCompanyDialog
+          isOpen={removeCompanyDialog.isOpen}
+          onClose={handleCloseRemoveCompanyDialog}
+          onConfirm={handleRemoveCompanyDirect}
+          company={removeCompanyDialog.company}
+          hasDocuments={removeCompanyDialog.hasDocuments}
+          documentCount={removeCompanyDialog.documentCount}
+          isDeleting={isDeletingDocuments}
+          onRemoveDocumentsAndCompany={handleRemoveDocumentsAndCompany}
+        />
+      )}
 
       <ReuploadDocumentModal
         isOpen={modals.isReuploadModalOpen}

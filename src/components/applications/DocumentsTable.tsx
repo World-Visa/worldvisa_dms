@@ -1,6 +1,20 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -10,7 +24,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useApplicationDocumentsPaginated } from "@/hooks/useApplicationDocumentsPaginated";
 import { useClientDeleteDocument } from "@/hooks/useClientDeleteDocument";
 import { useDocumentCommentCounts } from "@/hooks/useDocumentCommentCounts";
 import {
@@ -23,16 +36,22 @@ import { Document as ApplicationDocument } from "@/types/applications";
 import { ClientDocumentsResponse } from "@/types/client";
 import { formatDate } from "@/utils/format";
 import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  getPaginationRowModel,
+  useReactTable,
+} from "@tanstack/react-table";
+import {
   AlertCircle,
   CheckCircle,
   Clock,
   Eye,
   FileText,
-  Trash2,
+  MoreHorizontal,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
-import { ApplicationsPagination } from "./ApplicationsPagination";
+import { useMemo, useState } from "react";
 import { CommentIcon } from "./CommentIcon";
 import { DeleteDocumentDialog } from "./DeleteDocumentDialog";
 import { ReuploadDocumentModal } from "./ReuploadDocumentModal";
@@ -41,9 +60,11 @@ import ViewDocumentSheet from "./ViewDocumentSheet";
 
 interface DocumentsTableProps {
   applicationId: string;
-  currentPage?: number;
-  limit?: number; // Limit of documents per page
-  onPageChange?: (page: number) => void;
+  // Admin: pass full documents list
+  documents?: ApplicationDocument[];
+  // Admin loading/error states
+  isLoading?: boolean;
+  error?: Error | null;
   // Client privilege props
   isClientView?: boolean;
   // Client-specific data (when isClientView is true)
@@ -61,9 +82,9 @@ interface DocumentsTableProps {
 
 export function DocumentsTable({
   applicationId,
-  currentPage = 1,
-  limit = 10,
-  onPageChange,
+  documents: adminDocuments,
+  isLoading: adminIsLoading,
+  error: adminError,
   isClientView = false,
   clientDocumentsData,
   clientIsLoading = false,
@@ -96,27 +117,16 @@ export function DocumentsTable({
   const clientMoveDocumentMutation = useMoveDocument();
   const agentMoveDocumentMutation = useMoveDocumentAgent();
 
-  const {
-    data: adminDocumentsData,
-    isLoading: adminIsLoading,
-    error: adminError,
-    refetch,
-  } = useApplicationDocumentsPaginated(applicationId, currentPage, limit);
-
   // Use appropriate data based on view type
-  const documentsData = isClientView ? clientDocumentsData : adminDocumentsData;
   const isLoading = isClientView ? clientIsLoading : adminIsLoading;
   const error = isClientView ? clientError : adminError;
 
-  const documents = isClientView
-    ? (documentsData as ClientDocumentsResponse)?.data?.documents || []
-    : documentsData?.data || [];
-  const pagination = documentsData?.pagination;
+  const documents: ApplicationDocument[] = isClientView
+    ? ((clientDocumentsData?.data?.documents || []) as unknown as ApplicationDocument[])
+    : (adminDocuments || []);
 
   // Get document IDs for comment counts
-  const documentIds = (documents as ApplicationDocument[]).map(
-    (doc) => doc._id
-  );
+  const documentIds = documents.map((doc) => doc._id);
   const { data: commentCounts = {} } = useDocumentCommentCounts(documentIds);
 
   const handleDeleteDocument = (documentId: string, fileName: string) => {
@@ -139,7 +149,7 @@ export function DocumentsTable({
     documentType: string,
     category: string
   ) => {
-    const documentToReupload = (documents as ApplicationDocument[])?.find(
+    const documentToReupload = documents.find(
       (doc) => doc._id === documentId
     );
     if (!documentToReupload) {
@@ -164,15 +174,11 @@ export function DocumentsTable({
     if (!documentToDelete) return;
     try {
       if (isClientView) {
-        // await clientDeleteDocumentMutation.mutateAsync({
-        //   documentId: documentToDelete.id,
-        // });
         await clientMoveDocumentMutation.mutateAsync(documentToDelete.id);
         onClientDeleteSuccess?.();
       } else {
-        // await deleteDocumentMutation.mutateAsync(documentToDelete.id);
         await agentMoveDocumentMutation.mutateAsync(documentToDelete.id);
-        refetch();
+        // Note: Parent should handle refetch if needed
       }
       setDeleteDialogOpen(false);
       setDocumentToDelete(null);
@@ -229,6 +235,295 @@ export function DocumentsTable({
     }
   };
 
+  // Column definitions
+  const columns = useMemo<ColumnDef<ApplicationDocument>[]>(
+    () => [
+      {
+        id: "sno",
+        header: "S.No",
+        cell: ({ row, table }) => {
+          const pageIndex = table.getState().pagination.pageIndex;
+          const pageSize = table.getState().pagination.pageSize;
+          return (
+            <div className="font-medium">
+              {pageIndex * pageSize + row.index + 1}
+            </div>
+          );
+        },
+      },
+      {
+        id: "documentName",
+        header: "Document Name",
+        cell: ({ row }) => {
+          const document = row.original;
+          return (
+            <div className="flex flex-col space-y-1">
+              <div className="flex items-center space-x-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                <span
+                  className="truncate max-w-[150px]"
+                  title={document.file_name}
+                >
+                  {document.file_name.length > 20
+                    ? `${document.file_name.substring(0, 20)}...`
+                    : document.file_name}
+                </span>
+              </div>
+              {document.status === "rejected" && document.reject_message && (
+                <div className="mt-1 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 max-w-[200px]">
+                  <div className="flex items-start gap-1">
+                    <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 shrink-0" />
+                    <div>
+                      <strong>Rejection Reason:</strong>{" "}
+                      {document.reject_message}
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        id: "documentType",
+        header: "Document Type",
+        cell: ({ row }) => {
+          const document = row.original;
+          const documentType = document.document_name;
+
+          if (documentType) {
+            const formattedType = documentType
+              .replace(/_/g, " ")
+              .replace(/\//g, "/");
+            return (
+              <Badge
+                variant="secondary"
+                className="text-xs max-w-[120px] font-medium truncate font-lexend"
+                title={formattedType}
+              >
+                {formattedType.length > 15
+                  ? `${formattedType.substring(0, 15)}...`
+                  : formattedType}
+              </Badge>
+            );
+          } else {
+            return (
+              <Badge
+                variant="outline"
+                className="text-xs text-muted-foreground"
+              >
+                Not specified
+              </Badge>
+            );
+          }
+        },
+      },
+      {
+        id: "category",
+        header: "Category",
+        cell: ({ row }) => {
+          const document = row.original;
+          let documentCategory = document.document_category;
+
+          // If no document_category field, try to infer from filename
+          if (!documentCategory && document.file_name) {
+            const fileName = document.file_name.toLowerCase();
+
+            if (
+              fileName.includes("payslip") ||
+              fileName.includes("salary") ||
+              fileName.includes("experience") ||
+              fileName.includes("work") ||
+              fileName.includes("company") ||
+              fileName.includes("employment")
+            ) {
+              documentCategory = "Company Documents";
+            } else if (
+              fileName.includes("passport") ||
+              fileName.includes("aadhaar") ||
+              fileName.includes("aadhar") ||
+              fileName.includes("visa") ||
+              fileName.includes("birth") ||
+              fileName.includes("marriage")
+            ) {
+              documentCategory = "Identity Documents";
+            } else if (
+              fileName.includes("degree") ||
+              fileName.includes("certificate") ||
+              fileName.includes("10th") ||
+              fileName.includes("12th") ||
+              fileName.includes("bachelor") ||
+              fileName.includes("master") ||
+              fileName.includes("diploma") ||
+              fileName.includes("ielts") ||
+              fileName.includes("pte") ||
+              fileName.includes("toefl")
+            ) {
+              documentCategory = "Education Documents";
+            } else {
+              documentCategory = "Other Documents";
+            }
+          }
+
+          if (documentCategory) {
+            const {
+              badgeVariant,
+              badgeClassName,
+              displayText,
+            } = getCategoryDisplayProps(documentCategory);
+            return (
+              <Badge
+                variant={
+                  badgeVariant as
+                    | "default"
+                    | "outline"
+                    | "secondary"
+                    | "destructive"
+                    | null
+                    | undefined
+                }
+                className={`text-xs max-w-[140px] font-medium truncate font-lexend ${badgeClassName}`}
+                title={documentCategory}
+              >
+                {displayText}
+              </Badge>
+            );
+          } else {
+            return (
+              <Badge
+                variant="outline"
+                className="text-xs text-muted-foreground"
+              >
+                Not specified
+              </Badge>
+            );
+          }
+        },
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: ({ row }) => {
+          const document = row.original;
+          const statusConfig = getStatusConfig(document.status);
+          return (
+            <div
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${statusConfig.className}`}
+            >
+              <span className={statusConfig.iconClassName}>
+                {statusConfig.icon}
+              </span>
+              <span className="font-lexend">{statusConfig.label}</span>
+            </div>
+          );
+        },
+      },
+      {
+        id: "comments",
+        header: "Comments",
+        cell: ({ row }) => {
+          const document = row.original;
+          return (
+            <CommentIcon
+              documentId={document._id}
+              commentCount={commentCounts[document._id] || 0}
+              size="sm"
+            />
+          );
+        },
+      },
+      {
+        id: "submittedAt",
+        header: "Submitted At",
+        cell: ({ row }) => {
+          const document = row.original;
+          return formatDate(document.uploaded_at, "time");
+        },
+      },
+      {
+        id: "actions",
+        header: () => <div className="text-right">Actions</div>,
+        cell: ({ row }) => {
+          const document = row.original;
+          const isDeleting =
+            isClientView
+              ? clientDeleteDocumentMutation.isPending ||
+                document.status === "approved"
+              : deleteDocumentMutation.isPending;
+
+          return (
+            <div 
+              className="flex items-center justify-end"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="h-8 w-8 p-0"
+                    aria-label="Open menu"
+                  >
+                    <span className="sr-only">Open menu</span>
+                    <MoreHorizontal className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem
+                    onClick={() => handleViewDocument(document)}
+                  >
+                    View
+                  </DropdownMenuItem>
+                  {document.status === "reviewed" && (
+                    <DropdownMenuItem
+                      onClick={() => {
+                        const documentType =
+                          document.document_name ||
+                          document.document_type ||
+                          "Document";
+                        const category =
+                          document.document_category || "Other Documents";
+                        handleOpenReuploadModal(
+                          document._id,
+                          documentType,
+                          category
+                        );
+                      }}
+                    >
+                      Reupload
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    variant="destructive"
+                    onClick={() =>
+                      handleDeleteDocument(document._id, document.file_name)
+                    }
+                    disabled={isDeleting}
+                  >
+                    Delete
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          );
+        },
+      },
+    ],
+    [commentCounts, isClientView, clientDeleteDocumentMutation.isPending, deleteDocumentMutation.isPending]
+  );
+
+  const table = useReactTable({
+    data: documents,
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      },
+    },
+  });
+
   if (isLoading) {
     return (
       <Card>
@@ -265,7 +560,7 @@ export function DocumentsTable({
     );
   }
 
-  if (!documents || (documents as unknown[])?.length === 0) {
+  if (!documents || documents.length === 0) {
     return (
       <Card>
         <CardHeader>
@@ -283,267 +578,108 @@ export function DocumentsTable({
 
   return (
     <>
-      <Card className="w-full">
-        <CardContent className="p-0">
-          <Table className="w-full">
-            <TableHeader>
-              <TableRow>
-                <TableHead>S.No</TableHead>
-                <TableHead>Document Name</TableHead>
-                <TableHead>Document Type</TableHead>
-                <TableHead>Category</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Comments</TableHead>
-                <TableHead>Submitted At</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {(documents as ApplicationDocument[])?.map(
-                (document: ApplicationDocument, index: number) => (
-                  <TableRow key={document._id}>
-                    <TableCell className="font-medium">
-                      {(pagination?.currentPage
-                        ? (pagination.currentPage - 1) * pagination.limit
-                        : 0) +
-                        index +
-                        1}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex flex-col space-y-1">
-                        <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-muted-foreground" />
-                          <span
-                            className="truncate max-w-[150px]"
-                            title={document.file_name}
-                          >
-                            {document.file_name.length > 20
-                              ? `${document.file_name.substring(0, 20)}...`
-                              : document.file_name}
-                          </span>
-                        </div>
-                        {/* Show rejection message for rejected documents */}
-                        {document.status === "rejected" &&
-                          document.reject_message && (
-                            <div className="mt-1 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700 max-w-[200px]">
-                              <div className="flex items-start gap-1">
-                                <AlertCircle className="h-3 w-3 text-red-500 mt-0.5 flex-shrink-0" />
-                                <div>
-                                  <strong>Rejection Reason:</strong>{" "}
-                                  {document.reject_message}
-                                </div>
-                              </div>
-                            </div>
+      <div className="w-full">
+          {/* Table wrapper with border */}
+          <div className="overflow-hidden rounded-md border">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => {
+                      return (
+                        <TableHead key={header.id}>
+                          {header.isPlaceholder
+                            ? null
+                            : flexRender(
+                                header.column.columnDef.header,
+                                header.getContext()
+                              )}
+                        </TableHead>
+                      );
+                    })}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
+                {table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className="cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => handleViewDocument(row.original)}
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
                           )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="font-lexend ">
-                      {(() => {
-                        // Get document type from API response - use document_name field
-                        const documentType = document.document_name;
-
-                        if (documentType) {
-                          const formattedType = documentType
-                            .replace(/_/g, " ")
-                            .replace(/\//g, "/");
-                          return (
-                            <Badge
-                              variant="secondary"
-                              className="text-xs max-w-[120px] font-medium truncate"
-                              title={formattedType}
-                            >
-                              {formattedType.length > 15
-                                ? `${formattedType.substring(0, 15)}...`
-                                : formattedType}
-                            </Badge>
-                          );
-                        } else {
-                          return (
-                            <Badge
-                              variant="outline"
-                              className="text-xs text-muted-foreground"
-                            >
-                              Not specified
-                            </Badge>
-                          );
-                        }
-                      })()}
-                    </TableCell>
-                    <TableCell className="font-lexend">
-                      {(() => {
-                        // Try to determine document category with fallback logic
-                        let documentCategory = document.document_category;
-
-                        // If no document_category field, try to infer from filename or document type
-                        if (!documentCategory && document.file_name) {
-                          const fileName = document.file_name.toLowerCase();
-
-                          // Check for company-related documents
-                          if (
-                            fileName.includes("payslip") ||
-                            fileName.includes("salary") ||
-                            fileName.includes("experience") ||
-                            fileName.includes("work") ||
-                            fileName.includes("company") ||
-                            fileName.includes("employment")
-                          ) {
-                            documentCategory = "Company Documents";
-                          }
-                          // Check for identity documents
-                          else if (
-                            fileName.includes("passport") ||
-                            fileName.includes("aadhaar") ||
-                            fileName.includes("aadhar") ||
-                            fileName.includes("visa") ||
-                            fileName.includes("birth") ||
-                            fileName.includes("marriage")
-                          ) {
-                            documentCategory = "Identity Documents";
-                          }
-                          // Check for education documents
-                          else if (
-                            fileName.includes("degree") ||
-                            fileName.includes("certificate") ||
-                            fileName.includes("10th") ||
-                            fileName.includes("12th") ||
-                            fileName.includes("bachelor") ||
-                            fileName.includes("master") ||
-                            fileName.includes("diploma") ||
-                            fileName.includes("ielts") ||
-                            fileName.includes("pte") ||
-                            fileName.includes("toefl")
-                          ) {
-                            documentCategory = "Education Documents";
-                          }
-                          // Default to Other Documents
-                          else {
-                            documentCategory = "Other Documents";
-                          }
-                        }
-
-                        if (documentCategory) {
-                          const {
-                            category,
-                            badgeVariant,
-                            badgeClassName,
-                            displayText,
-                          } = getCategoryDisplayProps(documentCategory);
-                          return (
-                            <Badge
-                              variant={
-                                badgeVariant as
-                                  | "default"
-                                  | "outline"
-                                  | "secondary"
-                                  | "destructive"
-                                  | null
-                                  | undefined
-                              }
-                              className={`text-xs max-w-[140px] font-medium truncate ${badgeClassName}`}
-                              title={category}
-                            >
-                              {displayText}
-                            </Badge>
-                          );
-                        } else {
-                          return (
-                            <Badge
-                              variant="outline"
-                              className="text-xs text-muted-foreground"
-                            >
-                              Not specified
-                            </Badge>
-                          );
-                        }
-                      })()}
-                    </TableCell>
-                    <TableCell>
-                      {(() => {
-                        const statusConfig = getStatusConfig(document.status);
-                        return (
-                          <div
-                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${statusConfig.className}`}
-                          >
-                            <span className={statusConfig.iconClassName}>
-                              {statusConfig.icon}
-                            </span>
-                            <span className="font-lexend">
-                              {statusConfig.label}
-                            </span>
-                          </div>
-                        );
-                      })()}
-                    </TableCell>
-                    <TableCell>
-                      <CommentIcon
-                        documentId={document._id}
-                        commentCount={commentCounts[document._id] || 0}
-                        size="sm"
-                      />
-                    </TableCell>
-                    <TableCell>
-                      {formatDate(document.uploaded_at, "time")}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end space-x-2 w-full">
-                        <Button
-                          variant="link"
-                          size="sm"
-                          onClick={() => handleViewDocument(document)}
-                          className="cursor-pointer"
-                        >
-                          view
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            if (document.status === "reviewed") {
-                              const documentType =
-                                document.document_name ||
-                                document.document_type ||
-                                "Document";
-                              const category =
-                                document.document_category || "Other Documents";
-                              handleOpenReuploadModal(
-                                document._id,
-                                documentType,
-                                category
-                              );
-                            } else {
-                              handleDeleteDocument(
-                                document._id,
-                                document.file_name
-                              );
-                            }
-                          }}
-                          disabled={
-                            isClientView
-                              ? clientDeleteDocumentMutation.isPending ||
-                                document.status === "approved"
-                              : deleteDocumentMutation.isPending
-                          }
-                          className="cursor-pointer"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell
+                      colSpan={columns.length}
+                      className="h-24 text-center"
+                    >
+                      No results.
                     </TableCell>
                   </TableRow>
-                )
-              )}
-            </TableBody>
-          </Table>
-          {/* Pagination */}
-          {pagination && (
-            <ApplicationsPagination
-              currentPage={pagination.currentPage}
-              totalRecords={pagination.totalRecords}
-              limit={pagination.limit}
-              onPageChange={onPageChange || (() => {})}
-            />
-          )}
-        </CardContent>
+                )}
+              </TableBody>
+            </Table>
+          </div>
+
+          {/* Pagination controls */}
+          <div className="flex items-center justify-between space-x-2 py-4">
+            <div className="flex items-center space-x-2">
+              <p className="text-sm font-medium">Rows per page</p>
+              <Select
+                value={`${table.getState().pagination.pageSize}`}
+                onValueChange={(value) => {
+                  table.setPageSize(Number(value));
+                }}
+              >
+                <SelectTrigger className="h-8 w-[70px]">
+                  <SelectValue placeholder={table.getState().pagination.pageSize} />
+                </SelectTrigger>
+                <SelectContent side="top">
+                  {[10, 25, 50, 100].map((pageSize) => (
+                    <SelectItem key={pageSize} value={`${pageSize}`}>
+                      {pageSize}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex items-center space-x-6 lg:space-x-8">
+              <div className="flex items-center justify-center text-sm font-medium">
+                Page {table.getState().pagination.pageIndex + 1} of{" "}
+                {table.getPageCount()}
+              </div>
+              <div className="flex items-center space-x-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.previousPage()}
+                  disabled={!table.getCanPreviousPage()}
+                >
+                  Previous
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => table.nextPage()}
+                  disabled={!table.getCanNextPage()}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          </div>
         <UploadDocumentsModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
@@ -552,7 +688,7 @@ export function DocumentsTable({
           isClientView={isClientView}
           onSuccess={onUploadSuccess}
         />
-      </Card>
+      </div>
 
       {/* Delete Confirmation Dialog */}
       <DeleteDocumentDialog

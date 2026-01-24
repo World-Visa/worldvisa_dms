@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export interface AdminUser {
   _id: string;
@@ -14,7 +15,7 @@ interface AdminUsersResponse {
 const fetchAdminUsers = async (): Promise<AdminUser[]> => {
   try {
     const response = await fetch(
-      "https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/users/all"
+      `${ZOHO_BASE_URL}/users/all`
     );
 
     if (!response.ok) {

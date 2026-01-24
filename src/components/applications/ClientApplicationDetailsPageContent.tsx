@@ -25,8 +25,12 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
 import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
+import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
 import { parseCompaniesFromDocuments } from '@/utils/companyParsing';
 import { useStage2Documents } from "@/hooks/useStage2Documents";
+import { useClientDeleteDocument } from "@/hooks/useClientDeleteDocument";
+import { getCompanyDocuments } from "@/utils/companyDocuments";
+import { toast } from "sonner";
 
 export default function ClientApplicationDetailsPageContent() {
   const params = useParams();
@@ -39,7 +43,6 @@ export default function ClientApplicationDetailsPageContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>("submitted");
   const [documentsPage, setDocumentsPage] = useState(1);
   const documentsLimit = 10;
-  const [isCategoryChanging, setIsCategoryChanging] = useState(false);
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
@@ -53,6 +56,20 @@ export default function ClientApplicationDetailsPageContent() {
     setSelectedReuploadDocumentCategory,
   ] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const [removeCompanyDialog, setRemoveCompanyDialog] = useState<{
+    isOpen: boolean;
+    company: Company | null;
+    hasDocuments: boolean;
+    documentCount: number;
+  }>({
+    isOpen: false,
+    company: null,
+    hasDocuments: false,
+    documentCount: 0,
+  });
+  const [isDeletingDocuments, setIsDeletingDocuments] = useState(false);
+  const clientDeleteDocumentMutation = useClientDeleteDocument();
 
   const handleLayoutChange = useCallback((layout: ApplicationLayout) => {
     setSelectedLayout(layout);
@@ -211,16 +228,9 @@ export default function ClientApplicationDetailsPageContent() {
     setDocumentsPage(page);
   };
 
-  const handleCategoryChange = async (category: string) => {
-    setIsCategoryChanging(true);
-    try {
-      setSelectedCategory(category);
-      setDocumentsPage(1);
-
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    } finally {
-      setIsCategoryChanging(false);
-    }
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setDocumentsPage(1);
   };
 
   const handleDeleteSuccess = () => {
@@ -236,13 +246,127 @@ export default function ClientApplicationDetailsPageContent() {
     setIsAddCompanyDialogOpen(false);
   };
 
-  const handleRemoveCompany = (companyName: string) => {
+  const handleRemoveCompany = useCallback((companyName: string) => {
     setCompanies((prev) =>
       prev.filter(
         (company) => company.name.toLowerCase() !== companyName.toLowerCase()
       )
     );
-  };
+  }, []);
+
+  const handleRemoveCompanyWithDocuments = useCallback(
+    (companyName: string, companyCategory: string) => {
+      const company = finalCompanies.find(
+        (c) => c.name.toLowerCase() === companyName.toLowerCase()
+      );
+      if (!company) {
+        toast.error("Company not found");
+        return;
+      }
+      const allDocuments = allDocumentsData?.data?.documents ?? [];
+      const companyDocuments = getCompanyDocuments(
+        companyCategory,
+        (allDocuments ?? []) as unknown as Document[]
+      );
+      const hasDocuments = companyDocuments.length > 0;
+      const documentCount = companyDocuments.length;
+      setRemoveCompanyDialog({
+        isOpen: true,
+        company,
+        hasDocuments,
+        documentCount,
+      });
+    },
+    [finalCompanies, allDocumentsData?.data?.documents]
+  );
+
+  const handleRemoveDocumentsAndCompany = useCallback(async () => {
+    const { company, hasDocuments, documentCount } = removeCompanyDialog;
+    if (!company) return;
+
+    if (!hasDocuments || documentCount === 0) {
+      handleRemoveCompany(company.name);
+      setRemoveCompanyDialog({
+        isOpen: false,
+        company: null,
+        hasDocuments: false,
+        documentCount: 0,
+      });
+      toast.success("Company removed successfully");
+      return;
+    }
+
+    const companyCategory = company.category ?? `${company.name} Company Documents`;
+    const allDocuments = allDocumentsData?.data?.documents ?? [];
+    const companyDocuments = getCompanyDocuments(
+      companyCategory,
+      (allDocuments ?? []) as unknown as Document[]
+    );
+    if (companyDocuments.length === 0) {
+      handleRemoveCompany(company.name);
+      setRemoveCompanyDialog({
+        isOpen: false,
+        company: null,
+        hasDocuments: false,
+        documentCount: 0,
+      });
+      toast.success("Company removed successfully");
+      return;
+    }
+
+    setIsDeletingDocuments(true);
+    try {
+      for (const doc of companyDocuments) {
+        await clientDeleteDocumentMutation.mutateAsync({
+          documentId: doc._id,
+        });
+      }
+      handleRemoveCompany(company.name);
+      setRemoveCompanyDialog({
+        isOpen: false,
+        company: null,
+        hasDocuments: false,
+        documentCount: 0,
+      });
+      setIsDeletingDocuments(false);
+      toast.success(
+        `Company and ${documentCount} document${documentCount !== 1 ? "s" : ""} removed successfully`
+      );
+    } catch {
+      setIsDeletingDocuments(false);
+      toast.error(
+        "Failed to delete some documents. Company was not removed. Please try again."
+      );
+    }
+  }, [
+    removeCompanyDialog,
+    allDocumentsData?.data?.documents,
+    clientDeleteDocumentMutation,
+    handleRemoveCompany,
+  ]);
+
+  const handleCloseRemoveCompanyDialog = useCallback(() => {
+    if (isDeletingDocuments) return;
+    setRemoveCompanyDialog({
+      isOpen: false,
+      company: null,
+      hasDocuments: false,
+      documentCount: 0,
+    });
+  }, [isDeletingDocuments]);
+
+  const handleRemoveCompanyDirect = useCallback(() => {
+    const { company } = removeCompanyDialog;
+    if (!company) return;
+    handleRemoveCompany(company.name);
+    setRemoveCompanyDialog({
+      isOpen: false,
+      company: null,
+      hasDocuments: false,
+      documentCount: 0,
+    });
+    toast.success("Company removed successfully");
+  }, [removeCompanyDialog, handleRemoveCompany]);
 
   const handleReuploadDocument = (
     documentId: string,
@@ -385,14 +509,11 @@ export default function ClientApplicationDetailsPageContent() {
               applicationId={applicationId}
               selectedCategory={selectedCategory}
               onCategoryChange={handleCategoryChange}
-              documentsPage={documentsPage}
-              documentsLimit={documentsLimit}
-              onDocumentsPageChange={handleDocumentsPageChange}
-              isCategoryChanging={isCategoryChanging}
               maxCompanies={10}
               companies={finalCompanies}
               onAddCompany={() => setIsAddCompanyDialogOpen(true)}
               onRemoveCompany={handleRemoveCompany}
+              onRemoveCompanyWithCheck={handleRemoveCompanyWithDocuments}
               documentsResponse={documentsData}
               isDocumentsLoading={isDocumentsLoading}
               documentsError={documentsError}
@@ -450,6 +571,19 @@ export default function ClientApplicationDetailsPageContent() {
         existingCompanies={finalCompanies}
         maxCompanies={10}
       />
+
+      {removeCompanyDialog.company && (
+        <RemoveCompanyDialog
+          isOpen={removeCompanyDialog.isOpen}
+          onClose={handleCloseRemoveCompanyDialog}
+          onConfirm={handleRemoveCompanyDirect}
+          company={removeCompanyDialog.company}
+          hasDocuments={removeCompanyDialog.hasDocuments}
+          documentCount={removeCompanyDialog.documentCount}
+          isDeleting={isDeletingDocuments}
+          onRemoveDocumentsAndCompany={handleRemoveDocumentsAndCompany}
+        />
+      )}
 
       {/* Reupload Document Modal */}
       <ReuploadDocumentModal

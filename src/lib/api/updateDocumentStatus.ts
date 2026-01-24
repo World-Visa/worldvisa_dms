@@ -1,6 +1,5 @@
 import { fetcher } from '../fetcher';
-
-const ZOHO_BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export interface UpdateDocumentStatusRequest {
   status: 'pending' | 'reviewed' | 'request_review' | 'approved' | 'rejected';

@@ -30,7 +30,6 @@ export function SaveChecklistButton({
   errorMessage
 }: SaveChecklistButtonProps) {
   const buttonText = mode === 'creating' ? 'Save Checklist' : 'Save Checklist Changes';
-  const buttonColor = mode === 'creating' ? 'green' : 'blue';
   
   // Enhanced button text with count information
   const displayText = selectedCount !== undefined 
@@ -42,13 +41,10 @@ export function SaveChecklistButton({
       <Button
         onClick={onClick}
         disabled={disabled || isLoading}
+        variant="default"
         className={cn(
-          'cursor-pointer inline-flex items-center gap-2 px-6 py-3 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
-          'border-2 focus:outline-none focus:ring-2',
+          'cursor-pointer inline-flex items-center gap-2 px-6 py-3 text-sm font-medium transition-all duration-200 ease-in-out',
           'w-full md:w-auto',
-          buttonColor === 'green' 
-            ? 'bg-green-600 hover:bg-green-700 border-green-600 text-white focus:ring-green-200'
-            : 'bg-blue-600 hover:bg-blue-700 border-blue-600 text-white focus:ring-blue-200',
           (disabled || isLoading) && 'opacity-50 cursor-not-allowed',
           className
         )}

@@ -218,14 +218,47 @@ export const ApplicationsClient = memo(function ApplicationsClient({
       {/* Filters Section */}
       <div className="flex flex-col w-full sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900 font-lexend mb-2 flex items-center gap-2">
+          <h2 className="text-2xl font-bold text-gray-900  mb-2 flex items-center gap-2">
             Visa Applications
           </h2>
-          <p className="text-gray-600">
+          <p className="text-muted-foreground">
             Manage and review all visa applications assigned to you.
           </p>
         </div>
-        <div className="w-full sm:w-auto sm:max-w-lg">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-2 cursor-pointer"
+        >
+          <RefreshCw
+            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+          />
+          <span className="hidden sm:inline">Refresh</span>
+        </Button>
+      </div>
+
+      {/* Filters Toggle Section */}
+      <div className="mb-6 w-full flex justify-between gap-4 items-start">
+        <div className='flex gap-2 shrink-0'>
+          <Button
+            variant={!recentActivity ? "default" : "outline"}
+            className='rounded-full py-3 px-6 cursor-pointer'
+            onClick={handleRecentActivityToggle}
+          >
+            All applications
+          </Button>
+          <Button
+            variant={recentActivity ? "default" : "outline"}
+            className='rounded-full py-3 px-6 cursor-pointer'
+            onClick={handleRecentActivityToggle}
+          >
+            Recent activities
+          </Button>
+        </div>
+
+        <div className="flex-1 min-w-0 flex justify-end">
           <ApplicationsFilters
             search={search}
             searchType={searchType}
@@ -242,48 +275,14 @@ export const ApplicationsClient = memo(function ApplicationsClient({
             onClearFilters={handleClearFilters}
             onKeyPress={handleKeyPress}
           />
-          <div className="mt-2">
-            <Badge variant="outline">
-              Total applications:&nbsp;
-              {displayLoading ? '...' : totalApplications.toLocaleString()}
-            </Badge>
-          </div>
         </div>
       </div>
-
-      {/* Filters Toggle Section */}
-      <div className="mb-6">
-        <div className='flex justify-between gap-2'>
-          <div className='flex gap-2'>
-            <Button
-              variant={!recentActivity ? "default" : "outline"}
-              className='rounded-full py-3 px-6 cursor-pointer'
-              onClick={handleRecentActivityToggle}
-            >
-              All applications
-            </Button>
-            <Button
-              variant={recentActivity ? "default" : "outline"}
-              className='rounded-full py-3 px-6 cursor-pointer'
-              onClick={handleRecentActivityToggle}
-            >
-              Recent activities
-            </Button>
-          </div>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
-        </div>
+      
+      <div className="mb-4 flex justify-end">
+        <Badge variant="secondary">
+          Total applications:&nbsp;
+          {displayLoading ? '...' : totalApplications.toLocaleString()}
+        </Badge>
       </div>
 
       {/* Error State */}

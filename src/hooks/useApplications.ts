@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import qs from "query-string";
 import { fetcher } from "@/lib/fetcher";
 import { ApplicationsResponse, ApplicationsFilters } from "@/types/applications";
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export const useApplications = (filters: ApplicationsFilters) => {
   const transformedFilters = {
@@ -14,7 +15,7 @@ export const useApplications = (filters: ApplicationsFilters) => {
   };  
   
   const query = qs.stringify(transformedFilters, { skipNull: true, skipEmptyString: true });
-  const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications?${query}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications?${query}`;
 
   const isRecentActivity = filters.recentActivity === true;
   

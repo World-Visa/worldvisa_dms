@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetcher } from "@/lib/fetcher";
 import { toast } from "sonner";
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 // 1. Update User Role
 interface UpdateRolePayload {
@@ -10,7 +11,7 @@ interface UpdateRolePayload {
 
 const updateUserRole = async (payload: UpdateRolePayload) => {
   return fetcher(
-    `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/users/update_role`,
+    `${ZOHO_BASE_URL}/users/update_role`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -43,7 +44,7 @@ interface ResetPasswordPayload {
 
 const resetUserPassword = async (payload: ResetPasswordPayload) => {
   return fetcher(
-    "https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/users/reset",
+    `${ZOHO_BASE_URL}/users/reset`,
     {
       method: "POST",
       body: JSON.stringify({
@@ -74,7 +75,7 @@ interface CreateUserPayload {
 }
 
 const createUser = async (payload: CreateUserPayload) => {
-  return fetcher("https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/users/signup", {
+  return fetcher(`${ZOHO_BASE_URL}/users/signup`, {
     method: "POST",
     body: JSON.stringify({
       username: payload.username,
@@ -110,7 +111,7 @@ interface DeleteUserResponse {
 
 const deleteUser = async (payload: DeleteUserPayload): Promise<DeleteUserResponse> => {
   return fetcher<DeleteUserResponse>(
-    "https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/users/remove",
+    `${ZOHO_BASE_URL}/users/remove`,
     {
       method: "DELETE",
       body: JSON.stringify({
@@ -151,10 +152,6 @@ export function useDeleteUser() {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
     },
     onError: (error: Error, { username }, context) => {
-      // If the mutation fails, use the context returned from onMutate to roll back
-      if (context?.previousUsers) {
-        queryClient.setQueryData(["admin-users"], context.previousUsers);
-      }
       toast.error(`Failed to delete user "${username}": ${error.message}`);
     },
     onSettled: () => {

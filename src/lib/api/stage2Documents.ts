@@ -8,9 +8,7 @@ import type {
    UploadStage2DocumentResponse,
    DeleteStage2DocumentResponse,
 } from "@/types/stage2Documents";
-
-const ZOHO_BASE_URL =
-   "https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms";
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export async function fetchStage2Documents(
    applicationId: string,

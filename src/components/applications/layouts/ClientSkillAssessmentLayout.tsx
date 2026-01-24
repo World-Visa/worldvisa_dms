@@ -19,15 +19,12 @@ import { generateChecklistCategories } from '@/lib/checklist/categoryUtils';
 interface ClientSkillAssessmentLayoutProps {
   applicationId: string;
   selectedCategory: DocumentCategory | string;
-  onCategoryChange: (category: DocumentCategory | string) => Promise<void> | void;
-  documentsPage: number;
-  documentsLimit: number;
-  onDocumentsPageChange: (page: number) => void;
-  isCategoryChanging: boolean;
+  onCategoryChange: (category: DocumentCategory | string) => void;
   maxCompanies?: number;
   companies: Company[];
   onAddCompany: () => void;
   onRemoveCompany: (companyName: string) => void;
+  onRemoveCompanyWithCheck?: (companyName: string, companyCategory: string) => void;
   documentsResponse?: ClientDocumentsResponse;
   isDocumentsLoading: boolean;
   documentsError: Error | null;
@@ -51,14 +48,11 @@ export function ClientSkillAssessmentLayout({
   applicationId,
   selectedCategory,
   onCategoryChange,
-  documentsPage,
-  documentsLimit,
-  onDocumentsPageChange,
-  isCategoryChanging,
   maxCompanies = 5,
   companies,
   onAddCompany,
   onRemoveCompany,
+  onRemoveCompanyWithCheck,
   documentsResponse,
   isDocumentsLoading,
   documentsError,
@@ -167,13 +161,14 @@ export function ClientSkillAssessmentLayout({
             companies={companies}
             onAddCompany={onAddCompany}
             onRemoveCompany={onRemoveCompany}
+            onRemoveCompanyWithCheck={onRemoveCompanyWithCheck}
+            documents={allDocuments}
             maxCompanies={maxCompanies}
             isClientView
             submittedDocumentsCount={submittedDocumentsCount}
             checklistState={checklistState}
             checklistCategories={checklistCategories}
             hasCompanyDocuments={hasCompanyDocuments}
-            isCategoryChanging={isCategoryChanging}
           />
 
           {(() => {
@@ -196,9 +191,6 @@ export function ClientSkillAssessmentLayout({
               return (
                 <DocumentsTable
                   applicationId={applicationId}
-                  currentPage={documentsPage}
-                  limit={documentsLimit}
-                  onPageChange={onDocumentsPageChange}
                   isClientView
                   clientDocumentsData={documentsResponse}
                   clientIsLoading={isDocumentsLoading}
@@ -214,9 +206,6 @@ export function ClientSkillAssessmentLayout({
               return (
                 <DocumentsTable
                   applicationId={applicationId}
-                  currentPage={documentsPage}
-                  limit={documentsLimit}
-                  onPageChange={onDocumentsPageChange}
                   isClientView
                   clientDocumentsData={documentsResponse}
                   clientIsLoading={isDocumentsLoading}

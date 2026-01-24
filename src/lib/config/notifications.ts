@@ -1,10 +1,7 @@
-/**
- * Notification System Configuration
- * Centralized configuration for notification API and WebSocket endpoints
- */
+import { API_BASE_URL } from './api';
 
 // Production API base URL for notifications
-export const NOTIFICATION_API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'https://worldvisagroup-19a980221060.herokuapp.com';
+export const NOTIFICATION_API_BASE_URL = API_BASE_URL;
 
 // API endpoints
 export const NOTIFICATION_ENDPOINTS = {

@@ -8,9 +8,7 @@ import {
   ZohoComment,
 } from "@/types/comments";
 import * as Sentry from "@sentry/nextjs";
-
-const ZOHO_BASE_URL =
-  "https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms";
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 
 // GET /api/zoho_dms/visa_applications/documents/[documentId]/comment

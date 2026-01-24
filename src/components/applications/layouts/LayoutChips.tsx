@@ -1,3 +1,5 @@
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 
 export type ApplicationLayout = 'skill-assessment' | 'outcome' | 'eoi' | 'invitation';
@@ -6,6 +8,9 @@ interface LayoutChipsProps {
   selectedLayout: ApplicationLayout;
   onLayoutChange: (layout: ApplicationLayout) => void;
   availableLayouts?: ApplicationLayout[];
+  badges?: Record<ApplicationLayout, number | undefined>;
+  showSampleDocuments?: boolean;
+  onToggleSampleDocuments?: () => void;
 }
 
 const layoutChips: { id: ApplicationLayout; label: string }[] = [
@@ -15,31 +20,45 @@ const layoutChips: { id: ApplicationLayout; label: string }[] = [
   { id: 'invitation', label: 'Invitation' },
 ];
 
-export function LayoutChips({ selectedLayout, onLayoutChange, availableLayouts }: LayoutChipsProps) {
+export function LayoutChips({ selectedLayout, onLayoutChange, availableLayouts, badges, showSampleDocuments, onToggleSampleDocuments }: LayoutChipsProps) {
   // Filter chips based on availableLayouts if provided, otherwise show all (backward compatible)
   const chipsToShow = availableLayouts
     ? layoutChips.filter((chip) => availableLayouts.includes(chip.id))
     : layoutChips;
 
+  // Wrapper to convert string from Tabs to ApplicationLayout type
+  const handleValueChange = (value: string) => {
+    onLayoutChange(value as ApplicationLayout);
+  };
+
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b pb-4">
-      {chipsToShow.map((chip) => {
-        const isActive = selectedLayout === chip.id;
-        return (
-          <Button
-            key={chip.id}
-            variant={isActive ? "default" : "outline"}
-            onClick={() => onLayoutChange(chip.id)}
-            className={`px-8 py-5 duration-200 active:scale-95 transition-transform cursor-pointer ${
-              isActive
-                ? "bg-blue-600 hover:bg-blue-700  text-white shadow-sm"
-                : "hover:bg-gray-50"
-            }`}
-          >
-            {chip.label}
-          </Button>
-        );
-      })}
+    <div className="flex items-center justify-between">
+      <Tabs value={selectedLayout} onValueChange={handleValueChange}>
+        <TabsList className="h-11 **:data-[slot=badge]:bg-gray-50 **:data-[slot=badge]:size-6 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 ">
+          {chipsToShow.map((chip) => (
+            <TabsTrigger 
+              key={chip.id} 
+              value={chip.id} 
+              className="px-4 text-sm cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+            >
+              {chip.label}
+              {badges?.[chip.id] !== undefined && (
+                <Badge variant="secondary">{badges[chip.id]}</Badge>
+              )}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
+      {selectedLayout === 'skill-assessment' && onToggleSampleDocuments && (
+        <Button
+          variant={showSampleDocuments ? "secondary" : "outline"}
+          size="sm"
+          onClick={onToggleSampleDocuments}
+          className="cursor-pointer active:scale-95 transition-transform"
+        >
+          {showSampleDocuments ? "Back to checklist" : "Sample documents"}
+        </Button>
+      )}
     </div>
   );
 }

@@ -6,8 +6,7 @@ import type {
   UpdateSampleDocumentRequest,
   DeleteSampleDocumentResponse,
 } from '@/types/sampleDocuments';
-
-const ZOHO_BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {

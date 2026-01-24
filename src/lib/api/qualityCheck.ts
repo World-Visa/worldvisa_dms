@@ -1,5 +1,6 @@
 import { fetcher } from '@/lib/fetcher';
 import { QualityCheckRequest, QualityCheckResponse as QualityCheckResponseType } from '@/types/common';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export interface QualityCheckApplication {
   Email: string;
@@ -62,7 +63,7 @@ export async function getQualityCheckApplications(
   if (params.startDate) searchParams.append('startDate', params.startDate);
   if (params.endDate) searchParams.append('endDate', params.endDate);
 
-  const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/quality_check?${searchParams.toString()}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/quality_check?${searchParams.toString()}`;
   
   const response = await fetcher<QualityCheckResponse>(url);
   
@@ -90,7 +91,7 @@ export async function searchQualityCheckApplications(
   searchParams: Record<string, string>
 ): Promise<QualityCheckResponseType> {
   const urlParams = new URLSearchParams(searchParams);
-  const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/quality_check?${urlParams.toString()}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/quality_check?${urlParams.toString()}`;
   
   return fetcher<QualityCheckResponseType>(url);
 }
@@ -106,7 +107,7 @@ export async function pushForQualityCheck(
     limit: limit.toString(),
   });
 
-  const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/quality_check?${searchParams.toString()}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/quality_check?${searchParams.toString()}`;
   
   return fetcher<QualityCheckResponseType>(url, {
     method: 'POST',

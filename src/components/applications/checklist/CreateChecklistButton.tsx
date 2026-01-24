@@ -25,18 +25,15 @@ export function CreateChecklistButton({
     <Button
       onClick={onClick}
       disabled={disabled}
+      variant="default"
       className={cn(
-        'cursor-pointer bg-white inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
-        'border-2 border-dashed border-blue-300 hover:border-blue-400 hover:bg-blue-50',
-        'text-blue-600 hover:text-blue-700',
-        'focus:outline-none focus:ring-2 focus:ring-blue-200',
+        'cursor-pointer inline-flex items-center gap-2 px-4 py-3 text-sm font-medium transition-all duration-200 ease-in-out',
         'w-full md:w-auto',
         disabled && 'opacity-50 cursor-not-allowed',
         className
       )}
     >
       <Plus className="h-4 w-4" />
-      <FileText className="h-4 w-4" />
       <span>Create Checklist</span>
     </Button>
   );

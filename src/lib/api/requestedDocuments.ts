@@ -1,5 +1,5 @@
 import { fetcher } from '@/lib/fetcher';
-import { API_CONFIG, getFullUrl } from '@/lib/config/api';
+import { API_CONFIG, getFullUrl, ZOHO_BASE_URL } from '@/lib/config/api';
 
 export interface RequestedDocument {
   _id: string;
@@ -96,7 +96,9 @@ export async function getRequestedDocumentsToMe(
     
     const response = await fetcher(url, {
       method: 'GET',
-      headers: API_CONFIG.DEFAULT_HEADERS,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     }) as RequestedDocumentsResponse;
 
     const responseTime = Date.now() - startTime;
@@ -146,7 +148,9 @@ export async function getMyRequestedDocuments(
     
     const response = await fetcher(url, {
       method: 'GET',
-      headers: API_CONFIG.DEFAULT_HEADERS,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     }) as RequestedDocumentsResponse;
 
     const responseTime = Date.now() - startTime;
@@ -184,7 +188,7 @@ export async function updateRequestedDocumentStatus(
   const startTime = Date.now();
   
   try {
-    const response = await fetcher(`https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews/status`, {
+    const response = await fetcher(`${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/status`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',

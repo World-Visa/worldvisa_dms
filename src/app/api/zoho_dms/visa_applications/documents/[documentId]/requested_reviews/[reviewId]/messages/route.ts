@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { authenticatedFetch } from '@/lib/zoho';
 import { parseToken, isTokenExpired } from '@/lib/auth';
-
-const ZOHO_BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export async function GET(
   request: NextRequest,

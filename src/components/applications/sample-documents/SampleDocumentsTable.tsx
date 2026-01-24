@@ -114,7 +114,7 @@ export function SampleDocumentsTable({ applicationId, isClientView = false }: Sa
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Sample Documents</CardTitle>
-          {!isClientView && (
+          {!isClientView && groupedDocuments.length > 1 &&(
             <Button variant="default" size="sm" onClick={() => setIsUploadOpen(true)}>
               Upload Sample Document
             </Button>

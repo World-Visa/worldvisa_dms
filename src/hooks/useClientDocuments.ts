@@ -1,8 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetcher } from '@/lib/fetcher';
 import { ClientDocumentsResponse } from '@/types/client';
-
-const API_BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export function useClientDocuments(page: number = 1, limit: number = 10) {
   return useQuery({
@@ -13,7 +12,7 @@ export function useClientDocuments(page: number = 1, limit: number = 10) {
           page: page.toString(),
           limit: limit.toString(),
         });
-        return await fetcher<ClientDocumentsResponse>(`${API_BASE_URL}/clients/documents?${params.toString()}`);
+        return await fetcher<ClientDocumentsResponse>(`${ZOHO_BASE_URL}/clients/documents?${params.toString()}`);
       } catch {
         return {
           status: 'success' as const,
@@ -46,7 +45,7 @@ export function useAllClientDocuments() {
           page: '1',
           limit: '1000', // High limit to get all documents
         });
-        return await fetcher<ClientDocumentsResponse>(`${API_BASE_URL}/clients/documents?${params.toString()}`);
+        return await fetcher<ClientDocumentsResponse>(`${ZOHO_BASE_URL}/clients/documents?${params.toString()}`);
       } catch {
         return {
           status: 'success' as const,

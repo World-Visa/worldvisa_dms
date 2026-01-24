@@ -1,4 +1,5 @@
 import { tokenStorage } from '@/lib/auth';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export interface DownloadAllDocumentsResponse {
   status: string;
@@ -18,13 +19,9 @@ export interface DownloadAllDocumentsError {
   error?: string;
 }
 
-/**
- * Downloads all documents for a specific application as a ZIP file
- * @param leadId - The lead ID of the application
- * @returns Promise with download information or triggers direct download
- */
+
 export async function downloadAllDocuments(leadId: string): Promise<void> {
-  const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/${leadId}/documents/download/all`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/${leadId}/documents/download/all`;
   
   try {
     const token = tokenStorage.get();

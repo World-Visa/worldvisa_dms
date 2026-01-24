@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
 import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
 import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
 import { DocumentsSummary } from '@/components/applications/DocumentsSummary';
 import { DocumentsTable } from '@/components/applications/DocumentsTable';
-import { Button } from '@/components/ui/button';
 import { SampleDocumentsTable } from '@/components/applications/sample-documents/SampleDocumentsTable';
 import { Document } from '@/types/applications';
 import { Company, DocumentCategory } from '@/types/documents';
@@ -15,23 +13,23 @@ interface SkillAssessmentLayoutProps {
   isAllDocumentsLoading: boolean;
   allDocumentsError: Error | null;
   selectedCategory: DocumentCategory;
-  onCategoryChange: (category: DocumentCategory) => Promise<void>;
+  onCategoryChange: (category: DocumentCategory) => void;
   companies: Company[];
   onAddCompany: () => void;
   onRemoveCompany: (companyName: string) => void;
+  onRemoveCompanyWithCheck?: (companyName: string, companyCategory: string) => void;
   maxCompanies: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   checklistState: any;
-  onStartCreatingChecklist: () => Promise<void>;
-  onStartEditingChecklist: () => Promise<void>;
+  onStartCreatingChecklist: () => void;
+  onStartEditingChecklist: () => void;
   onSaveChecklist: () => Promise<void>;
-  onCancelChecklist: () => Promise<void>;
-  isCategoryChanging: boolean;
+  onCancelChecklist: () => void;
   applicationId: string;
-  documentsPage: number;
-  onDocumentsPageChange: (page: number) => void;
   onReuploadDocument: (documentId: string, documentType: string, category: string) => void;
   isClientView?: boolean;
+  showSampleDocuments: boolean;
+  onToggleSampleDocuments: () => void;
 }
 
 export function SkillAssessmentLayout({
@@ -43,62 +41,40 @@ export function SkillAssessmentLayout({
   companies,
   onAddCompany,
   onRemoveCompany,
+  onRemoveCompanyWithCheck,
   maxCompanies,
   checklistState,
   onStartCreatingChecklist,
   onStartEditingChecklist,
   onSaveChecklist,
   onCancelChecklist,
-  isCategoryChanging,
   applicationId,
-  documentsPage,
-  onDocumentsPageChange,
   onReuploadDocument,
   isClientView = false,
+  showSampleDocuments,
+  onToggleSampleDocuments,
 }: SkillAssessmentLayoutProps) {
-  const [showSampleDocuments, setShowSampleDocuments] = useState(false);
-
   return (
     <>
-      <div className="flex items-center justify-end">
-        {showSampleDocuments ? (
-          <Button
-            className="cursor-pointer active:scale-95 transition-transform"
-            variant="secondary"
-            size="sm"
-            onClick={() => setShowSampleDocuments(false)}
-          >
-            Back to checklist
-          </Button>
-        ) : (
-          <Button
-            className="cursor-pointer active:scale-95 transition-transform"
-            variant="outline"
-            size="sm"
-            onClick={() => setShowSampleDocuments(true)}
-          >
-            Sample documents
-          </Button>
-        )}
-      </div>
-
       {showSampleDocuments ? (
         <SampleDocumentsTable applicationId={applicationId} isClientView={isClientView} />
       ) : (
-        <div className="space-y-6">
+        <div className="space-y-10">
           <DocumentsSummary
             documents={allDocuments}
             isLoading={isAllDocumentsLoading}
             error={allDocumentsError}
           />
 
-          <div className="space-y-6">
+          <div className="space-y-8">
             <DocumentCategoryFilter
               selectedCategory={selectedCategory}
               onCategoryChange={onCategoryChange}
               companies={companies}
               onAddCompany={onAddCompany}
               onRemoveCompany={onRemoveCompany}
+              onRemoveCompanyWithCheck={onRemoveCompanyWithCheck}
+              documents={allDocuments}
               maxCompanies={maxCompanies}
               checklistState={checklistState.state}
               checklistCategories={checklistState.checklistCategories}
@@ -112,15 +88,14 @@ export function SkillAssessmentLayout({
               }
               onCancelChecklist={onCancelChecklist}
               isSavingChecklist={checklistState.isBatchSaving}
-              isCategoryChanging={isCategoryChanging}
             />
 
             {selectedCategory === 'submitted' ? (
               <DocumentsTable
                 applicationId={applicationId}
-                currentPage={documentsPage}
-                limit={10}
-                onPageChange={onDocumentsPageChange}
+                documents={allDocuments}
+                isLoading={isAllDocumentsLoading}
+                error={allDocumentsError}
                 onReuploadDocument={onReuploadDocument}
                 isClientView={isClientView}
               />
