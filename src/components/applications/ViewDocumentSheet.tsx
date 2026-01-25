@@ -133,7 +133,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
             view
           </Button>
         </SheetTrigger>
-        <SheetContent className="w-[95vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[1140px] !max-w-[1140px] p-0 rounded-l-3xl">
+        <SheetContent className="w-[95vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[1140px] max-w-[1100px]! p-0 rounded-l-3xl">
           <div className="flex flex-col h-full">
             {/* Header Bar */}
             <SheetHeader className="p-4 border-b">
@@ -167,13 +167,13 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
             </SheetHeader>
 
             {/* Document Selector Chips */}
-            <div className="p-2 sm:p-4 border-b bg-white">
+            {/* <div className="p-2 sm:p-4 border-b bg-white">
               <div className="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide pb-2">
                 {documents.map((doc, index) => (
                   <button
                     key={doc._id}
                     onClick={() => setSelectedIndex(index)}
-                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-medium transition-colors whitespace-nowrap flex-shrink-0 cursor-pointer ${
+                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
                       selectedIndex === index
                         ? "bg-[#222222] text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
@@ -190,7 +190,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                   </button>
                 ))}
               </div>
-            </div>
+            </div> */}
 
             {/* Main Content */}
             <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto">
@@ -209,6 +209,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                     </AlertDescription>
                   </Alert>
                 )}
+                
                 <DocumentPreview document={displayDoc} />
 
                 {/* Status Display */}
@@ -247,7 +248,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
               </div>
 
               {/* Comments Section - Bottom on mobile, Right on desktop */}
-              <div className="w-full lg:flex-shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
+              <div className="w-full lg:shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
                 <CommentErrorBoundary>
                   <DocumentComments
                     documentId={displayDoc._id}
