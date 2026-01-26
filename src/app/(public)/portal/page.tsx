@@ -34,13 +34,8 @@ export default function PortalPage() {
   }, []);
 
   return (
-    // <div className="h-screen bg-gradient-to-br from-pink-50 via-rose-50 to-orange-100 flex items-center justify-center">
-    // <div className="h-screen bg-gradient-to-br from-green-50 via-teal-50 to-cyan-100 flex items-center justify-center">
-    <div className="h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-sky-100 flex items-center justify-center">
-      {/* <div className="h-screen bg-gradient-to-br from-gray-50 via-slate-50 to-gray-100 flex items-center justify-center">  */}
-      {/* <div className="h-screen bg-gradient-to-br from-pink-50 via-blue-50 to-green-50 flex items-center justify-center">  */}
+    <div className="h-screen bg-linear-to-br from-violet-50 via-purple-50 to-sky-100 flex items-center justify-center">
       <div
-        ref={containerRef}
         className="w-full h-full mx-auto flex"
       >
 
@@ -66,7 +61,7 @@ export default function PortalPage() {
               />
             </div>
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+          <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-8 text-white">
             <h1 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight">
               WorldVisa Document Management System
@@ -79,7 +74,6 @@ export default function PortalPage() {
 
         {/* Right Side - Portal Selection */}
         <div
-          ref={rightRef}
           className="flex w-full md:w-1/2  md:min-w-[480px] items-center justify-center"
         >
           <div className='space-y-6 w-[90%] md:min-w-[450px]'>

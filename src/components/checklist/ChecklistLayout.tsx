@@ -3,8 +3,9 @@
 import React, { memo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Save } from 'lucide-react';
+import { ArrowLeft, Save } from 'lucide-react';
 import type { ChecklistPageMode } from './types';
+import { useRouter } from 'next/navigation';
 
 interface ChecklistLayoutProps {
   applicationId: string;
@@ -23,25 +24,15 @@ export const ChecklistLayout = memo(function ChecklistLayout({
   onSave,
   children,
 }: ChecklistLayoutProps) {
+  const router = useRouter();
   return (
     <div className="space-y-6 max-w-7xl mx-auto pt-10">
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Link
-            href={`/admin/applications/${applicationId}`}
-            className="hover:text-foreground underline"
-          >
-            Applications
-          </Link>
-          <span>/</span>
-          <Link
-            href={`/admin/applications/${applicationId}`}
-            className="hover:text-foreground underline"
-          >
-            {applicationId}
-          </Link>
-          <span>/</span>
-          <span className="text-foreground">Checklist</span>
+          <Button variant="ghost" size="sm" onClick={() => router.back()} className="cursor-pointer">
+            <ArrowLeft className="h-4 w-4" />
+            Back to Application
+          </Button>
         </div>
 
         <div className="flex items-center justify-end gap-2">
