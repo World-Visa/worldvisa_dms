@@ -1,9 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetcher } from "@/lib/fetcher";
 import { ClientApplicationResponse } from "@/types/client";
-
-const API_BASE_URL =
-  "https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms";
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export function useClientApplication() {
   return useQuery({
@@ -12,7 +10,7 @@ export function useClientApplication() {
       try {
         // Try the client-specific endpoint first
         return await fetcher<ClientApplicationResponse>(
-          `${API_BASE_URL}/clients/application`
+          `${ZOHO_BASE_URL}/clients/application`
         );
       } catch (error) {
         // If client endpoint fails, try to get application data from user's lead_id

@@ -1,6 +1,5 @@
 import { AdminLoginRequest, ClientLoginRequest, AuthResponse } from '@/types/auth';
-
-const ZOHO_BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 // Generic fetch wrapper with error handling
 async function fetchWithErrorHandling<T>(

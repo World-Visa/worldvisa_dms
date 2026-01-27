@@ -68,12 +68,11 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
 
   const isUpdating = statusUpdateMutation.isPending;
   const currentStatus = displayDocument.status;
-  const isAdmin = user?.role === "admin"; // Hide approve button for admin role
+  const isAdmin = user?.role === "admin"; 
 
   return (
     <>
       <div className="absolute bottom-4 right-2 sm:bottom-1 sm:right-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
-        {/* Hide approve button for admin role */}
         {!isAdmin && (
           <Button
             variant="default"

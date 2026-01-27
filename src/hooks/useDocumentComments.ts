@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { fetcher } from "@/lib/fetcher";
-import { realtimeManager } from "@/lib/realtime";
+import { realtimeManager, RequestedDocumentEvent } from "@/lib/realtime";
 import { commentMonitor } from "@/lib/commentMonitoring";
 import { Comment, CommentEvent, GetCommentsResponse } from "@/types/comments";
 
@@ -17,7 +17,7 @@ export function useDocumentComments(documentId: string) {
 
       try {
         const response = await fetcher<GetCommentsResponse>(
-          `/api/zoho_dms/visa_applications/documents/${documentId}/comments`
+          `/api/zoho_dms/visa_applications/documents/${documentId}/comment`
         );
 
         const responseTime = Date.now() - startTime;
@@ -64,7 +64,7 @@ export function useDocumentComments(documentId: string) {
 
     const unsubscribe = realtimeManager.subscribe(
       documentId,
-      (event: CommentEvent) => {
+      (event: CommentEvent | RequestedDocumentEvent) => {
         // Update the query cache with the new comment
         queryClient.setQueryData(
           ["document-comments", documentId],
@@ -154,8 +154,8 @@ export function useDocumentComments(documentId: string) {
 function sortCommentsByPriority(comments: Comment[]): Comment[] {
   return comments.sort((a, b) => {
     // Moshin's comments first
-    const aIsMoshin = a.added_by.toLowerCase().includes("moshin");
-    const bIsMoshin = b.added_by.toLowerCase().includes("moshin");
+    const aIsMoshin = (a.added_by ?? '').toLowerCase().includes("moshin");
+    const bIsMoshin = (b.added_by ?? '').toLowerCase().includes("moshin");
 
     if (aIsMoshin && !bIsMoshin) return -1;
     if (!aIsMoshin && bIsMoshin) return 1;

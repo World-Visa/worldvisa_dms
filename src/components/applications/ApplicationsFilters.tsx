@@ -104,7 +104,7 @@ export function ApplicationsFilters({
       <div className="flex items-center gap-3">
         <div className="flex-1 bg-white border border-gray-300 rounded-lg shadow-sm hover:shadow-md transition-all duration-200">
           <div className="flex items-center divide-x divide-gray-300">
-            <div className="relative flex-shrink-0">
+            <div className="relative shrink-0">
               <Select value={searchType} onValueChange={onSearchTypeChange}>
                 <SelectTrigger className="border-0 bg-transparent h-10 px-4 rounded-l-lg focus:ring-0 focus:ring-offset-0 hover:bg-gray-50 transition-colors min-w-[100px]">
                   <div className="flex items-center gap-2 text-gray-700">

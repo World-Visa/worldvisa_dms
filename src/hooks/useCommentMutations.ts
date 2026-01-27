@@ -5,6 +5,7 @@ import { tokenStorage } from '@/lib/auth';
 import { commentMonitor } from '@/lib/commentMonitoring';
 import * as Sentry from '@sentry/nextjs';
 import { toast } from 'sonner';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export function useAddComment(documentId: string) {
   const queryClient = useQueryClient();
@@ -15,13 +16,13 @@ export function useAddComment(documentId: string) {
       
       try {
         const response = await fetcher<AddCommentResponse>(
-          `/api/zoho_dms/visa_applications/documents/${documentId}/comments`,
+          `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/comment`,
           {
             method: 'POST',
             body: JSON.stringify({
-              ...data,
-              document_id: documentId
-            })
+              comment: data.comment,
+              added_by: data.added_by,
+            }),
           }
         );
 
@@ -39,7 +40,15 @@ export function useAddComment(documentId: string) {
         commentMonitor.trackCommentCreated(data.added_by, responseTime);
         commentMonitor.reportPerformanceIssue('add_comment', responseTime);
 
-        return response.data;
+        // Normalize: backend may use added_at; ensure created_at for cache/sort
+        const raw = response.data as Comment & { added_at?: string };
+        return {
+          ...raw,
+          created_at: raw.created_at ?? raw.added_at ?? new Date().toISOString(),
+          added_by: raw.added_by ?? data.added_by,
+          comment: raw.comment ?? data.comment,
+          document_id: raw.document_id ?? documentId,
+        } as Comment;
       } catch (error) {
         const responseTime = Date.now() - startTime;
         commentMonitor.trackCommentError(error as Error, {
@@ -96,7 +105,7 @@ export function useAddComment(documentId: string) {
         added_by: newComment.added_by || currentUser,
         created_at: new Date().toISOString(),
         document_id: documentId,
-        is_important: newComment.added_by?.toLowerCase().includes('moshin') || false
+        is_important: (newComment.added_by ?? '').toLowerCase().includes('moshin')
       };
 
       // Optimistically update the cache
@@ -162,8 +171,8 @@ export function useAddComment(documentId: string) {
 function sortCommentsByPriority(comments: Comment[]): Comment[] {
   return comments.sort((a, b) => {
     // Moshin's comments first
-    const aIsMoshin = a.added_by.toLowerCase().includes('moshin');
-    const bIsMoshin = b.added_by.toLowerCase().includes('moshin');
+    const aIsMoshin = (a.added_by ?? '').toLowerCase().includes('moshin');
+    const bIsMoshin = (b.added_by ?? '').toLowerCase().includes('moshin');
     
     if (aIsMoshin && !bIsMoshin) return -1;
     if (!aIsMoshin && bIsMoshin) return 1;
@@ -231,7 +240,7 @@ export function useDeleteComment(documentId: string) {
         }
 
         const response = await fetcher<DeleteCommentResponse>(
-          `/api/zoho_dms/visa_applications/documents/${documentId}/comments`,
+          `/api/zoho_dms/visa_applications/documents/${documentId}/comment`,
           {
             method: 'DELETE',
             body: JSON.stringify({

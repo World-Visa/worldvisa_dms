@@ -1,6 +1,7 @@
 import { fetcher } from "@/lib/fetcher";
 import { GetTimelineResponse, Timeline } from "@/types/documents";
 import { useQuery } from "@tanstack/react-query";
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export function useDocumentTimeline(documentId: string) {
   // Query for fetching document timeline
@@ -8,7 +9,7 @@ export function useDocumentTimeline(documentId: string) {
     queryKey: ["document-timeline", documentId],
     queryFn: async (): Promise<Timeline[]> => {
       try {
-        const TIMELINE_BASE_URL = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/timeline`;
+        const TIMELINE_BASE_URL = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/timeline`;
 
         const response = await fetcher<GetTimelineResponse>(TIMELINE_BASE_URL);
 

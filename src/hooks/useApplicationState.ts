@@ -12,10 +12,7 @@ interface UseApplicationStateProps {
    allDocuments: Document[] | undefined;
 }
 
-/**
- * Custom hook to manage application state (category, companies)
- * Consolidates state management logic for better organization
- */
+
 export function useApplicationState({
    applicationId,
    urlCategory,
@@ -33,7 +30,6 @@ export function useApplicationState({
          return savedCategory;
       }
    );
-   const [isCategoryChanging, setIsCategoryChanging] = useState(false);
 
    // Companies state
    const [companies, setCompanies] = useState<Company[]>(() => {
@@ -49,7 +45,6 @@ export function useApplicationState({
       }
    }, [urlCategory, selectedCategory, applicationId]);
 
-   // Parse companies from documents
    useEffect(() => {
       if (allDocuments && allDocuments.length > 0) {
          const parsedCompanies = parseCompaniesFromDocuments(allDocuments);
@@ -123,20 +118,13 @@ export function useApplicationState({
 
    // Memoized handlers
    const handleCategoryChange = useCallback(
-      async (category: DocumentCategory) => {
+      (category: DocumentCategory) => {
          if (category === selectedCategory) {
             return;
          }
-
-         setIsCategoryChanging(true);
-         try {
-            setSelectedCategory(category);
-            setURLCategory(category);
-            localStorageUtils.saveCategory(applicationId, category);
-            await new Promise((resolve) => setTimeout(resolve, 300));
-         } finally {
-            setIsCategoryChanging(false);
-         }
+         setSelectedCategory(category);
+         setURLCategory(category);
+         localStorageUtils.saveCategory(applicationId, category);
       },
       [applicationId, selectedCategory, setURLCategory]
    );
@@ -177,8 +165,6 @@ export function useApplicationState({
    return {
       selectedCategory,
       setSelectedCategory,
-      isCategoryChanging,
-      setIsCategoryChanging,
       companies,
       setCompanies,
       handleCategoryChange,

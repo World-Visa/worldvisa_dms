@@ -28,15 +28,13 @@ export const AddCompanyButton = memo(function AddCompanyButton({
 
   if (!shouldShow) return null;
 
-  return (
+  return (                         
     <Button
-      variant="outline"
+      variant="default"
       size="sm"
       onClick={onAddCompany}
       className={cn(
-        'cursor-pointer inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-medium transition-all duration-200 ease-in-out',
-        'border-2 border-dashed border-gray-300 hover:border-gray-400 hover:bg-gray-50',
-        'focus:outline-none focus:ring-0',
+        'cursor-pointer inline-flex items-center gap-2 px-4 py-3  text-sm font-medium transition-all duration-200 ease-in-out',
         'w-full md:w-auto'
       )}
     >

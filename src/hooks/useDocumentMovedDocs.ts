@@ -7,6 +7,7 @@ import {
 } from "@/types/documents";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 /**
  * Fetches all moved documents for a given document ID.
@@ -17,7 +18,7 @@ export function useDocumentMovedDocs(documentId: string) {
     queryKey: ["document-moved-docs", documentId],
     queryFn: async (): Promise<MovedDocument[]> => {
       if (!documentId) return [];
-      const MOVED_DOCS_URL = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/move/all?docId=${documentId}`;
+      const MOVED_DOCS_URL = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/move/all?docId=${documentId}`;
 
       const response = await fetcher<GetMovedDocsResponse>(MOVED_DOCS_URL);
       // Assuming the API returns an array of moved documents or an object with a property containing them
@@ -55,7 +56,7 @@ export function useDocumentMovedDocs(documentId: string) {
   async function getDocumentLink(documentId: string): Promise<DocumentLink> {
     if (!documentId) throw new Error("documentId is required");
 
-    const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/links`;
+    const url = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/links`;
 
     const response = await fetcher<GetDocumentLinkResponse>(url, {
       method: "POST",
@@ -99,7 +100,7 @@ export function useMoveDocument() {
     mutationFn: async (documentId: string): Promise<any> => {
       if (!documentId) throw new Error("documentId is required");
 
-      const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/clients/documents/${documentId}/move`;
+      const url = `${ZOHO_BASE_URL}/clients/documents/${documentId}/move`;
 
       return fetcher<any>(url, {
         method: "PATCH",
@@ -139,7 +140,7 @@ export function useMoveDocumentAgent() {
     mutationFn: async (documentId: string): Promise<any> => {
       if (!documentId) throw new Error("documentId is required");
 
-      const url = `https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/move`;
+      const url = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/move`;
 
       return fetcher<any>(url, {
         method: "PATCH",

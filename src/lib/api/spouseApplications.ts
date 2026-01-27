@@ -1,7 +1,6 @@
 import { fetcher } from "../fetcher";
 import { ApplicationsResponse, ApplicationsFilters, ApplicationDetailsResponse } from "@/types/applications";
-
-const ZOHO_BASE_URL = "https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms";
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 /**
  * Fetches spouse skill assessment applications with pagination and filters

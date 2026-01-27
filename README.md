@@ -5,7 +5,7 @@ A comprehensive Document Management System built for visa application processing
 ## 🏗️ Architecture Overview
 
 ### Technology Stack
-- **Framework**: Next.js 15 with App Router
+- **Framework**: Next.js 16 with App Router (Cache components with PPR)
 - **Language**: TypeScript
 - **Styling**: TailwindCSS v4
 - **UI Components**: Shadcn UI + Radix UI
@@ -328,7 +328,7 @@ npm run dev
 REDIS_URL=redis://localhost:6379
 
 # API Configuration
-NEXT_PUBLIC_API_BASE_URL=https://worldvisagroup-19a980221060.herokuapp.com
+NEXT_PUBLIC_API_BASE_URL=https://backend.worldvisa-api.cloud
 
 # JWT Secret
 JWT_SECRET=your-secret-key-change-in-production
@@ -362,7 +362,7 @@ NEXT_PUBLIC_SENTRY_DSN=your_sentry_dsn_here
 ### Production Build
 ```bash
 npm run build
-npm run start
+npm run dev
 ```
 
 ### Environment-Specific Configurations
@@ -450,4 +450,4 @@ For technical support or questions:
 
 ---
 
-**Built with ❤️ using Next.js 15, TypeScript, and modern web technologies for efficient visa application processing.**
+**Built with ❤️ using Next.js 16, TypeScript, and modern web technologies for efficient visa application processing.**

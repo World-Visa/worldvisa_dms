@@ -19,43 +19,45 @@ interface DocumentRowProps {
   onPatchToPending?: (documentId: string) => void;
   isPatching?: boolean;
   onOpenReuploadModal?: (documentId: string, documentType: string, category: string) => void;
+  onClientReviewedDeleteClick?: (document: Document) => void;
 }
 
-export function DocumentRow({ 
-  document, 
-  onView, 
-  onDelete, 
-  onReupload, 
-  isClientView, 
+export function DocumentRow({
+  document,
+  onView,
+  onDelete,
+  onReupload,
+  isClientView,
   isDeleting,
   onPatchToPending,
   isPatching = false,
-  onOpenReuploadModal
+  onOpenReuploadModal,
+  onClientReviewedDeleteClick,
 }: DocumentRowProps) {
   // Get real-time document data from cache
   const { document: currentDocument } = useDocumentData(document._id);
-  
+
   // Use the current document from cache, fallback to prop
   const displayDocument = currentDocument || document;
-  
- 
+
+
   return (
     <div
       key={displayDocument._id}
       className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors"
     >
       <div className="flex items-center space-x-3">
-        <Image 
-          src="/icons/pdf_small.svg" 
-          alt="PDF" 
-          width={20} 
+        <Image
+          src="/icons/pdf_small.svg"
+          alt="PDF"
+          width={20}
           height={20}
-          className="flex-shrink-0"
+          className="shrink-0"
         />
         <div className="flex-1">
           <p className="font-medium text-sm">
-            {displayDocument.file_name.length > 15 
-              ? `${displayDocument.file_name.substring(0, 15)}...` 
+            {displayDocument.file_name.length > 15
+              ? `${displayDocument.file_name.substring(0, 15)}...`
               : displayDocument.file_name}
           </p>
           <p className="text-xs text-muted-foreground">
@@ -100,6 +102,14 @@ export function DocumentRow({
           variant="outline"
           size="sm"
           onClick={() => {
+            if (
+              isClientView &&
+              displayDocument.status === 'reviewed' &&
+              onClientReviewedDeleteClick
+            ) {
+              onClientReviewedDeleteClick(displayDocument);
+              return;
+            }
             if (displayDocument.status === 'reviewed' && onOpenReuploadModal) {
               const documentType = displayDocument.document_name || displayDocument.document_type || 'Document';
               const category = displayDocument.document_category || 'Other Documents';
@@ -111,7 +121,7 @@ export function DocumentRow({
             }
           }}
           disabled={
-            isClientView 
+            isClientView
               ? (isDeleting || isPatching || displayDocument.status === 'approved')
               : (isDeleting || isPatching)
           }

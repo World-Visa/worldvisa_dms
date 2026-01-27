@@ -25,8 +25,12 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
 import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
+import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
 import { parseCompaniesFromDocuments } from '@/utils/companyParsing';
 import { useStage2Documents } from "@/hooks/useStage2Documents";
+import { useClientDeleteDocument } from "@/hooks/useClientDeleteDocument";
+import { getCompanyDocuments, filterDocumentsWithValidIds } from "@/utils/companyDocuments";
+import { toast } from "sonner";
 
 export default function ClientApplicationDetailsPageContent() {
   const params = useParams();
@@ -39,7 +43,7 @@ export default function ClientApplicationDetailsPageContent() {
   const [selectedCategory, setSelectedCategory] = useState<string>("submitted");
   const [documentsPage, setDocumentsPage] = useState(1);
   const documentsLimit = 10;
-  const [isCategoryChanging, setIsCategoryChanging] = useState(false);
+  const [showSampleDocuments, setShowSampleDocuments] = useState(false);
 
   const [companies, setCompanies] = useState<Company[]>([]);
   const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
@@ -54,8 +58,26 @@ export default function ClientApplicationDetailsPageContent() {
   ] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
 
+  const [removeCompanyDialog, setRemoveCompanyDialog] = useState<{
+    isOpen: boolean;
+    company: Company | null;
+    hasDocuments: boolean;
+    documentCount: number;
+  }>({
+    isOpen: false,
+    company: null,
+    hasDocuments: false,
+    documentCount: 0,
+  });
+  const [isDeletingDocuments, setIsDeletingDocuments] = useState(false);
+  const clientDeleteDocumentMutation = useClientDeleteDocument();
+
   const handleLayoutChange = useCallback((layout: ApplicationLayout) => {
     setSelectedLayout(layout);
+  }, []);
+
+  const onToggleSampleDocuments = useCallback(() => {
+    setShowSampleDocuments((prev) => !prev);
   }, []);
 
   // Refresh function
@@ -211,16 +233,9 @@ export default function ClientApplicationDetailsPageContent() {
     setDocumentsPage(page);
   };
 
-  const handleCategoryChange = async (category: string) => {
-    setIsCategoryChanging(true);
-    try {
-      setSelectedCategory(category);
-      setDocumentsPage(1);
-
-      await new Promise((resolve) => setTimeout(resolve, 300));
-    } finally {
-      setIsCategoryChanging(false);
-    }
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setDocumentsPage(1);
   };
 
   const handleDeleteSuccess = () => {
@@ -236,13 +251,205 @@ export default function ClientApplicationDetailsPageContent() {
     setIsAddCompanyDialogOpen(false);
   };
 
-  const handleRemoveCompany = (companyName: string) => {
+  const handleRemoveCompany = useCallback((companyName: string) => {
     setCompanies((prev) =>
       prev.filter(
         (company) => company.name.toLowerCase() !== companyName.toLowerCase()
       )
     );
-  };
+  }, []);
+
+  const handleRemoveCompanyWithDocuments = useCallback(
+    (companyName: string, companyCategory: string) => {
+      const company = finalCompanies.find(
+        (c) => c.name.toLowerCase() === companyName.toLowerCase()
+      );
+      if (!company) {
+        toast.error("Company not found");
+        return;
+      }
+      const allDocuments = allDocumentsData?.data?.documents ?? [];
+      const companyDocuments = getCompanyDocuments(
+        companyCategory,
+        (allDocuments ?? []) as unknown as Document[]
+      );
+      const hasDocuments = companyDocuments.length > 0;
+      const documentCount = companyDocuments.length;
+      setRemoveCompanyDialog({
+        isOpen: true,
+        company,
+        hasDocuments,
+        documentCount,
+      });
+    },
+    [finalCompanies, allDocumentsData?.data?.documents]
+  );
+
+  const handleRemoveDocumentsAndCompany = useCallback(async () => {
+    const { company, hasDocuments, documentCount } = removeCompanyDialog;
+    if (!company) return;
+
+    if (!hasDocuments || documentCount === 0) {
+      handleRemoveCompany(company.name);
+      setRemoveCompanyDialog({
+        isOpen: false,
+        company: null,
+        hasDocuments: false,
+        documentCount: 0,
+      });
+      toast.success("Company removed successfully");
+      return;
+    }
+
+    const companyCategory = company.category ?? `${company.name} Company Documents`;
+    const allDocuments = allDocumentsData?.data?.documents ?? [];
+    const companyDocuments = getCompanyDocuments(
+      companyCategory,
+      (allDocuments ?? []) as unknown as Document[]
+    );
+    if (companyDocuments.length === 0) {
+      handleRemoveCompany(company.name);
+      setRemoveCompanyDialog({
+        isOpen: false,
+        company: null,
+        hasDocuments: false,
+        documentCount: 0,
+      });
+      toast.success("Company removed successfully");
+      return;
+    }
+
+    // Filter out documents without valid IDs
+    const validDocuments = filterDocumentsWithValidIds(companyDocuments);
+
+    if (validDocuments.length === 0) {
+      handleRemoveCompany(company.name);
+      setRemoveCompanyDialog({
+        isOpen: false,
+        company: null,
+        hasDocuments: false,
+        documentCount: 0,
+      });
+      toast.success("Company removed successfully");
+      return;
+    }
+
+    setIsDeletingDocuments(true);
+    try {
+      // Process each document individually, tracking results
+      const deletionResults: Array<{ success: boolean; documentId: string; fileName?: string; error?: string }> = [];
+      
+      for (const doc of validDocuments) {
+        // Additional inline validation right before mutation call
+        if (!doc._id || typeof doc._id !== 'string' || doc._id.trim() === '') {
+          console.warn(`[RemoveCompany] Skipping document with invalid ID:`, doc);
+          deletionResults.push({
+            success: false,
+            documentId: doc._id || 'unknown',
+            fileName: doc.file_name,
+            error: 'Invalid document ID'
+          });
+          continue;
+        }
+
+        try {
+          console.log('[RemoveCompany] Deleting document:', doc._id, doc.file_name);
+          await clientDeleteDocumentMutation.mutateAsync({
+            documentId: doc._id,
+          });
+          deletionResults.push({
+            success: true,
+            documentId: doc._id,
+            fileName: doc.file_name
+          });
+        } catch (error) {
+          // Log but continue with other documents
+          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+          console.error(`[RemoveCompany] Failed to delete document ${doc._id} (${doc.file_name}):`, errorMessage);
+          deletionResults.push({
+            success: false,
+            documentId: doc._id,
+            fileName: doc.file_name,
+            error: errorMessage
+          });
+        }
+      }
+
+      // Analyze results
+      const successCount = deletionResults.filter(r => r.success).length;
+      const failureCount = deletionResults.filter(r => !r.success).length;
+
+      // Only fail if ALL documents failed
+      if (successCount === 0 && validDocuments.length > 0) {
+        // All failed - show error and don't remove company
+        console.error('[RemoveCompany] All document deletions failed');
+        setIsDeletingDocuments(false);
+        toast.error(
+          "Failed to delete all documents. Company was not removed. Please try again."
+        );
+        return;
+      }
+
+      // Some or all succeeded - remove company
+      if (failureCount > 0) {
+        // Some failed - show warning but still remove company
+        console.warn(`[RemoveCompany] ${successCount} document(s) deleted successfully, ${failureCount} failed`);
+        toast.warning(
+          `Company removed. ${successCount} document${successCount !== 1 ? "s" : ""} deleted successfully, but ${failureCount} document${failureCount !== 1 ? "s" : ""} could not be deleted.`
+        );
+      } else {
+        // All succeeded
+        toast.success(
+          `Company and ${successCount} document${successCount !== 1 ? "s" : ""} removed successfully`
+        );
+      }
+
+      handleRemoveCompany(company.name);
+      setRemoveCompanyDialog({
+        isOpen: false,
+        company: null,
+        hasDocuments: false,
+        documentCount: 0,
+      });
+      setIsDeletingDocuments(false);
+    } catch (error) {
+      // This catch block should rarely be hit now, but keep it as a safety net
+      setIsDeletingDocuments(false);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      console.error('[RemoveCompany] Unexpected error during document deletion:', errorMessage);
+      toast.error(
+        "An unexpected error occurred. Company was not removed. Please try again."
+      );
+    }
+  }, [
+    removeCompanyDialog,
+    allDocumentsData?.data?.documents,
+    clientDeleteDocumentMutation,
+    handleRemoveCompany,
+  ]);
+
+  const handleCloseRemoveCompanyDialog = useCallback(() => {
+    if (isDeletingDocuments) return;
+    setRemoveCompanyDialog({
+      isOpen: false,
+      company: null,
+      hasDocuments: false,
+      documentCount: 0,
+    });
+  }, [isDeletingDocuments]);
+
+  const handleRemoveCompanyDirect = useCallback(() => {
+    const { company } = removeCompanyDialog;
+    if (!company) return;
+    handleRemoveCompany(company.name);
+    setRemoveCompanyDialog({
+      isOpen: false,
+      company: null,
+      hasDocuments: false,
+      documentCount: 0,
+    });
+    toast.success("Company removed successfully");
+  }, [removeCompanyDialog, handleRemoveCompany]);
 
   const handleReuploadDocument = (
     documentId: string,
@@ -378,6 +585,8 @@ export default function ClientApplicationDetailsPageContent() {
             selectedLayout={selectedLayout}
             onLayoutChange={handleLayoutChange}
             availableLayouts={availableLayouts}
+            showSampleDocuments={showSampleDocuments}
+            onToggleSampleDocuments={onToggleSampleDocuments}
           />
 
           {selectedLayout === "skill-assessment" ? (
@@ -385,14 +594,11 @@ export default function ClientApplicationDetailsPageContent() {
               applicationId={applicationId}
               selectedCategory={selectedCategory}
               onCategoryChange={handleCategoryChange}
-              documentsPage={documentsPage}
-              documentsLimit={documentsLimit}
-              onDocumentsPageChange={handleDocumentsPageChange}
-              isCategoryChanging={isCategoryChanging}
               maxCompanies={10}
               companies={finalCompanies}
               onAddCompany={() => setIsAddCompanyDialogOpen(true)}
               onRemoveCompany={handleRemoveCompany}
+              onRemoveCompanyWithCheck={handleRemoveCompanyWithDocuments}
               documentsResponse={documentsData}
               isDocumentsLoading={isDocumentsLoading}
               documentsError={documentsError}
@@ -410,6 +616,8 @@ export default function ClientApplicationDetailsPageContent() {
               leadId={leadId}
               onChecklistRefresh={handleRefresh}
               onChecklistRequestSuccess={handleRefresh}
+              showSampleDocuments={showSampleDocuments}
+              onToggleSampleDocuments={onToggleSampleDocuments}
             />
           ) : selectedLayout === "outcome" ? (
             hasOutcomeDocuments ? (
@@ -450,6 +658,19 @@ export default function ClientApplicationDetailsPageContent() {
         existingCompanies={finalCompanies}
         maxCompanies={10}
       />
+
+      {removeCompanyDialog.company && (
+        <RemoveCompanyDialog
+          isOpen={removeCompanyDialog.isOpen}
+          onClose={handleCloseRemoveCompanyDialog}
+          onConfirm={handleRemoveCompanyDirect}
+          company={removeCompanyDialog.company}
+          hasDocuments={removeCompanyDialog.hasDocuments}
+          documentCount={removeCompanyDialog.documentCount}
+          isDeleting={isDeletingDocuments}
+          onRemoveDocumentsAndCompany={handleRemoveDocumentsAndCompany}
+        />
+      )}
 
       {/* Reupload Document Modal */}
       <ReuploadDocumentModal

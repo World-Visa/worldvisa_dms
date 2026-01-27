@@ -76,7 +76,7 @@ export async function fetcher<T>(
         const isChecklistEndpoint = url.includes('/visa_applications/checklist/');
         const isMessagesEndpoint = url.includes('/requested_reviews/') && url.includes('/messages');
         
-        if (isClientEndpoint || isChecklistEndpoint || url.includes('/comments') || isMessagesEndpoint) {
+        if (isClientEndpoint || isChecklistEndpoint || url.includes('/comment') || isMessagesEndpoint) {
           // Let hook handle the error for client/checklist/comments/messages endpoints
         } else {
           // For other endpoints, redirect if authentication fails  

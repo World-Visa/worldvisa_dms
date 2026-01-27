@@ -115,27 +115,22 @@ export function DocumentsSummary({ documents, isLoading, error }: DocumentsSumma
     ];
 
     return (
-        <section className="w-full space-y-2">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
-                <h3 className="font-medium text-base text-gray-900">Documents Summary</h3>
-                <span className="text-xs text-gray-500 border rounded px-2 py-0.5">
-                    {totalCount} total
-                </span>
-            </div>
+        <section className="w-full">
             <div className="grid grid-cols-2 lg:grid-cols-5 gap-2 w-full">
                 {summaryCards.map((card) => {
                     const Icon = card.icon;
                     return (
-                        <div
-                            key={card.title}
-                            className="flex flex-col items-center bg-white border rounded-md px-2 py-3 text-center"
-                        >
-                            <div className={`flex items-center justify-center h-8 w-8 rounded-full ${card.bgColor} mb-1`}>
-                                <Icon className={`h-4 w-4 ${card.color}`} />
-                            </div>
-                            <span className="text-xs text-gray-500">{card.title}</span>
-                            <span className="text-lg font-semibold text-gray-900">{card.count}</span>
-                        </div>
+                        <Card key={card.title} className="flex flex-col items-start bg-white border rounded-md px-2 py-3 text-center">
+                            <CardContent className="p-2 w-full">
+                                <CardHeader className="flex gap-2 items-center justify-center">
+                                    <div className={`flex items-center justify-center h-8 w-8 rounded-full ${card.bgColor} mb-1`}>
+                                        <Icon className={`h-4 w-4 ${card.color}`} />
+                                    </div>
+                                    <span className="text-xs text-gray-700">{card.title}</span>
+                                </CardHeader>
+                                <span className="text-lg flex justify-center items-center font-bold text-gray-900">{card.count}</span>
+                            </CardContent>
+                        </Card>
                     );
                 })}
             </div>

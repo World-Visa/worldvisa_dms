@@ -1,65 +1,68 @@
-/**
- * Centralized API configuration for the application
- * This makes it easy to switch between environments and maintain consistency
- */
+const getEnvVar = (key: string, defaultValue: string): string => {
+  return process.env[key] || defaultValue;
+};
 
-// Define the base URL separately to avoid circular reference
-const BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms';
+// Base URLs from environment
+export const API_BASE_URL = getEnvVar(
+  'NEXT_PUBLIC_API_BASE_URL',
+  'https://backend.worldvisa-api.cloud'
+);
 
+export const ZOHO_BASE_URL = getEnvVar(
+  'NEXT_PUBLIC_ZOHO_BASE_URL',
+  'https://backend.worldvisa-api.cloud/api/zoho_dms'
+);
+
+// Keep existing API_CONFIG for backward compatibility
 export const API_CONFIG = {
-  BASE_URL,
+  BASE_URL: ZOHO_BASE_URL,
   
   ENDPOINTS: {
     // Document review requests
     REVIEW_REQUESTS: (documentId: string) => 
-      `${BASE_URL}/visa_applications/documents/${documentId}/requested_reviews`,
+      `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews`,
     
     REVIEW_REQUEST_MESSAGES: (documentId: string, reviewId: string) =>
-      `${BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`,
+      `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`,
     
     // Requested documents
     REQUESTED_DOCUMENTS: {
-      ALL: `${BASE_URL}/visa_applications/documents/requested_reviews/all`,
-      ALL_TO: `${BASE_URL}/visa_applications/documents/requested_reviews/all_to`,
-      ALL_ME: `${BASE_URL}/visa_applications/documents/requested_reviews/all_me`,
-      SEARCH: `${BASE_URL}/visa_applications/documents/requested_reviews/search`,
+      ALL: `${ZOHO_BASE_URL}/visa_applications/documents/requested_reviews/all`,
+      ALL_TO: `${ZOHO_BASE_URL}/visa_applications/documents/requested_reviews/all_to`,
+      ALL_ME: `${ZOHO_BASE_URL}/visa_applications/documents/requested_reviews/all_me`,
+      SEARCH: `${ZOHO_BASE_URL}/visa_applications/documents/requested_reviews/search`,
     },
     
     // Quality check
-    QUALITY_CHECK: `${BASE_URL}/visa_applications/quality_check`,
+    QUALITY_CHECK: `${ZOHO_BASE_URL}/visa_applications/quality_check`,
     
     // Checklist requests (Admin)
     CHECKLIST_REQUESTS: {
-      LIST: `${BASE_URL}/visa_applications/checklist/requested`,
-      BY_ID: (leadId: string) => `${BASE_URL}/visa_applications/checklist/requested/${leadId}`,
-      STATUS: (leadId: string) => `${BASE_URL}/visa_applications/${leadId}/checklist-status`,
+      LIST: `${ZOHO_BASE_URL}/visa_applications/checklist/requested`,
+      BY_ID: (leadId: string) => `${ZOHO_BASE_URL}/visa_applications/checklist/requested/${leadId}`,
+      STATUS: (leadId: string) => `${ZOHO_BASE_URL}/visa_applications/${leadId}/checklist-status`,
     },
     
     // Client checklist requests
     CLIENT_CHECKLIST_REQUESTS: {
-      LIST: `${BASE_URL}/clients/checklist/requested`,
-      BY_ID: (leadId: string) => `${BASE_URL}/clients/checklist/requested/${leadId}`,
-      STATUS: (leadId: string) => `${BASE_URL}/visa_applications/${leadId}/checklist-status`,
+      LIST: `${ZOHO_BASE_URL}/clients/checklist/requested`,
+      BY_ID: (leadId: string) => `${ZOHO_BASE_URL}/clients/checklist/requested/${leadId}`,
+      STATUS: (leadId: string) => `${ZOHO_BASE_URL}/visa_applications/${leadId}/checklist-status`,
     },
     
     // User management
     USERS: {
-      LIST: `${BASE_URL}/users`,
-      CREATE: `${BASE_URL}/users/signup`,
-      UPDATE_ROLE: `${BASE_URL}/users/update_role`,
-      RESET_PASSWORD: `${BASE_URL}/users/reset`,
+      LIST: `${ZOHO_BASE_URL}/users`,
+      CREATE: `${ZOHO_BASE_URL}/users/signup`,
+      UPDATE_ROLE: `${ZOHO_BASE_URL}/users/update_role`,
+      RESET_PASSWORD: `${ZOHO_BASE_URL}/users/reset`,
     },
     
     // Authentication
     AUTH: {
-      LOGIN: `${BASE_URL}/auth/login`,
-      REFRESH: `${BASE_URL}/auth/refresh`,
+      LOGIN: `${ZOHO_BASE_URL}/auth/login`,
+      REFRESH: `${ZOHO_BASE_URL}/auth/refresh`,
     }
-  },
-  
-  // Request configuration
-  DEFAULT_HEADERS: {
-    'Content-Type': 'application/json',
   },
   
   // Timeout configuration
@@ -78,8 +81,30 @@ export const API_CONFIG = {
 } as const;
 
 /**
- * Helper function to build query strings
+ * Get headers for JSON requests
  */
+export function getJsonHeaders(token?: string): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
+/**
+ * Get headers for FormData requests (file uploads)
+ * IMPORTANT: Do NOT set Content-Type - browser sets it automatically with boundary
+ */
+export function getFormDataHeaders(token?: string): Record<string, string> {
+  const headers: Record<string, string> = {};
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export function buildQueryString(params: Record<string, string | number | boolean | undefined>): string {
   const searchParams = new URLSearchParams();
   
@@ -92,9 +117,6 @@ export function buildQueryString(params: Record<string, string | number | boolea
   return searchParams.toString();
 }
 
-/**
- * Helper function to get full URL with query parameters
- */
 export function getFullUrl(endpoint: string, params?: Record<string, string | number | boolean | undefined>): string {
   if (!params) return endpoint;
   

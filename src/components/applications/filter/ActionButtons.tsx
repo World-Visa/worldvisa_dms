@@ -39,10 +39,10 @@ export const ActionButtons = memo(function ActionButtons({
         <div className="flex items-center gap-2">
           {onCancelChecklist && (
             <Button
-              variant="outline"
+              variant="link"
               size="sm"
               onClick={onCancelChecklist}
-              className="px-4 py-3 rounded-full text-sm"
+              className="px-4 py-3 text-sm"
             >
               Cancel
             </Button>
@@ -67,10 +67,10 @@ export const ActionButtons = memo(function ActionButtons({
         <div className="flex items-center gap-2">
           {onCancelChecklist && (
             <Button
-              variant="outline"
+              variant="link"
               size="sm"
               onClick={onCancelChecklist}
-              className="px-4 py-3 rounded-full text-sm"
+              className="px-4 py-3 text-sm"
             >
               Cancel
             </Button>

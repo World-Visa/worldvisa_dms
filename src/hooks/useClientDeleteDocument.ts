@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetcher } from '@/lib/fetcher';
 import { toast } from 'sonner';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 interface DeleteDocumentResponse {
   success: boolean;
@@ -16,7 +17,12 @@ export function useClientDeleteDocument() {
 
   return useMutation({
     mutationFn: async ({ documentId }: DeleteDocumentRequest): Promise<DeleteDocumentResponse> => {
-      const response = await fetcher<DeleteDocumentResponse>(`/api/zoho_dms/visa_applications/documents/${documentId}`, {
+      // Validate documentId before making the request
+      if (!documentId || typeof documentId !== 'string' || documentId.trim() === '') {
+        throw new Error('Document ID is required and must be a non-empty string');
+      }
+      
+      const response = await fetcher<DeleteDocumentResponse>(`${ZOHO_BASE_URL}/visa_applications/documents/${documentId}`, {
         method: 'DELETE',
       });
       return response;

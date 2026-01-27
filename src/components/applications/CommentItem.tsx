@@ -37,7 +37,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
 }) => {
   const { user } = useAuth();
   const isImportant =
-    comment.is_important || comment.added_by.toLowerCase().includes("moshin");
+    comment.is_important || (comment.added_by ?? '').toLowerCase().includes("moshin");
 
   // Determine if current user can delete this comment
   const canDelete =

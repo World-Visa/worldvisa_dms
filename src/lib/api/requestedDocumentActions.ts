@@ -1,4 +1,5 @@
 import { fetcher } from '@/lib/fetcher';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export interface UpdateDocumentStatusRequest {
   reviewId: string;
@@ -28,9 +29,7 @@ export async function updateDocumentStatus(
   data: UpdateDocumentStatusRequest
 ): Promise<UpdateDocumentStatusResponse> {
   try {
-    // Use the correct endpoint for updating requested review status
-    // PUT /api/zoho_dms/visa_applications/documents/{documentId}/requested_reviews
-    const response = await fetcher(`https://worldvisagroup-19a980221060.herokuapp.com/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`, {
+    const response = await fetcher(`${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -50,8 +49,7 @@ export async function deleteRequestedDocument(
   data: DeleteRequestedDocumentRequest
 ): Promise<DeleteRequestedDocumentResponse> {
   try {
-    // Use local API route which handles real-time events
-    const response = await fetcher(`/api/zoho_dms/visa_applications/documents/${documentId}/requested_reviews`, {
+    const response = await fetcher(`${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

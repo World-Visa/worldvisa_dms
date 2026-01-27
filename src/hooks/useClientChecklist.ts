@@ -16,7 +16,7 @@ interface ChecklistApiResponse {
   };
 }
 
-const API_BASE_URL = 'https://worldvisagroup-19a980221060.herokuapp.com';
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export function useClientChecklist(applicationId: string) {
   return useQuery({
@@ -24,7 +24,7 @@ export function useClientChecklist(applicationId: string) {
     queryFn: async (): Promise<ChecklistResponse> => {
       try {
         // Use the client checklist endpoint with applicationId as query parameter
-        const url = `${API_BASE_URL}/api/zoho_dms/clients/checklist/`;
+        const url = `${ZOHO_BASE_URL}/clients/checklist/`;
         const params = new URLSearchParams({ record_id: applicationId });
         
         const response = await fetcher<ChecklistApiResponse>(`${url}?${params.toString()}`);

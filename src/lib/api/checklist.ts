@@ -1,10 +1,3 @@
-/**
- * Checklist API Integration
- *
- * This module handles all API interactions for the dynamic checklist system.
- * Provides clean, type-safe methods for CRUD operations on checklist items.
- */
-
 import { fetcher } from "@/lib/fetcher";
 import type {
   ChecklistApiResponse,
@@ -19,15 +12,13 @@ import {
   AddDescriptionResponse,
 } from "@/types/description";
 
-const API_BASE_URL = "https://worldvisagroup-19a980221060.herokuapp.com";
+import { ZOHO_BASE_URL } from '@/lib/config/api';
 
-/**
- * Get all checklist items for an application
- */
+
 export async function getChecklist(
   applicationId: string
 ): Promise<ChecklistResponse> {
-  const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
 
   const response = await fetcher<{
@@ -65,7 +56,7 @@ export async function createChecklistItem(
   applicationId: string,
   item: ChecklistCreateRequest
 ): Promise<ChecklistApiResponse<ChecklistItem>> {
-  const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
 
   const requestItem = {
@@ -88,7 +79,7 @@ export async function updateChecklistItem(
   applicationId: string,
   item: ChecklistUpdateRequest
 ): Promise<ChecklistApiResponse<ChecklistItem>> {
-  const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
 
   const requestItem = {
@@ -121,7 +112,7 @@ export async function updateDescription(
     throw new Error('Description cannot exceed 1000 characters');
   }
 
-  const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
 
   try {
@@ -158,7 +149,7 @@ export async function deleteChecklistItem(
   applicationId: string,
   request: ChecklistDeleteRequest
 ): Promise<ChecklistApiResponse<void>> {
-  const url = `${API_BASE_URL}/api/zoho_dms/visa_applications/checklist/${applicationId}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
 
   return fetcher<ChecklistApiResponse<void>>(`${url}?${params.toString()}`, {

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { memo, useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ChevronDown, Check } from 'lucide-react';
 import {
@@ -33,6 +34,8 @@ interface CategoryDropdownProps {
   onSaveChecklist?: () => void;
   onCancelChecklist?: () => void;
   isSavingChecklist: boolean;
+  checklistActions?: 'inline' | 'link';
+  applicationId?: string;
 }
 
 export const CategoryDropdown = memo(function CategoryDropdown({
@@ -50,9 +53,13 @@ export const CategoryDropdown = memo(function CategoryDropdown({
   onStartEditingChecklist,
   onSaveChecklist,
   onCancelChecklist,
-  isSavingChecklist
+  isSavingChecklist,
+  checklistActions = 'inline',
+  applicationId,
 }: CategoryDropdownProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const useLinkMode = checklistActions === 'link' && !!applicationId && !isClientView;
+  const hasChecklist = checklistState === 'saved';
 
   const selectedCategoryInfo = categories.find(cat => cat.id === selectedCategory);
 
@@ -113,15 +120,23 @@ export const CategoryDropdown = memo(function CategoryDropdown({
             maxCompanies={maxCompanies}
             onAddCompany={onAddCompany}
           />
-          <ActionButtons 
-            isClientView={isClientView}
-            checklistState={checklistState}
-            onStartCreatingChecklist={onStartCreatingChecklist}
-            onStartEditingChecklist={onStartEditingChecklist}
-            onSaveChecklist={onSaveChecklist}
-            onCancelChecklist={onCancelChecklist}
-            isSavingChecklist={isSavingChecklist}
-          />
+          {useLinkMode ? (
+            <Button variant="outline" size="sm" asChild className="w-full">
+              <Link href={`/admin/applications/${applicationId}/checklist`}>
+                {hasChecklist ? 'Edit checklist' : 'Create checklist'}
+              </Link>
+            </Button>
+          ) : (
+            <ActionButtons 
+              isClientView={isClientView}
+              checklistState={checklistState}
+              onStartCreatingChecklist={onStartCreatingChecklist}
+              onStartEditingChecklist={onStartEditingChecklist}
+              onSaveChecklist={onSaveChecklist}
+              onCancelChecklist={onCancelChecklist}
+              isSavingChecklist={isSavingChecklist}
+            />
+          )}
         </div>
       </div>
     </div>
