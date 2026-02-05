@@ -90,7 +90,12 @@ export const generatePastEmploymentDescription = (companyName: string, fromDate:
 };
 
 
-export const generateCompanyDescription = (fromDate: string, toDate: string): string => {
+export const generateCompanyDescription = (fromDate: string | null | undefined, toDate: string | null | undefined): string => {
+  const hasFrom = fromDate != null && String(fromDate).trim() !== '';
+  const hasTo = toDate != null && String(toDate).trim() !== '';
+  if (!hasFrom || !hasTo) {
+    return 'Employment period not specified';
+  }
   const fromDateFormatted = formatDateForDisplay(fromDate);
   const toDateFormatted = formatDateForDisplay(toDate);
   const duration = calculateDuration(fromDate, toDate);
