@@ -4,7 +4,6 @@ import React, { useState, useCallback, useMemo, useEffect, Suspense, lazy, memo 
 import { useQualityCheckApplications, useSearchQualityCheckApplications } from '@/hooks/useQualityCheckApplications';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
-import { QualityCheckFilters } from '@/components/quality-check/QualityCheckFilters';
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, CheckCircle, FileText } from 'lucide-react';

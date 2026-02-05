@@ -27,7 +27,7 @@ export function AdminLoginForm() {
           ? error.message
           : 'Login failed. Please try again.';
       toast.error(errorMessage);
-      throw error; // Re-throw to let LoginForm handle it
+      throw error; 
     }
   };
 
@@ -35,7 +35,6 @@ export function AdminLoginForm() {
     <div className="h-screen bg-gray-50 flex items-center justify-center">
       <div className="w-full h-full mx-auto flex">
 
-        {/* Left Side - Image with Overlay */}
         <div className="relative z-20 w-1/2 h-full rounded-2xl hidden md:block">
           <Image
             src={loginBackground}
@@ -65,9 +64,7 @@ export function AdminLoginForm() {
           </div>
         </div>
 
-        {/* Right Side - Login Form */}
         <div className="flex w-full md:w-1/2 md:min-w-[480px] items-center justify-center relative">
-          {/* Back to Portal Button - Top Right */}
           <Link href="/portal" className="absolute top-10 right-10 z-10">
             <Button variant="outline" size="sm" className="gap-2 cursor-pointer">
               Back to Portal

@@ -11,15 +11,15 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status }: StatusBadgeProps) {
   const statusConfig = {
-    pending: { 
-      variant: 'secondary' as const, 
-      icon: Clock, 
-      className: 'bg-yellow-100 text-yellow-800 border-yellow-200 text-xs px-2 py-1' 
+    pending: {
+      variant: 'secondary' as const,
+      icon: Clock,
+      className: 'bg-amber-100 text-amber-800 border border-amber-200 font-medium shadow-sm text-xs px-2 py-1'
     },
-    reviewed: { 
-      variant: 'secondary' as const, 
-      icon: Eye, 
-      className: 'bg-green-100 text-green-800 border-green-200 text-xs px-2 py-1' 
+    reviewed: {
+      variant: 'secondary' as const,
+      icon: Eye,
+      className: 'bg-emerald-100 text-emerald-800 border border-emerald-200 font-medium shadow-sm text-xs px-2 py-1'
     }
   };
 
