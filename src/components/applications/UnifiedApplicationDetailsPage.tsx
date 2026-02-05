@@ -280,8 +280,6 @@ export default function UnifiedApplicationDetailsPage({
     const hasDocuments = companyDocuments.length > 0;
     const documentCount = companyDocuments.length;
 
-    console.log('[RemoveCompany] Company documents found:', documentCount);
-
     // Open dialog with company info
     setRemoveCompanyDialog({
       isOpen: true,
