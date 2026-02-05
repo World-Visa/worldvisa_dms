@@ -14,33 +14,28 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
   const [limit] = useState(20);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
-  // Performance monitoring
   const { measureAsync } = usePerformanceMonitor("ChecklistRequestsPage");
 
-  // Fetch checklist requests data with optimized settings
   const { data, isLoading, error, refetch } = useChecklistRequests({
     page,
     limit,
-    staleTime: 5 * 60 * 1000, // 5 minutes - increased for better performance
+    staleTime: 5 * 60 * 1000, 
   });
 
-  // Memoized page change handler with debouncing
   const handlePageChange = useCallback(
     async (newPage: number) => {
-      if (newPage === page) return; // Prevent unnecessary calls
+      if (newPage === page) return;
 
       await measureAsync(async () => {
         setPage(newPage);
-        // Smooth scroll to top
         window.scrollTo({ top: 0, behavior: "smooth" });
       }, "pageChange");
     },
     [measureAsync, page]
   );
 
-  // Optimized refresh handler with loading state
   const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return; // Prevent multiple simultaneous refreshes
+    if (isRefreshing) return; 
 
     setIsRefreshing(true);
     try {
@@ -52,11 +47,9 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
     }
   }, [refetch, measureAsync, isRefreshing]);
 
-  // Memoized calculations with early returns for better performance
   const { totalRequests, currentRequests } = useMemo(() => {
     const rawRequests = data?.data || [];
 
-    // Early return if no data
     if (rawRequests.length === 0) {
       return {
         totalRequests: 0,
@@ -64,7 +57,6 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
       };
     }
 
-    // Filter valid requests in a single pass
     const valid = rawRequests.filter(
       (req) =>
         req.id && req.id.trim() !== "" && req.Checklist_Requested === true
@@ -76,7 +68,6 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
     };
   }, [data?.data]);
 
-  // Memoized loading state
   const isDataLoading = useMemo(
     () => isLoading || isRefreshing,
     [isLoading, isRefreshing]
@@ -85,7 +76,6 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
   return (
     <main className="min-h-screen bg-gray-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header Section */}
         <div className="mb-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
@@ -99,7 +89,6 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
               </p>
             </div>
 
-            {/* Stats Card with Refresh Button - Better Layout */}
             <div className="flex flex-col pt-0 md:pt-10 sm:flex-row items-start sm:items-center gap-4">
               <Button
                 variant="outline"
@@ -114,7 +103,7 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
                 <span>Refresh</span>
               </Button>
 
-              <Card className="w-full sm:w-64 border-0 shadow-sm bg-gradient-to-r from-blue-50 to-indigo-50">
+              <Card className="w-full sm:w-64 border-0 shadow-sm bg-linear-to-r from-blue-50 to-indigo-50">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -135,7 +124,6 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
           </div>
         </div>
 
-        {/* Error State */}
         {error && (
           <Card className="mb-6 border-red-200 bg-red-50/50">
             <CardContent className="p-6">
@@ -168,7 +156,6 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
           </Card>
         )}
 
-        {/* Empty State */}
         {!isDataLoading && !error && currentRequests.length === 0 && (
           <Card className="mb-6 border-blue-200 bg-blue-50/50">
             <CardContent className="p-8">
@@ -188,7 +175,6 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
           </Card>
         )}
 
-        {/* Checklist Requests Table */}
         {!error && (
           <div className="mb-8">
             <ChecklistRequestsTable
@@ -201,7 +187,6 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
           </div>
         )}
 
-        {/* Pagination */}
         {!isDataLoading && !error && totalRequests > limit && (
           <div className="flex justify-center">
             <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">

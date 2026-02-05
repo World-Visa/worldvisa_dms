@@ -28,6 +28,7 @@ export interface RequestedDocument {
     added_at: string;
   }>;
   __v: number;
+  client_name?: string;
   requested_review: {
     requested_by: string;
     requested_to: string;
@@ -44,7 +45,6 @@ export interface RequestedDocument {
     messages: unknown[];
     requested_at: string;
   }>;
-  // Computed properties added by the hook
   isOverdue?: boolean;
   daysSinceRequest?: number;
   priority?: 'high' | 'medium' | 'low';
@@ -73,26 +73,30 @@ export interface RequestedDocumentsParams {
   [key: string]: string | number | boolean | undefined;
 }
 
-/**
- * Fetches documents requested for review by the current user
- */
+
 export async function getRequestedDocumentsToMe(
   params: RequestedDocumentsParams = {}
 ): Promise<RequestedDocumentsResponse> {
   const startTime = Date.now();
-  
-  try {
-    const searchParams = new URLSearchParams();
-    
-    if (params.page) searchParams.append('page', params.page.toString());
-    if (params.limit) searchParams.append('limit', params.limit.toString());
-    if (params.status) searchParams.append('status', params.status);
-    if (params.requested_by) searchParams.append('requested_by', params.requested_by);
-    if (params.requested_to) searchParams.append('requested_to', params.requested_to);
-    if (params.sort) searchParams.append('sort', params.sort);
-    if (params.order) searchParams.append('order', params.order);
 
-    const url = getFullUrl(API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL_TO, params);
+  try {
+    const defaultParams = {
+      ...params,
+      sort: 'requested_at',
+      order: 'desc' as const
+    };
+
+    const searchParams = new URLSearchParams();
+
+    if (defaultParams.page) searchParams.append('page', defaultParams.page.toString());
+    if (defaultParams.limit) searchParams.append('limit', defaultParams.limit.toString());
+    if (defaultParams.status) searchParams.append('status', defaultParams.status);
+    if (defaultParams.requested_by) searchParams.append('requested_by', defaultParams.requested_by);
+    if (defaultParams.requested_to) searchParams.append('requested_to', defaultParams.requested_to);
+    if (defaultParams.sort) searchParams.append('sort', defaultParams.sort);
+    if (defaultParams.order) searchParams.append('order', defaultParams.order);
+
+    const url = getFullUrl(API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL_TO, defaultParams);
     
     const response = await fetcher(url, {
       method: 'GET',
@@ -125,26 +129,30 @@ export async function getRequestedDocumentsToMe(
   }
 }
 
-/**
- * Fetches documents that the current user has requested for review
- */
+
 export async function getMyRequestedDocuments(
   params: RequestedDocumentsParams = {}
 ): Promise<RequestedDocumentsResponse> {
   const startTime = Date.now();
-  
-  try {
-    const searchParams = new URLSearchParams();
-    
-    if (params.page) searchParams.append('page', params.page.toString());
-    if (params.limit) searchParams.append('limit', params.limit.toString());
-    if (params.status) searchParams.append('status', params.status);
-    if (params.requested_by) searchParams.append('requested_by', params.requested_by);
-    if (params.requested_to) searchParams.append('requested_to', params.requested_to);
-    if (params.sort) searchParams.append('sort', params.sort);
-    if (params.order) searchParams.append('order', params.order);
 
-    const url = getFullUrl(API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL_ME, params);
+  try {
+    const defaultParams = {
+      ...params,
+      sort: 'requested_at',
+      order: 'desc' as const
+    };
+
+    const searchParams = new URLSearchParams();
+
+    if (defaultParams.page) searchParams.append('page', defaultParams.page.toString());
+    if (defaultParams.limit) searchParams.append('limit', defaultParams.limit.toString());
+    if (defaultParams.status) searchParams.append('status', defaultParams.status);
+    if (defaultParams.requested_by) searchParams.append('requested_by', defaultParams.requested_by);
+    if (defaultParams.requested_to) searchParams.append('requested_to', defaultParams.requested_to);
+    if (defaultParams.sort) searchParams.append('sort', defaultParams.sort);
+    if (defaultParams.order) searchParams.append('order', defaultParams.order);
+
+    const url = getFullUrl(API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL_ME, defaultParams);
     
     const response = await fetcher(url, {
       method: 'GET',
@@ -177,9 +185,6 @@ export async function getMyRequestedDocuments(
   }
 }
 
-/**
- * Updates the status of a requested document review
- */
 export async function updateRequestedDocumentStatus(
   documentId: string,
   status: 'reviewed',
@@ -221,27 +226,30 @@ export async function updateRequestedDocumentStatus(
   }
 }
 
-/**
- * Fetch all requested documents (master admin only)
- */
+
 export async function getAllRequestedDocuments(
   page: number = 1,
   limit: number = 10,
   filters: Omit<RequestedDocumentsParams, 'page' | 'limit'> = {}
 ): Promise<RequestedDocumentsResponse> {
+  const defaultFilters = {
+    ...filters,
+    sort: 'requested_at',
+    order: 'desc' as const
+  };
+
   const searchParams = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
   });
 
-  // Add filter parameters
-  if (filters.status) searchParams.append('status', String(filters.status));
-  if (filters.requested_by) searchParams.append('requested_by', String(filters.requested_by));
-  if (filters.requested_to) searchParams.append('requested_to', String(filters.requested_to));
-  if (filters.sort) searchParams.append('sort', String(filters.sort));
-  if (filters.order) searchParams.append('order', String(filters.order));
+  if (defaultFilters.status) searchParams.append('status', String(defaultFilters.status));
+  if (defaultFilters.requested_by) searchParams.append('requested_by', String(defaultFilters.requested_by));
+  if (defaultFilters.requested_to) searchParams.append('requested_to', String(defaultFilters.requested_to));
+  if (defaultFilters.sort) searchParams.append('sort', String(defaultFilters.sort));
+  if (defaultFilters.order) searchParams.append('order', String(defaultFilters.order));
 
   return fetcher<RequestedDocumentsResponse>(
-    getFullUrl(API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL, { page, limit, ...filters })
+    getFullUrl(API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL, { page, limit, ...defaultFilters })
   );
 }
