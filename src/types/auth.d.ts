@@ -8,7 +8,8 @@ export interface User {
 
 export interface AuthResponse {
   status: "success" | "error";
-  token: string;
+  csrfToken: string;  // Changed from token to csrfToken (backend now returns this)
+  user?: User;  // Backend returns user directly, not nested in data
   data?: {
     user: User;
   };
@@ -38,7 +39,7 @@ export interface ClientResetPasswordRequest {
 
 export interface AuthState {
   user: User | null;
-  token: string | null;
+  csrfToken: string | null;  // Changed from token - stores CSRF token for authenticated requests
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
