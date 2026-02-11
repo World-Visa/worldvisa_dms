@@ -57,6 +57,7 @@ export async function adminLogin(credentials: AdminLoginRequest): Promise<AuthRe
   return fetchWithErrorHandling<AuthResponse>(`${ZOHO_BASE_URL}/users/login`, {
     method: 'POST',
     body: JSON.stringify(credentials),
+    credentials: 'include',  // CRITICAL: Send/receive session cookies
   });
 }
 
@@ -65,6 +66,7 @@ export async function clientLogin(credentials: ClientLoginRequest): Promise<Auth
   return fetchWithErrorHandling<AuthResponse>(`${ZOHO_BASE_URL}/clients/login`, {
     method: 'POST',
     body: JSON.stringify(credentials),
+    credentials: 'include',  // CRITICAL: Send/receive session cookies
   });
 }
 
