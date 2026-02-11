@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
 
     if (pathname.startsWith('/admin') && !adminRoles.includes(user.role)) {
       // User is not an admin but trying to access admin routes
-      return NextResponse.redirect(new URL('/client/dashboard', request.url));
+      return NextResponse.redirect(new URL('/client/applications', request.url));
     }
 
     if (pathname.startsWith('/client') && user.role !== 'client') {
