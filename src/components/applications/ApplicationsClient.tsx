@@ -232,7 +232,6 @@ export const ApplicationsClient = memo(function ApplicationsClient({
 
   return (
     <>
-      <LodgementDeadlineStatsCard type="visa" />
       {/* Filters Section */}
       <div className="flex flex-col w-full sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
         <div>
@@ -256,6 +255,9 @@ export const ApplicationsClient = memo(function ApplicationsClient({
           <span className="hidden sm:inline">Refresh</span>
         </Button>
       </div>
+
+      <LodgementDeadlineStatsCard type="visa" />
+
 
       {/* Filters Toggle Section */}
       <div className="mb-6 w-full flex justify-between gap-4 items-start">
@@ -299,7 +301,7 @@ export const ApplicationsClient = memo(function ApplicationsClient({
           />
         </div>
       </div>
-      
+
       <div className="mb-4 flex justify-end">
         <Badge variant="secondary">
           Total applications:&nbsp;
