@@ -29,6 +29,8 @@ export interface Application {
   Deadline_For_Lodgment?: string;
   Record_Type?: string;
   Main_Applicant?: string;
+  Spouse_Skill_Assessment?: string | null;
+  Spouse_Name?: string | null;
 }
 
 export interface Document {

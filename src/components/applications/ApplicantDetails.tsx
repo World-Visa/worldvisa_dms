@@ -1,24 +1,13 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Button } from "@/components/ui/button";
 import { Application } from "@/types/applications";
 import { formatDate } from "@/utils/format";
 import {
-  Briefcase,
-  Calendar,
-  FileText,
-  Globe,
-  Mail,
-  Phone,
-  Target,
   User,
-  Clock,
-  Edit3,
-  AlertTriangle,
-  Library,
 } from "lucide-react";
 import { useState } from "react";
+import { ApplicationDeadlineCard } from "./ApplicationDeadlineCard";
 import { DeadlineUpdateModal } from "./DeadlineUpdateModal";
 
 interface ApplicantDetailsProps {
@@ -110,164 +99,14 @@ export function ApplicantDetails({
     return value;
   };
 
-  // Check if deadline is approaching (within 30 days)
-  const isDeadlineApproaching = (deadline: string) => {
-    if (!deadline) return false;
-    const deadlineDate = new Date(deadline);
-    const today = new Date();
-    const diffTime = deadlineDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 30 && diffDays >= 0;
-  };
-
-  // Check if deadline has passed
-  const isDeadlinePassed = (deadline: string) => {
-    if (!deadline) return false;
-    const deadlineDate = new Date(deadline);
-    const today = new Date();
-    return deadlineDate < today;
-  };
-
-  // Calculate days remaining
-  const getDaysRemaining = (deadline: string) => {
-    if (!deadline) return null;
-    const deadlineDate = new Date(deadline);
-    const today = new Date();
-    const diffTime = deadlineDate.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays < 0 ? "Overdue" : diffDays;
-  };
-
-  // Get conditional styles based on deadline status
-  const getDeadlineStyles = (deadline: string) => {
-    const passed = isDeadlinePassed(deadline);
-    const approaching = isDeadlineApproaching(deadline);
-
-    if (passed) {
-      return {
-        container: "bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30",
-        iconContainer: "bg-red-500/10 dark:bg-red-500/20",
-        icon: "text-red-600 dark:text-red-400",
-        label: "text-red-600/70 dark:text-red-400/70",
-        date: "text-slate-800 dark:text-white",
-        subtitle: "text-red-600/60 dark:text-red-400/60",
-        days: "text-red-600 dark:text-red-400",
-      };
-    } else if (approaching) {
-      return {
-        container: "bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30",
-        iconContainer: "bg-orange-500/10 dark:bg-orange-500/20",
-        icon: "text-orange-600 dark:text-orange-400",
-        label: "text-orange-600/70 dark:text-orange-400/70",
-        date: "text-slate-800 dark:text-white",
-        subtitle: "text-orange-600/60 dark:text-orange-400/60",
-        days: "text-orange-600 dark:text-orange-400",
-      };
-    } else {
-      return {
-        container: "bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30",
-        iconContainer: "bg-blue-500/10 dark:bg-blue-500/20",
-        icon: "text-blue-600 dark:text-blue-400",
-        label: "text-blue-600/70 dark:text-blue-400/70",
-        date: "text-slate-800 dark:text-white",
-        subtitle: "text-blue-600/60 dark:text-blue-400/60",
-        days: "text-blue-600 dark:text-blue-400",
-      };
-    }
-  };
-
   return (
     <div className="space-y-6">
-      {/* Deadline Card - Prominent Display */}
-      {application.Deadline_For_Lodgment ? (() => {
-        const deadline = application.Deadline_For_Lodgment;
-        const styles = getDeadlineStyles(deadline);
-        const daysRemaining = getDaysRemaining(deadline);
-        const passed = isDeadlinePassed(deadline);
-        const approaching = isDeadlineApproaching(deadline);
-
-        return (
-          <div className={`${styles.container} rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6`}>
-            <div className="flex items-center space-x-5">
-              <div className={`w-12 h-12 ${styles.iconContainer} rounded-xl flex items-center justify-center relative`}>
-                <Calendar className={`h-6 w-6 ${styles.icon}`} />
-              </div>
-              <div>
-                <p className={`${styles.label} text-sm font-medium uppercase tracking-wider flex items-center gap-2`}>
-                  Application Deadline
-                  {passed && (
-                    <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />
-                  )}
-                  {approaching && !passed && (
-                    <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />
-                  )}
-                </p>
-                <h2 className={`${styles.date} text-2xl font-bold`}>
-                  {formatDate(deadline)}
-                </h2>
-                <p className={`${styles.subtitle} text-xs`}>
-                  {passed
-                    ? "⚠️ Deadline has passed"
-                    : approaching
-                      ? "⚠️ Deadline approaching"
-                      : "Final lodgement target date"}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-8">
-              <div className="text-center">
-                <p className={`${styles.days} text-3xl font-black`}>
-                  {daysRemaining}
-                </p>
-                <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest">
-                  Days Remaining
-                </p>
-              </div>
-              {(user?.role === "admin" ||
-                user?.role === "team_leader" ||
-                user?.role === "master_admin") && (
-                  <Button
-                    onClick={() => setIsDeadlineModalOpen(true)}
-                    className="bg-white hover:bg-gray-50 px-4 py-2 rounded-lg text-sm text-gray-900 font-semibold shadow-sm border border-slate-200 cursor-pointer transition-colors flex items-center gap-2"
-                  >
-                    Edit Deadline
-                  </Button>
-                )}
-            </div>
-          </div>
-        );
-      })() : (
-        // Show a card when no deadline is set, with option to set one
-        <div className="bg-gray-50 dark:bg-gray-900/10 border border-gray-200 dark:border-gray-800/30 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center space-x-5">
-            <div className="w-12 h-12 bg-gray-500/10 dark:bg-gray-500/20 rounded-xl flex items-center justify-center">
-              <Calendar className="h-6 w-6 text-gray-600 dark:text-gray-400" />
-            </div>
-            <div>
-              <p className="text-gray-600/70 dark:text-gray-400/70 text-sm font-medium uppercase tracking-wider">
-                Application Deadline
-              </p>
-              <h2 className="text-slate-800 dark:text-white text-2xl font-bold">
-                No deadline set
-              </h2>
-              <p className="text-gray-600/60 dark:text-gray-400/60 text-xs">
-                Application lodgement deadline not configured
-              </p>
-            </div>
-          </div>
-          {(user?.role === "admin" ||
-            user?.role === "team_leader" ||
-            user?.role === "master_admin") && (
-              <Button
-                onClick={() => setIsDeadlineModalOpen(true)}
-                className="bg-white dark:bg-slate-800 px-4 py-2 rounded-lg text-sm font-semibold shadow-sm border border-slate-200 dark:border-slate-700 hover:border-primary transition-colors flex items-center gap-2"
-              >
-                <Edit3 className="h-4 w-4" />
-                Set Deadline
-              </Button>
-            )}
-        </div>
-      )}
+      <ApplicationDeadlineCard
+        deadline={application.Deadline_For_Lodgment}
+        user={user}
+        onEditDeadline={() => setIsDeadlineModalOpen(true)}
+        applicationStage={application.Application_Stage}
+      />
 
       {/* All Application Information in Single Card */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
@@ -328,6 +167,26 @@ export function ApplicantDetails({
                     {formatValue(application.Main_Applicant || "")}
                   </p>
                 </div>
+                {application.Record_Type !== "spouse_skill_assessment" && (
+                  <>
+                    <div>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                        Spouse Skill Assessment
+                      </p>
+                      <p className="text-sm font-semibold">
+                        {formatValue(application.Spouse_Skill_Assessment ?? "")}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                        Spouse Name
+                      </p>
+                      <p className="text-sm font-semibold">
+                        {formatValue(application.Spouse_Name ?? "")}
+                      </p>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
