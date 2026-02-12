@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
 import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
 import { DocumentsSummary } from '@/components/applications/DocumentsSummary';
@@ -54,6 +55,13 @@ export function SkillAssessmentLayout({
   showSampleDocuments,
   onToggleSampleDocuments,
 }: SkillAssessmentLayoutProps) {
+  const [documentStatusFilter, setDocumentStatusFilter] = useState<Document['status'] | null>(null);
+
+  const documentsForTables = useMemo(() => {
+    if (!documentStatusFilter || !allDocuments) return allDocuments ?? [];
+    return allDocuments.filter((d) => d.status === documentStatusFilter);
+  }, [allDocuments, documentStatusFilter]);
+
   return (
     <>
       {showSampleDocuments ? (
@@ -64,6 +72,8 @@ export function SkillAssessmentLayout({
             documents={allDocuments}
             isLoading={isAllDocumentsLoading}
             error={allDocumentsError}
+            selectedStatus={documentStatusFilter}
+            onStatusClick={(status) => setDocumentStatusFilter((prev) => (prev === status ? null : status))}
           />
 
           <div className="space-y-8">
@@ -95,7 +105,7 @@ export function SkillAssessmentLayout({
             {selectedCategory === 'submitted' ? (
               <DocumentsTable
                 applicationId={applicationId}
-                documents={allDocuments}
+                documents={documentsForTables}
                 isLoading={isAllDocumentsLoading}
                 error={allDocumentsError}
                 onReuploadDocument={onReuploadDocument}
@@ -103,7 +113,7 @@ export function SkillAssessmentLayout({
               />
             ) : (
               <DocumentChecklistTable
-                documents={allDocuments}
+                documents={documentsForTables}
                 isLoading={isAllDocumentsLoading}
                 error={allDocumentsError}
                 applicationId={applicationId}
