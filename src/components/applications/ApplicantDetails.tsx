@@ -110,19 +110,6 @@ export function ApplicantDetails({
     return value;
   };
 
-  const getServiceBadgeVariant = (service: string) => {
-    switch (service?.toLowerCase()) {
-      case "permanent residency":
-        return "default";
-      case "work visa":
-        return "secondary";
-      case "student visa":
-        return "outline";
-      default:
-        return "secondary";
-    }
-  };
-
   // Check if deadline is approaching (within 30 days)
   const isDeadlineApproaching = (deadline: string) => {
     if (!deadline) return false;

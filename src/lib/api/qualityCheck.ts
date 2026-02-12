@@ -1,5 +1,5 @@
 import { fetcher } from '@/lib/fetcher';
-import { QualityCheckRequest, QualityCheckResponse as QualityCheckResponseType } from '@/types/common';
+import { QualityCheckRequest } from '@/types/common';
 import { ZOHO_BASE_URL } from '@/lib/config/api';
 
 export interface QualityCheckApplication {
@@ -12,6 +12,23 @@ export interface QualityCheckApplication {
   DMS_Application_Status?: string | null;
   Application_Stage?: string | null;
   Name: string;
+  Record_Type?: string;
+  Main_Applicant?: string | null;
+}
+
+/** Backend API response shape */
+interface QualityCheckBackendResponse {
+  success: boolean;
+  data: QualityCheckApplication[];
+  totalCount?: number;
+  pagination?: {
+    currentPage: number;
+    pageSize: number;
+    totalRecords: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export interface QualityCheckResponse {
@@ -65,23 +82,24 @@ export async function getQualityCheckApplications(
 
   const url = `${ZOHO_BASE_URL}/visa_applications/quality_check?${searchParams.toString()}`;
   
-  const response = await fetcher<QualityCheckResponse>(url);
+  const response = await fetcher<QualityCheckBackendResponse>(url);
   
-  // Transform the response to match our paginated structure
-  // Since the API doesn't return pagination info, we'll simulate it
   const page = params.page || 1;
-  const limit = params.limit || 20;
-  const totalItems = response.data?.length || 0;
-  const totalPages = Math.ceil(totalItems / limit);
-  
+  const limit = params.limit || 10;
+  const p = response.pagination;
+
+  // Map backend response: totalCount / pagination.totalRecords -> totalItems, pageSize -> limit
+  const totalItems = response.totalCount ?? p?.totalRecords ?? response.data?.length ?? 0;
+  const pageSize = p?.pageSize ?? limit;
+
   return {
     success: response.success,
     data: response.data || [],
     pagination: {
-      currentPage: page,
-      totalPages,
+      currentPage: p?.currentPage ?? page,
+      totalPages: p?.totalPages ?? Math.ceil(totalItems / pageSize),
       totalItems,
-      limit,
+      limit: pageSize,
     },
   };
 }
@@ -89,11 +107,11 @@ export async function getQualityCheckApplications(
 // Search quality check applications
 export async function searchQualityCheckApplications(
   searchParams: Record<string, string>
-): Promise<QualityCheckResponseType> {
+): Promise<QualityCheckResponse> {
   const urlParams = new URLSearchParams(searchParams);
   const url = `${ZOHO_BASE_URL}/visa_applications/quality_check?${urlParams.toString()}`;
   
-  return fetcher<QualityCheckResponseType>(url);
+  return fetcher<QualityCheckResponse>(url);
 }
 
 // Push application for quality check
@@ -101,7 +119,7 @@ export async function pushForQualityCheck(
   data: QualityCheckRequest,
   page: number = 1,
   limit: number = 10
-): Promise<QualityCheckResponseType> {
+): Promise<QualityCheckResponse> {
   const searchParams = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
@@ -109,7 +127,7 @@ export async function pushForQualityCheck(
 
   const url = `${ZOHO_BASE_URL}/visa_applications/quality_check?${searchParams.toString()}`;
   
-  return fetcher<QualityCheckResponseType>(url, {
+  return fetcher<QualityCheckResponse>(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

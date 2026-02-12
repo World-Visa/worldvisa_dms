@@ -9,20 +9,30 @@ import { ZOHO_BASE_URL } from '@/lib/config/api';
 export const useApplications = (filters: ApplicationsFilters) => {
   const transformedFilters = {
     ...filters,
-    handledBy: filters.handledBy && filters.handledBy.length > 0 
-      ? filters.handledBy.join(',') 
+    handledBy: filters.handledBy && filters.handledBy.length > 0
+      ? filters.handledBy.join(",")
       : undefined,
-  };  
-  
-  const query = qs.stringify(transformedFilters, { skipNull: true, skipEmptyString: true });
+    applicationStage:
+      filters.applicationStage && filters.applicationStage.length > 0
+        ? filters.applicationStage.join(",")
+        : undefined,
+    applicationState: filters.applicationState ?? undefined,
+  };
+
+  const query = qs.stringify(transformedFilters, {
+    skipNull: true,
+    skipEmptyString: true,
+  });
   const url = `${ZOHO_BASE_URL}/visa_applications?${query}`;
 
   const isRecentActivity = filters.recentActivity === true;
-  
+
   const hasActiveFilters = Boolean(
     (filters.handledBy && filters.handledBy.length > 0) ||
     filters.startDate ||
-    filters.endDate
+    filters.endDate ||
+    (filters.applicationStage && filters.applicationStage.length > 0) ||
+    filters.applicationState
   );
 
   return useQuery<ApplicationsResponse>({

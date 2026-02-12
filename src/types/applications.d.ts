@@ -99,6 +99,8 @@ export interface ApplicationsFilters {
   search?: string;
   recentActivity?: boolean;
   handledBy?: string[];
+  applicationStage?: string[];
+  applicationState?: "Active" | "In-Active";
 }
 
 export interface SearchParams {
