@@ -1,35 +1,17 @@
 'use client';
 
-import React, { useState, useCallback, useMemo, useEffect, Suspense, lazy, memo } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, memo } from 'react';
 import { useQualityCheckApplications, useSearchQualityCheckApplications } from '@/hooks/useQualityCheckApplications';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
-import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
+import { QualityCheckDataTable } from '@/components/quality-check/QualityCheckDataTable';
 import { Card, CardContent } from '@/components/ui/card';
-import { Users, CheckCircle, FileText } from 'lucide-react';
+import { CheckCircle } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
-
-// Lazy load heavy components for better performance
-const LazyQualityCheckTable = lazy(() =>
-  import('@/components/quality-check/QualityCheckTable').then(module => ({
-    default: module.QualityCheckTable
-  }))
-);
-
-// Skeleton component for loading state
-const QualityCheckTableSkeleton = () => (
-  <div className="space-y-4">
-    {Array.from({ length: 5 }).map((_, index) => (
-      <div key={index} className="animate-pulse">
-        <div className="h-16 bg-gray-200 rounded-lg"></div>
-      </div>
-    ))}
-  </div>
-);
 
 const QualityCheckPage = memo(function QualityCheckPage() {
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(20);
+  const [limit, setLimit] = useState(10);
   const [search, setSearch] = useState('');
   const [searchType, setSearchType] = useState<'name' | 'email' | 'phone'>('name');
   const [status, setStatus] = useState('all');
@@ -176,64 +158,37 @@ const QualityCheckPage = memo(function QualityCheckPage() {
     }
   }, [search, handleSearchClick]);
 
-  const totalApplications = data?.pagination.totalItems || 0;
+  const totalApplications = isSearchMode
+    ? (Array.isArray(searchData?.data) ? searchData.data.length : searchData?.data ? 1 : 0)
+    : (data?.pagination?.totalItems ?? 0);
 
   const displayError = isSearchMode ? searchQueryError : error;
 
   return (
-    <main className="min-h-screen bg-gray-50/50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 ">
-        {/* Header Section */}
+    <main className="min-h-screen bg-neutral-50/80">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header - Simple, professional */}
         <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div className="mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 font-lexend mb-2 flex items-center gap-2">
-                <FileText className="h-6 w-6" />
+          <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 sm:gap-4">
+            <div>
+              <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
                 Quality Check Applications
-              </h2>
-              <p className="text-gray-600">
-                Manage and review all applications pending quality verification.
+              </h1>
+              <p className="mt-0.5 text-sm text-neutral-500">
+                Manage and review applications pending quality verification.
               </p>
             </div>
-
-            {/* Stats Card */}
-            <div className="hidden lg:block pt-8">
-              <Card className="w-64 border-0 shadow-sm ">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 mb-1">Total Applications</p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {isLoading ? '...' : totalApplications.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-blue-50 rounded-full">
-                      <Users className="h-6 w-6 text-blue-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="text-sm text-neutral-500 tabular-nums">
+              {(isSearchMode ? isSearchQueryLoading : isLoading) ? (
+                <span className="animate-pulse">—</span>
+              ) : (
+                <>
+                  <span className="font-medium text-neutral-700">{totalApplications.toLocaleString()}</span>
+                  <span className="ml-1">{isSearchMode ? 'results' : 'applications'}</span>
+                </>
+              )}
             </div>
           </div>
-        </div>
-
-        {/* Mobile Stats Card */}
-        <div className="lg:hidden mb-6">
-          <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600 mb-1">Total Applications</p>
-                  <p className="text-xl font-bold text-gray-900">
-                    {isLoading ? '...' : totalApplications.toLocaleString()}
-                  </p>
-                </div>
-                <div className="p-2 bg-blue-50 rounded-full">
-                  <Users className="h-5 w-5 text-blue-600" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         {/* Filters Section */}
@@ -316,35 +271,25 @@ const QualityCheckPage = memo(function QualityCheckPage() {
           </Card>
         )}
 
-        {/* Applications Table Section */}
-        <div className="mb-8">
-          <Suspense fallback={<QualityCheckTableSkeleton />}>
-            <LazyQualityCheckTable
-              applications={data?.data || []}
-              currentPage={page}
-              limit={limit}
-              isLoading={isLoading}
-              isSearchMode={isSearchMode}
-              searchResults={[]}
-              isSearchLoading={isSearchQueryLoading}
-            />
-          </Suspense>
-        </div>
-
-        {/* Pagination (only show when not in search mode) */}
-        {!isSearchMode && data && data.pagination.totalPages > 1 && (
-          <div className="flex justify-center">
-            <Card className="border-0 shadow-sm bg-white/80 backdrop-blur-sm">
-              <CardContent className="p-4">
-                <ApplicationsPagination
-                  currentPage={page}
-                  totalRecords={data.pagination.totalItems}
-                  limit={limit}
-                  onPageChange={handlePageChange}
-                />
-              </CardContent>
-            </Card>
-          </div>
+        {/* DataTable with built-in pagination */}
+        {!isSearchMode ? (
+          <QualityCheckDataTable
+            applications={data?.data || []}
+            isLoading={isLoading}
+            totalItems={data?.pagination?.totalItems ?? 0}
+            currentPage={page}
+            limit={limit}
+            onPageChange={handlePageChange}
+          />
+        ) : (
+          <QualityCheckDataTable
+            applications={searchData?.data ? (Array.isArray(searchData.data) ? searchData.data : [searchData.data]) : []}
+            isLoading={isSearchQueryLoading}
+            totalItems={Array.isArray(searchData?.data) ? searchData.data.length : (searchData?.data ? 1 : 0)}
+            currentPage={1}
+            limit={limit}
+            onPageChange={() => {}}
+          />
         )}
       </div>
     </main>

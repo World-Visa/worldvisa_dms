@@ -8,6 +8,7 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { useQueryString } from '@/hooks/useQueryString';
 import { ApplicationsFilters } from '@/components/applications/ApplicationsFilters';
+import { LodgementDeadlineStatsCard } from '@/components/applications/LodgementDeadlineStatsCard';
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
 import { ApplicationsTableSkeleton, SearchResultsSkeleton } from '@/components/applications/ApplicationsTableSkeleton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -38,6 +39,8 @@ export const ApplicationsClient = memo(function ApplicationsClient({
   const [searchType, setSearchType] = useState<'name' | 'phone' | 'email'>('name');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [handledBy, setHandledBy] = useState<string[]>([]);
+  const [applicationStage, setApplicationStage] = useState<string[]>([]);
+  const [applicationState, setApplicationState] = useState<'Active' | 'In-Active' | undefined>(undefined);
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const [recentActivity, setRecentActivity] = useState(() => {
@@ -84,10 +87,12 @@ export const ApplicationsClient = memo(function ApplicationsClient({
       endDate,
       recentActivity: recentActivity || undefined,
       handledBy: handledBy.length > 0 ? handledBy : undefined,
+      applicationStage: applicationStage.length > 0 ? applicationStage : undefined,
+      applicationState: applicationState ?? undefined,
     };
 
     return filterParams;
-  }, [page, limit, dateRange, recentActivity, handledBy]);
+  }, [page, limit, dateRange, recentActivity, handledBy, applicationStage, applicationState]);
 
   const { data, isFetching, error } = useApplications(filters);
 
@@ -154,12 +159,24 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     setPage(1);
   }, []);
 
+  const handleApplicationStageChange = useCallback((value: string[]) => {
+    setApplicationStage(value);
+    setPage(1);
+  }, []);
+
+  const handleApplicationStateChange = useCallback((value: 'Active' | 'In-Active' | undefined) => {
+    setApplicationState(value);
+    setPage(1);
+  }, []);
+
   const handleClearFilters = useCallback(() => {
     setSearch('');
     setSearchQuery('');
     setSearchType('name');
     setDateRange(undefined);
     setHandledBy([]);
+    setApplicationStage([]);
+    setApplicationState(undefined);
     setRecentActivity(false);
     setPage(1);
 
@@ -215,6 +232,7 @@ export const ApplicationsClient = memo(function ApplicationsClient({
 
   return (
     <>
+      <LodgementDeadlineStatsCard type="visa" />
       {/* Filters Section */}
       <div className="flex flex-col w-full sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
         <div>
@@ -265,6 +283,8 @@ export const ApplicationsClient = memo(function ApplicationsClient({
             dateRange={dateRange}
             limit={limit}
             handledBy={handledBy}
+            applicationStage={applicationStage}
+            applicationState={applicationState}
             isSearchMode={isSearchMode}
             onSearchChange={handleSearchChange}
             onSearchTypeChange={handleSearchTypeChange}
@@ -272,6 +292,8 @@ export const ApplicationsClient = memo(function ApplicationsClient({
             onDateRangeChange={handleDateRangeChange}
             onLimitChange={handleLimitChange}
             onHandledByChange={handleHandledByChange}
+            onApplicationStageChange={handleApplicationStageChange}
+            onApplicationStateChange={handleApplicationStateChange}
             onClearFilters={handleClearFilters}
             onKeyPress={handleKeyPress}
           />
