@@ -1,11 +1,16 @@
 import { tokenStorage } from '@/lib/auth';
 import { ZOHO_BASE_URL } from '@/lib/config/api';
 
+/** Result when blob download was triggered in the client */
+export type DownloadAllDocumentsResult =
+  | { ok: true; downloaded: true }
+  | { ok: true; downloaded: false; downloadUrl: string; filename: string };
+
 /** Response when backend returns a Zoho download URL instead of streaming the ZIP */
 export interface DownloadAllUrlResponse {
   success: boolean;
   downloadUrl: string;
-  accessToken: string;
+  accessToken?: string;
   filename: string;
   message?: string;
   expiresIn?: number;
@@ -60,7 +65,13 @@ function triggerBlobDownload(blob: Blob, filename: string): void {
   window.URL.revokeObjectURL(objectUrl);
 }
 
-export async function downloadAllDocuments(leadId: string): Promise<void> {
+const SUCCESS_MESSAGE_PREFIX = 'Download link generated successfully';
+
+function isSuccessMessage(msg: string): boolean {
+  return msg.trim().toLowerCase().startsWith(SUCCESS_MESSAGE_PREFIX.toLowerCase());
+}
+
+export async function downloadAllDocuments(leadId: string): Promise<DownloadAllDocumentsResult> {
   const url = `${ZOHO_BASE_URL}/visa_applications/${leadId}/documents/download/all`;
 
   try {
@@ -91,7 +102,20 @@ export async function downloadAllDocuments(leadId: string): Promise<void> {
     });
 
     if (!response.ok) {
-      throw new Error(`Download failed: ${response.status} ${response.statusText}`);
+      let userMessage = 'Download failed. Please try again.';
+      const contentType = response.headers.get('content-type') ?? '';
+      if (contentType.includes('application/json')) {
+        try {
+          const json = (await response.json()) as { message?: string };
+          const msg = typeof json.message === 'string' ? json.message.trim() : '';
+          if (msg && !isSuccessMessage(msg)) {
+            userMessage = msg;
+          }
+        } catch {
+          /* use default userMessage */
+        }
+      }
+      throw new Error(userMessage);
     }
 
     const contentType = response.headers.get('content-type') ?? '';
@@ -99,39 +123,48 @@ export async function downloadAllDocuments(leadId: string): Promise<void> {
 
     if (contentType.includes('application/json')) {
       const json = (await response.json()) as DownloadAllUrlResponse;
-      if (!json.success || !json.downloadUrl || !json.accessToken) {
-        throw new Error(
-          json.message ?? 'Download link could not be generated. Please try again.'
-        );
+      if (!json.success || !json.downloadUrl) {
+        const fallback = 'Download link could not be generated. Please try again.';
+        throw new Error(json.message && !isSuccessMessage(json.message) ? json.message : fallback);
       }
       const filename = sanitizeFilename(json.filename, leadId);
-      const zohoResponse = await fetch(json.downloadUrl, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${json.accessToken}`,
-        },
-      });
-      if (!zohoResponse.ok) {
-        throw new Error('Download link could not be used. Please try again.');
+
+      if (!json.accessToken) {
+        return { ok: true, downloaded: false, downloadUrl: json.downloadUrl, filename };
       }
-      const blob = await zohoResponse.blob();
-      triggerBlobDownload(blob, filename);
-      return;
+
+      try {
+        const zohoResponse = await fetch(json.downloadUrl, {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${json.accessToken}`,
+          },
+        });
+        if (!zohoResponse.ok) {
+          return { ok: true, downloaded: false, downloadUrl: json.downloadUrl, filename };
+        }
+        const blob = await zohoResponse.blob();
+        triggerBlobDownload(blob, filename);
+        return { ok: true, downloaded: true };
+      } catch {
+        return { ok: true, downloaded: false, downloadUrl: json.downloadUrl, filename };
+      }
     }
 
     if (contentType.includes('application/zip') || contentDisposition?.includes('filename="documents.zip"')) {
       const blob = await response.blob();
       const fallbackFilename = `documents-${leadId}-${new Date().toISOString().split('T')[0]}.zip`;
       triggerBlobDownload(blob, fallbackFilename);
-      return;
+      return { ok: true, downloaded: true };
     }
 
     const text = await response.text();
     if (text.trim()) {
       try {
         const jsonResponse = JSON.parse(text) as { message?: string };
-        if (typeof jsonResponse.message === 'string' && jsonResponse.message) {
-          throw new Error(jsonResponse.message);
+        const msg = typeof jsonResponse.message === 'string' ? jsonResponse.message : '';
+        if (msg && !isSuccessMessage(msg)) {
+          throw new Error(msg);
         }
       } catch (err) {
         if (err instanceof Error && err.message !== 'Unexpected response format from download API') {

@@ -251,6 +251,85 @@ export async function updateStage2Document(
    return response.json();
 }
 
+export interface ReuploadStage2DocumentRequest {
+   applicationId: string;
+   documentId: string;
+   file: File;
+   file_name: string;
+   document_name: string;
+   document_type: string;
+   uploaded_by: string;
+   subclass?: string;
+   state?: string;
+   point?: number;
+   date?: string;
+   skill_assessing_body?: string;
+}
+
+export async function reuploadStage2Document(
+   request: ReuploadStage2DocumentRequest
+): Promise<UploadStage2DocumentResponse> {
+   const fileName = request.file.name.toLowerCase();
+   const allowedExtensions = [".pdf", ".doc", ".docx", ".jpg", ".jpeg", ".png"];
+   const allowedMimeTypes = [
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
+   ];
+   if (!allowedExtensions.some((ext) => fileName.endsWith(ext))) {
+      throw new Error(`File "${request.file.name}" has an unsupported file type.`);
+   }
+   if (!allowedMimeTypes.includes(request.file.type)) {
+      throw new Error(`File "${request.file.name}" has an unsupported MIME type.`);
+   }
+   if (request.file.size === 0) {
+      throw new Error(`File "${request.file.name}" is empty.`);
+   }
+   if (request.file.size > 5 * 1024 * 1024) {
+      throw new Error(`File "${request.file.name}" is too large. Maximum file size is 5MB.`);
+   }
+
+   const formData = new FormData();
+   formData.append("files", request.file);
+   formData.append("file_name", request.file_name);
+   formData.append("document_name", request.document_name);
+   formData.append("document_type", request.document_type);
+   formData.append("uploaded_by", request.uploaded_by);
+   if (request.subclass) formData.append("subclass", request.subclass);
+   if (request.state) formData.append("state", request.state);
+   if (request.point !== undefined) formData.append("point", request.point.toString());
+   if (request.date) formData.append("date", request.date);
+   if (request.skill_assessing_body) formData.append("skill_assessing_body", request.skill_assessing_body);
+
+   const token = tokenStorage.get();
+   const headers: Record<string, string> = {};
+   if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+   }
+
+   const url = `${ZOHO_BASE_URL}/visa_applications/${request.applicationId}/aus-stage2-documents/${request.documentId}`;
+   const response = await fetch(url, {
+      method: "PATCH",
+      body: formData,
+      headers,
+   });
+
+   if (!response.ok) {
+      let errorMessage = `HTTP error! status: ${response.status}`;
+      try {
+         const errorData = await response.json();
+         errorMessage = errorData.message || errorData.error || errorMessage;
+      } catch {
+         errorMessage = response.statusText || errorMessage;
+      }
+      throw new Error(errorMessage);
+   }
+   return response.json();
+}
+
 export async function deleteStage2Document(
    applicationId: string,
    documentId: string
