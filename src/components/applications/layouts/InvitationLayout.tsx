@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { IconFolderCode } from '@tabler/icons-react';
 import {
   Table,
@@ -15,7 +16,13 @@ import {
 } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, Trash2, Edit, AlertCircle } from 'lucide-react';
+import { Eye, Trash2, Pencil, MoreHorizontal, AlertCircle } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { toast } from 'sonner';
 import { useStage2Documents, useDeleteStage2Document } from '@/hooks/useStage2Documents';
 import { InvitationModal } from '@/components/applications/modals/InvitationModal';
@@ -154,17 +161,22 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
                   <Button onClick={() => setIsModalOpen(true)}>Add Invitation Document</Button>
                 </div>
               )}
-              <div className="rounded-md border overflow-x-auto">
+              {documents.length > 1 && (
+                <p className="text-sm text-muted-foreground mb-3">
+                  {documents.length} invitation document{documents.length !== 1 ? 's' : ''}
+                </p>
+              )}
+              <div className="rounded-md border overflow-x-auto max-h-[60vh] overflow-y-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className="sticky top-0 z-10 bg-background shadow-sm">
                       <TableHead>Document Name</TableHead>
                       <TableHead>Date</TableHead>
                       <TableHead>Subclass</TableHead>
                       <TableHead>State</TableHead>
                       <TableHead>Points</TableHead>
                       <TableHead>Deadline</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
+                      <TableHead className="text-right w-[80px]">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -175,7 +187,11 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
                         </TableCell>
                         <TableCell>{formatDate(document.date, 'short')}</TableCell>
                         <TableCell>{getSubclassDisplay(document.subclass)}</TableCell>
-                        <TableCell>{getStateDisplay(document.state)}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="font-normal">
+                            {document.state ? getStateDisplay(document.state) : 'N/A'}
+                          </Badge>
+                        </TableCell>
                         <TableCell>{document.point ?? 'N/A'}</TableCell>
                         <TableCell>
                           {document.deadline
@@ -183,35 +199,41 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
                             : 'N/A'}
                         </TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleView(document)}
-                              title="View document"
-                            >
-                              view
-                            </Button>
-                            {!isClientView && (
-                              <>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleEditClick(document)}
-                                  title="Edit document"
-                                >
-                                  edit
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => handleDeleteClick(document)}
-                                  title="Delete document"
-                                  className="text-red-600 hover:text-red-700"
-                                >
-                                  delete
-                                </Button>
-                              </>
+                          <div className="flex justify-end">
+                            {isClientView ? (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleView(document)}
+                                title="View document"
+                              >
+                                View
+                              </Button>
+                            ) : (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="outline" size="sm" title="Actions">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleView(document)}>
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleEditClick(document)}>
+                                    <Pencil className="h-4 w-4 mr-2" />
+                                    Edit
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() => handleDeleteClick(document)}
+                                    variant='destructive'
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             )}
                           </div>
                         </TableCell>
@@ -240,7 +262,7 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete the document "{documentToDelete?.document_name || documentToDelete?.file_name}". 
+                  This will permanently delete the document &quot;{documentToDelete?.document_name || documentToDelete?.file_name}&quot;.
                   This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>

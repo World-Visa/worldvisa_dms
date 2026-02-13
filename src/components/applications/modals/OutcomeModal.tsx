@@ -44,7 +44,6 @@ export function OutcomeModal({
   mode = 'create',
 }: OutcomeModalProps) {
   const { user } = useAuth();
-  const [documentName, setDocumentName] = useState('');
   const [outcomeDate, setOutcomeDate] = useState<Date | undefined>(undefined);
   const [outcome, setOutcome] = useState('');
   const [selectedAnzscoCode, setSelectedAnzscoCode] = useState('');
@@ -68,7 +67,6 @@ export function OutcomeModal({
   // Pre-fill form in edit mode
   useEffect(() => {
     if (mode === 'edit' && document) {
-      setDocumentName(document.document_name || '');
       setOutcomeDate(document.outcome_date ? new Date(document.outcome_date) : undefined);
       setOutcome(document.outcome || '');
       // skill_assessing_body contains the anzsco_code
@@ -98,7 +96,6 @@ export function OutcomeModal({
       setCustomAnzscoName('');
       setCustomAssessingAuthority('');
     } else {
-      setDocumentName('');
       setOutcomeDate(undefined);
       setOutcome('');
       setSelectedAnzscoCode('');
@@ -224,11 +221,6 @@ export function OutcomeModal({
   };
 
   const handleSubmit = async () => {
-    if (!documentName.trim()) {
-      toast.error('Please enter a document name.');
-      return;
-    }
-
     if (!outcomeDate) {
       toast.error('Please select an outcome date.');
       return;
@@ -263,7 +255,7 @@ export function OutcomeModal({
           applicationId,
           documentId: document._id,
           metadata: {
-            document_name: documentName,
+            document_name: document.file_name,
             outcome_date: formattedOutcomeDate,
             outcome,
             skill_assessing_body: anzscoCodeValue,
@@ -283,7 +275,7 @@ export function OutcomeModal({
             applicationId,
             files: uploadedFiles.map((uf) => uf.file),
             file_name: uploadedFiles[0].file.name,
-            document_name: documentName,
+            document_name: uploadedFiles[0].file.name,
             document_type: uploadedFiles[0].file.type,
             uploaded_by: user.username,
             type: 'outcome',
@@ -310,7 +302,6 @@ export function OutcomeModal({
 
   const handleClose = () => {
     if (!isUploading) {
-      setDocumentName('');
       setOutcomeDate(undefined);
       setOutcome('');
       setSelectedAnzscoCode('');
@@ -333,18 +324,6 @@ export function OutcomeModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Document Name */}
-          <div className="space-y-2">
-            <Label htmlFor="document-name">Document Name *</Label>
-            <Input
-              id="document-name"
-              value={documentName}
-              onChange={(e) => setDocumentName(e.target.value)}
-              placeholder="Enter document name"
-              disabled={isUploading}
-            />
-          </div>
-
           {/* Outcome */}
           <div className="space-y-2">
             <Label htmlFor="outcome">Outcome *</Label>

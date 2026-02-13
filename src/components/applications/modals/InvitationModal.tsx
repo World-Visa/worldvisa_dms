@@ -47,7 +47,6 @@ export function InvitationModal({
   mode = 'create',
 }: InvitationModalProps) {
   const { user } = useAuth();
-  const [documentName, setDocumentName] = useState('');
   const [subclass, setSubclass] = useState('');
   const [state, setState] = useState('');
   const [point, setPoint] = useState('');
@@ -80,14 +79,12 @@ export function InvitationModal({
   // Pre-fill form in edit mode
   useEffect(() => {
     if (mode === 'edit' && document) {
-      setDocumentName(document.document_name || '');
       setSubclass(document.subclass || '');
       setState(document.state || '');
       setPoint(document.point?.toString() || '');
       setDate(document.date ? new Date(document.date) : undefined);
       setDeadlineDate(document.deadline ? new Date(document.deadline) : undefined);
     } else {
-      setDocumentName('');
       setSubclass('');
       setState('');
       setPoint('');
@@ -180,11 +177,6 @@ export function InvitationModal({
   };
 
   const handleSubmit = async () => {
-    if (!documentName.trim()) {
-      toast.error('Please enter a document name.');
-      return;
-    }
-
     if (!subclass) {
       toast.error('Please select a subclass.');
       return;
@@ -232,7 +224,7 @@ export function InvitationModal({
           applicationId,
           documentId: document._id,
           metadata: {
-            document_name: documentName,
+            document_name: document.file_name,
             subclass,
             state,
             point: Number(point),
@@ -253,7 +245,7 @@ export function InvitationModal({
             applicationId,
             files: uploadedFiles.map((uf) => uf.file),
             file_name: uploadedFiles[0].file.name,
-            document_name: documentName,
+            document_name: uploadedFiles[0].file.name,
             document_type: uploadedFiles[0].file.type,
             uploaded_by: user.username,
             type: 'invitation',
@@ -282,7 +274,6 @@ export function InvitationModal({
 
   const handleClose = () => {
     if (!isUploading) {
-      setDocumentName('');
       setSubclass('');
       setState('');
       setPoint('');
@@ -303,18 +294,6 @@ export function InvitationModal({
         </DialogHeader>
 
         <div className="space-y-6">
-          {/* Document Name */}
-          <div className="space-y-2">
-            <Label htmlFor="document-name">Document Name *</Label>
-            <Input
-              id="document-name"
-              value={documentName}
-              onChange={(e) => setDocumentName(e.target.value)}
-              placeholder="Enter document name"
-              disabled={isUploading}
-            />
-          </div>
-
           {/* Subclass */}
           <div className="space-y-2">
             <Label>Subclass *</Label>

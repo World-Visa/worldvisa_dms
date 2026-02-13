@@ -11,6 +11,8 @@ import {
   uploadStage2Document,
   updateStage2Document,
   deleteStage2Document,
+  reuploadStage2Document,
+  type ReuploadStage2DocumentRequest,
 } from '@/lib/api/stage2Documents';
 
 export function useStage2Documents(
@@ -67,6 +69,27 @@ export function useUpdateStage2Document() {
     onError: (error: Error) => {
       console.error('Update stage 2 document error:', error);
       toast.error(`Failed to update document: ${error.message}`);
+    },
+  });
+}
+
+/**
+ * Hook to replace (reupload) the file for an existing stage 2 document
+ */
+export function useReuploadStage2Document() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: ReuploadStage2DocumentRequest) => reuploadStage2Document(data),
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({
+        queryKey: ['stage2-documents', variables.applicationId],
+      });
+      toast.success('Document file replaced successfully!');
+    },
+    onError: (error: Error) => {
+      console.error('Reupload stage 2 document error:', error);
+      toast.error(`Failed to replace file: ${error.message}`);
     },
   });
 }
