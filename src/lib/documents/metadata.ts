@@ -4,6 +4,7 @@ import {
   OTHER_DOCUMENTS,
   COMPANY_DOCUMENTS,
   SELF_EMPLOYMENT_DOCUMENTS,
+  DOCUMENT_TYPES_WITH_SAMPLE_IN_MODALS,
 } from "./checklist";
 
 export interface ChecklistDocumentMetadata {
@@ -97,5 +98,17 @@ export const getChecklistDocumentMeta = (
 
 export const getAllChecklistDocuments = (): ChecklistDocumentMetadata[] =>
   CHECKLIST_DOCUMENTS;
+
+export function isDocumentTypeWithSampleInModal(
+  documentType: string,
+  category: string
+): boolean {
+  if (!documentType?.trim()) return false;
+  const resolvedCategory = resolveChecklistCategory(category);
+  return DOCUMENT_TYPES_WITH_SAMPLE_IN_MODALS.some(
+    (entry) =>
+      entry.documentType === documentType && entry.category === resolvedCategory
+  );
+}
 
 

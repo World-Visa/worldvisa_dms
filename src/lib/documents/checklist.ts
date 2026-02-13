@@ -42,6 +42,7 @@ export const IDENTITY_DOCUMENTS = [
    {
       category: "Identity Documents",
       documentType: "Name Change Affidavit",
+      sampleDocument: "/sample_documents/Name_Change_Affidavit_sample.docx",
       allowedDocument: 2,
    },
 ];
@@ -137,6 +138,7 @@ export const OTHER_DOCUMENTS = [
    {
       category: "Other Documents",
       documentType: "Portfolio (only for Vetassess)",
+      sampleDocument: "/sample_documents/Portfolio_Vetassess_sample.docx",
       allowedDocument: 2,
    },
    {
@@ -267,10 +269,25 @@ export const SELF_EMPLOYMENT_DOCUMENTS = [
    {
       category: "Self Employment/Freelance",
       documentType: "Letter from Accountant (CA)",
+      sampleDocument: "/sample_documents/Letter_from_Accountant_CA_sample.docx",
    },
    {
       category: "Self Employment/Freelance",
       documentType: "Organisational Chart",
+      sampleDocument: "/sample_documents/Organisational_Chart_sample.docx",
       importantNote: `DO NOT GET IT ON A LETTERHEAD UNTIL IT IS VERIFIED AND APPROVED BY THE CASE OFFICER.`,
    },
+];
+
+/** Document types that show the "View sample" option in Upload and Reupload modals. */
+export const DOCUMENT_TYPES_WITH_SAMPLE_IN_MODALS: Array<{
+  documentType: string;
+  category: string;
+}> = [
+  { documentType: "Reference Letter", category: "Company" },
+  { documentType: "Statutory Decleration", category: "Company" },
+  { documentType: "Organisational Chart", category: "Self Employment/Freelance" },
+  { documentType: "Name Change Affidavit", category: "Identity Documents" },
+  { documentType: "Letter from Accountant (CA)", category: "Self Employment/Freelance" },
+  { documentType: "Portfolio (only for Vetassess)", category: "Other Documents" },
 ];

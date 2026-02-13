@@ -24,6 +24,8 @@ interface DocumentListModalProps {
   onReuploadDocument?: (documentId: string, documentType: string, category: string) => void;
   category?: string;
   isClientView?: boolean;
+  /** When provided, ViewDocumentSheet navigates across all application documents instead of only `documents`. */
+  allApplicationDocuments?: Document[];
 }
 
 
@@ -36,7 +38,8 @@ export function DocumentListModal({
   onDocumentDeleted,
   onReuploadDocument,
   category,
-  isClientView = false
+  isClientView = false,
+  allApplicationDocuments
 }: DocumentListModalProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{ id: string; name: string } | null>(null);
@@ -273,7 +276,7 @@ export function DocumentListModal({
       {selectedDocument && (
         <ViewDocumentSheet
           document={selectedDocument}
-          documents={documents}
+          documents={allApplicationDocuments ?? documents}
           applicationId={applicationId}
           isOpen={viewSheetOpen}
           onClose={handleCloseViewSheet}

@@ -139,7 +139,7 @@ export default function UnifiedApplicationDetailsPage({
     applicationId,
     documents: allDocuments,
     companies: appState.companies,
-    recordType: application?.Record_Type,
+    recordType: isSpouseApplication ? 'spouse_skill_assessment' : application?.Record_Type,
   });
 
   const areAllDocumentsApproved = useMemo(() => {

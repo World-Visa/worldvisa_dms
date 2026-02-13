@@ -1,11 +1,9 @@
-/**
- * Sample Document Service
- * 
- * This service handles sample document operations including
- * resolution, caching, and download functionality.
- */
-
-import { COMPANY_DOCUMENTS } from '@/lib/documents/checklist';
+import {
+  COMPANY_DOCUMENTS,
+  IDENTITY_DOCUMENTS,
+  SELF_EMPLOYMENT_DOCUMENTS,
+  OTHER_DOCUMENTS,
+} from '@/lib/documents/checklist';
 import type { SampleDocument, DocumentTypeWithSample } from '@/types/samples';
 
 class SampleDocumentService {
@@ -179,19 +177,33 @@ class SampleDocumentService {
   // Private helper methods
 
   private findDocumentWithSample(documentType: string, category: string): DocumentTypeWithSample | null {
-    // Normalize category for comparison
     const normalizedCategory = this.normalizeCategory(category);
-    
-    return COMPANY_DOCUMENTS.find(doc => 
-      doc.documentType === documentType && 
-      this.normalizeCategory(doc.category) === normalizedCategory
-    ) || null;
+    const predicate = (doc: { documentType: string; category: string; sampleDocument?: string }) =>
+      doc.documentType === documentType &&
+      this.normalizeCategory(doc.category) === normalizedCategory &&
+      doc.sampleDocument;
+
+    return (
+      COMPANY_DOCUMENTS.find(predicate) ??
+      IDENTITY_DOCUMENTS.find(predicate) ??
+      SELF_EMPLOYMENT_DOCUMENTS.find(predicate) ??
+      OTHER_DOCUMENTS.find(predicate) ??
+      null
+    );
   }
 
   private normalizeCategory(category: string): string {
-    // Handle different category formats
     if (category === 'Company' || category === 'Company Documents' || category.includes('Company Documents')) {
       return 'Company';
+    }
+    if (category === 'Identity' || category === 'Identity Documents') {
+      return 'Identity Documents';
+    }
+    if (category === 'Self Employment/Freelance' || category === 'Self Employment') {
+      return 'Self Employment/Freelance';
+    }
+    if (category === 'Other' || category === 'Other Documents') {
+      return 'Other Documents';
     }
     return category;
   }

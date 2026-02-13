@@ -16,9 +16,10 @@ import { useClientReuploadDocument } from '@/hooks/useClientDocumentMutations';
 import { useDocumentData } from '@/hooks/useDocumentData';
 import { useAuth } from '@/hooks/useAuth';
 import { toast } from 'sonner';
-import { Upload, X, AlertCircle, FileText, File } from 'lucide-react';
+import { Upload, X, AlertCircle, FileText, File, FileCheck } from 'lucide-react';
 import { Document } from '@/types/applications';
-import { getChecklistDocumentMeta } from '@/lib/documents/metadata';
+import { getChecklistDocumentMeta, isDocumentTypeWithSampleInModal } from '@/lib/documents/metadata';
+import { SampleDocumentModal } from './SampleDocumentModal';
 
 interface ReuploadDocumentModalProps {
   isOpen: boolean;
@@ -51,6 +52,7 @@ export function ReuploadDocumentModal({
   const finalCategory = category || document?.document_category || 'Other Documents';
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [sampleModalOpen, setSampleModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const reuploadMutation = useReuploadDocument();
   const clientReuploadMutation = useClientReuploadDocument();
@@ -71,6 +73,7 @@ export function ReuploadDocumentModal({
     if (!isOpen) {
       setUploadedFile(null);
       setIsUploading(false);
+      setSampleModalOpen(false);
       if (fileInputRef.current) {
         fileInputRef.current.value = '';
       }
@@ -253,6 +256,7 @@ export function ReuploadDocumentModal({
   if (!displayDocument) return null;
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
@@ -285,6 +289,18 @@ export function ReuploadDocumentModal({
               <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
                 <strong>Rejection Reason:</strong> {displayDocument.reject_message}
               </div>
+            )}
+            {isDocumentTypeWithSampleInModal(finalDocumentType, finalCategory) && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="mt-2 gap-1.5"
+                onClick={() => setSampleModalOpen(true)}
+              >
+                <FileCheck className="h-4 w-4" />
+                View sample
+              </Button>
             )}
           </div>
 
@@ -434,5 +450,13 @@ export function ReuploadDocumentModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <SampleDocumentModal
+      isOpen={sampleModalOpen}
+      onClose={() => setSampleModalOpen(false)}
+      documentType={finalDocumentType}
+      category={finalCategory}
+      samplePath=""
+    />
+    </>
   );
 }

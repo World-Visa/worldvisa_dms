@@ -5,11 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
   DropdownMenu,
-  DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuGroup,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { HighlightText } from '@/components/ui/HighlightText';
@@ -31,7 +28,6 @@ import {
 } from '@/components/ui/table';
 import { useDocumentCommentCounts } from '@/hooks/useDocumentCommentCounts';
 import { useChecklistMutations } from '@/hooks/useChecklist';
-import { useHasSampleDocument } from '@/hooks/useSampleDocuments';
 import { cn } from '@/lib/utils';
 import { useDocumentChecklistLogic } from '@/hooks/useDocumentChecklistLogic';
 import { useReuploadDocument } from '@/hooks/useReuploadDocument';
@@ -62,7 +58,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from '@tanstack/react-table';
-import { Check, ChevronDown, Eye, FileCheck, FileText, MessageCircle, MoreHorizontal, Plus, Upload } from 'lucide-react';
+import { Check, FileText, MessageCircle, MoreHorizontal, Plus, Upload } from 'lucide-react';
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { CommentIcon } from './CommentIcon';
 import { ChecklistTableHeader } from './checklist/ChecklistTableHeader';
@@ -73,7 +69,6 @@ import { DocumentListModal } from './DocumentListModal';
 import { RejectionDetailsSheet } from './RejectionDetailsSheet';
 import { RejectionMessageDisplay } from './RejectionMessageDisplay';
 import { ReuploadDocumentModal } from './ReuploadDocumentModal';
-import { SampleDocumentModal } from './SampleDocumentModal';
 import { UploadDocumentsModal } from './UploadDocumentsModal';
 
 interface DocumentType {
@@ -183,12 +178,10 @@ const DocumentChecklistTableComponent = ({
     documentName: true,
     status: true,
     comments: true,
-    sample: true,
     action: true,
   });
   const [descriptionModals, setDescriptionModals] = useState<Record<string, { open: boolean; mode: 'view' | 'edit' }>>({});
   const [descriptionDialogs, setDescriptionDialogs] = useState<Record<string, boolean>>({});
-  const [sampleModals, setSampleModals] = useState<Record<string, boolean>>({});
 
   // Reupload mutation
   const reuploadMutation = useReuploadDocument();
@@ -496,10 +489,6 @@ const DocumentChecklistTableComponent = ({
 
     return counts;
   }, [documents, checklistItems, filterDocumentsByType]);
-
-  // Calculate hasSample for all items (we'll use this in column definitions)
-  // Note: We can't use hooks in column definitions, so we'll check this in the cell renderer differently
-
 
   const getLatestDocuments = useCallback((fallbackDocuments: Document[]): Document[] => {
     // Use the all documents query to get all documents, not just paginated ones
@@ -851,39 +840,6 @@ const DocumentChecklistTableComponent = ({
       enableHiding: true,
     },
     {
-      id: 'sample',
-      header: 'Sample',
-      cell: ({ row }) => {
-        const item = row.original;
-        const itemKey = `${item.category}-${item.documentType}-${item.checklist_id || 'new'}`;
-        // We'll check for sample documents differently - using a simple check
-        // For now, we'll show the button and handle the check in the modal
-        const handleViewSample = () => {
-          setSampleModals(prev => ({ ...prev, [itemKey]: true }));
-        };
-
-        // Simple check - if there's a sample path pattern, show button
-        // This is a simplified version - the actual check happens in the modal
-        const hasSample = true; // We'll let the modal handle the actual check
-
-        return (
-          <div className="w-20 text-center">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleViewSample}
-              className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
-              title="View Sample Document"
-            >
-              <FileCheck className="h-3 w-3" />
-              <span className="hidden sm:inline">Sample</span>
-            </Button>
-          </div>
-        );
-      },
-      enableHiding: true,
-    },
-    {
       id: 'action',
       header: () => <div className="text-right">Action</div>,
       cell: ({ row }) => {
@@ -1043,7 +999,6 @@ const DocumentChecklistTableComponent = ({
     commentCounts,
     descriptionModals,
     descriptionDialogs,
-    sampleModals,
     pendingDeletions,
     isBatchDeleting,
     isAddingDocument,
@@ -1310,26 +1265,6 @@ const DocumentChecklistTableComponent = ({
         );
       })}
 
-      {Object.entries(sampleModals).map(([key, isOpen]) => {
-        if (!isOpen) return null;
-        // Find item by matching the key pattern
-        const item = filteredItems.find(
-          i => `${i.category}-${i.documentType}-${i.checklist_id || 'new'}` === key
-        );
-        if (!item) return null;
-        return (
-          <SampleDocumentModal
-            key={key}
-            isOpen={isOpen}
-            onClose={() => setSampleModals(prev => ({ ...prev, [key]: false }))}
-            documentType={item.documentType}
-            category={item.category}
-            samplePath={''}
-            companyName={item.company_name}
-          />
-        );
-      })}
-
       <UploadDocumentsModal
         isOpen={isModalOpen}
         onClose={handleModalClose}
@@ -1347,6 +1282,7 @@ const DocumentChecklistTableComponent = ({
         onClose={() => setIsDocumentListModalOpen(false)}
         documentType={selectedDocumentTypeForView}
         documents={selectedDocumentsForView}
+        allApplicationDocuments={getLatestDocuments(documents || [])}
         applicationId={applicationId}
         category={selectedCompanyCategoryForView}
         onReuploadDocument={handleReuploadClick}
