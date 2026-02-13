@@ -16,7 +16,7 @@ import { useClientUploadDocument } from '@/hooks/useClientDocumentMutations';
 import { useAuth } from '@/hooks/useAuth';
 import { useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { Upload, X, FileText, File, AlertCircle } from 'lucide-react';
+import { Upload, X, FileText, File, AlertCircle, FileCheck } from 'lucide-react';
 import Image from 'next/image';
 import { UploadDocumentsModalProps, UploadedFile, ApiDocument } from '@/types/documents';
 import { 
@@ -24,7 +24,8 @@ import {
   generateCurrentEmploymentDescription, 
   generatePastEmploymentDescription 
 } from '@/utils/dateCalculations';
-import { getChecklistDocumentMeta } from '@/lib/documents/metadata';
+import { getChecklistDocumentMeta, isDocumentTypeWithSampleInModal } from '@/lib/documents/metadata';
+import { SampleDocumentModal } from './SampleDocumentModal';
 
 
 export function UploadDocumentsModal({ 
@@ -44,6 +45,7 @@ export function UploadDocumentsModal({
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [description, setDescription] = useState<string>('');
   const [isUploading, setIsUploading] = useState(false);
+  const [sampleModalOpen, setSampleModalOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addDocumentMutation = useAddDocument();
   const clientUploadDocumentMutation = useClientUploadDocument();
@@ -498,11 +500,13 @@ export function UploadDocumentsModal({
       setSelectedDocumentCategory('');
       setDescription('');
       setUploadedFiles([]);
+      setSampleModalOpen(false);
       onClose();
     }
   };
 
   return (
+    <>
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
@@ -544,6 +548,18 @@ export function UploadDocumentsModal({
                     </p>
                   </AlertDescription>
                 </Alert>
+              )}
+              {isDocumentTypeWithSampleInModal(selectedDocumentType, selectedDocumentCategory) && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5"
+                  onClick={() => setSampleModalOpen(true)}
+                >
+                  <FileCheck className="h-4 w-4" />
+                  View sample
+                </Button>
               )}
             </div>
           )}
@@ -709,5 +725,13 @@ export function UploadDocumentsModal({
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    <SampleDocumentModal
+      isOpen={sampleModalOpen}
+      onClose={() => setSampleModalOpen(false)}
+      documentType={selectedDocumentType}
+      category={selectedDocumentCategory}
+      samplePath=""
+    />
+    </>
   );
 }

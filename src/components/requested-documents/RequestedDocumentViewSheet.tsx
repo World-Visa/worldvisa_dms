@@ -15,7 +15,8 @@ import {
   CheckCircle,
   Trash2,
   AlertTriangle,
-  ExternalLink
+  ExternalLink,
+  Clock
 } from 'lucide-react';
 import { RequestedDocument } from '@/lib/api/requestedDocuments';
 import { StatusBadge } from './StatusBadge';
@@ -190,7 +191,7 @@ export function RequestedDocumentViewSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[95vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[1140px] !max-w-[1140px] p-0 rounded-l-3xl">
+      <SheetContent className="w-[95vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[1140px] max-w-[1140px]! p-0 rounded-l-3xl">
         <div className="flex flex-col h-full">
           {/* Header Bar */}
           <SheetHeader className="p-4 border-b">
@@ -208,6 +209,20 @@ export function RequestedDocumentViewSheet({
                   <span className="text-sm text-gray-600">
                     {displayDoc.requested_review.requested_at
                       ? new Date(displayDoc.requested_review.requested_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                        timeZone: 'UTC'
+                      })
+                      : 'Unknown date'
+                    }
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Clock className="h-4 w-4 text-gray-500" />
+                  <span className="text-sm text-gray-600">
+                    Uploaded at {displayDoc.uploaded_at
+                      ? new Date(displayDoc.uploaded_at).toLocaleDateString('en-US', {
                         year: 'numeric',
                         month: 'short',
                         day: 'numeric',

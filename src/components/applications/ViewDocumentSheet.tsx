@@ -14,7 +14,7 @@ import DocumentPreview from "./DocumentPreview";
 import DocumentStatusButtons from "./DocumentStatusButtons";
 import DocumentStatusDisplay from "./DocumentStatusDisplay";
 import { SendDocumentModal } from "./SendDocumentModal";
-import { User, Clock, FileText, Upload, AlertCircle } from "lucide-react";
+import { User, Clock, ChevronLeft, ChevronRight, Upload, AlertCircle } from "lucide-react";
 import { Document } from "@/types/applications";
 import { useDocumentData } from "@/hooks/useDocumentData";
 import { useQueryClient } from "@tanstack/react-query";
@@ -117,6 +117,31 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     }
   }, [documents, document._id, onClose]);
 
+  const canGoPrev = selectedIndex > 0;
+  const canGoNext = selectedIndex < documents.length - 1;
+  const goPrev = () => {
+    if (canGoPrev) setSelectedIndex((i) => i - 1);
+  };
+  const goNext = () => {
+    if (canGoNext) setSelectedIndex((i) => i + 1);
+  };
+
+  // Optional keyboard navigation when sheet is open
+  useEffect(() => {
+    if (!isOpen || documents.length <= 1) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        setSelectedIndex((i) => (i > 0 ? i - 1 : i));
+      } else if (e.key === "ArrowRight") {
+        setSelectedIndex((i) =>
+          i < documents.length - 1 ? i + 1 : i
+        );
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, documents.length]);
+
   if (!displayDoc || documents.length === 0) {
     return (
       <Button variant="link" size="sm" className="cursor-pointer" disabled>
@@ -154,6 +179,33 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                     </span>
                   </div>
                 </div>
+                {documents.length > 1 && (
+                  <div className="flex items-center gap-1 sm:gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      disabled={!canGoPrev}
+                      onClick={goPrev}
+                      aria-label="Previous document"
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <span className="text-sm text-gray-600 tabular-nums min-w-[3ch] text-center">
+                      {selectedIndex + 1} of {documents.length}
+                    </span>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="h-8 w-8 shrink-0"
+                      disabled={!canGoNext}
+                      onClick={goNext}
+                      aria-label="Next document"
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                )}
                 {!isClientView && (
                   <SendDocumentModal
                     documents={documents}
