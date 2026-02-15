@@ -46,9 +46,11 @@ const isCompanyLikeCategory = (category: string): boolean => {
     lowered.includes("company documents") ||
     (lowered.includes("documents") &&
       !CATEGORY_ALIASES[category] &&
-      !["identity documents", "education documents", "other documents"].includes(
-        lowered,
-      ))
+      ![
+        "identity documents",
+        "education documents",
+        "other documents",
+      ].includes(lowered))
   );
 };
 
@@ -101,14 +103,13 @@ export const getAllChecklistDocuments = (): ChecklistDocumentMetadata[] =>
 
 export function isDocumentTypeWithSampleInModal(
   documentType: string,
-  category: string
+  category: string,
 ): boolean {
   if (!documentType?.trim()) return false;
   const resolvedCategory = resolveChecklistCategory(category);
   return DOCUMENT_TYPES_WITH_SAMPLE_IN_MODALS.some(
     (entry) =>
-      entry.documentType === documentType && entry.category === resolvedCategory
+      entry.documentType === documentType &&
+      entry.category === resolvedCategory,
   );
 }
-
-

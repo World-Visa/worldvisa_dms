@@ -1,36 +1,38 @@
-import { fetcher } from '@/lib/fetcher';
-import { API_CONFIG } from '@/lib/config/api';
+import { fetcher } from "@/lib/fetcher";
+import { API_CONFIG } from "@/lib/config/api";
 
 export interface ReviewRequestData {
   requested_by: string;
   requested_to: string;
-  status: 'pending' | 'approved' | 'rejected';
+  status: "pending" | "approved" | "rejected";
   message: string;
 }
 
 export interface ReviewRequestResponse {
   success?: boolean;
-  status?: 'success' | 'error';
+  status?: "success" | "error";
   message: string;
-  data?: {
-    _id: string;
-    document_id: string;
-    requested_by: string;
-    requested_to: string;
-    status: string;
-    message: string;
-    created_at: string;
-    updated_at: string;
-  } | {
-    _id: string;
-    document_id: string;
-    requested_by: string;
-    requested_to: string;
-    status: string;
-    message: string;
-    created_at: string;
-    updated_at: string;
-  }[];
+  data?:
+    | {
+        _id: string;
+        document_id: string;
+        requested_by: string;
+        requested_to: string;
+        status: string;
+        message: string;
+        created_at: string;
+        updated_at: string;
+      }
+    | {
+        _id: string;
+        document_id: string;
+        requested_by: string;
+        requested_to: string;
+        status: string;
+        message: string;
+        created_at: string;
+        updated_at: string;
+      }[];
 }
 
 export interface ReviewRequestError {
@@ -47,16 +49,19 @@ export interface ReviewRequestError {
  */
 export async function createReviewRequest(
   documentId: string,
-  data: ReviewRequestData
+  data: ReviewRequestData,
 ): Promise<ReviewRequestResponse> {
   const startTime = Date.now();
-  
+
   try {
-    const response = await fetcher(API_CONFIG.ENDPOINTS.REVIEW_REQUESTS(documentId), {
-      method: 'POST',
-      headers: API_CONFIG.DEFAULT_HEADERS,
-      body: JSON.stringify(data),
-    }) as ReviewRequestResponse;
+    const response = (await fetcher(
+      API_CONFIG.ENDPOINTS.REVIEW_REQUESTS(documentId),
+      {
+        method: "POST",
+        headers: API_CONFIG.DEFAULT_HEADERS,
+        body: JSON.stringify(data),
+      },
+    )) as ReviewRequestResponse;
 
     const responseTime = Date.now() - startTime;
 
@@ -66,8 +71,8 @@ export async function createReviewRequest(
     }
 
     // Check if response exists and has success field
-    if (!response || typeof response !== 'object') {
-      throw new Error('Invalid response format from server');
+    if (!response || typeof response !== "object") {
+      throw new Error("Invalid response format from server");
     }
 
     // Handle empty response object (common when server returns 200 with no body)
@@ -75,105 +80,135 @@ export async function createReviewRequest(
       // Return a success response structure with single item array for consistency
       return {
         success: true,
-        message: 'Review request created successfully',
-        data: [{
-          _id: `temp-${Date.now()}`,
-          document_id: documentId,
-          requested_by: data.requested_by,
-          requested_to: data.requested_to,
-          status: data.status,
-          message: data.message,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }]
+        message: "Review request created successfully",
+        data: [
+          {
+            _id: `temp-${Date.now()}`,
+            document_id: documentId,
+            requested_by: data.requested_by,
+            requested_to: data.requested_to,
+            status: data.status,
+            message: data.message,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ],
       };
     }
 
     // Handle server error responses (status: "error")
-    if (response.status === 'error') {
-      throw new Error(response.message || 'Failed to create review request');
+    if (response.status === "error") {
+      throw new Error(response.message || "Failed to create review request");
     }
 
     if (response.success === false) {
-      throw new Error(response.message || 'Failed to create review request');
+      throw new Error(response.message || "Failed to create review request");
     }
 
     // Handle server success responses (status: "success")
-    if (response.status === 'success') {
+    if (response.status === "success") {
       return {
         ...response,
         success: true,
-        message: response.message || 'Review request created successfully',
-        data: Array.isArray(response.data) ? response.data : response.data ? [response.data] : []
+        message: response.message || "Review request created successfully",
+        data: Array.isArray(response.data)
+          ? response.data
+          : response.data
+            ? [response.data]
+            : [],
       };
     }
 
     // If success field is missing, assume it's successful for 200 status
     if (response.success === undefined) {
-      console.warn('Response missing success field, assuming success for 200 status');
+      console.warn(
+        "Response missing success field, assuming success for 200 status",
+      );
       return {
         ...response,
         success: true,
-        message: response.message || 'Review request created successfully',
-        data: Array.isArray(response.data) ? response.data : response.data ? [response.data] : []
+        message: response.message || "Review request created successfully",
+        data: Array.isArray(response.data)
+          ? response.data
+          : response.data
+            ? [response.data]
+            : [],
       };
     }
 
     // Normalize response data to always be an array
     return {
       ...response,
-      data: Array.isArray(response.data) ? response.data : response.data ? [response.data] : []
+      data: Array.isArray(response.data)
+        ? response.data
+        : response.data
+          ? [response.data]
+          : [],
     };
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    
+
     // Enhanced error logging
-    console.error('Review request failed:', {
+    console.error("Review request failed:", {
       documentId,
       data,
-      error: error instanceof Error ? {
-        message: error.message,
-        stack: error.stack,
-        name: error.name
-      } : error,
+      error:
+        error instanceof Error
+          ? {
+              message: error.message,
+              stack: error.stack,
+              name: error.name,
+            }
+          : error,
       responseTime,
-      url: API_CONFIG.ENDPOINTS.REVIEW_REQUESTS(documentId)
+      url: API_CONFIG.ENDPOINTS.REVIEW_REQUESTS(documentId),
     });
 
- 
-    if (error instanceof Error && 
-        (error.message.includes('JSON') || 
-         error.message.includes('parse') || 
-         error.message.includes('Invalid response format'))) {
-      console.warn('Response parsing failed, but assuming request succeeded based on user feedback');
+    if (
+      error instanceof Error &&
+      (error.message.includes("JSON") ||
+        error.message.includes("parse") ||
+        error.message.includes("Invalid response format"))
+    ) {
+      console.warn(
+        "Response parsing failed, but assuming request succeeded based on user feedback",
+      );
       return {
         success: true,
-        message: 'Review request created successfully (response parsing issue)',
-        data: [{
-          _id: `temp-${Date.now()}`,
-          document_id: documentId,
-          requested_by: data.requested_by,
-          requested_to: data.requested_to,
-          status: data.status,
-          message: data.message,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        }]
+        message: "Review request created successfully (response parsing issue)",
+        data: [
+          {
+            _id: `temp-${Date.now()}`,
+            document_id: documentId,
+            requested_by: data.requested_by,
+            requested_to: data.requested_to,
+            status: data.status,
+            message: data.message,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          },
+        ],
       };
     }
 
     // Provide more specific error messages
     if (error instanceof Error) {
-      if (error.message.includes('fetch')) {
-        throw new Error('Network error: Unable to connect to the server. Please check your internet connection.');
-      } else if (error.message.includes('401')) {
-        throw new Error('Authentication failed: Please log in again.');
-      } else if (error.message.includes('403')) {
-        throw new Error('Access denied: You do not have permission to perform this action.');
-      } else if (error.message.includes('404')) {
-        throw new Error('Document not found: The document may have been deleted.');
-      } else if (error.message.includes('500')) {
-        throw new Error('Server error: Please try again later.');
+      if (error.message.includes("fetch")) {
+        throw new Error(
+          "Network error: Unable to connect to the server. Please check your internet connection.",
+        );
+      } else if (error.message.includes("401")) {
+        throw new Error("Authentication failed: Please log in again.");
+      } else if (error.message.includes("403")) {
+        throw new Error(
+          "Access denied: You do not have permission to perform this action.",
+        );
+      } else if (error.message.includes("404")) {
+        throw new Error(
+          "Document not found: The document may have been deleted.",
+        );
+      } else if (error.message.includes("500")) {
+        throw new Error("Server error: Please try again later.");
       }
     }
 
@@ -187,14 +222,14 @@ export async function createReviewRequest(
  * @returns Promise<ReviewRequestResponse[]>
  */
 export async function createMultipleReviewRequests(
-  requests: Array<{ documentId: string; data: ReviewRequestData }>
+  requests: Array<{ documentId: string; data: ReviewRequestData }>,
 ): Promise<ReviewRequestResponse[]> {
   const startTime = Date.now();
-  
+
   try {
     // Process requests in parallel for better performance
     const promises = requests.map(({ documentId, data }) =>
-      createReviewRequest(documentId, data)
+      createReviewRequest(documentId, data),
     );
 
     const results = await Promise.allSettled(promises);
@@ -210,34 +245,37 @@ export async function createMultipleReviewRequests(
     const failed: Array<{ documentId: string; error: Error }> = [];
 
     results.forEach((result, index) => {
-      if (result.status === 'fulfilled') {
+      if (result.status === "fulfilled") {
         successful.push(result.value);
       } else {
         failed.push({
           documentId: requests[index].documentId,
-          error: result.reason
+          error: result.reason,
         });
       }
     });
 
     // If all requests failed, throw an error
     if (failed.length === requests.length) {
-      throw new Error('All review requests failed');
+      throw new Error("All review requests failed");
     }
 
     // If some requests failed, log warnings but return successful ones
     if (failed.length > 0) {
-      console.warn(`${failed.length} out of ${requests.length} review requests failed:`, failed);
+      console.warn(
+        `${failed.length} out of ${requests.length} review requests failed:`,
+        failed,
+      );
     }
 
     return successful;
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    
-    console.error('Multiple review requests failed:', {
+
+    console.error("Multiple review requests failed:", {
       requestCount: requests.length,
       error,
-      responseTime
+      responseTime,
     });
 
     throw error;

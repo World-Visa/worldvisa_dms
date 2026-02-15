@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback } from "react";
 
-import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
-import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
-import { DocumentsTable } from '@/components/applications/DocumentsTable';
-import { ChecklistRequestSuccessCard } from '@/components/applications/ChecklistRequestSuccessCard';
-import { RequestChecklistCard } from '@/components/applications/RequestChecklistCard';
-import { SampleDocumentsTable } from '@/components/applications/sample-documents/SampleDocumentsTable';
-import type { Document } from '@/types/applications';
-import type { ClientDocumentsResponse } from '@/types/client';
-import type { Company, DocumentCategory } from '@/types/documents';
-import type { ChecklistResponse } from '@/types/checklist';
-import { generateChecklistCategories } from '@/lib/checklist/categoryUtils';
+import { DocumentCategoryFilter } from "@/components/applications/DocumentCategoryFilter";
+import { DocumentChecklistTable } from "@/components/applications/DocumentChecklistTable";
+import { DocumentsTable } from "@/components/applications/DocumentsTable";
+import { ChecklistRequestSuccessCard } from "@/components/applications/ChecklistRequestSuccessCard";
+import { RequestChecklistCard } from "@/components/applications/RequestChecklistCard";
+import { SampleDocumentsTable } from "@/components/applications/sample-documents/SampleDocumentsTable";
+import type { Document } from "@/types/applications";
+import type { ClientDocumentsResponse } from "@/types/client";
+import type { Company, DocumentCategory } from "@/types/documents";
+import type { ChecklistResponse } from "@/types/checklist";
+import { generateChecklistCategories } from "@/lib/checklist/categoryUtils";
 
 interface ClientSkillAssessmentLayoutProps {
   applicationId: string;
@@ -22,7 +22,10 @@ interface ClientSkillAssessmentLayoutProps {
   companies: Company[];
   onAddCompany: () => void;
   onRemoveCompany: (companyName: string) => void;
-  onRemoveCompanyWithCheck?: (companyName: string, companyCategory: string) => void;
+  onRemoveCompanyWithCheck?: (
+    companyName: string,
+    companyCategory: string,
+  ) => void;
   documentsResponse?: ClientDocumentsResponse;
   isDocumentsLoading: boolean;
   documentsError: Error | null;
@@ -33,7 +36,11 @@ interface ClientSkillAssessmentLayoutProps {
   isChecklistLoading: boolean;
   checklistError: Error | null;
   onClientDeleteSuccess: () => void;
-  onReuploadDocument: (documentId: string, documentType: string, category: string) => void;
+  onReuploadDocument: (
+    documentId: string,
+    documentType: string,
+    category: string,
+  ) => void;
   onUploadSuccess: () => void;
   checklistRequested: boolean;
   checklistRequestedAt?: string;
@@ -74,29 +81,41 @@ export function ClientSkillAssessmentLayout({
   onToggleSampleDocuments,
 }: ClientSkillAssessmentLayoutProps) {
   const allDocuments = useMemo(
-    () => allDocumentsResponse?.data?.documents as unknown as Document[] | undefined,
-    [allDocumentsResponse]
+    () =>
+      allDocumentsResponse?.data?.documents as unknown as
+        | Document[]
+        | undefined,
+    [allDocumentsResponse],
   );
 
-  const submittedDocumentsCount = allDocumentsResponse?.data?.documents?.length ?? 0;
-  const hasChecklist = Array.isArray(checklistData?.data) && checklistData.data.length > 0;
+  const submittedDocumentsCount =
+    allDocumentsResponse?.data?.documents?.length ?? 0;
+  const hasChecklist =
+    Array.isArray(checklistData?.data) && checklistData.data.length > 0;
   const hasSubmittedDocuments = submittedDocumentsCount > 0;
 
   const checklistCategories = useMemo(
-    () => generateChecklistCategories(checklistData, allDocumentsResponse, companies),
-    [checklistData, allDocumentsResponse, companies]
+    () =>
+      generateChecklistCategories(
+        checklistData,
+        allDocumentsResponse,
+        companies,
+      ),
+    [checklistData, allDocumentsResponse, companies],
   );
 
   const hasCompanyDocuments = useMemo(
     () =>
       Array.isArray(checklistData?.data) &&
       checklistData.data.some(
-        (item) => item.document_category === 'Company' || item.document_category === 'Company Documents'
+        (item) =>
+          item.document_category === "Company" ||
+          item.document_category === "Company Documents",
       ),
-    [checklistData?.data]
+    [checklistData?.data],
   );
 
-  const checklistState = hasChecklist ? 'saved' : 'none';
+  const checklistState = hasChecklist ? "saved" : "none";
 
   const handleChecklistRefresh = useCallback(() => {
     onChecklistRefresh?.();
@@ -143,9 +162,17 @@ export function ClientSkillAssessmentLayout({
               );
             }
 
-            if (!hasChecklist && !hasSubmittedDocuments && !checklistRequested && leadId) {
+            if (
+              !hasChecklist &&
+              !hasSubmittedDocuments &&
+              !checklistRequested &&
+              leadId
+            ) {
               return (
-                <RequestChecklistCard leadId={leadId} onRequestSuccess={handleChecklistRequestSuccess} />
+                <RequestChecklistCard
+                  leadId={leadId}
+                  onRequestSuccess={handleChecklistRequestSuccess}
+                />
               );
             }
 
@@ -164,7 +191,7 @@ export function ClientSkillAssessmentLayout({
               );
             }
 
-            if (selectedCategory === 'submitted') {
+            if (selectedCategory === "submitted") {
               return (
                 <DocumentsTable
                   applicationId={applicationId}
@@ -200,4 +227,3 @@ export function ClientSkillAssessmentLayout({
     </div>
   );
 }
-

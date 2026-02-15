@@ -50,7 +50,8 @@ function getDeadlineStyles(deadline: string) {
 
   if (passed) {
     return {
-      container: "bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30",
+      container:
+        "bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30",
       iconContainer: "bg-red-500/10 dark:bg-red-500/20",
       icon: "text-red-600 dark:text-red-400",
       label: "text-red-600/70 dark:text-red-400/70",
@@ -61,7 +62,8 @@ function getDeadlineStyles(deadline: string) {
   }
   if (approaching) {
     return {
-      container: "bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30",
+      container:
+        "bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30",
       iconContainer: "bg-orange-500/10 dark:bg-orange-500/20",
       icon: "text-orange-600 dark:text-orange-400",
       label: "text-orange-600/70 dark:text-orange-400/70",
@@ -71,7 +73,8 @@ function getDeadlineStyles(deadline: string) {
     };
   }
   return {
-    container: "bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30",
+    container:
+      "bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30",
     iconContainer: "bg-blue-500/10 dark:bg-blue-500/20",
     icon: "text-blue-600 dark:text-blue-400",
     label: "text-blue-600/70 dark:text-blue-400/70",
@@ -87,11 +90,19 @@ export function ApplicationDeadlineCard({
   onEditDeadline,
   applicationStage,
 }: ApplicationDeadlineCardProps) {
-  if (applicationStage !== undefined && !STAGES_WITH_DEADLINE.includes(applicationStage as (typeof STAGES_WITH_DEADLINE)[number])) {
+  if (
+    applicationStage !== undefined &&
+    !STAGES_WITH_DEADLINE.includes(
+      applicationStage as (typeof STAGES_WITH_DEADLINE)[number],
+    )
+  ) {
     return null;
   }
 
-  const canEdit = user?.role === "admin" || user?.role === "team_leader" || user?.role === "master_admin";
+  const canEdit =
+    user?.role === "admin" ||
+    user?.role === "team_leader" ||
+    user?.role === "master_admin";
 
   if (deadline) {
     const styles = getDeadlineStyles(deadline);
@@ -100,18 +111,28 @@ export function ApplicationDeadlineCard({
     const approaching = isDeadlineApproaching(deadline);
 
     return (
-      <div className={`${styles.container} rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6`}>
+      <div
+        className={`${styles.container} rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6`}
+      >
         <div className="flex items-center space-x-5">
-          <div className={`w-12 h-12 ${styles.iconContainer} rounded-xl flex items-center justify-center relative`}>
+          <div
+            className={`w-12 h-12 ${styles.iconContainer} rounded-xl flex items-center justify-center relative`}
+          >
             <Calendar className={`h-6 w-6 ${styles.icon}`} />
           </div>
           <div>
-            <p className={`${styles.label} text-sm font-medium uppercase tracking-wider flex items-center gap-2`}>
+            <p
+              className={`${styles.label} text-sm font-medium uppercase tracking-wider flex items-center gap-2`}
+            >
               Application Deadline
               {passed && <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />}
-              {approaching && !passed && <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />}
+              {approaching && !passed && (
+                <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />
+              )}
             </p>
-            <h2 className={`${styles.date} text-2xl font-bold`}>{formatDate(deadline)}</h2>
+            <h2 className={`${styles.date} text-2xl font-bold`}>
+              {formatDate(deadline)}
+            </h2>
             <p className={`${styles.subtitle} text-xs`}>
               {passed
                 ? "⚠️ Deadline has passed"
@@ -123,7 +144,9 @@ export function ApplicationDeadlineCard({
         </div>
         <div className="flex items-center gap-8">
           <div className="text-center">
-            <p className={`${styles.days} text-3xl font-black`}>{daysRemaining}</p>
+            <p className={`${styles.days} text-3xl font-black`}>
+              {daysRemaining}
+            </p>
             <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest">
               Days Remaining
             </p>
@@ -151,7 +174,9 @@ export function ApplicationDeadlineCard({
           <p className="text-gray-600/70 dark:text-gray-400/70 text-sm font-medium uppercase tracking-wider">
             Application Deadline
           </p>
-          <h2 className="text-slate-800 dark:text-white text-2xl font-bold">No deadline set</h2>
+          <h2 className="text-slate-800 dark:text-white text-2xl font-bold">
+            No deadline set
+          </h2>
           <p className="text-gray-600/60 dark:text-gray-400/60 text-xs">
             Application lodgement deadline not configured
           </p>

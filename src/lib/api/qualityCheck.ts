@@ -1,6 +1,6 @@
-import { fetcher } from '@/lib/fetcher';
-import { QualityCheckRequest } from '@/types/common';
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { fetcher } from "@/lib/fetcher";
+import { QualityCheckRequest } from "@/types/common";
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export interface QualityCheckApplication {
   Email: string;
@@ -62,34 +62,36 @@ export interface QualityCheckPaginatedResponse {
 
 // Fetch all quality check applications
 export async function getQualityCheckApplications(
-  params: QualityCheckParams = {}
+  params: QualityCheckParams = {},
 ): Promise<QualityCheckPaginatedResponse> {
   const searchParams = new URLSearchParams();
-  
+
   // Add pagination parameters
-  if (params.page) searchParams.append('page', params.page.toString());
-  if (params.limit) searchParams.append('limit', params.limit.toString());
-  
+  if (params.page) searchParams.append("page", params.page.toString());
+  if (params.limit) searchParams.append("limit", params.limit.toString());
+
   // Add filter parameters
-  if (params.name) searchParams.append('name', params.name);
-  if (params.email) searchParams.append('email', params.email);
-  if (params.phone) searchParams.append('phone', params.phone);
-  if (params.status) searchParams.append('status', params.status);
-  if (params.handledBy) searchParams.append('handledBy', params.handledBy);
-  if (params.qualityCheckFrom) searchParams.append('qualityCheckFrom', params.qualityCheckFrom);
-  if (params.startDate) searchParams.append('startDate', params.startDate);
-  if (params.endDate) searchParams.append('endDate', params.endDate);
+  if (params.name) searchParams.append("name", params.name);
+  if (params.email) searchParams.append("email", params.email);
+  if (params.phone) searchParams.append("phone", params.phone);
+  if (params.status) searchParams.append("status", params.status);
+  if (params.handledBy) searchParams.append("handledBy", params.handledBy);
+  if (params.qualityCheckFrom)
+    searchParams.append("qualityCheckFrom", params.qualityCheckFrom);
+  if (params.startDate) searchParams.append("startDate", params.startDate);
+  if (params.endDate) searchParams.append("endDate", params.endDate);
 
   const url = `${ZOHO_BASE_URL}/visa_applications/quality_check?${searchParams.toString()}`;
-  
+
   const response = await fetcher<QualityCheckBackendResponse>(url);
-  
+
   const page = params.page || 1;
   const limit = params.limit || 10;
   const p = response.pagination;
 
   // Map backend response: totalCount / pagination.totalRecords -> totalItems, pageSize -> limit
-  const totalItems = response.totalCount ?? p?.totalRecords ?? response.data?.length ?? 0;
+  const totalItems =
+    response.totalCount ?? p?.totalRecords ?? response.data?.length ?? 0;
   const pageSize = p?.pageSize ?? limit;
 
   return {
@@ -106,11 +108,11 @@ export async function getQualityCheckApplications(
 
 // Search quality check applications
 export async function searchQualityCheckApplications(
-  searchParams: Record<string, string>
+  searchParams: Record<string, string>,
 ): Promise<QualityCheckResponse> {
   const urlParams = new URLSearchParams(searchParams);
   const url = `${ZOHO_BASE_URL}/visa_applications/quality_check?${urlParams.toString()}`;
-  
+
   return fetcher<QualityCheckResponse>(url);
 }
 
@@ -118,7 +120,7 @@ export async function searchQualityCheckApplications(
 export async function pushForQualityCheck(
   data: QualityCheckRequest,
   page: number = 1,
-  limit: number = 10
+  limit: number = 10,
 ): Promise<QualityCheckResponse> {
   const searchParams = new URLSearchParams({
     page: page.toString(),
@@ -126,11 +128,11 @@ export async function pushForQualityCheck(
   });
 
   const url = `${ZOHO_BASE_URL}/visa_applications/quality_check?${searchParams.toString()}`;
-  
+
   return fetcher<QualityCheckResponse>(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(data),
   });

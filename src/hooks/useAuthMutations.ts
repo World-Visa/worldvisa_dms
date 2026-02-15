@@ -5,7 +5,7 @@ import { useAuth } from "./useAuth";
 import { AdminLoginRequest, ClientLoginRequest } from "@/types/auth";
 import { fetcher } from "@/lib/fetcher";
 import { toast } from "sonner";
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export function useAdminLogin() {
   const { login, clearError } = useAuth();
@@ -56,13 +56,10 @@ interface ResetPasswordPayload {
 }
 
 const resetPassword = (payload: ResetPasswordPayload) => {
-  return fetcher(
-    `${ZOHO_BASE_URL}/clients/reset_password`,
-    {
-      method: "POST",
-      body: JSON.stringify(payload),
-    }
-  );
+  return fetcher(`${ZOHO_BASE_URL}/clients/reset_password`, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
 };
 
 export function useResetPassword() {

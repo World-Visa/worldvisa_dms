@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React, { memo } from 'react';
-import { Button } from '@/components/ui/button';
-import { CreateChecklistButton } from '../checklist/CreateChecklistButton';
-import { EditChecklistButton } from '../checklist/EditChecklistButton';
-import { SaveChecklistButton } from '../checklist/SaveChecklistButton';
-import type { ChecklistState } from '@/types/checklist';
+import React, { memo } from "react";
+import { Button } from "@/components/ui/button";
+import { CreateChecklistButton } from "../checklist/CreateChecklistButton";
+import { EditChecklistButton } from "../checklist/EditChecklistButton";
+import { SaveChecklistButton } from "../checklist/SaveChecklistButton";
+import type { ChecklistState } from "@/types/checklist";
 
 interface ActionButtonsProps {
   isClientView: boolean;
@@ -24,17 +24,17 @@ export const ActionButtons = memo(function ActionButtons({
   onStartEditingChecklist,
   onSaveChecklist,
   onCancelChecklist,
-  isSavingChecklist = false
+  isSavingChecklist = false,
 }: ActionButtonsProps) {
   if (isClientView) return null; // Hide for clients
 
   switch (checklistState) {
-    case 'none':
+    case "none":
       return onStartCreatingChecklist ? (
         <CreateChecklistButton onClick={onStartCreatingChecklist} />
       ) : null;
 
-    case 'creating':
+    case "creating":
       return (
         <div className="flex items-center gap-2">
           {onCancelChecklist && (
@@ -57,12 +57,12 @@ export const ActionButtons = memo(function ActionButtons({
         </div>
       );
 
-    case 'saved':
+    case "saved":
       return onStartEditingChecklist ? (
         <EditChecklistButton onClick={onStartEditingChecklist} />
       ) : null;
 
-    case 'editing':
+    case "editing":
       return (
         <div className="flex items-center gap-2">
           {onCancelChecklist && (

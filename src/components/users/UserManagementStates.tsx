@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import React, { memo } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { RefreshCw, Users, AlertCircle } from 'lucide-react';
+import React, { memo } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { RefreshCw, Users, AlertCircle } from "lucide-react";
 
 interface LoadingStateProps {
   onRetry?: () => void;
 }
 
-export const LoadingState = memo(function LoadingState({ onRetry }: LoadingStateProps) {
+export const LoadingState = memo(function LoadingState({
+  onRetry,
+}: LoadingStateProps) {
   return (
     <Card>
       <CardContent className="p-8">
@@ -34,7 +36,10 @@ interface ErrorStateProps {
   onRetry?: () => void;
 }
 
-export const ErrorState = memo(function ErrorState({ error, onRetry }: ErrorStateProps) {
+export const ErrorState = memo(function ErrorState({
+  error,
+  onRetry,
+}: ErrorStateProps) {
   return (
     <Card className="border-red-200 bg-red-50/50">
       <CardContent className="p-8">
@@ -46,7 +51,7 @@ export const ErrorState = memo(function ErrorState({ error, onRetry }: ErrorStat
             Error Loading Users
           </h3>
           <p className="text-red-700 mb-4">
-            {error.message || 'Failed to load users. Please try again.'}
+            {error.message || "Failed to load users. Please try again."}
           </p>
           {onRetry && (
             <Button
@@ -67,7 +72,9 @@ interface EmptyStateProps {
   onCreateUser?: () => void;
 }
 
-export const EmptyState = memo(function EmptyState({ onCreateUser }: EmptyStateProps) {
+export const EmptyState = memo(function EmptyState({
+  onCreateUser,
+}: EmptyStateProps) {
   return (
     <Card className="border-blue-200 bg-blue-50/50">
       <CardContent className="p-8">
@@ -79,7 +86,8 @@ export const EmptyState = memo(function EmptyState({ onCreateUser }: EmptyStateP
             No Users Found
           </h3>
           <p className="text-blue-700 mb-4">
-            There are currently no users in the system. Create your first user to get started.
+            There are currently no users in the system. Create your first user
+            to get started.
           </p>
           {onCreateUser && (
             <Button

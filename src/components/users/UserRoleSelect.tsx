@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React, { memo } from 'react';
+import React, { memo } from "react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 
 interface UserRoleSelectProps {
   currentRole: string;
@@ -16,10 +16,10 @@ interface UserRoleSelectProps {
 }
 
 export const ROLE_OPTIONS = [
-  { value: 'master_admin', label: 'Master Admin' },
-  { value: 'admin', label: 'Admin' },
-  { value: 'team_leader', label: 'Team Leader' },
-  { value: 'supervisor', label: 'Supervisor' },
+  { value: "master_admin", label: "Master Admin" },
+  { value: "admin", label: "Admin" },
+  { value: "team_leader", label: "Team Leader" },
+  { value: "supervisor", label: "Supervisor" },
 ] as const;
 
 export const UserRoleSelect = memo(function UserRoleSelect({

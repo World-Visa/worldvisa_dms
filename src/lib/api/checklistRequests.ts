@@ -33,7 +33,7 @@ export interface ChecklistRequestsParams {
  * Fetches all applications that have requested checklists (Admin)
  */
 export async function getChecklistRequests(
-  params: ChecklistRequestsParams = {}
+  params: ChecklistRequestsParams = {},
 ): Promise<ChecklistRequestsResponse> {
   try {
     const { page = 1, limit = 20 } = params;
@@ -53,7 +53,7 @@ export async function getChecklistRequests(
 
     if (!Array.isArray(response.data)) {
       throw new Error(
-        "Invalid data format: expected array of checklist requests"
+        "Invalid data format: expected array of checklist requests",
       );
     }
 
@@ -62,7 +62,7 @@ export async function getChecklistRequests(
     // Enhanced error handling with specific error types
     if (error instanceof TypeError && error.message.includes("fetch")) {
       throw new Error(
-        "Network error: Unable to connect to server. Please check your internet connection."
+        "Network error: Unable to connect to server. Please check your internet connection.",
       );
     }
 
@@ -73,7 +73,7 @@ export async function getChecklistRequests(
 
     // Fallback for unknown errors
     throw new Error(
-      "An unexpected error occurred while fetching checklist requests. Please try again."
+      "An unexpected error occurred while fetching checklist requests. Please try again.",
     );
   }
 }
@@ -82,7 +82,7 @@ export async function getChecklistRequests(
  * Fetches a single checklist request by lead ID
  */
 export async function getChecklistRequestByLeadId(
-  leadId: string
+  leadId: string,
 ): Promise<ChecklistRequestItem | null> {
   try {
     if (!leadId || typeof leadId !== "string") {
@@ -100,7 +100,7 @@ export async function getChecklistRequestByLeadId(
       throw new Error(`Failed to fetch checklist request: ${error.message}`);
     }
     throw new Error(
-      "An unexpected error occurred while fetching checklist request."
+      "An unexpected error occurred while fetching checklist request.",
     );
   }
 }

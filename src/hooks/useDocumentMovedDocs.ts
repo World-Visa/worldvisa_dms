@@ -7,7 +7,7 @@ import {
 } from "@/types/documents";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 /**
  * Fetches all moved documents for a given document ID.

@@ -29,15 +29,18 @@ Requires Node.js 18+.
 ## Architecture Overview
 
 ### Route Structure (App Router)
+
 - `/(public)/*` - Public routes (admin-login, client-login, portal)
 - `/admin/*` - Protected admin dashboard (applications, checklist-requests, quality-check, requested-docs, manage-users)
 - `/client/*` - Protected client dashboard (applications)
 - `/api/*` - Backend API routes proxying to Zoho DMS
 
 ### User Roles
+
 Master Admin > Admin > Team Leader > Supervisor > Client
 
 ### Key Directories
+
 - `src/hooks/` - 61 custom hooks encapsulating business logic and API interactions
 - `src/lib/api/` - API client functions with typed responses
 - `src/lib/config/` - Configuration including API endpoints
@@ -46,16 +49,19 @@ Master Admin > Admin > Team Leader > Supervisor > Client
 - `src/components/ui/` - Shadcn UI component library
 
 ### Data Patterns
+
 - **Query Keys**: Centralized in hooks (e.g., `NOTIFICATION_KEYS`, `APPLICATION_KEYS`)
 - **Optimistic Updates**: Used with React Query mutations for immediate UI feedback
 - **API Base URL**: Configured via `NEXT_PUBLIC_API_BASE_URL` and `NEXT_PUBLIC_ZOHO_BASE_URL`
 
 ### WebSocket Integration
+
 Real-time notifications via `NotificationSocketManager` class in `src/lib/notificationSocket.ts`. Handles automatic reconnection with exponential backoff.
 
 ## Environment Variables
 
 Copy `env.example` to `.env.local`:
+
 - `JWT_SECRET` - JWT signing key
 - `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` - Redis for caching
 - `NEXT_PUBLIC_API_BASE_URL` - Backend API URL (https://backend.worldvisa-api.cloud)

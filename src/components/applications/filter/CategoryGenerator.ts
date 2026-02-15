@@ -36,7 +36,7 @@ export function generateCategories({
   if (isClientView) {
     return generateClientCategories(
       uniqueChecklistCategories,
-      submittedDocumentsCount
+      submittedDocumentsCount,
     );
   }
 
@@ -45,7 +45,7 @@ export function generateCategories({
 
 function generateClientCategories(
   checklistCategories: ChecklistCategory[],
-  submittedDocumentsCount: number
+  submittedDocumentsCount: number,
 ): DocumentCategoryInfo[] {
   if (!checklistCategories || checklistCategories.length === 0) {
     return submittedDocumentsCount > 0
@@ -89,7 +89,7 @@ function generateClientCategories(
 
 function generateAdminCategories(
   checklistState: ChecklistState,
-  checklistCategories: ChecklistCategory[]
+  checklistCategories: ChecklistCategory[],
 ): DocumentCategoryInfo[] {
   switch (checklistState) {
     case "none":

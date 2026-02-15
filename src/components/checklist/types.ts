@@ -1,1 +1,1 @@
-export type ChecklistPageMode = 'view' | 'create' | 'edit';
+export type ChecklistPageMode = "view" | "create" | "edit";

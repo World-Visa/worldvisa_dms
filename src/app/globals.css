@@ -120,66 +120,66 @@
   body {
     @apply bg-background text-foreground;
   }
-  
+
   /* Smart responsive container - automatically adjusts max-width based on screen size */
   .container {
     @apply w-full mx-auto px-4 sm:px-6 lg:px-8;
     @apply sm:max-w-2xl md:max-w-4xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-screen-2xl;
   }
-  
+
   /* Responsive text utilities */
   .text-responsive {
     @apply text-sm sm:text-base lg:text-lg;
   }
-  
+
   .heading-responsive {
     @apply text-xl sm:text-2xl lg:text-3xl xl:text-4xl;
   }
-  
+
   .subheading-responsive {
     @apply text-lg sm:text-xl lg:text-2xl;
   }
-  
+
   /* Hide scrollbar utility */
   .scrollbar-hide {
-    -ms-overflow-style: none;  /* Internet Explorer 10+ */
-    scrollbar-width: none;  /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+    scrollbar-width: none; /* Firefox */
   }
-  .scrollbar-hide::-webkit-scrollbar { 
-    display: none;  /* Safari and Chrome */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
   }
-  
+
   /* Highlight search styles */
   .highlight-match {
     @apply bg-yellow-200 text-yellow-900 px-0.5 rounded-sm;
     @apply dark:bg-yellow-800 dark:text-yellow-100;
     @apply transition-colors duration-150;
   }
-  
+
   .highlight-match:hover {
     @apply bg-yellow-300 dark:bg-yellow-700;
   }
-  
+
   /* Search box focus styles */
   .search-box:focus-within {
     @apply ring-0;
   }
-  
+
   /* Search results container */
   .search-results {
     @apply transition-all duration-200 ease-in-out;
   }
-  
+
   /* Mobile-first responsive search */
   .search-container {
     @apply w-full;
   }
-  
+
   /* Mobile table improvements */
   .mobile-table {
     @apply text-sm;
   }
-  
+
   /* Mobile button improvements */
   .mobile-button {
     @apply min-h-[44px] touch-manipulation;

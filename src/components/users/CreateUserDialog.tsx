@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import React, { memo, useState } from 'react';
+import React, { memo, useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Eye, EyeOff, UserPlus } from 'lucide-react';
-import { UserRoleSelect } from './UserRoleSelect';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Eye, EyeOff, UserPlus } from "lucide-react";
+import { UserRoleSelect } from "./UserRoleSelect";
 
 interface CreateUserDialogProps {
   onCreateUser: (userData: {
@@ -27,42 +27,42 @@ export const CreateUserDialog = memo(function CreateUserDialog({
   isCreating = false,
 }: CreateUserDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [role, setRole] = useState('admin');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [role, setRole] = useState("admin");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const handleCreate = () => {
     if (!username.trim() || !password.trim() || password !== confirmPassword) {
-      console.error('Invalid input or passwords do not match');
+      console.error("Invalid input or passwords do not match");
       return;
     }
-    
+
     onCreateUser({
       username: username.trim(),
       password,
       role,
     });
-    
+
     handleClose();
   };
 
   const handleClose = () => {
     setIsOpen(false);
-    setUsername('');
-    setPassword('');
-    setConfirmPassword('');
-    setRole('admin');
+    setUsername("");
+    setPassword("");
+    setConfirmPassword("");
+    setRole("admin");
     setShowPassword(false);
     setShowConfirmPassword(false);
   };
 
-  const isFormValid = 
-    username.trim() && 
-    password.trim() && 
-    confirmPassword.trim() && 
+  const isFormValid =
+    username.trim() &&
+    password.trim() &&
+    confirmPassword.trim() &&
     password === confirmPassword;
 
   return (
@@ -92,7 +92,7 @@ export const CreateUserDialog = memo(function CreateUserDialog({
             <label className="text-sm font-medium">Password</label>
             <div className="relative">
               <Input
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 placeholder="Enter password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -119,7 +119,7 @@ export const CreateUserDialog = memo(function CreateUserDialog({
             <label className="text-sm font-medium">Confirm Password</label>
             <div className="relative">
               <Input
-                type={showConfirmPassword ? 'text' : 'password'}
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -152,9 +152,7 @@ export const CreateUserDialog = memo(function CreateUserDialog({
           </div>
 
           {password && confirmPassword && password !== confirmPassword && (
-            <p className="text-sm text-red-600">
-              Passwords do not match
-            </p>
+            <p className="text-sm text-red-600">Passwords do not match</p>
           )}
 
           <div className="flex justify-end gap-3">
@@ -169,7 +167,7 @@ export const CreateUserDialog = memo(function CreateUserDialog({
               onClick={handleCreate}
               disabled={!isFormValid || isCreating}
             >
-              {isCreating ? 'Creating...' : 'Create User'}
+              {isCreating ? "Creating..." : "Create User"}
             </Button>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import { fetcher } from "@/lib/fetcher";
 import { GetTimelineResponse, Timeline } from "@/types/documents";
 import { useQuery } from "@tanstack/react-query";
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export function useDocumentTimeline(documentId: string) {
   // Query for fetching document timeline

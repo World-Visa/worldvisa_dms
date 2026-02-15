@@ -1,19 +1,22 @@
-'use client';
+"use client";
 
-import React, { memo } from 'react';
-import { cn } from '@/lib/utils';
-import { X } from 'lucide-react';
-import { DocumentCategoryInfo } from '@/types/documents';
-import { formatDateRange, formatDate } from '@/utils/dateFormat';
-import { Badge } from '@/components/ui/badge';
-import type { Document } from '@/types/applications';
+import React, { memo } from "react";
+import { cn } from "@/lib/utils";
+import { X } from "lucide-react";
+import { DocumentCategoryInfo } from "@/types/documents";
+import { formatDateRange, formatDate } from "@/utils/dateFormat";
+import { Badge } from "@/components/ui/badge";
+import type { Document } from "@/types/applications";
 
 interface CategoryButtonProps {
   category: DocumentCategoryInfo;
   selectedCategory: string;
   onCategoryChange: (categoryId: string) => void;
   onRemoveCompany?: (companyName: string) => void;
-  onRemoveCompanyWithCheck?: (companyName: string, companyCategory: string) => void;
+  onRemoveCompanyWithCheck?: (
+    companyName: string,
+    companyCategory: string,
+  ) => void;
   documents?: Document[];
   count?: number;
   disabled?: boolean;
@@ -27,16 +30,19 @@ export const CategoryButton = memo(function CategoryButton({
   onRemoveCompanyWithCheck,
   documents,
   count: countProp,
-  disabled = false
+  disabled = false,
 }: CategoryButtonProps) {
   const count = countProp ?? category.count;
   // Check if this is a company-specific chip (contains "Company Documents" but not the generic one)
-  const isCompanyChip = category.label.includes('Company Documents') &&
-    category.label !== 'Company Documents' &&
+  const isCompanyChip =
+    category.label.includes("Company Documents") &&
+    category.label !== "Company Documents" &&
     (onRemoveCompany || onRemoveCompanyWithCheck);
 
   // Extract company name from the category label (this will be lowercase for matching)
-  const companyName = isCompanyChip ? category.label.replace(' Company Documents', '') : null;
+  const companyName = isCompanyChip
+    ? category.label.replace(" Company Documents", "")
+    : null;
   // The company category is the full label (e.g., "Oracle Company Documents")
   const companyCategory = isCompanyChip ? category.label : null;
 
@@ -62,18 +68,20 @@ export const CategoryButton = memo(function CategoryButton({
         key={category.id}
         disabled={disabled}
         className={cn(
-          'relative inline-flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-0 transition-all duration-200 ease-in-out',
-          'focus:outline-none focus:ring-0',
-          disabled && 'cursor-not-allowed opacity-50',
-          !disabled && 'cursor-pointer hover:opacity-80',
-          selected ? 'font-bold text-black dark:text-white' : 'font-medium text-gray-400 dark:text-gray-500'
+          "relative inline-flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-0 transition-all duration-200 ease-in-out",
+          "focus:outline-none focus:ring-0",
+          disabled && "cursor-not-allowed opacity-50",
+          !disabled && "cursor-pointer hover:opacity-80",
+          selected
+            ? "font-bold text-black dark:text-white"
+            : "font-medium text-gray-400 dark:text-gray-500",
         )}
         onClick={() => !disabled && onCategoryChange(category.id)}
       >
         <span
           className={cn(
-            'inline-flex items-center gap-2 whitespace-nowrap',
-            selected && 'border-b-2 border-black dark:border-white pb-0.5'
+            "inline-flex items-center gap-2 whitespace-nowrap",
+            selected && "border-b-2 border-black dark:border-white pb-0.5",
           )}
         >
           {labelWithCount}
@@ -107,9 +115,9 @@ export const CategoryButton = memo(function CategoryButton({
         <button
           onClick={handleDeleteClick}
           className={cn(
-            'absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200',
-            'bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1',
-            'opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100'
+            "absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200",
+            "bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1",
+            "opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100",
           )}
           title={`Remove ${companyName}`}
         >

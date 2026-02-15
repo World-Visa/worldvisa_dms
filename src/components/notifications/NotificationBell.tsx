@@ -1,10 +1,18 @@
-import { memo, useCallback } from 'react';
-import { Bell, BellRing } from 'lucide-react';
-import { useNotifications, useNotificationConnection } from '@/hooks/useNotifications';
-import { useNotificationStore } from '@/store/notificationStore';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { memo, useCallback } from "react";
+import { Bell, BellRing } from "lucide-react";
+import {
+  useNotifications,
+  useNotificationConnection,
+} from "@/hooks/useNotifications";
+import { useNotificationStore } from "@/store/notificationStore";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface NotificationBellProps {
   className?: string;
@@ -20,16 +28,20 @@ export const NotificationBell = memo<NotificationBellProps>(({ className }) => {
   }, [toggleNotificationPanel]);
 
   const getConnectionStatus = () => {
-    if (isConnecting) return 'Connecting...';
+    if (isConnecting) return "Connecting...";
     if (error) return `Connection error: ${error}`;
-    if (isConnected) return 'Connected';
-    return 'Disconnected';
+    if (isConnected) return "Connected";
+    return "Disconnected";
   };
 
   const getConnectionIcon = () => {
-    if (isConnecting) return <div className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />;
+    if (isConnecting)
+      return (
+        <div className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
+      );
     if (error) return <div className="h-2 w-2 rounded-full bg-red-500" />;
-    if (isConnected) return <div className="h-2 w-2 rounded-full bg-green-500" />;
+    if (isConnected)
+      return <div className="h-2 w-2 rounded-full bg-green-500" />;
     return <div className="h-2 w-2 rounded-full bg-gray-400" />;
   };
 
@@ -41,7 +53,7 @@ export const NotificationBell = memo<NotificationBellProps>(({ className }) => {
             variant="ghost"
             size="icon"
             onClick={handleClick}
-            className={`relative cursor-pointer ${className || ''}`}
+            className={`relative cursor-pointer ${className || ""}`}
             disabled={isConnecting}
           >
             {unreadCount > 0 ? (
@@ -49,16 +61,14 @@ export const NotificationBell = memo<NotificationBellProps>(({ className }) => {
             ) : (
               <Bell className="h-5 w-5" />
             )}
-            
+
             {/* Unread count badge */}
             {unreadCount > 0 && (
-              <Badge 
-                variant="default" 
+              <Badge
+                variant="default"
                 className="absolute -top-1 -right-2 h-5 w-5 rounded-full p-0 text-xs font-bold flex items-center justify-center"
               >
-                <span>
-                  {unreadCount > 99 ? '99+' : unreadCount}
-                </span>
+                <span>{unreadCount > 99 ? "99+" : unreadCount}</span>
               </Badge>
             )}
             {/* Connection status indicator */}
@@ -70,7 +80,9 @@ export const NotificationBell = memo<NotificationBellProps>(({ className }) => {
         <TooltipContent side="bottom" align="end">
           <div className="space-y-1">
             <div className="font-medium">
-              {unreadCount > 0 ? `${unreadCount} unread notification${unreadCount > 1 ? 's' : ''}` : 'No unread notifications'}
+              {unreadCount > 0
+                ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`
+                : "No unread notifications"}
             </div>
             <div className="text-xs text-white">
               Status: {getConnectionStatus()}
@@ -87,4 +99,4 @@ export const NotificationBell = memo<NotificationBellProps>(({ className }) => {
   );
 });
 
-NotificationBell.displayName = 'NotificationBell';
+NotificationBell.displayName = "NotificationBell";

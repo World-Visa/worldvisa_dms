@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState, useCallback, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   Download,
   Loader2,
@@ -16,21 +16,21 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
-} from 'lucide-react';
-import { toast } from 'sonner';
+} from "lucide-react";
+import { toast } from "sonner";
 import {
   createZipExportJob,
   getZipExportJobStatus,
   cancelZipExportJob,
-} from '@/lib/api/zipExportJob';
+} from "@/lib/api/zipExportJob";
 
 type ExportStatus =
-  | 'idle'
-  | 'pending'
-  | 'processing'
-  | 'completed'
-  | 'failed'
-  | 'expired';
+  | "idle"
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed"
+  | "expired";
 
 const POLL_INTERVAL_MS = 1500;
 
@@ -41,25 +41,25 @@ interface DownloadAllDocumentsModalProps {
 }
 
 function formatExpiryCountdown(expiresAt: string | null): string {
-  if (!expiresAt) return '';
+  if (!expiresAt) return "";
   try {
     const exp = new Date(expiresAt);
     const now = new Date();
-    if (exp.getTime() <= now.getTime()) return 'Expired';
+    if (exp.getTime() <= now.getTime()) return "Expired";
     const ms = exp.getTime() - now.getTime();
     const hours = Math.floor(ms / (1000 * 60 * 60));
     const minutes = Math.floor((ms % (1000 * 60 * 60)) / (1000 * 60));
     if (hours > 0) return `Expires in ${hours}h ${minutes}m`;
     return `Expires in ${minutes}m`;
   } catch {
-    return '';
+    return "";
   }
 }
 
 function CircularProgress({
   current,
   total,
-  className = '',
+  className = "",
 }: {
   current: number;
   total: number;
@@ -102,7 +102,7 @@ function CircularProgress({
         strokeDashoffset={offset}
         strokeLinecap="round"
         className="text-teal-600 dark:text-teal-400 transition-[stroke-dashoffset] duration-300"
-        style={{ transform: 'rotate(-90deg)', transformOrigin: '50% 50%' }}
+        style={{ transform: "rotate(-90deg)", transformOrigin: "50% 50%" }}
       />
     </svg>
   );
@@ -114,7 +114,7 @@ export function DownloadAllDocumentsModal({
   leadId,
 }: DownloadAllDocumentsModalProps) {
   const [jobId, setJobId] = useState<string | null>(null);
-  const [status, setStatus] = useState<ExportStatus>('idle');
+  const [status, setStatus] = useState<ExportStatus>("idle");
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -124,7 +124,7 @@ export function DownloadAllDocumentsModal({
 
   // Update countdown every minute when completed and expiresAt is set
   useEffect(() => {
-    if (status !== 'completed' || !expiresAt) return;
+    if (status !== "completed" || !expiresAt) return;
     const interval = setInterval(() => {
       setCountdownTick((t) => t + 1);
     }, 60_000);
@@ -133,7 +133,7 @@ export function DownloadAllDocumentsModal({
 
   const reset = useCallback(() => {
     setJobId(null);
-    setStatus('idle');
+    setStatus("idle");
     setProgress({ current: 0, total: 0 });
     setDownloadUrl(null);
     setErrorMessage(null);
@@ -147,12 +147,13 @@ export function DownloadAllDocumentsModal({
     try {
       const { job_id } = await createZipExportJob(leadId);
       setJobId(job_id);
-      setStatus('pending');
+      setStatus("pending");
       setProgress({ current: 0, total: 0 });
       isPollingRef.current = true;
     } catch (err) {
-      console.error('Create ZIP export job failed:', err);
-      const msg = err instanceof Error ? err.message : 'Failed to create export.';
+      console.error("Create ZIP export job failed:", err);
+      const msg =
+        err instanceof Error ? err.message : "Failed to create export.";
       setErrorMessage(msg);
       toast.error(msg);
     }
@@ -168,34 +169,34 @@ export function DownloadAllDocumentsModal({
           total: data.progress.total,
         });
       }
-      if (data.status === 'pending' || data.status === 'processing') {
+      if (data.status === "pending" || data.status === "processing") {
         setStatus(data.status);
         return;
       }
       isPollingRef.current = false;
-      if (data.status === 'completed') {
-        setStatus('completed');
+      if (data.status === "completed") {
+        setStatus("completed");
         setDownloadUrl(data.download_url ?? null);
         setExpiresAt(data.expires_at ?? null);
-        toast.success('Export completed. You can download your ZIP file.');
+        toast.success("Export completed. You can download your ZIP file.");
         return;
       }
-      if (data.status === 'failed') {
-        setStatus('failed');
-        setErrorMessage(data.error_message ?? 'Export failed.');
-        toast.error(data.error_message ?? 'Export failed.');
+      if (data.status === "failed") {
+        setStatus("failed");
+        setErrorMessage(data.error_message ?? "Export failed.");
+        toast.error(data.error_message ?? "Export failed.");
       }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : '';
-      if (msg === 'expired') {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg === "expired") {
         isPollingRef.current = false;
-        setStatus('expired');
-        setErrorMessage('Download link has expired (24 hour limit).');
-        toast.error('Download link has expired.');
+        setStatus("expired");
+        setErrorMessage("Download link has expired (24 hour limit).");
+        toast.error("Download link has expired.");
       } else {
         isPollingRef.current = false;
-        setStatus('failed');
-        const fallback = 'Failed to fetch export status.';
+        setStatus("failed");
+        const fallback = "Failed to fetch export status.";
         setErrorMessage(msg || fallback);
         toast.error(msg || fallback);
       }
@@ -203,19 +204,19 @@ export function DownloadAllDocumentsModal({
   }, [leadId, jobId]);
 
   useEffect(() => {
-    if (!jobId || (status !== 'pending' && status !== 'processing')) return;
+    if (!jobId || (status !== "pending" && status !== "processing")) return;
     const interval = setInterval(pollStatus, POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [jobId, status, pollStatus]);
 
   const cancelExport = useCallback(async () => {
-    if (!leadId || !jobId || (status !== 'pending' && status !== 'processing'))
+    if (!leadId || !jobId || (status !== "pending" && status !== "processing"))
       return;
     try {
       await cancelZipExportJob(leadId, jobId);
-      toast.success('Export cancelled.');
+      toast.success("Export cancelled.");
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to cancel.');
+      toast.error(err instanceof Error ? err.message : "Failed to cancel.");
     } finally {
       isPollingRef.current = false;
       reset();
@@ -224,11 +225,11 @@ export function DownloadAllDocumentsModal({
   }, [leadId, jobId, status, reset, onOpenChange]);
 
   const downloadFile = useCallback(() => {
-    if (downloadUrl) window.open(downloadUrl, '_blank');
+    if (downloadUrl) window.open(downloadUrl, "_blank");
   }, [downloadUrl]);
 
   const handleClose = useCallback(() => {
-    if (status === 'pending' || status === 'processing') {
+    if (status === "pending" || status === "processing") {
       cancelExport();
       return;
     }
@@ -236,7 +237,7 @@ export function DownloadAllDocumentsModal({
     onOpenChange(false);
   }, [status, reset, onOpenChange, cancelExport]);
 
-  const isBusy = status === 'pending' || status === 'processing';
+  const isBusy = status === "pending" || status === "processing";
   const canClose = !isBusy;
 
   return (
@@ -255,7 +256,7 @@ export function DownloadAllDocumentsModal({
 
         <div className="space-y-4" role="status" aria-live="polite">
           {/* Idle */}
-          {status === 'idle' && (
+          {status === "idle" && (
             <div className="text-center py-6">
               <div className="flex flex-col items-center gap-4">
                 <FileArchive className="h-12 w-12 text-muted-foreground" />
@@ -270,7 +271,7 @@ export function DownloadAllDocumentsModal({
           )}
 
           {/* Pending */}
-          {status === 'pending' && (
+          {status === "pending" && (
             <div className="text-center py-6">
               <div className="flex flex-col items-center gap-4">
                 <Loader2 className="h-10 w-10 animate-spin text-teal-600 dark:text-teal-400" />
@@ -285,7 +286,7 @@ export function DownloadAllDocumentsModal({
           )}
 
           {/* Processing */}
-          {status === 'processing' && (
+          {status === "processing" && (
             <div className="text-center py-6">
               <div className="flex flex-col items-center gap-4">
                 <CircularProgress
@@ -306,7 +307,7 @@ export function DownloadAllDocumentsModal({
           )}
 
           {/* Completed */}
-          {status === 'completed' && (
+          {status === "completed" && (
             <div className="text-center py-4">
               <div className="flex flex-col items-center gap-4">
                 <div className="rounded-full bg-green-100 dark:bg-green-900/30 p-3">
@@ -317,7 +318,8 @@ export function DownloadAllDocumentsModal({
                     Export ready
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    {formatExpiryCountdown(expiresAt) || 'Download link available.'}
+                    {formatExpiryCountdown(expiresAt) ||
+                      "Download link available."}
                   </p>
                 </div>
               </div>
@@ -325,7 +327,7 @@ export function DownloadAllDocumentsModal({
           )}
 
           {/* Failed */}
-          {status === 'failed' && (
+          {status === "failed" && (
             <div className="text-center py-4">
               <div className="flex flex-col items-center gap-4">
                 <div className="rounded-full bg-destructive/10 p-3">
@@ -344,7 +346,7 @@ export function DownloadAllDocumentsModal({
           )}
 
           {/* Expired */}
-          {status === 'expired' && (
+          {status === "expired" && (
             <div className="text-center py-4">
               <div className="flex flex-col items-center gap-4">
                 <div className="rounded-full bg-amber-100 dark:bg-amber-900/30 p-3">
@@ -355,7 +357,8 @@ export function DownloadAllDocumentsModal({
                     Link expired
                   </p>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Download link has expired (24 hour limit). Start a new export.
+                    Download link has expired (24 hour limit). Start a new
+                    export.
                   </p>
                 </div>
               </div>
@@ -364,7 +367,7 @@ export function DownloadAllDocumentsModal({
         </div>
 
         <DialogFooter className="flex flex-wrap gap-2">
-          {status === 'idle' && (
+          {status === "idle" && (
             <>
               <Button variant="outline" onClick={handleClose}>
                 Cancel
@@ -375,12 +378,12 @@ export function DownloadAllDocumentsModal({
               </Button>
             </>
           )}
-          {(status === 'pending' || status === 'processing') && (
+          {(status === "pending" || status === "processing") && (
             <Button variant="outline" onClick={cancelExport} disabled={!jobId}>
               Cancel export
             </Button>
           )}
-          {status === 'completed' && (
+          {status === "completed" && (
             <>
               <Button variant="outline" onClick={handleClose}>
                 Close
@@ -391,7 +394,7 @@ export function DownloadAllDocumentsModal({
               </Button>
             </>
           )}
-          {(status === 'failed' || status === 'expired') && (
+          {(status === "failed" || status === "expired") && (
             <>
               <Button variant="outline" onClick={handleClose}>
                 Close
@@ -403,7 +406,7 @@ export function DownloadAllDocumentsModal({
                 }}
                 className="gap-2"
               >
-                {status === 'failed' ? 'Try again' : 'Start new export'}
+                {status === "failed" ? "Try again" : "Start new export"}
               </Button>
             </>
           )}

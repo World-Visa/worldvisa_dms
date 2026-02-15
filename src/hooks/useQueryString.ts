@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import { useSearchParams, useRouter, usePathname } from 'next/navigation';
-import { useCallback, useMemo } from 'react';
-import queryString from 'query-string';
-import { FilterParams } from '@/types/common';
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
+import { useCallback, useMemo } from "react";
+import queryString from "query-string";
+import { FilterParams } from "@/types/common";
 
 export function useQueryString() {
   const searchParams = useSearchParams();
@@ -22,29 +22,31 @@ export function useQueryString() {
   const updateQuery = useCallback(
     (params: Partial<FilterParams>, options?: { replace?: boolean }) => {
       const newParams = { ...queryParams, ...params };
-      
+
       // Remove undefined values
-      Object.keys(newParams).forEach(key => {
-        if (newParams[key] === undefined || newParams[key] === '') {
+      Object.keys(newParams).forEach((key) => {
+        if (newParams[key] === undefined || newParams[key] === "") {
           delete newParams[key];
         }
       });
 
       const queryStringResult = queryString.stringify(newParams, {
-        arrayFormat: 'bracket',
+        arrayFormat: "bracket",
         skipNull: true,
         skipEmptyString: true,
       });
 
-      const url = queryStringResult ? `${pathname}?${queryStringResult}` : pathname;
-      
+      const url = queryStringResult
+        ? `${pathname}?${queryStringResult}`
+        : pathname;
+
       if (options?.replace) {
         router.replace(url);
       } else {
         router.push(url);
       }
     },
-    [queryParams, pathname, router]
+    [queryParams, pathname, router],
   );
 
   // Remove specific query parameter
@@ -52,17 +54,19 @@ export function useQueryString() {
     (key: string) => {
       const newParams = { ...queryParams };
       delete newParams[key];
-      
+
       const queryStringResult = queryString.stringify(newParams, {
-        arrayFormat: 'bracket',
+        arrayFormat: "bracket",
         skipNull: true,
         skipEmptyString: true,
       });
 
-      const url = queryStringResult ? `${pathname}?${queryStringResult}` : pathname;
+      const url = queryStringResult
+        ? `${pathname}?${queryStringResult}`
+        : pathname;
       router.push(url);
     },
-    [queryParams, pathname, router]
+    [queryParams, pathname, router],
   );
 
   // Clear all query parameters
@@ -75,7 +79,7 @@ export function useQueryString() {
     (key: string) => {
       return queryParams[key];
     },
-    [queryParams]
+    [queryParams],
   );
 
   return {

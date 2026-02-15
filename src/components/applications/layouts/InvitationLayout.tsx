@@ -1,11 +1,18 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { IconFolderCode } from '@tabler/icons-react';
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { IconFolderCode } from "@tabler/icons-react";
 import {
   Table,
   TableBody,
@@ -13,22 +20,31 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Eye, Trash2, Pencil, MoreHorizontal, AlertCircle } from 'lucide-react';
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Eye, Trash2, Pencil, MoreHorizontal, AlertCircle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { toast } from 'sonner';
-import { useStage2Documents, useDeleteStage2Document } from '@/hooks/useStage2Documents';
-import { InvitationModal } from '@/components/applications/modals/InvitationModal';
-import { formatDate } from '@/utils/format';
-import { getVisaSubclassByCode, getStateByCode } from '@/lib/constants/australianData';
-import type { InvitationLayoutProps, Stage2Document } from '@/types/stage2Documents';
+} from "@/components/ui/dropdown-menu";
+import { toast } from "sonner";
+import {
+  useStage2Documents,
+  useDeleteStage2Document,
+} from "@/hooks/useStage2Documents";
+import { InvitationModal } from "@/components/applications/modals/InvitationModal";
+import { formatDate } from "@/utils/format";
+import {
+  getVisaSubclassByCode,
+  getStateByCode,
+} from "@/lib/constants/australianData";
+import type {
+  InvitationLayoutProps,
+  Stage2Document,
+} from "@/types/stage2Documents";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,18 +54,27 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 
 interface InvitationLayoutComponentProps extends InvitationLayoutProps {
   isClientView?: boolean;
 }
 
-export function InvitationLayout({ applicationId, isClientView = false }: InvitationLayoutComponentProps) {
+export function InvitationLayout({
+  applicationId,
+  isClientView = false,
+}: InvitationLayoutComponentProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingDocument, setEditingDocument] = useState<Stage2Document | null>(null);
-  const [documentToDelete, setDocumentToDelete] = useState<Stage2Document | null>(null);
+  const [editingDocument, setEditingDocument] = useState<Stage2Document | null>(
+    null,
+  );
+  const [documentToDelete, setDocumentToDelete] =
+    useState<Stage2Document | null>(null);
 
-  const { data, isLoading, error } = useStage2Documents(applicationId, 'invitation');
+  const { data, isLoading, error } = useStage2Documents(
+    applicationId,
+    "invitation",
+  );
   const deleteMutation = useDeleteStage2Document();
 
   const documents = data?.data || [];
@@ -57,7 +82,7 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
   const handleView = (document: Stage2Document) => {
     const url = document.document_link || document.download_url;
     if (!url) {
-      toast.error('Document URL not available');
+      toast.error("Document URL not available");
       return;
     }
 
@@ -68,8 +93,8 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
 
     window.open(
       url,
-      '_blank',
-      `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`
+      "_blank",
+      `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`,
     );
   };
 
@@ -91,7 +116,7 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
         });
         setDocumentToDelete(null);
       } catch (error) {
-        console.error('Delete error:', error);
+        console.error("Delete error:", error);
       }
     }
   };
@@ -102,13 +127,13 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
   };
 
   const getSubclassDisplay = (code?: string) => {
-    if (!code) return 'N/A';
+    if (!code) return "N/A";
     const subclass = getVisaSubclassByCode(code);
     return subclass ? subclass.label : code;
   };
 
   const getStateDisplay = (code?: string) => {
-    if (!code) return 'N/A';
+    if (!code) return "N/A";
     const state = getStateByCode(code);
     return state ? `${state.code} - ${state.name}` : code;
   };
@@ -141,13 +166,17 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
                 </EmptyMedia>
                 <EmptyTitle>No Invitation Yet</EmptyTitle>
                 <EmptyDescription>
-                  No invitation documents have been uploaded for this application.
+                  No invitation documents have been uploaded for this
+                  application.
                 </EmptyDescription>
               </EmptyHeader>
               {!isClientView && (
                 <EmptyContent>
                   <div className="flex gap-2">
-                    <Button className="cursor-pointer" onClick={() => setIsModalOpen(true)}>
+                    <Button
+                      className="cursor-pointer"
+                      onClick={() => setIsModalOpen(true)}
+                    >
                       Create Invitation
                     </Button>
                   </div>
@@ -158,12 +187,15 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
             <div>
               {!isClientView && (
                 <div className="flex justify-end mb-4">
-                  <Button onClick={() => setIsModalOpen(true)}>Add Invitation Document</Button>
+                  <Button onClick={() => setIsModalOpen(true)}>
+                    Add Invitation Document
+                  </Button>
                 </div>
               )}
               {documents.length > 1 && (
                 <p className="text-sm text-muted-foreground mb-3">
-                  {documents.length} invitation document{documents.length !== 1 ? 's' : ''}
+                  {documents.length} invitation document
+                  {documents.length !== 1 ? "s" : ""}
                 </p>
               )}
               <div className="rounded-md border overflow-x-auto max-h-[60vh] overflow-y-auto">
@@ -176,7 +208,9 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
                       <TableHead>State</TableHead>
                       <TableHead>Points</TableHead>
                       <TableHead>Deadline</TableHead>
-                      <TableHead className="text-right w-[80px]">Actions</TableHead>
+                      <TableHead className="text-right w-[80px]">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -185,18 +219,24 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
                         <TableCell className="font-medium">
                           {document.document_name || document.file_name}
                         </TableCell>
-                        <TableCell>{formatDate(document.date, 'short')}</TableCell>
-                        <TableCell>{getSubclassDisplay(document.subclass)}</TableCell>
+                        <TableCell>
+                          {formatDate(document.date, "short")}
+                        </TableCell>
+                        <TableCell>
+                          {getSubclassDisplay(document.subclass)}
+                        </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="font-normal">
-                            {document.state ? getStateDisplay(document.state) : 'N/A'}
+                            {document.state
+                              ? getStateDisplay(document.state)
+                              : "N/A"}
                           </Badge>
                         </TableCell>
-                        <TableCell>{document.point ?? 'N/A'}</TableCell>
+                        <TableCell>{document.point ?? "N/A"}</TableCell>
                         <TableCell>
                           {document.deadline
-                            ? formatDate(document.deadline, 'short')
-                            : 'N/A'}
+                            ? formatDate(document.deadline, "short")
+                            : "N/A"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end">
@@ -212,22 +252,30 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
                             ) : (
                               <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                  <Button variant="outline" size="sm" title="Actions">
+                                  <Button
+                                    variant="outline"
+                                    size="sm"
+                                    title="Actions"
+                                  >
                                     <MoreHorizontal className="h-4 w-4" />
                                   </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
-                                  <DropdownMenuItem onClick={() => handleView(document)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleView(document)}
+                                  >
                                     <Eye className="h-4 w-4 mr-2" />
                                     View
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleEditClick(document)}>
+                                  <DropdownMenuItem
+                                    onClick={() => handleEditClick(document)}
+                                  >
                                     <Pencil className="h-4 w-4 mr-2" />
                                     Edit
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() => handleDeleteClick(document)}
-                                    variant='destructive'
+                                    variant="destructive"
                                   >
                                     <Trash2 className="h-4 w-4 mr-2" />
                                     Delete
@@ -254,16 +302,21 @@ export function InvitationLayout({ applicationId, isClientView = false }: Invita
             onClose={handleModalClose}
             applicationId={applicationId}
             document={editingDocument || undefined}
-            mode={editingDocument ? 'edit' : 'create'}
+            mode={editingDocument ? "edit" : "create"}
           />
 
-          <AlertDialog open={!!documentToDelete} onOpenChange={() => setDocumentToDelete(null)}>
+          <AlertDialog
+            open={!!documentToDelete}
+            onOpenChange={() => setDocumentToDelete(null)}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete the document &quot;{documentToDelete?.document_name || documentToDelete?.file_name}&quot;.
-                  This action cannot be undone.
+                  This will permanently delete the document &quot;
+                  {documentToDelete?.document_name ||
+                    documentToDelete?.file_name}
+                  &quot;. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

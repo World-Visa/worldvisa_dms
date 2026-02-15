@@ -1,17 +1,23 @@
-import { useState, useCallback } from 'react';
-import type { Document } from '@/types/applications';
-
+import { useState, useCallback } from "react";
+import type { Document } from "@/types/applications";
 
 export function useApplicationModals() {
   const [isAddCompanyDialogOpen, setIsAddCompanyDialogOpen] = useState(false);
   const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
-  const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
-  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>("");
-  const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>("");
+  const [selectedReuploadDocument, setSelectedReuploadDocument] =
+    useState<Document | null>(null);
+  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] =
+    useState<string>("");
+  const [
+    selectedReuploadDocumentCategory,
+    setSelectedReuploadDocumentCategory,
+  ] = useState<string>("");
   const [isQualityCheckModalOpen, setIsQualityCheckModalOpen] = useState(false);
-  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] =
+    useState(false);
   const [isDownloadAllModalOpen, setIsDownloadAllModalOpen] = useState(false);
-  const [isActivateAccountSheetOpen, setIsActivateAccountSheetOpen] = useState(false);
+  const [isActivateAccountSheetOpen, setIsActivateAccountSheetOpen] =
+    useState(false);
 
   // Memoized handlers
   const openAddCompanyDialog = useCallback(() => {
@@ -22,16 +28,15 @@ export function useApplicationModals() {
     setIsAddCompanyDialogOpen(false);
   }, []);
 
-  const openReuploadModal = useCallback((
-    document: Document,
-    documentType: string,
-    category: string
-  ) => {
-    setSelectedReuploadDocument(document);
-    setSelectedReuploadDocumentType(documentType);
-    setSelectedReuploadDocumentCategory(category);
-    setIsReuploadModalOpen(true);
-  }, []);
+  const openReuploadModal = useCallback(
+    (document: Document, documentType: string, category: string) => {
+      setSelectedReuploadDocument(document);
+      setSelectedReuploadDocumentType(documentType);
+      setSelectedReuploadDocumentCategory(category);
+      setIsReuploadModalOpen(true);
+    },
+    [],
+  );
 
   const closeReuploadModal = useCallback(() => {
     setIsReuploadModalOpen(false);
@@ -122,4 +127,3 @@ export function useApplicationModals() {
     setActivateAccountSheetOpen,
   };
 }
-

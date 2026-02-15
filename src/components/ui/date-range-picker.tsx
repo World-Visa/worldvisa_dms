@@ -1,18 +1,18 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { Calendar as CalendarIcon, X } from 'lucide-react';
-import { DateRange } from 'react-day-picker';
-import { format } from 'date-fns';
+import * as React from "react";
+import { Calendar as CalendarIcon, X } from "lucide-react";
+import { DateRange } from "react-day-picker";
+import { format } from "date-fns";
 
-import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
-import { Calendar } from '@/components/ui/calendar';
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover';
+} from "@/components/ui/popover";
 
 interface DateRangePickerProps {
   className?: string;
@@ -28,7 +28,9 @@ export function DateRangePicker({
   placeholder = "Pick a date range",
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
-  const [tempRange, setTempRange] = React.useState<DateRange | undefined>(value);
+  const [tempRange, setTempRange] = React.useState<DateRange | undefined>(
+    value,
+  );
 
   React.useEffect(() => {
     setTempRange(value);
@@ -47,12 +49,12 @@ export function DateRangePicker({
 
   const formatDateRange = (range: DateRange | undefined) => {
     if (!range?.from) return placeholder;
-    
+
     if (range.to) {
-      return `${format(range.from, 'MMM dd')} - ${format(range.to, 'MMM dd, yyyy')}`;
+      return `${format(range.from, "MMM dd")} - ${format(range.to, "MMM dd, yyyy")}`;
     }
-    
-    return format(range.from, 'MMM dd, yyyy');
+
+    return format(range.from, "MMM dd, yyyy");
   };
 
   return (
@@ -64,7 +66,7 @@ export function DateRangePicker({
             variant="outline"
             className={cn(
               "w-full justify-start text-left font-normal",
-              !tempRange && "text-muted-foreground"
+              !tempRange && "text-muted-foreground",
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -84,7 +86,7 @@ export function DateRangePicker({
                 <X className="h-4 w-4" />
               </Button>
             </div>
-            
+
             <Calendar
               initialFocus
               mode="range"
@@ -93,7 +95,7 @@ export function DateRangePicker({
               onSelect={setTempRange}
               numberOfMonths={1}
             />
-            
+
             <div className="flex justify-end gap-2 mt-4 pt-3 border-t">
               <Button
                 variant="outline"
@@ -103,11 +105,7 @@ export function DateRangePicker({
               >
                 Clear
               </Button>
-              <Button
-                size="sm"
-                onClick={handleApply}
-                className="h-8"
-              >
+              <Button size="sm" onClick={handleApply} className="h-8">
                 Apply
               </Button>
             </div>

@@ -1,6 +1,6 @@
 /**
  * Dynamic Checklist System Types
- * 
+ *
  * This module defines all types related to the dynamic checklist functionality
  * for managing document requirements per application.
  */
@@ -13,8 +13,8 @@ export interface ChecklistItem {
   company_name?: string;
   created_at?: string;
   updated_at?: string;
-  fromDate?:string;
-  toDate?:string;
+  fromDate?: string;
+  toDate?: string;
   description?: string;
 }
 
@@ -42,15 +42,15 @@ export interface ChecklistDeleteRequest {
   checklist_id: string;
 }
 
-export type ChecklistState = 'none' | 'creating' | 'editing' | 'saved';
+export type ChecklistState = "none" | "creating" | "editing" | "saved";
 
-export type DocumentRequirement = 'mandatory' | 'optional' | 'not_required';
+export type DocumentRequirement = "mandatory" | "optional" | "not_required";
 
 export interface ChecklistCategory {
   id: string;
   label: string;
   count: number;
-  type: 'base' | 'company' | 'checklist';
+  type: "base" | "company" | "checklist";
   company_name?: string;
   is_selected?: boolean;
   fromDate?: string;

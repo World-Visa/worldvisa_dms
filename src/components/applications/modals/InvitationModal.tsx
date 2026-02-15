@@ -1,37 +1,40 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { DatePicker } from '@/components/ui/date-picker';
-import { Upload, X, FileText, File } from 'lucide-react';
-import Image from 'next/image';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { useAuth } from '@/hooks/useAuth';
-import { useUploadStage2Document, useUpdateStage2Document } from '@/hooks/useStage2Documents';
-import { Combobox } from '@/components/ui/combobox';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Upload, X, FileText, File } from "lucide-react";
+import Image from "next/image";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  useUploadStage2Document,
+  useUpdateStage2Document,
+} from "@/hooks/useStage2Documents";
+import { Combobox } from "@/components/ui/combobox";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   AUSTRALIAN_VISA_SUBCLASSES,
   AUSTRALIAN_STATES,
-} from '@/lib/constants/australianData';
-import type { InvitationModalProps } from '@/types/stage2Documents';
+} from "@/lib/constants/australianData";
+import type { InvitationModalProps } from "@/types/stage2Documents";
 
 interface UploadedFile {
   file: File;
@@ -44,12 +47,12 @@ export function InvitationModal({
   onClose,
   applicationId,
   document,
-  mode = 'create',
+  mode = "create",
 }: InvitationModalProps) {
   const { user } = useAuth();
-  const [subclass, setSubclass] = useState('');
-  const [state, setState] = useState('');
-  const [point, setPoint] = useState('');
+  const [subclass, setSubclass] = useState("");
+  const [state, setState] = useState("");
+  const [point, setPoint] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
   const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -61,7 +64,7 @@ export function InvitationModal({
 
   // Prepare combobox options
   const subclassOptions = AUSTRALIAN_VISA_SUBCLASSES.filter((s) =>
-    ['189', '190', '491'].includes(s.code)
+    ["189", "190", "491"].includes(s.code),
   ).map((s) => ({
     value: s.code,
     label: s.label,
@@ -72,22 +75,25 @@ export function InvitationModal({
     label: `${s.code} - ${s.name}`,
   }));
 
-  const pointOptions = Array.from({ length: Math.floor((110 - 65) / 5) + 1 }, (_, index) =>
-    (65 + index * 5).toString()
+  const pointOptions = Array.from(
+    { length: Math.floor((110 - 65) / 5) + 1 },
+    (_, index) => (65 + index * 5).toString(),
   );
 
   // Pre-fill form in edit mode
   useEffect(() => {
-    if (mode === 'edit' && document) {
-      setSubclass(document.subclass || '');
-      setState(document.state || '');
-      setPoint(document.point?.toString() || '');
+    if (mode === "edit" && document) {
+      setSubclass(document.subclass || "");
+      setState(document.state || "");
+      setPoint(document.point?.toString() || "");
       setDate(document.date ? new Date(document.date) : undefined);
-      setDeadlineDate(document.deadline ? new Date(document.deadline) : undefined);
+      setDeadlineDate(
+        document.deadline ? new Date(document.deadline) : undefined,
+      );
     } else {
-      setSubclass('');
-      setState('');
-      setPoint('');
+      setSubclass("");
+      setState("");
+      setPoint("");
       setDate(undefined);
       setDeadlineDate(undefined);
       setUploadedFiles([]);
@@ -96,27 +102,36 @@ export function InvitationModal({
 
   const validateFile = (file: File): boolean => {
     const fileName = file.name.toLowerCase();
-    const allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+    const allowedExtensions = [
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".jpg",
+      ".jpeg",
+      ".png",
+    ];
     const allowedMimeTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
     ];
 
-    const hasValidExtension = allowedExtensions.some((ext) => fileName.endsWith(ext));
+    const hasValidExtension = allowedExtensions.some((ext) =>
+      fileName.endsWith(ext),
+    );
     if (!hasValidExtension) {
       toast.error(
-        `${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png) are allowed.`
+        `${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png) are allowed.`,
       );
       return false;
     }
 
     if (!allowedMimeTypes.includes(file.type)) {
       toast.error(
-        `${file.name} has an unsupported MIME type. Only PDF, Word, and image files are allowed.`
+        `${file.name} has an unsupported MIME type. Only PDF, Word, and image files are allowed.`,
       );
       return false;
     }
@@ -147,7 +162,7 @@ export function InvitationModal({
     setUploadedFiles((prev) => [...prev, ...newFiles]);
 
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -178,47 +193,47 @@ export function InvitationModal({
 
   const handleSubmit = async () => {
     if (!subclass) {
-      toast.error('Please select a subclass.');
+      toast.error("Please select a subclass.");
       return;
     }
 
     if (!state) {
-      toast.error('Please select a state.');
+      toast.error("Please select a state.");
       return;
     }
 
     if (!point) {
-      toast.error('Please select points.');
+      toast.error("Please select points.");
       return;
     }
 
     if (!date) {
-      toast.error('Please select a date.');
+      toast.error("Please select a date.");
       return;
     }
 
     if (!deadlineDate) {
-      toast.error('Please select a deadline date.');
+      toast.error("Please select a deadline date.");
       return;
     }
 
-    const formattedDate = format(date, 'yyyy-MM-dd');
-    const formattedDeadlineDate = format(deadlineDate, 'yyyy-MM-dd');
+    const formattedDate = format(date, "yyyy-MM-dd");
+    const formattedDeadlineDate = format(deadlineDate, "yyyy-MM-dd");
 
-    if (mode === 'create' && uploadedFiles.length === 0) {
-      toast.error('Please upload at least one file.');
+    if (mode === "create" && uploadedFiles.length === 0) {
+      toast.error("Please upload at least one file.");
       return;
     }
 
     if (!user?.username) {
-      toast.error('User information not available. Please login again.');
+      toast.error("User information not available. Please login again.");
       return;
     }
 
     setIsUploading(true);
 
     try {
-      if (mode === 'edit' && document) {
+      if (mode === "edit" && document) {
         // Update existing document metadata
         await updateMutation.mutateAsync({
           applicationId,
@@ -236,7 +251,10 @@ export function InvitationModal({
         // Create new document
         const progressInterval = setInterval(() => {
           setUploadedFiles((prev) =>
-            prev.map((file) => ({ ...file, progress: Math.min(file.progress + 5, 90) }))
+            prev.map((file) => ({
+              ...file,
+              progress: Math.min(file.progress + 5, 90),
+            })),
           );
         }, 200);
 
@@ -248,7 +266,7 @@ export function InvitationModal({
             document_name: uploadedFiles[0].file.name,
             document_type: uploadedFiles[0].file.type,
             uploaded_by: user.username,
-            type: 'invitation',
+            type: "invitation",
             subclass,
             state,
             point: Number(point),
@@ -256,7 +274,9 @@ export function InvitationModal({
             deadline: formattedDeadlineDate,
           });
 
-          setUploadedFiles((prev) => prev.map((file) => ({ ...file, progress: 100 })));
+          setUploadedFiles((prev) =>
+            prev.map((file) => ({ ...file, progress: 100 })),
+          );
           clearInterval(progressInterval);
         } catch (error) {
           clearInterval(progressInterval);
@@ -266,7 +286,7 @@ export function InvitationModal({
 
       handleClose();
     } catch (error) {
-      console.error('Submit error:', error);
+      console.error("Submit error:", error);
     } finally {
       setIsUploading(false);
     }
@@ -274,9 +294,9 @@ export function InvitationModal({
 
   const handleClose = () => {
     if (!isUploading) {
-      setSubclass('');
-      setState('');
-      setPoint('');
+      setSubclass("");
+      setState("");
+      setPoint("");
       setDate(undefined);
       setDeadlineDate(undefined);
       setUploadedFiles([]);
@@ -289,7 +309,9 @@ export function InvitationModal({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'edit' ? 'Edit Invitation Document' : 'Create Invitation Document'}
+            {mode === "edit"
+              ? "Edit Invitation Document"
+              : "Create Invitation Document"}
           </DialogTitle>
         </DialogHeader>
 
@@ -366,7 +388,7 @@ export function InvitationModal({
           </div>
 
           {/* File Upload - Only in create mode */}
-          {mode === 'create' && (
+          {mode === "create" && (
             <div className="space-y-3">
               <Label>Upload Files *</Label>
               <div
@@ -386,8 +408,10 @@ export function InvitationModal({
                   Drop your files here, or click to browse
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  <strong>PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png)</strong> •
-                  Max file size 5MB per file
+                  <strong>
+                    PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png)
+                  </strong>{" "}
+                  • Max file size 5MB per file
                 </p>
                 <input
                   ref={fileInputRef}
@@ -402,29 +426,45 @@ export function InvitationModal({
           )}
 
           {/* Show existing file name in edit mode */}
-          {mode === 'edit' && document && (
+          {mode === "edit" && document && (
             <div className="space-y-2">
               <Label>Current File</Label>
               <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted">
                 <FileText className="h-5 w-5 text-blue-600 shrink-0" />
-                <span className="text-sm font-medium">{document.file_name}</span>
+                <span className="text-sm font-medium">
+                  {document.file_name}
+                </span>
               </div>
             </div>
           )}
 
           {/* Uploaded Files List - Only in create mode */}
-          {mode === 'create' && uploadedFiles.length > 0 && (
+          {mode === "create" && uploadedFiles.length > 0 && (
             <div className="space-y-3">
               <Label>Files to Upload</Label>
               <div className="space-y-2">
                 {uploadedFiles.map((uploadedFile) => (
-                  <div key={uploadedFile.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                  <div
+                    key={uploadedFile.id}
+                    className="flex items-center gap-3 p-3 border rounded-lg"
+                  >
                     {(() => {
                       const fileName = uploadedFile.file.name.toLowerCase();
-                      if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png')) {
-                        return <File className="h-5 w-5 text-green-600 shrink-0" />;
-                      } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
-                        return <FileText className="h-5 w-5 text-blue-600 shrink-0" />;
+                      if (
+                        fileName.endsWith(".jpg") ||
+                        fileName.endsWith(".jpeg") ||
+                        fileName.endsWith(".png")
+                      ) {
+                        return (
+                          <File className="h-5 w-5 text-green-600 shrink-0" />
+                        );
+                      } else if (
+                        fileName.endsWith(".doc") ||
+                        fileName.endsWith(".docx")
+                      ) {
+                        return (
+                          <FileText className="h-5 w-5 text-blue-600 shrink-0" />
+                        );
                       } else {
                         return (
                           <Image
@@ -438,13 +478,18 @@ export function InvitationModal({
                       }
                     })()}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{uploadedFile.file.name}</p>
+                      <p className="text-sm font-medium truncate">
+                        {uploadedFile.file.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                       {isUploading && (
                         <div className="mt-2">
-                          <Progress value={uploadedFile.progress} className="h-2" />
+                          <Progress
+                            value={uploadedFile.progress}
+                            className="h-2"
+                          />
                           <p className="text-xs text-muted-foreground mt-1">
                             {uploadedFile.progress}%
                           </p>
@@ -452,7 +497,11 @@ export function InvitationModal({
                       )}
                     </div>
                     {!isUploading && (
-                      <Button variant="ghost" size="sm" onClick={() => removeFile(uploadedFile.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(uploadedFile.id)}
+                      >
                         <X className="h-4 w-4" />
                       </Button>
                     )}
@@ -464,19 +513,27 @@ export function InvitationModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isUploading}>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isUploading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isUploading} className="flex items-center gap-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={isUploading}
+            className="flex items-center gap-2"
+          >
             {isUploading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                {mode === 'edit' ? 'Updating...' : 'Uploading...'}
+                {mode === "edit" ? "Updating..." : "Uploading..."}
               </>
             ) : (
               <>
                 <Upload className="h-4 w-4" />
-                {mode === 'edit' ? 'Update Document' : 'Upload Document'}
+                {mode === "edit" ? "Update Document" : "Upload Document"}
               </>
             )}
           </Button>
@@ -485,4 +542,3 @@ export function InvitationModal({
     </Dialog>
   );
 }
-

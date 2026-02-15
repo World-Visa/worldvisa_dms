@@ -14,7 +14,14 @@ import DocumentPreview from "./DocumentPreview";
 import DocumentStatusButtons from "./DocumentStatusButtons";
 import DocumentStatusDisplay from "./DocumentStatusDisplay";
 import { SendDocumentModal } from "./SendDocumentModal";
-import { User, Clock, ChevronLeft, ChevronRight, Upload, AlertCircle } from "lucide-react";
+import {
+  User,
+  Clock,
+  ChevronLeft,
+  ChevronRight,
+  Upload,
+  AlertCircle,
+} from "lucide-react";
 import { Document } from "@/types/applications";
 import { useDocumentData } from "@/hooks/useDocumentData";
 import { useQueryClient } from "@tanstack/react-query";
@@ -30,7 +37,7 @@ interface ViewDocumentSheetProps {
   onReuploadDocument?: (
     documentId: string,
     documentType: string,
-    category: string
+    category: string,
   ) => void;
   documentType?: string;
   category?: string;
@@ -53,10 +60,10 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   const finalCategory =
     category || document.document_category || "Other Documents";
   const currentDocumentIndex = documents.findIndex(
-    (doc) => doc._id === document._id
+    (doc) => doc._id === document._id,
   );
   const [selectedIndex, setSelectedIndex] = useState(
-    currentDocumentIndex >= 0 ? currentDocumentIndex : 0
+    currentDocumentIndex >= 0 ? currentDocumentIndex : 0,
   );
 
   // Use the custom hook to get real-time document data for the currently selected document
@@ -97,7 +104,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     if (selectedDocument && !currentDoc) {
       queryClient.setQueryData(
         ["document", selectedDocument._id],
-        selectedDocument
+        selectedDocument,
       );
     }
   }, [selectedDocument, currentDoc, queryClient]);
@@ -133,9 +140,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
       if (e.key === "ArrowLeft") {
         setSelectedIndex((i) => (i > 0 ? i - 1 : i));
       } else if (e.key === "ArrowRight") {
-        setSelectedIndex((i) =>
-          i < documents.length - 1 ? i + 1 : i
-        );
+        setSelectedIndex((i) => (i < documents.length - 1 ? i + 1 : i));
       }
     };
     window.addEventListener("keydown", handleKeyDown);
@@ -261,7 +266,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                     </AlertDescription>
                   </Alert>
                 )}
-                
+
                 <DocumentPreview document={displayDoc} />
 
                 {/* Status Display */}
@@ -278,7 +283,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                         onReuploadDocument(
                           displayDoc._id,
                           finalDocumentType,
-                          finalCategory
+                          finalCategory,
                         )
                       }
                       className="bg-orange-600 hover:bg-orange-700 text-white"

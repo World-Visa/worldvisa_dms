@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React, { memo } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { ArrowLeft, Save } from 'lucide-react';
-import type { ChecklistPageMode } from './types';
-import { useRouter } from 'next/navigation';
+import React, { memo } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft, Save } from "lucide-react";
+import type { ChecklistPageMode } from "./types";
+import { useRouter } from "next/navigation";
 
 interface ChecklistLayoutProps {
   applicationId: string;
@@ -29,14 +29,24 @@ export const ChecklistLayout = memo(function ChecklistLayout({
     <div className="space-y-6 max-w-7xl mx-auto pt-10">
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <Button variant="ghost" size="sm" onClick={() => router.back()} className="cursor-pointer">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.back()}
+            className="cursor-pointer"
+          >
             <ArrowLeft className="h-4 w-4" />
             Back to Application
           </Button>
         </div>
 
         <div className="flex items-center justify-end gap-2">
-          <Button variant="ghost" size="sm" onClick={onCancel} disabled={isSaving}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onCancel}
+            disabled={isSaving}
+          >
             Cancel
           </Button>
           <Button
@@ -53,7 +63,9 @@ export const ChecklistLayout = memo(function ChecklistLayout({
             ) : (
               <>
                 <Save className="h-4 w-4" />
-                {mode === 'create' ? 'Save Checklist' : 'Save Checklist Changes'}
+                {mode === "create"
+                  ? "Save Checklist"
+                  : "Save Checklist Changes"}
               </>
             )}
           </Button>

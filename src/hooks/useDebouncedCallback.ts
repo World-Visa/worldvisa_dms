@@ -1,11 +1,11 @@
-import { useCallback, useRef } from 'react';
+import { useCallback, useRef } from "react";
 
 /**
  * Creates a debounced version of a callback function
  */
 export function useDebouncedCallback<T extends (...args: never[]) => void>(
   callback: T,
-  delay: number
+  delay: number,
 ): T {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -21,17 +21,16 @@ export function useDebouncedCallback<T extends (...args: never[]) => void>(
         callback(...args);
       }, delay);
     }) as T,
-    [callback, delay]
+    [callback, delay],
   );
 }
 
 /**
  * Creates a debounced callback that can be cancelled
  */
-export function useDebouncedCallbackWithCancel<T extends (...args: never[]) => void>(
-  callback: T,
-  delay: number
-): [T, () => void] {
+export function useDebouncedCallbackWithCancel<
+  T extends (...args: never[]) => void,
+>(callback: T, delay: number): [T, () => void] {
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const debouncedCallback = useCallback(
@@ -44,7 +43,7 @@ export function useDebouncedCallbackWithCancel<T extends (...args: never[]) => v
         callback(...args);
       }, delay);
     }) as T,
-    [callback, delay]
+    [callback, delay],
   );
 
   const cancel = useCallback(() => {

@@ -131,7 +131,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
             ) : (
               [...comments]
                 .sort((a, b) =>
-                  (b.created_at ?? "").localeCompare(a.created_at ?? "")
+                  (b.created_at ?? "").localeCompare(a.created_at ?? ""),
                 )
                 .map((comment) => (
                   <CommentItem

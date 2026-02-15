@@ -75,7 +75,7 @@ const documentsMissingSecondBeta: Document[] = [alphaDocument, betaDocument];
 assert.strictEqual(
   areAllMandatoryDocumentsReviewed(checklistItems, documentsMissingSecondBeta),
   false,
-  "Should require all mandatory company documents before enabling quality check"
+  "Should require all mandatory company documents before enabling quality check",
 );
 
 const betaDocumentWrongCompany = createDocument({
@@ -92,7 +92,7 @@ assert.strictEqual(
     betaDocumentWrongCompany,
   ]),
   false,
-  "Documents from a different company should not satisfy another company's mandatory checklist item"
+  "Documents from a different company should not satisfy another company's mandatory checklist item",
 );
 
 const betaFinancials = createDocument({
@@ -110,7 +110,7 @@ assert.strictEqual(
     betaFinancials,
   ]),
   true,
-  "All mandatory documents reviewed should enable quality check"
+  "All mandatory documents reviewed should enable quality check",
 );
 
 const mixedCaseChecklist: ChecklistItem[] = [
@@ -132,7 +132,7 @@ const mixedCaseDocument = createDocument({
 assert.strictEqual(
   areAllMandatoryDocumentsReviewed(mixedCaseChecklist, [mixedCaseDocument]),
   true,
-  "Company documents without company_name should match regardless of category casing"
+  "Company documents without company_name should match regardless of category casing",
 );
 
 const genericCompanyChecklist: ChecklistItem[] = [
@@ -152,10 +152,11 @@ const specificCompanyDocument = createDocument({
 });
 
 assert.strictEqual(
-  areAllMandatoryDocumentsReviewed(genericCompanyChecklist, [specificCompanyDocument]),
+  areAllMandatoryDocumentsReviewed(genericCompanyChecklist, [
+    specificCompanyDocument,
+  ]),
   true,
-  "Generic company checklist rows should match documents from any company"
+  "Generic company checklist rows should match documents from any company",
 );
 
 console.log("checklistValidation tests passed");
-

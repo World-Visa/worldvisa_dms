@@ -1,5 +1,5 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Document } from '@/types/applications';
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Document } from "@/types/applications";
 
 /**
  * Custom hook to get document data with real-time updates
@@ -11,11 +11,18 @@ export function useDocumentData(documentId: string) {
 
   // Use React Query to get the document data
   // This will automatically re-render when the cache changes
-  const { data: document, isLoading, error } = useQuery({
-    queryKey: ['document', documentId],
+  const {
+    data: document,
+    isLoading,
+    error,
+  } = useQuery({
+    queryKey: ["document", documentId],
     queryFn: () => {
       // Get from cache first
-      const cachedDocument = queryClient.getQueryData<Document>(['document', documentId]);
+      const cachedDocument = queryClient.getQueryData<Document>([
+        "document",
+        documentId,
+      ]);
       if (cachedDocument) {
         return cachedDocument;
       }
@@ -38,7 +45,8 @@ export function useDocumentData(documentId: string) {
     isLoading,
     error,
     // Helper function to get document from cache synchronously
-    getDocumentFromCache: () => queryClient.getQueryData<Document>(['document', documentId])
+    getDocumentFromCache: () =>
+      queryClient.getQueryData<Document>(["document", documentId]),
   };
 }
 
@@ -49,11 +57,11 @@ export function useDocumentsData(documentIds: string[]) {
   const queryClient = useQueryClient();
 
   return useQuery({
-    queryKey: ['documents', documentIds],
+    queryKey: ["documents", documentIds],
     queryFn: () => {
-      return documentIds.map(id => 
-        queryClient.getQueryData<Document>(['document', id])
-      ).filter(Boolean) as Document[];
+      return documentIds
+        .map((id) => queryClient.getQueryData<Document>(["document", id]))
+        .filter(Boolean) as Document[];
     },
     enabled: documentIds.length > 0,
     staleTime: 0,

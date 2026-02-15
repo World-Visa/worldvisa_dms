@@ -1,17 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { AlertTriangle } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { AlertTriangle } from "lucide-react";
 
 interface RejectDocumentDialogProps {
   isOpen: boolean;
@@ -26,19 +26,19 @@ export function RejectDocumentDialog({
   onClose,
   onConfirm,
   documentName,
-  isLoading = false
+  isLoading = false,
 }: RejectDocumentDialogProps) {
-  const [reason, setReason] = useState('');
+  const [reason, setReason] = useState("");
 
   const handleConfirm = () => {
     if (reason.trim()) {
       onConfirm(reason.trim());
-      setReason(''); // Reset form
+      setReason(""); // Reset form
     }
   };
 
   const handleClose = () => {
-    setReason(''); // Reset form
+    setReason(""); // Reset form
     onClose();
   };
 
@@ -55,10 +55,12 @@ export function RejectDocumentDialog({
         <div className="space-y-4">
           <div>
             <p className="text-sm text-gray-600">
-              You are about to reject the document: <strong>{documentName}</strong>
+              You are about to reject the document:{" "}
+              <strong>{documentName}</strong>
             </p>
             <p className="text-sm text-gray-500 mt-1">
-              Please provide a reason for rejection. This will help the client understand what needs to be corrected.
+              Please provide a reason for rejection. This will help the client
+              understand what needs to be corrected.
             </p>
           </div>
 
@@ -76,11 +78,7 @@ export function RejectDocumentDialog({
         </div>
 
         <DialogFooter>
-          <Button
-            variant="outline"
-            onClick={handleClose}
-            disabled={isLoading}
-          >
+          <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancel
           </Button>
           <Button

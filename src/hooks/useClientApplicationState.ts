@@ -1,14 +1,14 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback } from "react";
 
 interface UseClientApplicationStateProps {
   initialCategory?: string;
 }
 
-
 export function useClientApplicationState({
   initialCategory = "submitted",
 }: UseClientApplicationStateProps = {}) {
-  const [selectedCategory, setSelectedCategory] = useState<string>(initialCategory);
+  const [selectedCategory, setSelectedCategory] =
+    useState<string>(initialCategory);
   const [documentsPage, setDocumentsPage] = useState(1);
   const [isCategoryChanging, setIsCategoryChanging] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -45,7 +45,3 @@ export function useClientApplicationState({
     setRefreshing,
   };
 }
-
-
-
-

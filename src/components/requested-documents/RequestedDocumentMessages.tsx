@@ -1,24 +1,19 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect, useMemo } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { 
-  Send, 
-  Trash2, 
-  User, 
-  MessageSquare
-} from 'lucide-react';
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send, Trash2, User, MessageSquare } from "lucide-react";
 import {
   useRequestedDocumentMessages,
   useSendRequestedDocumentMessage,
   useDeleteRequestedDocumentMessage,
   useRequestedDocumentMessagesRealtime,
-  useRealtimeConnection
-} from '@/hooks/useRequestedDocumentMessages';
-import { useAuth } from '@/hooks/useAuth';
-import { cn } from '@/lib/utils';
+  useRealtimeConnection,
+} from "@/hooks/useRequestedDocumentMessages";
+import { useAuth } from "@/hooks/useAuth";
+import { cn } from "@/lib/utils";
 
 interface RequestedDocumentMessagesProps {
   documentId: string;
@@ -27,19 +22,21 @@ interface RequestedDocumentMessagesProps {
 
 export function RequestedDocumentMessages({
   documentId,
-  reviewId
+  reviewId,
 }: RequestedDocumentMessagesProps) {
   const { user } = useAuth();
-  const [newMessage, setNewMessage] = useState('');
+  const [newMessage, setNewMessage] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Authorization check - only specific roles can access messages
-  const canAccessMessages = user?.role && ['admin', 'team_leader', 'master_admin', 'supervisor'].includes(user.role);
+  const canAccessMessages =
+    user?.role &&
+    ["admin", "team_leader", "master_admin", "supervisor"].includes(user.role);
 
   const {
     data: messagesData,
     isLoading: isLoadingMessages,
-    error: messagesError
+    error: messagesError,
   } = useRequestedDocumentMessages(documentId, reviewId);
 
   const sendMessageMutation = useSendRequestedDocumentMessage();
@@ -49,11 +46,14 @@ export function RequestedDocumentMessages({
   useRequestedDocumentMessagesRealtime(documentId, reviewId);
   const connectionState = useRealtimeConnection();
 
-  const messages = useMemo(() => messagesData?.data || [], [messagesData?.data]);
+  const messages = useMemo(
+    () => messagesData?.data || [],
+    [messagesData?.data],
+  );
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
   // Early return for unauthorized users (after all hooks)
@@ -74,9 +74,9 @@ export function RequestedDocumentMessages({
       await sendMessageMutation.mutateAsync({
         documentId,
         reviewId,
-        data: { message: newMessage.trim() }
+        data: { message: newMessage.trim() },
       });
-      setNewMessage('');
+      setNewMessage("");
     } catch {
       // Error is handled by the mutation
     }
@@ -87,7 +87,7 @@ export function RequestedDocumentMessages({
       await deleteMessageMutation.mutateAsync({
         documentId,
         reviewId,
-        data: { messageId }
+        data: { messageId },
       });
     } catch {
       // Error is handled by the mutation
@@ -95,7 +95,7 @@ export function RequestedDocumentMessages({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSendMessage();
     }
@@ -189,56 +189,70 @@ export function RequestedDocumentMessages({
             messages.map((message) => {
               const isCurrentUser = message.username === user?.username;
               const canDelete = isCurrentUser; // Only allow deleting own messages
-              
+
               return (
                 <div
                   key={message._id}
                   className={cn(
-                    'flex space-x-3',
-                    isCurrentUser ? 'justify-end' : 'justify-start'
+                    "flex space-x-3",
+                    isCurrentUser ? "justify-end" : "justify-start",
                   )}
                 >
-                  <div className={cn(
-                    'flex space-x-3 max-w-[80%]',
-                    isCurrentUser && 'flex-row-reverse space-x-reverse'
-                  )}>
+                  <div
+                    className={cn(
+                      "flex space-x-3 max-w-[80%]",
+                      isCurrentUser && "flex-row-reverse space-x-reverse",
+                    )}
+                  >
                     {/* Avatar */}
                     <div className="flex-shrink-0">
-                      <div className={cn(
-                        'h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium',
-                        isCurrentUser 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-200 text-gray-700'
-                      )}>
+                      <div
+                        className={cn(
+                          "h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium",
+                          isCurrentUser
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-200 text-gray-700",
+                        )}
+                      >
                         <User className="h-4 w-4" />
                       </div>
                     </div>
 
                     {/* Message Content */}
-                    <div className={cn(
-                      'flex flex-col space-y-1',
-                      isCurrentUser ? 'items-end' : 'items-start'
-                    )}>
+                    <div
+                      className={cn(
+                        "flex flex-col space-y-1",
+                        isCurrentUser ? "items-end" : "items-start",
+                      )}
+                    >
                       {/* Message Bubble */}
-                      <div className={cn(
-                        'rounded-lg px-3 py-2 max-w-full',
-                        isCurrentUser 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-100 text-gray-900'
-                      )}>
+                      <div
+                        className={cn(
+                          "rounded-lg px-3 py-2 max-w-full",
+                          isCurrentUser
+                            ? "bg-blue-600 text-white"
+                            : "bg-gray-100 text-gray-900",
+                        )}
+                      >
                         <p className="text-sm whitespace-pre-wrap break-words">
                           {message.message}
                         </p>
                       </div>
 
                       {/* Message Meta */}
-                      <div className={cn(
-                        'flex items-center space-x-2 text-xs text-gray-500',
-                        isCurrentUser ? 'flex-row-reverse space-x-reverse' : ''
-                      )}>
+                      <div
+                        className={cn(
+                          "flex items-center space-x-2 text-xs text-gray-500",
+                          isCurrentUser
+                            ? "flex-row-reverse space-x-reverse"
+                            : "",
+                        )}
+                      >
                         <span className="font-medium">{message.username}</span>
                         <span>•</span>
-                        <span>{new Date(message.added_at).toLocaleString()}</span>
+                        <span>
+                          {new Date(message.added_at).toLocaleString()}
+                        </span>
                         {canDelete && (
                           <button
                             onClick={() => handleDeleteMessage(message._id)}

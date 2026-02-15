@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Search, X } from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
-import { useDebounce } from '@/hooks/useDebounce';
+import React, { useState, useEffect, useCallback } from "react";
+import { Search, X } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface SearchBoxProps {
   value: string;
@@ -15,50 +15,53 @@ interface SearchBoxProps {
   debounceMs?: number;
   showClearButton?: boolean;
   autoFocus?: boolean;
-  'aria-label'?: string;
+  "aria-label"?: string;
 }
-
 
 export function SearchBox({
   value,
   onChange,
-  placeholder = 'Search document...',
+  placeholder = "Search document...",
   className,
   debounceMs = 200,
   showClearButton = true,
   autoFocus = false,
-  'aria-label': ariaLabel = 'Search'
+  "aria-label": ariaLabel = "Search",
 }: SearchBoxProps) {
   const [localValue, setLocalValue] = useState(value);
   const debouncedValue = useDebounce(localValue, debounceMs);
-
 
   useEffect(() => {
     onChange(debouncedValue);
   }, [debouncedValue, onChange]);
 
-
   useEffect(() => {
     setLocalValue(value);
   }, [value]);
 
-  const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setLocalValue(e.target.value);
-  }, []);
+  const handleInputChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setLocalValue(e.target.value);
+    },
+    [],
+  );
 
   const handleClear = useCallback(() => {
-    setLocalValue('');
-    onChange('');
+    setLocalValue("");
+    onChange("");
   }, [onChange]);
 
-  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Escape') {
-      handleClear();
-    }
-  }, [handleClear]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === "Escape") {
+        handleClear();
+      }
+    },
+    [handleClear],
+  );
 
   return (
-    <div className={cn('relative max-w-md', className)}>
+    <div className={cn("relative max-w-md", className)}>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input
@@ -69,7 +72,7 @@ export function SearchBox({
           placeholder={placeholder}
           autoFocus={autoFocus}
           aria-label={ariaLabel}
-          aria-describedby={localValue ? 'search-results' : undefined}
+          aria-describedby={localValue ? "search-results" : undefined}
           role="searchbox"
           className="pl-10 pr-10 h-10 border border-gray-300 focus:ring-0 focus:outline-none focus:border-primary text-base"
         />
@@ -90,19 +93,18 @@ export function SearchBox({
   );
 }
 
-
-export function useSearch(initialValue: string = '', debounceMs: number = 200) {
+export function useSearch(initialValue: string = "", debounceMs: number = 200) {
   const [searchQuery, setSearchQuery] = useState(initialValue);
   const debouncedQuery = useDebounce(searchQuery, debounceMs);
 
   const clearSearch = useCallback(() => {
-    setSearchQuery('');
+    setSearchQuery("");
   }, []);
 
   return {
     searchQuery,
     setSearchQuery,
     debouncedQuery,
-    clearSearch
+    clearSearch,
   };
 }

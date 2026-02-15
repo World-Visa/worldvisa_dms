@@ -1,73 +1,73 @@
-'use client';
+"use client";
 
-import React, { useMemo, memo, useCallback } from 'react';
-import { DocumentCategoryFilterProps, Company } from '@/types/documents';
-import { ChecklistState, ChecklistCategory } from '@/types/checklist';
-import { generateCategories } from './filter/CategoryGenerator';
-import { CategoryChips } from './filter/CategoryChips';
-import { CategoryDropdown } from './filter/CategoryDropdown';
-import type { Document } from '@/types/applications';
-import type { DocumentCategoryInfo } from '@/types/documents';
+import React, { useMemo, memo, useCallback } from "react";
+import { DocumentCategoryFilterProps, Company } from "@/types/documents";
+import { ChecklistState, ChecklistCategory } from "@/types/checklist";
+import { generateCategories } from "./filter/CategoryGenerator";
+import { CategoryChips } from "./filter/CategoryChips";
+import { CategoryDropdown } from "./filter/CategoryDropdown";
+import type { Document } from "@/types/applications";
+import type { DocumentCategoryInfo } from "@/types/documents";
 
 function computeCategoryCounts(
   categories: DocumentCategoryInfo[],
-  documents: Document[] | undefined
+  documents: Document[] | undefined,
 ): Record<string, number> {
   const map: Record<string, number> = {};
   if (!documents?.length) return map;
 
   for (const cat of categories) {
     let n = 0;
-    if (cat.id === 'submitted' || cat.id === 'all') {
+    if (cat.id === "submitted" || cat.id === "all") {
       n = documents.length;
-    } else if (cat.id === 'checklist') {
+    } else if (cat.id === "checklist") {
       n = documents.length;
     } else if (
-      cat.id === 'identity' ||
-      cat.id === 'identity_documents' ||
-      cat.label === 'Identity Documents'
+      cat.id === "identity" ||
+      cat.id === "identity_documents" ||
+      cat.label === "Identity Documents"
     ) {
       n = documents.filter(
         (d) =>
-          d.document_category === 'Identity Documents' ||
-          d.document_category === 'Identity'
+          d.document_category === "Identity Documents" ||
+          d.document_category === "Identity",
       ).length;
     } else if (
-      cat.id === 'education' ||
-      cat.id === 'education_documents' ||
-      cat.label === 'Education Documents'
+      cat.id === "education" ||
+      cat.id === "education_documents" ||
+      cat.label === "Education Documents"
     ) {
       n = documents.filter(
         (d) =>
-          d.document_category === 'Education Documents' ||
-          d.document_category === 'Education'
+          d.document_category === "Education Documents" ||
+          d.document_category === "Education",
       ).length;
     } else if (
-      cat.id === 'other' ||
-      cat.id === 'other_documents' ||
-      cat.label === 'Other Documents'
+      cat.id === "other" ||
+      cat.id === "other_documents" ||
+      cat.label === "Other Documents"
     ) {
       n = documents.filter(
         (d) =>
-          d.document_category === 'Other Documents' ||
-          d.document_category === 'Other'
+          d.document_category === "Other Documents" ||
+          d.document_category === "Other",
       ).length;
     } else if (
-      cat.id === 'self_employment' ||
-      cat.label === 'Self Employment/Freelance'
+      cat.id === "self_employment" ||
+      cat.label === "Self Employment/Freelance"
     ) {
       n = documents.filter(
-        (d) => d.document_category === 'Self Employment/Freelance'
+        (d) => d.document_category === "Self Employment/Freelance",
       ).length;
-    } else if (cat.id === 'company') {
+    } else if (cat.id === "company") {
       n = documents.filter(
         (d) =>
-          d.document_category?.includes('Company Documents') ||
-          d.document_category === 'Company'
+          d.document_category?.includes("Company Documents") ||
+          d.document_category === "Company",
       ).length;
     } else if (
-      cat.label?.includes('Company Documents') &&
-      cat.label !== 'Company Documents'
+      cat.label?.includes("Company Documents") &&
+      cat.label !== "Company Documents"
     ) {
       n = documents.filter((d) => d.document_category === cat.label).length;
     } else {
@@ -78,12 +78,16 @@ function computeCategoryCounts(
   return map;
 }
 
-interface ExtendedDocumentCategoryFilterProps extends DocumentCategoryFilterProps {
+interface ExtendedDocumentCategoryFilterProps
+  extends DocumentCategoryFilterProps {
   companies?: Company[];
   onAddCompany?: () => void;
   onRemoveCompany?: (companyName: string) => void;
-  onRemoveCompanyWithCheck?: (companyName: string, companyCategory: string) => void;
-  documents?: import('@/types/applications').Document[];
+  onRemoveCompanyWithCheck?: (
+    companyName: string,
+    companyCategory: string,
+  ) => void;
+  documents?: import("@/types/applications").Document[];
   maxCompanies?: number;
   // Client privilege props
   isClientView?: boolean;
@@ -97,7 +101,7 @@ interface ExtendedDocumentCategoryFilterProps extends DocumentCategoryFilterProp
   onCancelChecklist?: () => void;
   isSavingChecklist?: boolean;
   /** When 'link', show Create/Edit checklist links to /checklist instead of inline actions */
-  checklistActions?: 'inline' | 'link';
+  checklistActions?: "inline" | "link";
   applicationId?: string;
 }
 
@@ -114,7 +118,7 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
   isClientView = false,
   submittedDocumentsCount = 0,
   // Checklist props (admin only)
-  checklistState = 'none',
+  checklistState = "none",
   checklistCategories = [],
   hasCompanyDocuments = false,
   onStartCreatingChecklist,
@@ -122,7 +126,7 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
   onSaveChecklist,
   onCancelChecklist,
   isSavingChecklist = false,
-  checklistActions = 'inline',
+  checklistActions = "inline",
   applicationId,
 }: ExtendedDocumentCategoryFilterProps) {
   const categories = useMemo(
@@ -133,30 +137,38 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
         checklistCategories,
         submittedDocumentsCount,
       }),
-    [isClientView, checklistState, checklistCategories, submittedDocumentsCount]
+    [
+      isClientView,
+      checklistState,
+      checklistCategories,
+      submittedDocumentsCount,
+    ],
   );
 
   const categoryCounts = useMemo(
     () => computeCategoryCounts(categories, documents),
-    [categories, documents]
+    [categories, documents],
   );
 
   // Memoize category change handler to prevent unnecessary re-renders
-  const handleCategoryChange = useCallback((category: string) => {
-    onCategoryChange(category);
-  }, [onCategoryChange]);
+  const handleCategoryChange = useCallback(
+    (category: string) => {
+      onCategoryChange(category);
+    },
+    [onCategoryChange],
+  );
 
   // Memoize company removal handler
-  const handleRemoveCompany = useCallback((companyName: string) => {
-    onRemoveCompany?.(companyName);
-  }, [onRemoveCompany]);
-
+  const handleRemoveCompany = useCallback(
+    (companyName: string) => {
+      onRemoveCompany?.(companyName);
+    },
+    [onRemoveCompany],
+  );
 
   // Show "No checklist" message when there are no categories and it's client view
   if (isClientView && categories.length === 0) {
-    return (
-      <></>
-    );
+    return <></>;
   }
 
   return (
@@ -210,5 +222,4 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
       />
     </div>
   );
-}
-);
+});

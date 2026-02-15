@@ -37,7 +37,7 @@ import ViewDocumentSheet from "./ViewDocumentSheet";
 
 // Helper function to convert ClientDocument to Document
 const convertClientDocumentToDocument = (
-  clientDoc: ClientDocument
+  clientDoc: ClientDocument,
 ): Document => ({
   ...clientDoc,
   comments: clientDoc.comments.map((comment) => ({
@@ -226,16 +226,24 @@ export function ClientDocumentsTable({
                                 badgeClassName,
                                 displayText,
                               } = getCategoryDisplayProps(
-                                document.document_category
+                                document.document_category,
                               );
                               return (
                                 <Badge
-                                  variant={badgeVariant as "default" | "destructive" | "outline" | "secondary" | null | undefined}
+                                  variant={
+                                    badgeVariant as
+                                      | "default"
+                                      | "destructive"
+                                      | "outline"
+                                      | "secondary"
+                                      | null
+                                      | undefined
+                                  }
                                   className={`text-xs max-w-[140px] font-medium truncate ${badgeClassName}`}
                                   title={category}
                                 >
                                   {displayText}
-                              );
+                                  );
                                 </Badge>
                               );
                             } else {
@@ -253,7 +261,7 @@ export function ClientDocumentsTable({
                         <TableCell>
                           {(() => {
                             const statusConfig = getStatusConfig(
-                              document.status
+                              document.status,
                             );
                             return (
                               <div
@@ -273,7 +281,7 @@ export function ClientDocumentsTable({
                           <div className="text-sm text-gray-600">
                             {format(
                               new Date(document.uploaded_at),
-                              "MMM dd, yyyy, h:mm a"
+                              "MMM dd, yyyy, h:mm a",
                             )}
                           </div>
                         </TableCell>
@@ -310,7 +318,7 @@ export function ClientDocumentsTable({
                     Showing {(currentPage - 1) * pagination.limit + 1} to{" "}
                     {Math.min(
                       currentPage * pagination.limit,
-                      pagination.totalRecords
+                      pagination.totalRecords,
                     )}{" "}
                     of {pagination.totalRecords} documents
                   </div>

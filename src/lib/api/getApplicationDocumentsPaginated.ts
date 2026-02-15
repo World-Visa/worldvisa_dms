@@ -1,6 +1,6 @@
-import { Document } from '@/types/applications';
-import { fetcher } from '../fetcher';
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { Document } from "@/types/applications";
+import { fetcher } from "../fetcher";
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export interface PaginatedDocumentsResponse {
   success: boolean;
@@ -21,10 +21,10 @@ export interface GetPaginatedDocumentsRequest {
 }
 
 export async function getApplicationDocumentsPaginated(
-  data: GetPaginatedDocumentsRequest
+  data: GetPaginatedDocumentsRequest,
 ): Promise<PaginatedDocumentsResponse> {
   const { applicationId, page = 1, limit = 10, token } = data;
-  
+
   const params = new URLSearchParams({
     page: page.toString(),
     limit: limit.toString(),
@@ -32,14 +32,14 @@ export async function getApplicationDocumentsPaginated(
 
   const headers: Record<string, string> = {};
   if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+    headers["Authorization"] = `Bearer ${token}`;
   }
 
   return fetcher<PaginatedDocumentsResponse>(
     `${ZOHO_BASE_URL}/visa_applications/${applicationId}/documents?${params}`,
     {
-      method: 'GET',
+      method: "GET",
       headers,
-    }
+    },
   );
 }

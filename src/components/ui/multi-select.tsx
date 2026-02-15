@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import { Check, ChevronDown, X, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useRef, useEffect } from "react";
+import { Check, ChevronDown, X, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface MultiSelectOption {
   value: string;
@@ -31,39 +31,43 @@ export function MultiSelect({
   loading = false,
   error,
   className,
-  maxSelections
+  maxSelections,
 }: MultiSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   // Filter options based on search term
-  const filteredOptions = options.filter(option =>
-    option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    option.value.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredOptions = options.filter(
+    (option) =>
+      option.label.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      option.value.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   // Handle click outside to close dropdown
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
-        setSearchTerm('');
+        setSearchTerm("");
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const handleToggle = (optionValue: string) => {
     if (disabled) return;
-    
+
     const isSelected = value.includes(optionValue);
-    
+
     if (isSelected) {
-      onChange(value.filter(v => v !== optionValue));
+      onChange(value.filter((v) => v !== optionValue));
     } else {
       if (maxSelections && value.length >= maxSelections) {
         return; // Don't add if max selections reached
@@ -72,13 +76,18 @@ export function MultiSelect({
     }
   };
 
-  const handleRemove = (optionValue: string, event: React.MouseEvent | React.KeyboardEvent) => {
+  const handleRemove = (
+    optionValue: string,
+    event: React.MouseEvent | React.KeyboardEvent,
+  ) => {
     event.stopPropagation();
-    onChange(value.filter(v => v !== optionValue));
+    onChange(value.filter((v) => v !== optionValue));
   };
 
   const getSelectedLabels = () => {
-    return value.map(val => options.find(opt => opt.value === val)?.label).filter(Boolean);
+    return value
+      .map((val) => options.find((opt) => opt.value === val)?.label)
+      .filter(Boolean);
   };
 
   const selectedLabels = getSelectedLabels();
@@ -94,8 +103,10 @@ export function MultiSelect({
           "w-full min-h-[40px] px-3 py-2 text-left bg-white border rounded-md shadow-sm",
           "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500",
           "disabled:bg-gray-50 disabled:text-gray-500 disabled:cursor-not-allowed",
-          error ? "border-red-300 focus:ring-red-500 focus:border-red-500" : "border-gray-300",
-          "hover:border-gray-400 transition-colors"
+          error
+            ? "border-red-300 focus:ring-red-500 focus:border-red-500"
+            : "border-gray-300",
+          "hover:border-gray-400 transition-colors",
         )}
       >
         <div className="flex items-center justify-between">
@@ -121,7 +132,7 @@ export function MultiSelect({
                         role="button"
                         tabIndex={0}
                         onKeyDown={(e) => {
-                          if (e.key === 'Enter' || e.key === ' ') {
+                          if (e.key === "Enter" || e.key === " ") {
                             e.preventDefault();
                             handleRemove(optionValue, e);
                           }
@@ -142,10 +153,12 @@ export function MultiSelect({
               <span className="text-gray-500">{placeholder}</span>
             )}
           </div>
-          <ChevronDown className={cn(
-            "h-4 w-4 text-gray-400 transition-transform",
-            isOpen && "rotate-180"
-          )} />
+          <ChevronDown
+            className={cn(
+              "h-4 w-4 text-gray-400 transition-transform",
+              isOpen && "rotate-180",
+            )}
+          />
         </div>
       </button>
 
@@ -169,13 +182,14 @@ export function MultiSelect({
           <div className="max-h-48 overflow-y-auto">
             {filteredOptions.length === 0 ? (
               <div className="px-3 py-2 text-sm text-gray-500 text-center">
-                {searchTerm ? 'No admins found' : 'No admins available'}
+                {searchTerm ? "No admins found" : "No admins available"}
               </div>
             ) : (
               filteredOptions.map((option) => {
                 const isSelected = value.includes(option.value);
-                const isDisabled = maxSelections && value.length >= maxSelections && !isSelected;
-                
+                const isDisabled =
+                  maxSelections && value.length >= maxSelections && !isSelected;
+
                 return (
                   <button
                     key={option.value}
@@ -186,16 +200,18 @@ export function MultiSelect({
                       "w-full px-3 py-2 text-left text-sm hover:bg-gray-50 focus:bg-gray-50 focus:outline-none",
                       "flex items-center justify-between",
                       isSelected && "bg-blue-50 text-blue-900",
-                      isDisabled && "opacity-50 cursor-not-allowed"
+                      isDisabled && "opacity-50 cursor-not-allowed",
                     )}
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1">
                       <Users className="h-4 w-4 text-gray-400 flex-shrink-0" />
                       <div className="min-w-0 flex-1">
-                        <div className="font-medium truncate">{option.label}</div>
+                        <div className="font-medium truncate">
+                          {option.label}
+                        </div>
                         {option.role && (
                           <div className="text-xs text-gray-500 capitalize">
-                            {option.role.replace('_', ' ')}
+                            {option.role.replace("_", " ")}
                           </div>
                         )}
                       </div>
@@ -219,9 +235,7 @@ export function MultiSelect({
       )}
 
       {/* Error Message */}
-      {error && (
-        <p className="mt-1 text-sm text-red-600">{error}</p>
-      )}
+      {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
     </div>
   );
 }

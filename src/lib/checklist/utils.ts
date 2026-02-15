@@ -1,6 +1,6 @@
 /**
  * Checklist Utility Functions
- * 
+ *
  * This module provides utility functions for checklist operations,
  * document filtering, and requirement management.
  */
@@ -11,8 +11,8 @@ import type {
   DocumentRequirement,
   RequirementMap,
   ChecklistCategory,
-  ChecklistCreateRequest
-} from '@/types/checklist';
+  ChecklistCreateRequest,
+} from "@/types/checklist";
 
 interface DocumentType {
   category: string;
@@ -24,19 +24,27 @@ interface Company {
   category: string;
   name: string;
 }
-import type { Document } from '@/types/applications';
-import { IDENTITY_DOCUMENTS, EDUCATION_DOCUMENTS, OTHER_DOCUMENTS, COMPANY_DOCUMENTS, SELF_EMPLOYMENT_DOCUMENTS } from '@/lib/documents/checklist';
+import type { Document } from "@/types/applications";
+import {
+  IDENTITY_DOCUMENTS,
+  EDUCATION_DOCUMENTS,
+  OTHER_DOCUMENTS,
+  COMPANY_DOCUMENTS,
+  SELF_EMPLOYMENT_DOCUMENTS,
+} from "@/lib/documents/checklist";
 
 /**
  * Convert requirement string to boolean for API
  */
-export function requirementToBoolean(requirement: DocumentRequirement): boolean | null {
+export function requirementToBoolean(
+  requirement: DocumentRequirement,
+): boolean | null {
   switch (requirement) {
-    case 'mandatory':
+    case "mandatory":
       return true;
-    case 'optional':
+    case "optional":
       return false;
-    case 'not_required':
+    case "not_required":
     default:
       return null; // Don't include in API call
   }
@@ -46,7 +54,7 @@ export function requirementToBoolean(requirement: DocumentRequirement): boolean 
  * Convert boolean to requirement string
  */
 export function booleanToRequirement(required: boolean): DocumentRequirement {
-  return required ? 'mandatory' : 'optional';
+  return required ? "mandatory" : "optional";
 }
 
 /**
@@ -54,52 +62,67 @@ export function booleanToRequirement(required: boolean): DocumentRequirement {
  */
 export function markSubmittedDocumentsAsMandatory(
   documents: Document[],
-  allDocumentTypes: DocumentType[]
+  allDocumentTypes: DocumentType[],
 ): RequirementMap {
   const requirementMap: RequirementMap = {};
-  
+
   // Add safety checks
   if (!Array.isArray(documents)) {
-    console.warn('markSubmittedDocumentsAsMandatory: documents is not an array', documents);
+    console.warn(
+      "markSubmittedDocumentsAsMandatory: documents is not an array",
+      documents,
+    );
     return requirementMap;
   }
-  
+
   if (!Array.isArray(allDocumentTypes)) {
-    console.warn('markSubmittedDocumentsAsMandatory: allDocumentTypes is not an array', allDocumentTypes);
+    console.warn(
+      "markSubmittedDocumentsAsMandatory: allDocumentTypes is not an array",
+      allDocumentTypes,
+    );
     return requirementMap;
   }
-  
-  const validDocuments = documents?.filter(doc => 
-    doc && typeof doc === 'object' && doc.file_name
-  ) || [];
-  
-  allDocumentTypes.forEach(docType => {
-    const expectedDocType = docType.documentType.toLowerCase().replace(/\s+/g, '_');
-    
-    const uploadedDoc = validDocuments.find(doc => {
+
+  const validDocuments =
+    documents?.filter(
+      (doc) => doc && typeof doc === "object" && doc.file_name,
+    ) || [];
+
+  allDocumentTypes.forEach((docType) => {
+    const expectedDocType = docType.documentType
+      .toLowerCase()
+      .replace(/\s+/g, "_");
+
+    const uploadedDoc = validDocuments.find((doc) => {
       if (!doc || !doc.file_name) return false;
-      
+
       // Check by document_type field first
       if (doc.document_type && doc.document_type === expectedDocType) {
-        if (docType.category.includes('Documents') && 
-            !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
+        if (
+          docType.category.includes("Documents") &&
+          ![
+            "Identity Documents",
+            "Education Documents",
+            "Other Documents",
+          ].includes(docType.category)
+        ) {
           return doc.document_category === docType.category;
         }
         return true;
       }
-      
+
       // Fallback to filename matching
       const fileName = doc.file_name.toLowerCase();
       const docTypeName = docType.documentType.toLowerCase();
       return fileName.includes(docTypeName);
     });
-    
+
     if (uploadedDoc) {
       const key = `${docType.category}-${docType.documentType}`;
-      requirementMap[key] = 'mandatory';
+      requirementMap[key] = "mandatory";
     }
   });
-  
+
   return requirementMap;
 }
 
@@ -115,22 +138,24 @@ export function getAllDocumentTypes(companies: Company[] = []) {
   ];
 
   // Add company documents for each company (these will have dynamic company names)
-  const companyDocuments = companies.flatMap(company => 
-    COMPANY_DOCUMENTS.map(doc => ({
+  const companyDocuments = companies.flatMap((company) =>
+    COMPANY_DOCUMENTS.map((doc) => ({
       ...doc,
       category: company.category,
-      companyName: company.name
-    }))
+      companyName: company.name,
+    })),
   );
 
   // If no companies are added yet, still include generic company documents
   // so users can see them in the checklist creation mode
-  const genericCompanyDocuments = companies.length === 0 ? 
-    COMPANY_DOCUMENTS.map(doc => ({
-      ...doc,
-      category: 'Company Documents',
-      companyName: undefined
-    })) : [];
+  const genericCompanyDocuments =
+    companies.length === 0
+      ? COMPANY_DOCUMENTS.map((doc) => ({
+          ...doc,
+          category: "Company Documents",
+          companyName: undefined,
+        }))
+      : [];
 
   return [...baseDocuments, ...companyDocuments, ...genericCompanyDocuments];
 }
@@ -140,35 +165,43 @@ export function getAllDocumentTypes(companies: Company[] = []) {
  */
 export function filterDocumentsByCategories(
   allDocumentTypes: DocumentType[],
-  selectedCategories: string[]
+  selectedCategories: string[],
 ): DocumentType[] {
-  if (selectedCategories.includes('all')) {
+  if (selectedCategories.includes("all")) {
     return allDocumentTypes;
   }
-  
+
   return allDocumentTypes.filter((docType: DocumentType) => {
     // Handle company documents - check for both   'company' selection and 'Company' category
-    if (docType.category === 'Company') {
-      return selectedCategories.includes('company');
+    if (docType.category === "Company") {
+      return selectedCategories.includes("company");
     }
-    
+
     // Handle company documents with dynamic company names
-    if (docType.category.includes('Documents') && 
-        !['Identity Documents', 'Education Documents', 'Other Documents'].includes(docType.category)) {
-      return selectedCategories.includes('company') || 
-             selectedCategories.some(cat => cat === docType.category);
+    if (
+      docType.category.includes("Documents") &&
+      ![
+        "Identity Documents",
+        "Education Documents",
+        "Other Documents",
+      ].includes(docType.category)
+    ) {
+      return (
+        selectedCategories.includes("company") ||
+        selectedCategories.some((cat) => cat === docType.category)
+      );
     }
-    
+
     // Handle base categories
     switch (docType.category) {
-      case 'Identity Documents':
-        return selectedCategories.includes('identity');
-      case 'Education Documents':
-        return selectedCategories.includes('education');
-      case 'Other Documents':
-        return selectedCategories.includes('other');
-      case 'Self Employment/Freelance':
-        return selectedCategories.includes('self_employment');
+      case "Identity Documents":
+        return selectedCategories.includes("identity");
+      case "Education Documents":
+        return selectedCategories.includes("education");
+      case "Other Documents":
+        return selectedCategories.includes("other");
+      case "Self Employment/Freelance":
+        return selectedCategories.includes("self_employment");
       default:
         return false;
     }
@@ -180,151 +213,175 @@ export function filterDocumentsByCategories(
  */
 export function generateChecklistCategories(
   checklistItems: ChecklistItem[],
-  companies: { name: string; category: string; fromDate?: string; toDate?: string; isCurrentEmployment?: boolean }[] = [],
-  uploadedDocuments: { document_category?: string }[] = []
+  companies: {
+    name: string;
+    category: string;
+    fromDate?: string;
+    toDate?: string;
+    isCurrentEmployment?: boolean;
+  }[] = [],
+  uploadedDocuments: { document_category?: string }[] = [],
 ): ChecklistCategory[] {
   const categoryMap = new Map<string, ChecklistCategory>();
-  
+
   // Process checklist items
-  checklistItems.forEach(item => {
+  checklistItems.forEach((item) => {
     const categoryKey = item.document_category;
-    
+
     // Skip company documents - they will be handled separately
-    if (categoryKey === 'Company' || categoryKey === 'Company Documents') {
+    if (categoryKey === "Company" || categoryKey === "Company Documents") {
       return;
     }
-    
+
     if (!categoryMap.has(categoryKey)) {
       let displayLabel = categoryKey;
-      if (categoryKey === 'Identity') {
-        displayLabel = 'Identity Documents';
-      } else if (categoryKey === 'Education') {
-        displayLabel = 'Education Documents';
-      } else if (categoryKey === 'Other') {
-        displayLabel = 'Other Documents';
-      } else if (categoryKey === 'Self Employment/Freelance') {
-        displayLabel = 'Self Employment/Freelance';
+      if (categoryKey === "Identity") {
+        displayLabel = "Identity Documents";
+      } else if (categoryKey === "Education") {
+        displayLabel = "Education Documents";
+      } else if (categoryKey === "Other") {
+        displayLabel = "Other Documents";
+      } else if (categoryKey === "Self Employment/Freelance") {
+        displayLabel = "Self Employment/Freelance";
       }
-      
+
       categoryMap.set(categoryKey, {
-        id: categoryKey.toLowerCase().replace(/\s+/g, '_'),
+        id: categoryKey.toLowerCase().replace(/\s+/g, "_"),
         label: displayLabel,
         count: 0,
-        type: 'base',
-        is_selected: true
+        type: "base",
+        is_selected: true,
       });
     }
-    
+
     const category = categoryMap.get(categoryKey)!;
     category.count++;
   });
-  
+
   // Extract company categories from uploaded documents
   // This ensures company chips persist across logout/login
   const companyCategories = new Set<string>();
-  
+
   // Get company categories from uploaded documents
-  uploadedDocuments.forEach(doc => {
-    if (doc.document_category && doc.document_category.includes('Company Documents')) {
+  uploadedDocuments.forEach((doc) => {
+    if (
+      doc.document_category &&
+      doc.document_category.includes("Company Documents")
+    ) {
       companyCategories.add(doc.document_category);
     }
   });
-  
+
   // Add company-specific categories from uploaded documents
   // Track which company items have been counted to avoid double-counting
   const countedCompanyItems = new Set<string>();
-  
-  companyCategories.forEach(companyCategory => {
-    const companyName = companyCategory.replace(' Company Documents', '');
-    
+
+  companyCategories.forEach((companyCategory) => {
+    const companyName = companyCategory.replace(" Company Documents", "");
+
     // Count items for this specific company
     // First try to match by company_name if it exists
-    let companyItems = checklistItems.filter(item => 
-      item.document_category === 'Company' && 
-      item.company_name === companyName
+    let companyItems = checklistItems.filter(
+      (item) =>
+        item.document_category === "Company" &&
+        item.company_name === companyName,
     );
-    
+
     // If no items found by company_name, fall back to counting all company items
     // This handles cases where company_name might not be set properly
     if (companyItems.length === 0) {
-      companyItems = checklistItems.filter(item => item.document_category === 'Company');
+      companyItems = checklistItems.filter(
+        (item) => item.document_category === "Company",
+      );
     }
-    
+
     // Filter out items that have already been counted for other companies
-    const uniqueCompanyItems = companyItems.filter(item => {
-      const itemKey = `${item.document_type}-${item.company_name || 'generic'}`;
+    const uniqueCompanyItems = companyItems.filter((item) => {
+      const itemKey = `${item.document_type}-${item.company_name || "generic"}`;
       if (countedCompanyItems.has(itemKey)) {
         return false; // Already counted
       }
       countedCompanyItems.add(itemKey);
       return true;
     });
-    
+
     // Find the company data to get dates
-    const companyData = companies.find(company => company.name === companyName);
-    
+    const companyData = companies.find(
+      (company) => company.name === companyName,
+    );
+
     categoryMap.set(companyCategory, {
-      id: companyCategory.toLowerCase().replace(/\s+/g, '_'),
+      id: companyCategory.toLowerCase().replace(/\s+/g, "_"),
       label: companyCategory,
       count: uniqueCompanyItems.length,
-      type: 'company' as const,
+      type: "company" as const,
       company_name: companyName,
       is_selected: true,
       fromDate: companyData?.fromDate,
       toDate: companyData?.toDate,
-      isCurrentEmployment: companyData?.isCurrentEmployment
+      isCurrentEmployment: companyData?.isCurrentEmployment,
     });
   });
-  
-  companies.forEach(company => {
+
+  companies.forEach((company) => {
     const companyCategoryKey = company.category; // e.g., "WorldVisa Company Documents"
-    
+
     // Skip if already added from uploaded documents
     if (categoryMap.has(companyCategoryKey)) {
       return;
     }
-    
+
     // Count items for this specific company
     // First try to match by company_name if it exists
-    let companyItems = checklistItems.filter(item => 
-      item.document_category === 'Company' && 
-      item.company_name === company.name
+    let companyItems = checklistItems.filter(
+      (item) =>
+        item.document_category === "Company" &&
+        item.company_name === company.name,
     );
-    
+
     // If no items found by company_name, fall back to counting all company items
     if (companyItems.length === 0) {
-      companyItems = checklistItems.filter(item => item.document_category === 'Company');
+      companyItems = checklistItems.filter(
+        (item) => item.document_category === "Company",
+      );
     }
-    
+
     categoryMap.set(companyCategoryKey, {
-      id: companyCategoryKey.toLowerCase().replace(/\s+/g, '_'),
+      id: companyCategoryKey.toLowerCase().replace(/\s+/g, "_"),
       label: companyCategoryKey,
       count: companyItems.length,
-      type: 'company' as const,
+      type: "company" as const,
       company_name: company.name,
       is_selected: true,
       fromDate: company.fromDate,
       toDate: company.toDate,
-      isCurrentEmployment: company.isCurrentEmployment
+      isCurrentEmployment: company.isCurrentEmployment,
     });
   });
-  
+
   const result = Array.from(categoryMap.values());
-  
+
   return result;
 }
 
 /**
  * Check if company documents are selected in checklist
  */
-export function hasCompanyDocumentsInChecklist(checklistItems: ChecklistItem[]): boolean {
+export function hasCompanyDocumentsInChecklist(
+  checklistItems: ChecklistItem[],
+): boolean {
   if (!Array.isArray(checklistItems)) {
-    console.warn('hasCompanyDocumentsInChecklist: checklistItems is not an array', checklistItems);
+    console.warn(
+      "hasCompanyDocumentsInChecklist: checklistItems is not an array",
+      checklistItems,
+    );
     return false;
   }
-  
-  return checklistItems.some(item => 
-    item.document_category === 'Company' || item.document_category === 'Company Documents'
+
+  return checklistItems.some(
+    (item) =>
+      item.document_category === "Company" ||
+      item.document_category === "Company Documents",
   );
 }
 
@@ -333,66 +390,70 @@ export function hasCompanyDocumentsInChecklist(checklistItems: ChecklistItem[]):
  */
 export function getAvailableDocumentsForEditing(
   allDocumentTypes: DocumentType[],
-  checklistItems: ChecklistItem[]
+  checklistItems: ChecklistItem[],
 ): DocumentType[] {
   // Add safety checks
   if (!Array.isArray(allDocumentTypes)) {
-    console.warn('getAvailableDocumentsForEditing: allDocumentTypes is not an array', allDocumentTypes);
+    console.warn(
+      "getAvailableDocumentsForEditing: allDocumentTypes is not an array",
+      allDocumentTypes,
+    );
     return [];
   }
-  
+
   if (!Array.isArray(checklistItems)) {
-    console.warn('getAvailableDocumentsForEditing: checklistItems is not an array', checklistItems);
+    console.warn(
+      "getAvailableDocumentsForEditing: checklistItems is not an array",
+      checklistItems,
+    );
     return allDocumentTypes;
   }
-  
-  
+
   const checklistDocumentTypes = new Set(
-    checklistItems.map(item => {
-        let categoryLabel = item.document_category;
-        if (item.document_category === 'Identity') {
-          categoryLabel = 'Identity Documents';
-        } else if (item.document_category === 'Education') {
-          categoryLabel = 'Education Documents';
-        } else if (item.document_category === 'Other') {
-          categoryLabel = 'Other Documents';
-        } else if (item.document_category === 'Self Employment/Freelance') {
-          categoryLabel = 'Self Employment/Freelance';
-        } else if (item.document_category === 'Company') {
+    checklistItems.map((item) => {
+      let categoryLabel = item.document_category;
+      if (item.document_category === "Identity") {
+        categoryLabel = "Identity Documents";
+      } else if (item.document_category === "Education") {
+        categoryLabel = "Education Documents";
+      } else if (item.document_category === "Other") {
+        categoryLabel = "Other Documents";
+      } else if (item.document_category === "Self Employment/Freelance") {
+        categoryLabel = "Self Employment/Freelance";
+      } else if (item.document_category === "Company") {
         // For company documents, use the specific company name if available
         if (item.company_name) {
           categoryLabel = `${item.company_name} Company Documents`;
         } else {
-          categoryLabel = 'Company Documents';
+          categoryLabel = "Company Documents";
         }
-      } else if (item.document_category.includes('Company Documents')) {
+      } else if (item.document_category.includes("Company Documents")) {
         // If it's already a specific company category, keep it as is
         categoryLabel = item.document_category;
       }
       return `${categoryLabel}-${item.document_type}`;
-    })
+    }),
   );
-  
-  
-  const filteredDocuments = allDocumentTypes.filter(docType => {
+
+  const filteredDocuments = allDocumentTypes.filter((docType) => {
     const key = `${docType.category}-${docType.documentType}`;
-    
+
     // Check if this document type is already in the checklist
     if (checklistDocumentTypes.has(key)) {
       return false; // Exclude it from available documents
     }
-    
+
     // Special handling for company documents
-    if (docType.category.includes('Company Documents')) {
+    if (docType.category.includes("Company Documents")) {
       // Extract company name from the category (e.g., "worldvisa Company Documents" -> "worldvisa")
-      const companyName = docType.category.replace(' Company Documents', '');
-      
+      const companyName = docType.category.replace(" Company Documents", "");
+
       // Check if there's a checklist item for this specific company and document type
       const companySpecificKey = `${companyName} Company Documents-${docType.documentType}`;
       if (checklistDocumentTypes.has(companySpecificKey)) {
         return false; // Exclude it from available documents
       }
-      
+
       // Also check if there's a generic "Company Documents" entry in the checklist for the same document type
       // This handles cases where checklist items have document_category: "Company" (mapped to "Company Documents")
       const genericKey = `Company Documents-${docType.documentType}`;
@@ -400,19 +461,18 @@ export function getAvailableDocumentsForEditing(
         return false; // Exclude it from available documents
       }
     }
-    
+
     // Special handling for generic "Company" category documents
-    if (docType.category === 'Company') {
+    if (docType.category === "Company") {
       // Check if there's a generic "Company Documents" entry in the checklist for the same document type
       const genericKey = `Company Documents-${docType.documentType}`;
       if (checklistDocumentTypes.has(genericKey)) {
         return false; // Exclude it from available documents
       }
     }
-    
+
     return true; // Include it in available documents
   });
-  
 
   return filteredDocuments;
 }
@@ -422,19 +482,19 @@ export function getAvailableDocumentsForEditing(
  */
 function mapCategoryToApiFormat(category: string): string {
   switch (category) {
-    case 'Identity Documents':
-      return 'Identity';
-    case 'Education Documents':
-      return 'Education';
-    case 'Other Documents':
-      return 'Other';
-    case 'Self Employment/Freelance':
-      return 'Self Employment/Freelance';
-    case 'Company':
-      return 'Company';
+    case "Identity Documents":
+      return "Identity";
+    case "Education Documents":
+      return "Education";
+    case "Other Documents":
+      return "Other";
+    case "Self Employment/Freelance":
+      return "Self Employment/Freelance";
+    case "Company":
+      return "Company";
     default:
-      if (category.includes('Company Documents')) {
-        return 'Company';
+      if (category.includes("Company Documents")) {
+        return "Company";
       }
       return category;
   }
@@ -445,22 +505,22 @@ function mapCategoryToApiFormat(category: string): string {
  */
 export function createChecklistItemsFromDocuments(
   selectedDocuments: ChecklistDocument[],
-  requirementMap: RequirementMap
-): ChecklistCreateRequest[] { 
+  requirementMap: RequirementMap,
+): ChecklistCreateRequest[] {
   return selectedDocuments
-    .map(doc => {
+    .map((doc) => {
       const key = `${doc.category}-${doc.documentType}`;
-      const requirement = requirementMap[key] || 'not_required';
+      const requirement = requirementMap[key] || "not_required";
       const required = requirementToBoolean(requirement);
-      
+
       // Only include if requirement is not 'not_required'
       if (required === null) return null;
-      
+
       return {
         document_type: doc.documentType,
         document_category: mapCategoryToApiFormat(doc.category),
         required,
-        company_name: doc.company_name
+        company_name: doc.company_name,
       };
     })
     .filter((item): item is NonNullable<typeof item> => item !== null);
@@ -476,40 +536,46 @@ export function validateChecklist(selectedDocuments: ChecklistDocument[]): {
 } {
   const errors: string[] = [];
   const warnings: string[] = [];
-  
+
   // Basic validation
   if (!Array.isArray(selectedDocuments)) {
-    errors.push('Invalid document selection format');
+    errors.push("Invalid document selection format");
     return { isValid: false, errors, warnings };
   }
-  
+
   if (selectedDocuments.length === 0) {
-    errors.push('Please select at least one document for the checklist');
+    errors.push("Please select at least one document for the checklist");
     return { isValid: false, errors, warnings };
   }
 
   // Check for maximum limit (prevent overwhelming the system)
   const MAX_DOCUMENTS = 50;
   if (selectedDocuments.length > MAX_DOCUMENTS) {
-    errors.push(`Too many documents selected. Maximum allowed: ${MAX_DOCUMENTS}`);
+    errors.push(
+      `Too many documents selected. Maximum allowed: ${MAX_DOCUMENTS}`,
+    );
     return { isValid: false, errors, warnings };
   }
-  
+
   // Validate each document
   const documentKeys = new Set<string>();
   const duplicateKeys: string[] = [];
   const invalidDocuments: string[] = [];
-  
+
   selectedDocuments.forEach((doc, index) => {
     // Check required fields
-    if (!doc.category || typeof doc.category !== 'string') {
-      invalidDocuments.push(`Document ${index + 1}: Missing or invalid category`);
+    if (!doc.category || typeof doc.category !== "string") {
+      invalidDocuments.push(
+        `Document ${index + 1}: Missing or invalid category`,
+      );
     }
-    
-    if (!doc.documentType || typeof doc.documentType !== 'string') {
-      invalidDocuments.push(`Document ${index + 1}: Missing or invalid document type`);
+
+    if (!doc.documentType || typeof doc.documentType !== "string") {
+      invalidDocuments.push(
+        `Document ${index + 1}: Missing or invalid document type`,
+      );
     }
-    
+
     // Check for duplicates
     if (doc.category && doc.documentType) {
       const key = `${doc.category}-${doc.documentType}`;
@@ -519,35 +585,39 @@ export function validateChecklist(selectedDocuments: ChecklistDocument[]): {
         documentKeys.add(key);
       }
     }
-    
+
     // Check for suspicious patterns
     if (doc.documentType && doc.documentType.length > 100) {
-      warnings.push(`Document ${index + 1}: Document type name is unusually long`);
+      warnings.push(
+        `Document ${index + 1}: Document type name is unusually long`,
+      );
     }
-    
+
     if (doc.category && doc.category.length > 50) {
       warnings.push(`Document ${index + 1}: Category name is unusually long`);
     }
   });
-  
+
   // Add validation errors
   if (invalidDocuments.length > 0) {
     errors.push(...invalidDocuments);
   }
-  
+
   if (duplicateKeys.length > 0) {
-    errors.push(`Duplicate documents found: ${duplicateKeys.join(', ')}`);
+    errors.push(`Duplicate documents found: ${duplicateKeys.join(", ")}`);
   }
-  
+
   // Add warnings for potential issues
   if (selectedDocuments.length > 20) {
-    warnings.push('Large number of documents selected. Save operation may take longer.');
+    warnings.push(
+      "Large number of documents selected. Save operation may take longer.",
+    );
   }
-  
+
   return {
     isValid: errors.length === 0,
     errors,
-    warnings
+    warnings,
   };
 }
 
@@ -555,28 +625,37 @@ export function validateChecklist(selectedDocuments: ChecklistDocument[]): {
  * Get category display name
  */
 export function getCategoryDisplayName(category: string): string {
-  if (category === 'Identity Documents') return 'Identity';
-  if (category === 'Education Documents') return 'Education';
-  if (category === 'Other Documents') return 'Other';
-  if (category === 'Self Employment/Freelance') return 'Self Employment/Freelance';
-  if (category.includes('Documents')) return category.replace(' Documents', '');
+  if (category === "Identity Documents") return "Identity";
+  if (category === "Education Documents") return "Education";
+  if (category === "Other Documents") return "Other";
+  if (category === "Self Employment/Freelance")
+    return "Self Employment/Freelance";
+  if (category.includes("Documents")) return category.replace(" Documents", "");
   return category;
 }
 
 /**
  * Sort categories for display
  */
-export function sortCategoriesForDisplay(categories: ChecklistCategory[]): ChecklistCategory[] {
-  const order = ['identity', 'education', 'other', 'self_employment', 'company'];
-  
+export function sortCategoriesForDisplay(
+  categories: ChecklistCategory[],
+): ChecklistCategory[] {
+  const order = [
+    "identity",
+    "education",
+    "other",
+    "self_employment",
+    "company",
+  ];
+
   return categories.sort((a, b) => {
-    const aIndex = order.findIndex(o => a.id.includes(o));
-    const bIndex = order.findIndex(o => b.id.includes(o));
-    
+    const aIndex = order.findIndex((o) => a.id.includes(o));
+    const bIndex = order.findIndex((o) => b.id.includes(o));
+
     if (aIndex === -1 && bIndex === -1) return a.label.localeCompare(b.label);
     if (aIndex === -1) return 1;
     if (bIndex === -1) return -1;
-    
+
     return aIndex - bIndex;
   });
 }

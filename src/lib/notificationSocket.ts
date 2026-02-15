@@ -1,28 +1,28 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // @ts-expect-error
-import { io, type Socket } from 'socket.io-client';
-import { tokenStorage } from './auth';
-import { 
-  NOTIFICATION_API_BASE_URL, 
-  NOTIFICATION_ENDPOINTS, 
-  SOCKET_EVENTS, 
+import { io, type Socket } from "socket.io-client";
+import { tokenStorage } from "./auth";
+import {
+  NOTIFICATION_API_BASE_URL,
+  NOTIFICATION_ENDPOINTS,
+  SOCKET_EVENTS,
   CONNECTION_CONFIG,
-  MONITORING_CONFIG 
-} from '@/lib/config/notifications';
-import { 
-  NotificationNewEvent, 
-  NotificationUpdatedEvent, 
+  MONITORING_CONFIG,
+} from "@/lib/config/notifications";
+import {
+  NotificationNewEvent,
+  NotificationUpdatedEvent,
   NotificationDeletedEvent,
-  NotificationConnectionState 
-} from '@/types/notifications';
+  NotificationConnectionState,
+} from "@/types/notifications";
 
 // Enhanced event listener types for better type safety
 type EventCallback<T = any> = (data: T) => void;
 type EventMap = {
-  'notification:new': EventCallback<NotificationNewEvent>;
-  'notification:updated': EventCallback<NotificationUpdatedEvent>;
-  'notification:deleted': EventCallback<NotificationDeletedEvent>;
+  "notification:new": EventCallback<NotificationNewEvent>;
+  "notification:updated": EventCallback<NotificationUpdatedEvent>;
+  "notification:deleted": EventCallback<NotificationDeletedEvent>;
 };
 
 export class NotificationSocketManager {
@@ -35,16 +35,18 @@ export class NotificationSocketManager {
   private isDestroyed = false;
   private connectionTimeout: NodeJS.Timeout | null = null;
   private reconnectTimeout: NodeJS.Timeout | null = null;
-  
+
   // Enhanced listener management with proper typing
   private listeners = new Map<keyof EventMap, Set<EventCallback>>();
   private connectionState: NotificationConnectionState = {
     isConnected: false,
     isConnecting: false,
     error: null,
-    lastEvent: null
+    lastEvent: null,
   };
-  private stateListeners = new Set<(state: NotificationConnectionState) => void>();
+  private stateListeners = new Set<
+    (state: NotificationConnectionState) => void
+  >();
 
   // Performance monitoring
   private metrics = {
@@ -58,7 +60,7 @@ export class NotificationSocketManager {
 
   // Track processed notifications to prevent duplicates
   private processedNotifications = new Set<string>();
-  
+
   // Throttle notification:all events to reduce spam
   private lastNotificationAllTime = 0;
   private notificationAllThrottleMs = 2000; // Only process once every 2 seconds
@@ -73,11 +75,13 @@ export class NotificationSocketManager {
     if (this.isConnecting || this.isConnected() || this.isDestroyed) {
       return;
     }
-    
+
     const token = tokenStorage.get();
     if (!token) {
-      console.error('🔔 No authentication token available for socket connection');
-      this.handleConnectionError('No authentication token available');
+      console.error(
+        "🔔 No authentication token available for socket connection",
+      );
+      this.handleConnectionError("No authentication token available");
       return;
     }
 
@@ -98,18 +102,19 @@ export class NotificationSocketManager {
         forceNew: true, // Force new connection
       });
 
-
       // Set connection timeout
       this.connectionTimeout = setTimeout(() => {
         if (this.isConnecting && !this.isConnected()) {
-          this.handleConnectionError('Connection timeout');
+          this.handleConnectionError("Connection timeout");
         }
       }, CONNECTION_CONFIG.CONNECTION_TIMEOUT);
 
       this.setupEventListeners();
     } catch (error) {
-      console.error('🔔 Failed to create socket:', error);
-      this.handleConnectionError(`Failed to create socket: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("🔔 Failed to create socket:", error);
+      this.handleConnectionError(
+        `Failed to create socket: ${error instanceof Error ? error.message : "Unknown error"}`,
+      );
     }
   }
 
@@ -118,19 +123,25 @@ export class NotificationSocketManager {
     return this.subscribe(SOCKET_EVENTS.NEW, callback);
   }
 
-  onNotificationUpdated(callback: EventCallback<NotificationUpdatedEvent>): () => void {
+  onNotificationUpdated(
+    callback: EventCallback<NotificationUpdatedEvent>,
+  ): () => void {
     return this.subscribe(SOCKET_EVENTS.UPDATED, callback);
   }
 
-  onNotificationDeleted(callback: EventCallback<NotificationDeletedEvent>): () => void {
+  onNotificationDeleted(
+    callback: EventCallback<NotificationDeletedEvent>,
+  ): () => void {
     return this.subscribe(SOCKET_EVENTS.DELETED, callback);
   }
 
-  onConnectionStateChange(callback: (state: NotificationConnectionState) => void): () => void {
+  onConnectionStateChange(
+    callback: (state: NotificationConnectionState) => void,
+  ): () => void {
     this.stateListeners.add(callback);
     // Immediate callback with current state
     callback(this.connectionState);
-    
+
     return () => {
       this.stateListeners.delete(callback);
     };
@@ -145,12 +156,12 @@ export class NotificationSocketManager {
   forceResubscribe(): void {
     if (this.socket && this.socket.connected) {
       this.listeners.forEach((callbacks, event) => {
-        callbacks.forEach(callback => {
+        callbacks.forEach((callback) => {
           this.socket!.on(event, callback);
         });
       });
     } else {
-      console.log('🔔 Cannot force re-subscribe: socket not connected');
+      console.log("🔔 Cannot force re-subscribe: socket not connected");
     }
   }
 
@@ -159,31 +170,32 @@ export class NotificationSocketManager {
     if (this.socket && this.socket.connected) {
       const testNotification = {
         _id: `test_${Date.now()}`,
-        message: 'Manual test notification',
-        type: 'info',
-        category: 'general',
+        message: "Manual test notification",
+        type: "info",
+        category: "general",
         link: null,
         isRead: false,
         createdAt: new Date().toISOString(),
       };
-      
-      
+
       // Manually call all registered listeners
-      const callbacks = this.listeners.get('notification:new');
+      const callbacks = this.listeners.get("notification:new");
       if (callbacks) {
         callbacks.forEach((callback) => {
           try {
             callback(testNotification);
           } catch (error) {
-            console.error('🔔 Error in notification callback:', error);
+            console.error("🔔 Error in notification callback:", error);
           }
         });
       } else {
-        console.log('🔔 Manual trigger: No callbacks found for notification:new');
-        console.log('🔔 Manual trigger: Available callbacks:', this.listeners);
+        console.log(
+          "🔔 Manual trigger: No callbacks found for notification:new",
+        );
+        console.log("🔔 Manual trigger: Available callbacks:", this.listeners);
       }
     } else {
-      console.log('🔔 Cannot trigger test notification: socket not connected');
+      console.log("🔔 Cannot trigger test notification: socket not connected");
     }
   }
 
@@ -199,19 +211,22 @@ export class NotificationSocketManager {
     }
 
     const notificationId = notification._id;
-    
+
     if (this.processedNotifications.has(notificationId)) {
       return false;
     }
 
     // Mark as processed
     this.processedNotifications.add(notificationId);
-    
+
     // Clean up old processed notifications (keep only last 100)
     if (this.processedNotifications.size > 100) {
       const notificationsArray = Array.from(this.processedNotifications);
-      const toRemove = notificationsArray.slice(0, notificationsArray.length - 100);
-      toRemove.forEach(id => this.processedNotifications.delete(id));
+      const toRemove = notificationsArray.slice(
+        0,
+        notificationsArray.length - 100,
+      );
+      toRemove.forEach((id) => this.processedNotifications.delete(id));
     }
 
     return true;
@@ -219,10 +234,10 @@ export class NotificationSocketManager {
 
   disconnect(): void {
     this.cleanup();
-    this.updateConnectionState({ 
-      isConnected: false, 
-      isConnecting: false, 
-      error: null 
+    this.updateConnectionState({
+      isConnected: false,
+      isConnecting: false,
+      error: null,
     });
   }
 
@@ -239,7 +254,7 @@ export class NotificationSocketManager {
       clearTimeout(this.connectionTimeout);
       this.connectionTimeout = null;
     }
-    
+
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = null;
@@ -250,19 +265,21 @@ export class NotificationSocketManager {
       this.socket.disconnect();
       this.socket = null;
     }
-    
+
     this.isConnecting = false;
     this.reconnectAttempts = 0;
   }
 
   // Enhanced private methods with better type safety
-  private subscribe(event: keyof EventMap, callback: EventCallback): () => void {
+  private subscribe(
+    event: keyof EventMap,
+    callback: EventCallback,
+  ): () => void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
     }
     this.listeners.get(event)!.add(callback);
-    
-    
+
     // Set up socket listener if connected
     if (this.socket && this.socket.connected) {
       this.socket.on(event, callback);
@@ -281,9 +298,7 @@ export class NotificationSocketManager {
       return;
     }
 
-
-    this.socket.on('connect', () => {
-      
+    this.socket.on("connect", () => {
       // Clear connection timeout
       if (this.connectionTimeout) {
         clearTimeout(this.connectionTimeout);
@@ -295,104 +310,104 @@ export class NotificationSocketManager {
       this.isConnecting = false;
       this.metrics.successfulConnections++;
       this.metrics.lastConnectionTime = new Date();
-      
-      this.updateConnectionState({ 
-        isConnected: true, 
-        isConnecting: false, 
+
+      this.updateConnectionState({
+        isConnected: true,
+        isConnecting: false,
         error: null,
-        lastEvent: 'connected'
+        lastEvent: "connected",
       });
 
-     
       // Re-subscribe to all events
       this.listeners.forEach((callbacks, event) => {
-        callbacks.forEach(callback => {
+        callbacks.forEach((callback) => {
           this.socket!.on(event, callback);
         });
       });
-
     });
 
-    this.socket.on('connect_error', (error: any) => {
-      console.error('🔔 Socket connection error:', error);
+    this.socket.on("connect_error", (error: any) => {
+      console.error("🔔 Socket connection error:", error);
       this.metrics.failedConnections++;
-      this.handleConnectionError(error.message || 'Connection failed');
+      this.handleConnectionError(error.message || "Connection failed");
     });
 
-    this.socket.on('disconnect', (reason: any) => {
-      this.updateConnectionState({ 
-        isConnected: false, 
-        isConnecting: false, 
+    this.socket.on("disconnect", (reason: any) => {
+      this.updateConnectionState({
+        isConnected: false,
+        isConnecting: false,
         error: reason,
-        lastEvent: 'disconnected'
+        lastEvent: "disconnected",
       });
-      
+
       // Attempt reconnection if not manually disconnected
-      if (reason !== 'io client disconnect' && !this.isDestroyed) {
+      if (reason !== "io client disconnect" && !this.isDestroyed) {
         this.scheduleReconnect();
       }
     });
 
     // Handle message events for metrics
-    this.socket.on('notification:new', (data: any) => {
+    this.socket.on("notification:new", (data: any) => {
       this.metrics.messagesReceived++;
-      this.updateConnectionState({ 
-        lastEvent: 'notification:new' 
-      });
-    });
-    
-    this.socket.on('notification:updated', (data: any) => {
-      this.metrics.messagesReceived++;
-      this.updateConnectionState({ 
-        lastEvent: 'notification:updated' 
-      });
-    });
-    
-    this.socket.on('notification:deleted', (data: any) => {
-      this.metrics.messagesReceived++;
-      this.updateConnectionState({ 
-        lastEvent: 'notification:deleted' 
+      this.updateConnectionState({
+        lastEvent: "notification:new",
       });
     });
 
+    this.socket.on("notification:updated", (data: any) => {
+      this.metrics.messagesReceived++;
+      this.updateConnectionState({
+        lastEvent: "notification:updated",
+      });
+    });
+
+    this.socket.on("notification:deleted", (data: any) => {
+      this.metrics.messagesReceived++;
+      this.updateConnectionState({
+        lastEvent: "notification:deleted",
+      });
+    });
 
     // Handle notification:all events (server is sending this instead of notification:new)
-    this.socket.on('notification:all', (data: any) => {
+    this.socket.on("notification:all", (data: any) => {
       const now = Date.now();
-      
+
       // Throttle notification:all events to reduce spam
       if (now - this.lastNotificationAllTime < this.notificationAllThrottleMs) {
         return;
       }
       this.lastNotificationAllTime = now;
-      
-      
+
       // Check if data is empty or invalid
-      if (!data || !data.data || !Array.isArray(data.data) || data.data.length === 0) {
+      if (
+        !data ||
+        !data.data ||
+        !Array.isArray(data.data) ||
+        data.data.length === 0
+      ) {
         return;
       }
-      
+
       // Process the notification:all event as if it were notification:new
       // Get the latest notification (first in array)
       const latestNotification = data.data[0];
       if (latestNotification) {
-        
         // Check if this is a truly new notification (not a duplicate)
         const isNewNotification = this.isNewNotification(latestNotification);
         if (isNewNotification) {
           // Manually trigger the notification:new listeners
-          const callbacks = this.listeners.get('notification:new');
+          const callbacks = this.listeners.get("notification:new");
           if (callbacks) {
-            callbacks.forEach(callback => {
+            callbacks.forEach((callback) => {
               try {
                 callback(latestNotification);
               } catch (error) {
-                console.error('🔔 Error in notification:all callback:', error);
+                console.error("🔔 Error in notification:all callback:", error);
               }
             });
           }
         } else {
-          console.log('🔔 This is a duplicate notification, skipping');
+          console.log("🔔 This is a duplicate notification, skipping");
         }
       }
     });
@@ -401,19 +416,27 @@ export class NotificationSocketManager {
   private handleConnectionError(error: string): void {
     this.isConnecting = false;
     this.reconnectAttempts++;
-    
-    console.warn(`🔔 Notification socket error (attempt ${this.reconnectAttempts}):`, error);
-    
-    if (this.reconnectAttempts < this.maxReconnectAttempts && !this.isDestroyed) {
+
+    console.warn(
+      `🔔 Notification socket error (attempt ${this.reconnectAttempts}):`,
+      error,
+    );
+
+    if (
+      this.reconnectAttempts < this.maxReconnectAttempts &&
+      !this.isDestroyed
+    ) {
       this.scheduleReconnect();
     } else if (this.reconnectAttempts >= this.maxReconnectAttempts) {
-      console.error('🔔 Notification socket: Max reconnection attempts reached');
+      console.error(
+        "🔔 Notification socket: Max reconnection attempts reached",
+      );
     }
-    
-    this.updateConnectionState({ 
-      isConnected: false, 
-      isConnecting: false, 
-      error 
+
+    this.updateConnectionState({
+      isConnected: false,
+      isConnecting: false,
+      error,
     });
   }
 
@@ -424,7 +447,7 @@ export class NotificationSocketManager {
     const jitter = Math.random() * 1000;
     const delay = Math.min(
       this.reconnectDelay * Math.pow(2, this.reconnectAttempts - 1) + jitter,
-      this.maxReconnectDelay
+      this.maxReconnectDelay,
     );
 
     this.reconnectTimeout = setTimeout(() => {
@@ -433,34 +456,39 @@ export class NotificationSocketManager {
         this.connect();
       }
     }, delay);
-
   }
 
-  private updateConnectionState(updates: Partial<NotificationConnectionState>): void {
+  private updateConnectionState(
+    updates: Partial<NotificationConnectionState>,
+  ): void {
     this.connectionState = { ...this.connectionState, ...updates };
-    this.stateListeners.forEach(callback => callback(this.connectionState));
+    this.stateListeners.forEach((callback) => callback(this.connectionState));
   }
 
   private setupVisibilityHandling(): void {
-    if (typeof window !== 'undefined') {
-      document.addEventListener('visibilitychange', () => {
-        if (document.visibilityState === 'visible' && !this.isConnected() && !this.isDestroyed) {
+    if (typeof window !== "undefined") {
+      document.addEventListener("visibilitychange", () => {
+        if (
+          document.visibilityState === "visible" &&
+          !this.isConnected() &&
+          !this.isDestroyed
+        ) {
           this.connect();
         }
       });
 
       // Handle online/offline events
-      window.addEventListener('online', () => {
+      window.addEventListener("online", () => {
         if (!this.isConnected() && !this.isDestroyed) {
           this.connect();
         }
       });
 
-      window.addEventListener('offline', () => {
-        this.updateConnectionState({ 
-          isConnected: false, 
-          isConnecting: false, 
-          error: 'Network offline' 
+      window.addEventListener("offline", () => {
+        this.updateConnectionState({
+          isConnected: false,
+          isConnecting: false,
+          error: "Network offline",
         });
       });
     }

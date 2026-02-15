@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { memo, useMemo, useState } from 'react';
+import React, { memo, useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,17 +8,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +30,7 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 import {
   ColumnDef,
   SortingState,
@@ -40,7 +40,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from '@tanstack/react-table';
+} from "@tanstack/react-table";
 import {
   MoreHorizontal,
   ArrowUpDown,
@@ -48,9 +48,9 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-} from 'lucide-react';
-import type { AdminUser } from '@/hooks/useAdminUsers';
-import { ROLE_OPTIONS } from './UserRoleSelect';
+} from "lucide-react";
+import type { AdminUser } from "@/hooks/useAdminUsers";
+import { ROLE_OPTIONS } from "./UserRoleSelect";
 
 export interface UserTableCurrentUser {
   username?: string;
@@ -72,12 +72,16 @@ interface UserTableProps {
 function globalFilterFn(
   row: { getValue: (id: string) => unknown },
   _columnId: string,
-  filterValue: string
+  filterValue: string,
 ): boolean {
-  const q = String(filterValue ?? '').toLowerCase().trim();
+  const q = String(filterValue ?? "")
+    .toLowerCase()
+    .trim();
   if (!q) return true;
-  const username = String(row.getValue('username') ?? '').toLowerCase();
-  const role = String(row.getValue('role') ?? '').replace(/_/g, ' ').toLowerCase();
+  const username = String(row.getValue("username") ?? "").toLowerCase();
+  const role = String(row.getValue("role") ?? "")
+    .replace(/_/g, " ")
+    .toLowerCase();
   return username.includes(q) || role.includes(q);
 }
 
@@ -93,18 +97,18 @@ export const UserTable = memo(function UserTable({
   isDeletingUser,
 }: UserTableProps) {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [globalFilter, setGlobalFilter] = useState('');
-  const isMasterAdmin = currentUser?.role === 'master_admin';
+  const [globalFilter, setGlobalFilter] = useState("");
+  const isMasterAdmin = currentUser?.role === "master_admin";
 
   const columns = useMemo<ColumnDef<AdminUser>[]>(
     () => [
       {
-        accessorKey: 'username',
+        accessorKey: "username",
         header: ({ column }) => (
           <Button
             variant="ghost"
             className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Username
             <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -116,12 +120,12 @@ export const UserTable = memo(function UserTable({
         enableSorting: true,
       },
       {
-        accessorKey: 'role',
+        accessorKey: "role",
         header: ({ column }) => (
           <Button
             variant="ghost"
             className="-ml-3 h-8"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Role
             <ArrowUpDown className="ml-2 h-4 w-4" />
@@ -129,13 +133,13 @@ export const UserTable = memo(function UserTable({
         ),
         cell: ({ row }) => (
           <Badge variant="secondary">
-            {row.original.role.replace(/_/g, ' ')}
+            {row.original.role.replace(/_/g, " ")}
           </Badge>
         ),
         enableSorting: true,
       },
       {
-        id: 'actions',
+        id: "actions",
         header: () => null,
         cell: ({ row }) => {
           const user = row.original;
@@ -160,9 +164,7 @@ export const UserTable = memo(function UserTable({
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuSub>
-                    <DropdownMenuSubTrigger
-                      disabled={isUpdatingRole}
-                    >
+                    <DropdownMenuSubTrigger disabled={isUpdatingRole}>
                       Change role
                     </DropdownMenuSubTrigger>
                     <DropdownMenuSubContent>
@@ -214,7 +216,7 @@ export const UserTable = memo(function UserTable({
       onRoleChange,
       onDeleteUser,
       onOpenResetPassword,
-    ]
+    ],
   );
 
   const table = useReactTable({
@@ -243,7 +245,7 @@ export const UserTable = memo(function UserTable({
       <div className="flex items-center gap-4">
         <Input
           placeholder="Search users..."
-          value={(table.getState().globalFilter as string) ?? ''}
+          value={(table.getState().globalFilter as string) ?? ""}
           onChange={(e) => table.setGlobalFilter(e.target.value)}
           className="max-w-sm"
         />
@@ -260,7 +262,7 @@ export const UserTable = memo(function UserTable({
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -272,13 +274,13 @@ export const UserTable = memo(function UserTable({
               rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={row.getIsSelected() && 'selected'}
+                  data-state={row.getIsSelected() && "selected"}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
                       {flexRender(
                         cell.column.columnDef.cell,
-                        cell.getContext()
+                        cell.getContext(),
                       )}
                     </TableCell>
                   ))}
@@ -308,9 +310,7 @@ export const UserTable = memo(function UserTable({
             }}
           >
             <SelectTrigger className="h-8 w-[70px]">
-              <SelectValue
-                placeholder={table.getState().pagination.pageSize}
-              />
+              <SelectValue placeholder={table.getState().pagination.pageSize} />
             </SelectTrigger>
             <SelectContent side="top">
               {[10, 25, 50, 100].map((size) => (
@@ -323,7 +323,7 @@ export const UserTable = memo(function UserTable({
         </div>
         <div className="flex items-center space-x-6 lg:space-x-8">
           <div className="flex min-w-[120px] items-center justify-center text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of{' '}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
             {table.getPageCount() || 1}
           </div>
           <div className="flex items-center space-x-2">
@@ -361,9 +361,7 @@ export const UserTable = memo(function UserTable({
               variant="outline"
               size="sm"
               className="hidden h-8 w-8 p-0 lg:flex"
-              onClick={() =>
-                table.setPageIndex(table.getPageCount() - 1)
-              }
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
               disabled={!table.getCanNextPage()}
               aria-label="Last page"
             >

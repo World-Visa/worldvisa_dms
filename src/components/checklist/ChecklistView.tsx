@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { memo, useMemo } from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import React, { memo, useMemo } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -10,13 +10,13 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { ChecklistCategoryTabs } from './ChecklistCategoryTabs';
-import { SearchBox } from '@/components/ui/SearchBox';
-import { getCategoryBadgeStyle } from '@/lib/checklist/dataProcessing';
-import { FileText } from 'lucide-react';
-import type { Document } from '@/types/applications';
-import type { DocumentCategoryInfo } from '@/types/documents';
+} from "@/components/ui/table";
+import { ChecklistCategoryTabs } from "./ChecklistCategoryTabs";
+import { SearchBox } from "@/components/ui/SearchBox";
+import { getCategoryBadgeStyle } from "@/lib/checklist/dataProcessing";
+import { FileText } from "lucide-react";
+import type { Document } from "@/types/applications";
+import type { DocumentCategoryInfo } from "@/types/documents";
 
 interface ChecklistViewItem {
   category: string;
@@ -82,7 +82,9 @@ export const ChecklistView = memo(function ChecklistView({
                 <TableHead className="w-16">S.No</TableHead>
                 <TableHead className="hidden sm:table-cell">Category</TableHead>
                 <TableHead>Document Name</TableHead>
-                <TableHead className="hidden md:table-cell">Requirement</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  Requirement
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -95,8 +97,12 @@ export const ChecklistView = memo(function ChecklistView({
                 </TableRow>
               ) : (
                 items.map((item, index) => (
-                  <TableRow key={`${item.category}-${item.documentType}-${index}`}>
-                    <TableCell className="font-medium w-16">{index + 1}</TableCell>
+                  <TableRow
+                    key={`${item.category}-${item.documentType}-${index}`}
+                  >
+                    <TableCell className="font-medium w-16">
+                      {index + 1}
+                    </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <Badge
                         variant="default"
@@ -120,12 +126,14 @@ export const ChecklistView = memo(function ChecklistView({
                       <Badge
                         variant="default"
                         className={
-                          item.requirement === 'mandatory'
-                            ? 'bg-red-100 text-red-800 hover:bg-red-200 text-xs'
-                            : 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 text-xs'
+                          item.requirement === "mandatory"
+                            ? "bg-red-100 text-red-800 hover:bg-red-200 text-xs"
+                            : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 text-xs"
                         }
                       >
-                        {item.requirement === 'mandatory' ? 'Mandatory' : 'Optional'}
+                        {item.requirement === "mandatory"
+                          ? "Mandatory"
+                          : "Optional"}
                       </Badge>
                     </TableCell>
                   </TableRow>

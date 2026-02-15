@@ -3,8 +3,7 @@ import { Geist, Geist_Mono, Lexend } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "sonner";
-import { NotificationProvider } from '@/components/notifications/NotificationProvider';
-
+import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -33,7 +32,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/favicon.ico?v=1", sizes: "any" },
-      { url: "/favicon.ico?v=1", type: "image/x-icon" }
+      { url: "/favicon.ico?v=1", type: "image/x-icon" },
     ],
     shortcut: "/favicon.ico?v=1",
     apple: "/favicon.ico?v=1",
@@ -58,15 +57,13 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <Providers>
-          <NotificationProvider>
-          {children}
-        </NotificationProvider>
-        {/* <NotificationDebugger /> */}
-        {/* <NotificationTestButton /> */}
-        {/* <LocalNotificationTestButton /> */}
-        <Toaster position="top-center" richColors  />
-      </Providers>
-    </body>
-    </html >
+          <NotificationProvider>{children}</NotificationProvider>
+          {/* <NotificationDebugger /> */}
+          {/* <NotificationTestButton /> */}
+          {/* <LocalNotificationTestButton /> */}
+          <Toaster position="top-center" richColors />
+        </Providers>
+      </body>
+    </html>
   );
 }

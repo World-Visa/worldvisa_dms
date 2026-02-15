@@ -1,8 +1,8 @@
-import { fetcher } from '../fetcher';
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { fetcher } from "../fetcher";
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export interface UpdateDocumentStatusRequest {
-  status: 'pending' | 'reviewed' | 'request_review' | 'approved' | 'rejected';
+  status: "pending" | "reviewed" | "request_review" | "approved" | "rejected";
   changed_by: string;
   reject_message?: string;
 }
@@ -20,13 +20,13 @@ export interface UpdateDocumentStatusResponse {
 
 export async function updateDocumentStatus(
   documentId: string,
-  data: UpdateDocumentStatusRequest
+  data: UpdateDocumentStatusRequest,
 ): Promise<UpdateDocumentStatusResponse> {
   return fetcher<UpdateDocumentStatusResponse>(
     `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/status`,
     {
-      method: 'PATCH',
+      method: "PATCH",
       body: JSON.stringify(data),
-    }
+    },
   );
 }

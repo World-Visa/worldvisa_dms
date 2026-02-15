@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, RefreshCw } from 'lucide-react';
+import React from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 
 interface ErrorBoundaryState {
   hasError: boolean;
@@ -16,7 +16,10 @@ interface ErrorBoundaryProps {
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
 }
 
-export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+export class ErrorBoundary extends React.Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
     this.state = { hasError: false };
@@ -27,7 +30,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
     this.props.onError?.(error, errorInfo);
   }
 
@@ -38,14 +41,25 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
   render() {
     if (this.state.hasError) {
       const FallbackComponent = this.props.fallback || DefaultErrorFallback;
-      return <FallbackComponent error={this.state.error} resetError={this.resetError} />;
+      return (
+        <FallbackComponent
+          error={this.state.error}
+          resetError={this.resetError}
+        />
+      );
     }
 
     return this.props.children;
   }
 }
 
-function DefaultErrorFallback({ error, resetError }: { error?: Error; resetError: () => void }) {
+function DefaultErrorFallback({
+  error,
+  resetError,
+}: {
+  error?: Error;
+  resetError: () => void;
+}) {
   return (
     <div className="flex items-center justify-center min-h-[200px] p-6">
       <Alert variant="destructive" className="max-w-md">
@@ -54,7 +68,8 @@ function DefaultErrorFallback({ error, resetError }: { error?: Error; resetError
           <div className="space-y-3">
             <p className="font-medium">Something went wrong</p>
             <p className="text-sm">
-              {error?.message || 'An unexpected error occurred while loading the component.'}
+              {error?.message ||
+                "An unexpected error occurred while loading the component."}
             </p>
             <Button
               variant="outline"
@@ -76,18 +91,19 @@ function DefaultErrorFallback({ error, resetError }: { error?: Error; resetError
 export function useErrorHandler() {
   return {
     handleError: (error: Error, context?: string) => {
-      console.error(`Error in ${context || 'component'}:`, error);
-      
+      console.error(`Error in ${context || "component"}:`, error);
+
       // You can integrate with error reporting services here
       // Example: Sentry.captureException(error, { tags: { context } });
     },
-    
+
     handleAsyncError: (error: unknown, context?: string) => {
-      const errorMessage = error instanceof Error ? error : new Error(String(error));
-      console.error(`Async error in ${context || 'component'}:`, errorMessage);
-      
+      const errorMessage =
+        error instanceof Error ? error : new Error(String(error));
+      console.error(`Async error in ${context || "component"}:`, errorMessage);
+
       // You can integrate with error reporting services here
       // Example: Sentry.captureException(errorMessage, { tags: { context } });
-    }
+    },
   };
 }

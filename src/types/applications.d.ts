@@ -103,7 +103,7 @@ export interface ApplicationsFilters {
   handledBy?: string[];
   applicationStage?: string[];
   applicationState?: "Active" | "In-Active";
-  deadlineCategory?: 'approaching' | 'overdue' | 'noDeadline' | null;
+  deadlineCategory?: "approaching" | "overdue" | "noDeadline" | null;
 }
 
 export interface SearchParams {

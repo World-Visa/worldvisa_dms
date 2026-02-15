@@ -1,5 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { getChecklistRequests, ChecklistRequestsParams, ChecklistRequestsResponse } from '@/lib/api/checklistRequests';
+import { useQuery } from "@tanstack/react-query";
+import {
+  getChecklistRequests,
+  ChecklistRequestsParams,
+  ChecklistRequestsResponse,
+} from "@/lib/api/checklistRequests";
 
 interface UseChecklistRequestsOptions extends ChecklistRequestsParams {
   enabled?: boolean;
@@ -7,7 +11,9 @@ interface UseChecklistRequestsOptions extends ChecklistRequestsParams {
   refetchInterval?: number;
 }
 
-export function useChecklistRequests(options: UseChecklistRequestsOptions = {}) {
+export function useChecklistRequests(
+  options: UseChecklistRequestsOptions = {},
+) {
   const {
     page = 1,
     limit = 20,
@@ -22,14 +28,14 @@ export function useChecklistRequests(options: UseChecklistRequestsOptions = {}) 
   };
 
   return useQuery({
-    queryKey: ['checklistRequests', params],
+    queryKey: ["checklistRequests", params],
     queryFn: () => getChecklistRequests(params),
     enabled,
     staleTime,
     refetchInterval,
     retry: (failureCount, error) => {
       // Don't retry on 4xx errors (client errors)
-      if (error instanceof Error && error.message.includes('4')) {
+      if (error instanceof Error && error.message.includes("4")) {
         return false;
       }
       // Retry up to 3 times for other errors

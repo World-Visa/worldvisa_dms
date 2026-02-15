@@ -1,35 +1,40 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback, useMemo, useEffect, memo } from 'react';
-import { useQualityCheckApplications, useSearchQualityCheckApplications } from '@/hooks/useQualityCheckApplications';
-import { useDebounce } from '@/hooks/useDebounce';
-import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
-import { QualityCheckDataTable } from '@/components/quality-check/QualityCheckDataTable';
-import { Card, CardContent } from '@/components/ui/card';
-import { CheckCircle } from 'lucide-react';
-import { DateRange } from 'react-day-picker';
+import React, { useState, useCallback, useMemo, useEffect, memo } from "react";
+import {
+  useQualityCheckApplications,
+  useSearchQualityCheckApplications,
+} from "@/hooks/useQualityCheckApplications";
+import { useDebounce } from "@/hooks/useDebounce";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
+import { QualityCheckDataTable } from "@/components/quality-check/QualityCheckDataTable";
+import { Card, CardContent } from "@/components/ui/card";
+import { CheckCircle } from "lucide-react";
+import { DateRange } from "react-day-picker";
 
 const QualityCheckPage = memo(function QualityCheckPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
-  const [search, setSearch] = useState('');
-  const [searchType, setSearchType] = useState<'name' | 'email' | 'phone'>('name');
-  const [status, setStatus] = useState('all');
-  const [handledBy, setHandledBy] = useState('');
-  const [qualityCheckFrom, setQualityCheckFrom] = useState('');
+  const [search, setSearch] = useState("");
+  const [searchType, setSearchType] = useState<"name" | "email" | "phone">(
+    "name",
+  );
+  const [status, setStatus] = useState("all");
+  const [handledBy, setHandledBy] = useState("");
+  const [qualityCheckFrom, setQualityCheckFrom] = useState("");
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
 
   // Separate state for the actual search query that triggers API calls
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Debounce search input for better performance
   const debouncedSearch = useDebounce(search, 300);
 
   // Performance monitoring
-  const { measureAsync } = usePerformanceMonitor('QualityCheckPage');
+  const { measureAsync } = usePerformanceMonitor("QualityCheckPage");
 
   // Check if we're in search mode
-  const isSearchMode = searchQuery.trim() !== '';
+  const isSearchMode = searchQuery.trim() !== "";
 
   const filters = useMemo(() => {
     let startDate: string | undefined;
@@ -37,8 +42,8 @@ const QualityCheckPage = memo(function QualityCheckPage() {
 
     const formatLocalDate = (date: Date): string => {
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     };
 
@@ -59,7 +64,7 @@ const QualityCheckPage = memo(function QualityCheckPage() {
     const filterParams = {
       page,
       limit,
-      status: status !== 'all' ? status : undefined,
+      status: status !== "all" ? status : undefined,
       handledBy: handledBy || undefined,
       qualityCheckFrom: qualityCheckFrom || undefined,
       startDate,
@@ -81,11 +86,15 @@ const QualityCheckPage = memo(function QualityCheckPage() {
     return params;
   }, [searchQuery, searchType]);
 
-  const { data: searchData, isLoading: isSearchQueryLoading, error: searchQueryError } = useSearchQualityCheckApplications(searchParamsForAPI);
+  const {
+    data: searchData,
+    isLoading: isSearchQueryLoading,
+    error: searchQueryError,
+  } = useSearchQualityCheckApplications(searchParamsForAPI);
 
   const handlePageChange = useCallback((newPage: number) => {
     setPage(newPage);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const handleLimitChange = useCallback((newLimit: number) => {
@@ -97,16 +106,19 @@ const QualityCheckPage = memo(function QualityCheckPage() {
     setSearch(value);
   }, []);
 
-  const handleSearchTypeChange = useCallback((type: 'name' | 'email' | 'phone') => {
-    setSearchType(type);
-  }, []);
+  const handleSearchTypeChange = useCallback(
+    (type: "name" | "email" | "phone") => {
+      setSearchType(type);
+    },
+    [],
+  );
 
   const handleSearchClick = useCallback(async () => {
     if (search.trim()) {
       await measureAsync(async () => {
         setSearchQuery(search.trim());
         setPage(1);
-      }, 'searchQualityCheckApplications');
+      }, "searchQualityCheckApplications");
     }
   }, [search, measureAsync]);
 
@@ -115,8 +127,8 @@ const QualityCheckPage = memo(function QualityCheckPage() {
     if (debouncedSearch.trim() && debouncedSearch.length >= 2) {
       setSearchQuery(debouncedSearch.trim());
       setPage(1);
-    } else if (debouncedSearch.trim() === '') {
-      setSearchQuery('');
+    } else if (debouncedSearch.trim() === "") {
+      setSearchQuery("");
     }
   }, [debouncedSearch]);
 
@@ -130,10 +142,13 @@ const QualityCheckPage = memo(function QualityCheckPage() {
     setPage(1);
   }, []);
 
-  const handleQualityCheckFromChange = useCallback((newQualityCheckFrom: string) => {
-    setQualityCheckFrom(newQualityCheckFrom);
-    setPage(1);
-  }, []);
+  const handleQualityCheckFromChange = useCallback(
+    (newQualityCheckFrom: string) => {
+      setQualityCheckFrom(newQualityCheckFrom);
+      setPage(1);
+    },
+    [],
+  );
 
   const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
     setDateRange(range);
@@ -141,25 +156,32 @@ const QualityCheckPage = memo(function QualityCheckPage() {
   }, []);
 
   const handleClearFilters = useCallback(() => {
-    setSearch('');
-    setSearchQuery('');
-    setSearchType('name');
-    setStatus('all');
-    setHandledBy('');
-    setQualityCheckFrom('');
+    setSearch("");
+    setSearchQuery("");
+    setSearchType("name");
+    setStatus("all");
+    setHandledBy("");
+    setQualityCheckFrom("");
     setDateRange(undefined);
     setPage(1);
   }, []);
 
   // Add keyboard shortcut for search (Enter key)
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && search.trim()) {
-      handleSearchClick();
-    }
-  }, [search, handleSearchClick]);
+  const handleKeyPress = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter" && search.trim()) {
+        handleSearchClick();
+      }
+    },
+    [search, handleSearchClick],
+  );
 
   const totalApplications = isSearchMode
-    ? (Array.isArray(searchData?.data) ? searchData.data.length : searchData?.data ? 1 : 0)
+    ? Array.isArray(searchData?.data)
+      ? searchData.data.length
+      : searchData?.data
+        ? 1
+        : 0
     : (data?.pagination?.totalItems ?? 0);
 
   const displayError = isSearchMode ? searchQueryError : error;
@@ -183,8 +205,12 @@ const QualityCheckPage = memo(function QualityCheckPage() {
                 <span className="animate-pulse">—</span>
               ) : (
                 <>
-                  <span className="font-medium text-neutral-700">{totalApplications.toLocaleString()}</span>
-                  <span className="ml-1">{isSearchMode ? 'results' : 'applications'}</span>
+                  <span className="font-medium text-neutral-700">
+                    {totalApplications.toLocaleString()}
+                  </span>
+                  <span className="ml-1">
+                    {isSearchMode ? "results" : "applications"}
+                  </span>
                 </>
               )}
             </div>
@@ -228,14 +254,17 @@ const QualityCheckPage = memo(function QualityCheckPage() {
                   <CheckCircle className="h-6 w-6 text-red-600" />
                 </div>
                 <h3 className="text-lg font-semibold text-red-800 mb-2">
-                  {isSearchMode ? 'Search Error' : 'Loading Error'}
+                  {isSearchMode ? "Search Error" : "Loading Error"}
                 </h3>
                 <p className="text-red-700 mb-2">
-                  {displayError instanceof Error ? displayError.message : displayError}
+                  {displayError instanceof Error
+                    ? displayError.message
+                    : displayError}
                 </p>
                 {isSearchMode && (
                   <p className="text-sm text-red-600">
-                    Please check your search term and try again. Make sure you have at least 2 characters.
+                    Please check your search term and try again. Make sure you
+                    have at least 2 characters.
                   </p>
                 )}
               </div>
@@ -253,20 +282,30 @@ const QualityCheckPage = memo(function QualityCheckPage() {
                     Search Results
                   </h3>
                   <p className="text-blue-700">
-                    Found {Array.isArray(searchData?.data) ? searchData.data.length : (searchData?.data ? 1 : 0)} results for &quot;{searchQuery}&quot; in {searchType}
+                    Found{" "}
+                    {Array.isArray(searchData?.data)
+                      ? searchData.data.length
+                      : searchData?.data
+                        ? 1
+                        : 0}{" "}
+                    results for &quot;{searchQuery}&quot; in {searchType}
                   </p>
                 </div>
                 <div className="p-2 bg-blue-100 rounded-full">
                   <CheckCircle className="h-5 w-5 text-blue-600" />
                 </div>
               </div>
-              {!isSearchQueryLoading && (!searchData?.data || (Array.isArray(searchData.data) && searchData.data.length === 0)) && (
-                <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <p className="text-yellow-800 text-sm">
-                    No applications found matching your search criteria. Try adjusting your search term or search type.
-                  </p>
-                </div>
-              )}
+              {!isSearchQueryLoading &&
+                (!searchData?.data ||
+                  (Array.isArray(searchData.data) &&
+                    searchData.data.length === 0)) && (
+                  <div className="mt-4 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-yellow-800 text-sm">
+                      No applications found matching your search criteria. Try
+                      adjusting your search term or search type.
+                    </p>
+                  </div>
+                )}
             </CardContent>
           </Card>
         )}
@@ -283,9 +322,21 @@ const QualityCheckPage = memo(function QualityCheckPage() {
           />
         ) : (
           <QualityCheckDataTable
-            applications={searchData?.data ? (Array.isArray(searchData.data) ? searchData.data : [searchData.data]) : []}
+            applications={
+              searchData?.data
+                ? Array.isArray(searchData.data)
+                  ? searchData.data
+                  : [searchData.data]
+                : []
+            }
             isLoading={isSearchQueryLoading}
-            totalItems={Array.isArray(searchData?.data) ? searchData.data.length : (searchData?.data ? 1 : 0)}
+            totalItems={
+              Array.isArray(searchData?.data)
+                ? searchData.data.length
+                : searchData?.data
+                  ? 1
+                  : 0
+            }
             currentPage={1}
             limit={limit}
             onPageChange={() => {}}

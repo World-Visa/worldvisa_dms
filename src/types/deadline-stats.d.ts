@@ -1,4 +1,4 @@
-import { VisaApplication } from './applications';
+import { VisaApplication } from "./applications";
 
 export interface DeadlineStatsSummary {
   total: number;
@@ -32,7 +32,7 @@ export interface DeadlineStatsData {
 }
 
 export interface DeadlineStatsParams {
-  type: 'visa' | 'spouse';
+  type: "visa" | "spouse";
   approachingPage?: number;
   approachingLimit?: number;
   overduePage?: number;

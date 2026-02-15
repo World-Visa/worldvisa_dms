@@ -26,7 +26,7 @@ interface ClientDocumentsContentProps {
   onReuploadDocument: (
     documentId: string,
     documentType: string,
-    category: string
+    category: string,
   ) => void;
   onUploadSuccess: () => void;
   onDeleteSuccess: () => void;
@@ -63,7 +63,8 @@ export function ClientDocumentsContent({
     (allDocumentsData?.data?.documents?.length || 0) > 0;
 
   // Check if checklist has been requested
-  const checklistRequested = applicationData?.data?.Checklist_Requested === true;
+  const checklistRequested =
+    applicationData?.data?.Checklist_Requested === true;
   const leadId = applicationData?.data?.leadId || applicationData?.data?.id;
 
   // If checklist has been requested, show success card
@@ -79,7 +80,12 @@ export function ClientDocumentsContent({
   }
 
   // If no checklist and no submitted documents, show the request card
-  if (!hasChecklist && !hasSubmittedDocuments && !checklistRequested && leadId) {
+  if (
+    !hasChecklist &&
+    !hasSubmittedDocuments &&
+    !checklistRequested &&
+    leadId
+  ) {
     return (
       <RequestChecklistCard
         leadId={leadId}
@@ -130,9 +136,7 @@ export function ClientDocumentsContent({
   } else {
     return (
       <DocumentChecklistTable
-        documents={
-          allDocumentsData?.data?.documents as unknown as Document[]
-        }
+        documents={allDocumentsData?.data?.documents as unknown as Document[]}
         isLoading={isChecklistLoading}
         error={checklistError}
         applicationId={applicationId}
@@ -151,5 +155,3 @@ export function ClientDocumentsContent({
     );
   }
 }
-
-

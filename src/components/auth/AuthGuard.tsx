@@ -7,7 +7,7 @@ import { Loader2 } from "lucide-react";
 
 interface AuthGuardProps {
   children: React.ReactNode;
-  requiredRole?: 'admin' | 'client' | 'master_admin' | 'team_leader';
+  requiredRole?: "admin" | "client" | "master_admin" | "team_leader";
   redirectTo?: string;
 }
 
@@ -38,18 +38,24 @@ export function AuthGuard({
 
       if (requiredRole && user?.role !== requiredRole) {
         // Check if user has access to admin pages (admin, team_leader, master_admin, and supervisor can access admin pages)
-        if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin' || user?.role === 'supervisor')) {
+        if (
+          requiredRole === "admin" &&
+          (user?.role === "admin" ||
+            user?.role === "team_leader" ||
+            user?.role === "master_admin" ||
+            user?.role === "supervisor")
+        ) {
           // Allow access to admin pages for admin, team_leader, master_admin, and supervisor roles
         } else {
           // Redirect to appropriate dashboard based on user role
-          if (user?.role === 'admin' || user?.role === 'team_leader') {
-            router.push('/admin/applications');
-          } else if (user?.role === 'client') {
-            router.push('/client/dashboard');
-          } else if(user?.role === 'master_admin') {
-            router.push('/admin/dashboard');
-          } else if(user?.role === 'supervisor') {
-            router.push('/admin/applications');
+          if (user?.role === "admin" || user?.role === "team_leader") {
+            router.push("/admin/applications");
+          } else if (user?.role === "client") {
+            router.push("/client/dashboard");
+          } else if (user?.role === "master_admin") {
+            router.push("/admin/dashboard");
+          } else if (user?.role === "supervisor") {
+            router.push("/admin/applications");
           } else {
             router.push(redirectTo);
           }
@@ -86,7 +92,13 @@ export function AuthGuard({
 
   // Check role access - allow master_admin and supervisor to access admin pages
   if (requiredRole && user?.role !== requiredRole) {
-    if (requiredRole === 'admin' && (user?.role === 'admin' || user?.role === 'team_leader' || user?.role === 'master_admin' || user?.role === 'supervisor')) {
+    if (
+      requiredRole === "admin" &&
+      (user?.role === "admin" ||
+        user?.role === "team_leader" ||
+        user?.role === "master_admin" ||
+        user?.role === "supervisor")
+    ) {
       // Allow access to admin pages for admin, team_leader, master_admin, and supervisor roles
     } else {
       return null;

@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useMemo } from 'react';
-import { highlightText, HighlightSegment } from '@/lib/utils/highlight';
-import { cn } from '@/lib/utils';
+import React, { useMemo } from "react";
+import { highlightText, HighlightSegment } from "@/lib/utils/highlight";
+import { cn } from "@/lib/utils";
 
 interface HighlightTextProps {
   text: string;
@@ -12,13 +12,12 @@ interface HighlightTextProps {
   caseSensitive?: boolean;
 }
 
-
 export function HighlightText({
   text,
   query,
   className,
   highlightClassName,
-  caseSensitive = false
+  caseSensitive = false,
 }: HighlightTextProps) {
   const segments = highlightText(text, caseSensitive ? query : query);
 
@@ -35,8 +34,8 @@ export function HighlightText({
             <mark
               key={index}
               className={cn(
-                'highlight-match bg-yellow-200 text-yellow-900 px-0.5 rounded-sm',
-                highlightClassName
+                "highlight-match bg-yellow-200 text-yellow-900 px-0.5 rounded-sm",
+                highlightClassName,
               )}
               aria-label={`Highlighted match: ${segment.text}`}
             >
@@ -50,7 +49,9 @@ export function HighlightText({
   );
 }
 
-
-export function useHighlightSegments(text: string, query: string): HighlightSegment[] {
+export function useHighlightSegments(
+  text: string,
+  query: string,
+): HighlightSegment[] {
   return useMemo(() => highlightText(text, query), [text, query]);
 }

@@ -1,6 +1,6 @@
 /**
  * Document Category Normalization Utility
- * 
+ *
  * This utility provides consistent category normalization across the application
  * to handle variations in document category storage and display formats.
  */
@@ -14,29 +14,32 @@ export function normalizeDocumentCategory(category: string): string {
 
   // Handle API format categories
   switch (category) {
-    case 'Identity':
-      return 'Identity Documents';
-    case 'Education':
-      return 'Education Documents';
-    case 'Other':
-      return 'Other Documents';
-    case 'Self Employment/Freelance':
-      return 'Self Employment/Freelance';
-    case 'Company':
-      return 'Company Documents';
+    case "Identity":
+      return "Identity Documents";
+    case "Education":
+      return "Education Documents";
+    case "Other":
+      return "Other Documents";
+    case "Self Employment/Freelance":
+      return "Self Employment/Freelance";
+    case "Company":
+      return "Company Documents";
     default:
       // Handle variations like "Education Document." or "Education Documents"
-      if (category.includes('Education') && !category.includes('Documents')) {
-        return 'Education Documents';
+      if (category.includes("Education") && !category.includes("Documents")) {
+        return "Education Documents";
       }
-      if (category.includes('Identity') && !category.includes('Documents')) {
-        return 'Identity Documents';
+      if (category.includes("Identity") && !category.includes("Documents")) {
+        return "Identity Documents";
       }
-      if (category.includes('Other') && !category.includes('Documents')) {
-        return 'Other Documents';
+      if (category.includes("Other") && !category.includes("Documents")) {
+        return "Other Documents";
       }
-      if (category.includes('Self Employment') && !category.includes('Documents')) {
-        return 'Self Employment/Freelance';
+      if (
+        category.includes("Self Employment") &&
+        !category.includes("Documents")
+      ) {
+        return "Self Employment/Freelance";
       }
       // Return as-is for company documents and other categories
       return category;
@@ -47,7 +50,7 @@ export function normalizeDocumentCategory(category: string): string {
  * Check if a category is a company document category
  */
 export function isCompanyDocumentCategory(category: string): boolean {
-  return category.includes('Company Documents');
+  return category.includes("Company Documents");
 }
 
 /**
@@ -56,16 +59,17 @@ export function isCompanyDocumentCategory(category: string): boolean {
 export function getCategoryDisplayProps(category: string) {
   const normalizedCategory = normalizeDocumentCategory(category);
   const isCompanyDoc = isCompanyDocumentCategory(normalizedCategory);
-  
+
   return {
     category: normalizedCategory,
     isCompanyDoc,
-    badgeVariant: isCompanyDoc ? "default" : "outline" as const,
-    badgeClassName: isCompanyDoc 
-      ? 'bg-blue-100 text-blue-800 hover:bg-blue-200'
-      : '',
-    displayText: normalizedCategory.length > 18 
-      ? `${normalizedCategory.substring(0, 18)}...`
-      : normalizedCategory
+    badgeVariant: isCompanyDoc ? "default" : ("outline" as const),
+    badgeClassName: isCompanyDoc
+      ? "bg-blue-100 text-blue-800 hover:bg-blue-200"
+      : "",
+    displayText:
+      normalizedCategory.length > 18
+        ? `${normalizedCategory.substring(0, 18)}...`
+        : normalizedCategory,
   };
 }

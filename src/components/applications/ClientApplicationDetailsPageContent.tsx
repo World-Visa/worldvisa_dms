@@ -1,9 +1,18 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback, Suspense } from "react";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useCallback,
+  Suspense,
+} from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ClientApplicationDetails } from "@/components/applications/ClientApplicationDetails";
-import { LayoutChips, type ApplicationLayout } from "@/components/applications/layouts/LayoutChips";
+import {
+  LayoutChips,
+  type ApplicationLayout,
+} from "@/components/applications/layouts/LayoutChips";
 import { ClientSkillAssessmentLayout } from "@/components/applications/layouts/ClientSkillAssessmentLayout";
 import { EOILayout } from "@/components/applications/layouts/EOILayout";
 import { InvitationLayout } from "@/components/applications/layouts/InvitationLayout";
@@ -26,10 +35,13 @@ import Link from "next/link";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
 import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
 import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
-import { parseCompaniesFromDocuments } from '@/utils/companyParsing';
+import { parseCompaniesFromDocuments } from "@/utils/companyParsing";
 import { useStage2Documents } from "@/hooks/useStage2Documents";
 import { useClientDeleteDocument } from "@/hooks/useClientDeleteDocument";
-import { getCompanyDocuments, filterDocumentsWithValidIds } from "@/utils/companyDocuments";
+import {
+  getCompanyDocuments,
+  filterDocumentsWithValidIds,
+} from "@/utils/companyDocuments";
 import { toast } from "sonner";
 
 export default function ClientApplicationDetailsPageContent() {
@@ -39,7 +51,8 @@ export default function ClientApplicationDetailsPageContent() {
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
 
-  const [selectedLayout, setSelectedLayout] = useState<ApplicationLayout>("skill-assessment");
+  const [selectedLayout, setSelectedLayout] =
+    useState<ApplicationLayout>("skill-assessment");
   const [selectedCategory, setSelectedCategory] = useState<string>("submitted");
   const [documentsPage, setDocumentsPage] = useState(1);
   const documentsLimit = 10;
@@ -137,7 +150,10 @@ export default function ClientApplicationDetailsPageContent() {
     error: checklistError,
   } = useClientChecklist(applicationId);
 
-  const invitationDocumentsQuery = useStage2Documents(applicationId, "invitation");
+  const invitationDocumentsQuery = useStage2Documents(
+    applicationId,
+    "invitation",
+  );
   const invitationDocuments = invitationDocumentsQuery.data?.data ?? [];
   const hasInvitationDocuments = invitationDocuments.length > 0;
 
@@ -173,7 +189,8 @@ export default function ClientApplicationDetailsPageContent() {
     }
   }, [availableLayouts, selectedLayout]);
 
-  const checklistRequested = applicationData?.data?.Checklist_Requested === true;
+  const checklistRequested =
+    applicationData?.data?.Checklist_Requested === true;
   const checklistRequestedAt = applicationData?.data?.Checklist_Requested_At;
   const leadId = applicationData?.data?.leadId || applicationData?.data?.id;
 
@@ -183,8 +200,10 @@ export default function ClientApplicationDetailsPageContent() {
       allDocumentsData?.data?.documents &&
       allDocumentsData.data.documents.length > 0
     ) {
-      const parsedCompanies = parseCompaniesFromDocuments(allDocumentsData.data.documents);
-      
+      const parsedCompanies = parseCompaniesFromDocuments(
+        allDocumentsData.data.documents,
+      );
+
       // Update companies state with parsed data
       if (parsedCompanies.length > 0) {
         setCompanies(parsedCompanies);
@@ -207,7 +226,7 @@ export default function ClientApplicationDetailsPageContent() {
           ) {
             companyCategories.add(doc.document_category);
           }
-        }
+        },
       );
     }
 
@@ -220,7 +239,9 @@ export default function ClientApplicationDetailsPageContent() {
     }
 
     if (companyCategories.size > 0) {
-      return parseCompaniesFromDocuments(allDocumentsData?.data?.documents || []);
+      return parseCompaniesFromDocuments(
+        allDocumentsData?.data?.documents || [],
+      );
     }
 
     return [];
@@ -254,15 +275,15 @@ export default function ClientApplicationDetailsPageContent() {
   const handleRemoveCompany = useCallback((companyName: string) => {
     setCompanies((prev) =>
       prev.filter(
-        (company) => company.name.toLowerCase() !== companyName.toLowerCase()
-      )
+        (company) => company.name.toLowerCase() !== companyName.toLowerCase(),
+      ),
     );
   }, []);
 
   const handleRemoveCompanyWithDocuments = useCallback(
     (companyName: string, companyCategory: string) => {
       const company = finalCompanies.find(
-        (c) => c.name.toLowerCase() === companyName.toLowerCase()
+        (c) => c.name.toLowerCase() === companyName.toLowerCase(),
       );
       if (!company) {
         toast.error("Company not found");
@@ -271,7 +292,7 @@ export default function ClientApplicationDetailsPageContent() {
       const allDocuments = allDocumentsData?.data?.documents ?? [];
       const companyDocuments = getCompanyDocuments(
         companyCategory,
-        (allDocuments ?? []) as unknown as Document[]
+        (allDocuments ?? []) as unknown as Document[],
       );
       const hasDocuments = companyDocuments.length > 0;
       const documentCount = companyDocuments.length;
@@ -282,7 +303,7 @@ export default function ClientApplicationDetailsPageContent() {
         documentCount,
       });
     },
-    [finalCompanies, allDocumentsData?.data?.documents]
+    [finalCompanies, allDocumentsData?.data?.documents],
   );
 
   const handleRemoveDocumentsAndCompany = useCallback(async () => {
@@ -301,11 +322,12 @@ export default function ClientApplicationDetailsPageContent() {
       return;
     }
 
-    const companyCategory = company.category ?? `${company.name} Company Documents`;
+    const companyCategory =
+      company.category ?? `${company.name} Company Documents`;
     const allDocuments = allDocumentsData?.data?.documents ?? [];
     const companyDocuments = getCompanyDocuments(
       companyCategory,
-      (allDocuments ?? []) as unknown as Document[]
+      (allDocuments ?? []) as unknown as Document[],
     );
     if (companyDocuments.length === 0) {
       handleRemoveCompany(company.name);
@@ -337,55 +359,71 @@ export default function ClientApplicationDetailsPageContent() {
     setIsDeletingDocuments(true);
     try {
       // Process each document individually, tracking results
-      const deletionResults: Array<{ success: boolean; documentId: string; fileName?: string; error?: string }> = [];
-      
+      const deletionResults: Array<{
+        success: boolean;
+        documentId: string;
+        fileName?: string;
+        error?: string;
+      }> = [];
+
       for (const doc of validDocuments) {
         // Additional inline validation right before mutation call
-        if (!doc._id || typeof doc._id !== 'string' || doc._id.trim() === '') {
-          console.warn(`[RemoveCompany] Skipping document with invalid ID:`, doc);
+        if (!doc._id || typeof doc._id !== "string" || doc._id.trim() === "") {
+          console.warn(
+            `[RemoveCompany] Skipping document with invalid ID:`,
+            doc,
+          );
           deletionResults.push({
             success: false,
-            documentId: doc._id || 'unknown',
+            documentId: doc._id || "unknown",
             fileName: doc.file_name,
-            error: 'Invalid document ID'
+            error: "Invalid document ID",
           });
           continue;
         }
 
         try {
-          console.log('[RemoveCompany] Deleting document:', doc._id, doc.file_name);
+          console.log(
+            "[RemoveCompany] Deleting document:",
+            doc._id,
+            doc.file_name,
+          );
           await clientDeleteDocumentMutation.mutateAsync({
             documentId: doc._id,
           });
           deletionResults.push({
             success: true,
             documentId: doc._id,
-            fileName: doc.file_name
+            fileName: doc.file_name,
           });
         } catch (error) {
           // Log but continue with other documents
-          const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-          console.error(`[RemoveCompany] Failed to delete document ${doc._id} (${doc.file_name}):`, errorMessage);
+          const errorMessage =
+            error instanceof Error ? error.message : "Unknown error";
+          console.error(
+            `[RemoveCompany] Failed to delete document ${doc._id} (${doc.file_name}):`,
+            errorMessage,
+          );
           deletionResults.push({
             success: false,
             documentId: doc._id,
             fileName: doc.file_name,
-            error: errorMessage
+            error: errorMessage,
           });
         }
       }
 
       // Analyze results
-      const successCount = deletionResults.filter(r => r.success).length;
-      const failureCount = deletionResults.filter(r => !r.success).length;
+      const successCount = deletionResults.filter((r) => r.success).length;
+      const failureCount = deletionResults.filter((r) => !r.success).length;
 
       // Only fail if ALL documents failed
       if (successCount === 0 && validDocuments.length > 0) {
         // All failed - show error and don't remove company
-        console.error('[RemoveCompany] All document deletions failed');
+        console.error("[RemoveCompany] All document deletions failed");
         setIsDeletingDocuments(false);
         toast.error(
-          "Failed to delete all documents. Company was not removed. Please try again."
+          "Failed to delete all documents. Company was not removed. Please try again.",
         );
         return;
       }
@@ -393,14 +431,16 @@ export default function ClientApplicationDetailsPageContent() {
       // Some or all succeeded - remove company
       if (failureCount > 0) {
         // Some failed - show warning but still remove company
-        console.warn(`[RemoveCompany] ${successCount} document(s) deleted successfully, ${failureCount} failed`);
+        console.warn(
+          `[RemoveCompany] ${successCount} document(s) deleted successfully, ${failureCount} failed`,
+        );
         toast.warning(
-          `Company removed. ${successCount} document${successCount !== 1 ? "s" : ""} deleted successfully, but ${failureCount} document${failureCount !== 1 ? "s" : ""} could not be deleted.`
+          `Company removed. ${successCount} document${successCount !== 1 ? "s" : ""} deleted successfully, but ${failureCount} document${failureCount !== 1 ? "s" : ""} could not be deleted.`,
         );
       } else {
         // All succeeded
         toast.success(
-          `Company and ${successCount} document${successCount !== 1 ? "s" : ""} removed successfully`
+          `Company and ${successCount} document${successCount !== 1 ? "s" : ""} removed successfully`,
         );
       }
 
@@ -415,10 +455,14 @@ export default function ClientApplicationDetailsPageContent() {
     } catch (error) {
       // This catch block should rarely be hit now, but keep it as a safety net
       setIsDeletingDocuments(false);
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      console.error('[RemoveCompany] Unexpected error during document deletion:', errorMessage);
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error(
+        "[RemoveCompany] Unexpected error during document deletion:",
+        errorMessage,
+      );
       toast.error(
-        "An unexpected error occurred. Company was not removed. Please try again."
+        "An unexpected error occurred. Company was not removed. Please try again.",
       );
     }
   }, [
@@ -454,11 +498,11 @@ export default function ClientApplicationDetailsPageContent() {
   const handleReuploadDocument = (
     documentId: string,
     documentType: string,
-    category: string
+    category: string,
   ) => {
     // Find the document to reupload
     const documentToReupload = documentsData?.data?.documents?.find(
-      (doc) => doc._id === documentId
+      (doc) => doc._id === documentId,
     );
     if (!documentToReupload) {
       console.error("Document not found for reupload:", documentId);
@@ -545,10 +589,10 @@ export default function ClientApplicationDetailsPageContent() {
       </div>
       {/* Loading State */}
       {isAuthLoading ||
-        isApplicationLoading ||
-        isDocumentsLoading ||
-        isAllDocumentsLoading ||
-        isChecklistLoading ? (
+      isApplicationLoading ||
+      isDocumentsLoading ||
+      isAllDocumentsLoading ||
+      isChecklistLoading ? (
         <div className="space-y-6">
           <div className="flex justify-between w-full gap-8 items-end">
             <div className="space-y-4 w-full">
@@ -621,19 +665,25 @@ export default function ClientApplicationDetailsPageContent() {
             />
           ) : selectedLayout === "outcome" ? (
             hasOutcomeDocuments ? (
-              <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
+              <Suspense
+                fallback={<Skeleton className="h-96 w-full rounded-xl" />}
+              >
                 <OutcomeLayout applicationId={applicationId} isClientView />
               </Suspense>
             ) : null
           ) : selectedLayout === "eoi" ? (
             hasEOIDocuments ? (
-              <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
+              <Suspense
+                fallback={<Skeleton className="h-96 w-full rounded-xl" />}
+              >
                 <EOILayout applicationId={applicationId} isClientView />
               </Suspense>
             ) : null
           ) : selectedLayout === "invitation" ? (
             hasInvitationDocuments ? (
-              <Suspense fallback={<Skeleton className="h-96 w-full rounded-xl" />}>
+              <Suspense
+                fallback={<Skeleton className="h-96 w-full rounded-xl" />}
+              >
                 <InvitationLayout applicationId={applicationId} isClientView />
               </Suspense>
             ) : null
@@ -685,4 +735,3 @@ export default function ClientApplicationDetailsPageContent() {
     </div>
   );
 }
-

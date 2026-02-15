@@ -9,7 +9,7 @@ import { gsap } from "gsap";
 import Logo from "../../../public/logos/world-visa-logo.webp";
 import Image from "next/image";
 import { ResetClientPasswordDialog } from "./ResetClientPassword";
-import { useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from "@tanstack/react-query";
 
 export function ClientHeader() {
   const { user, logout } = useAuth();
@@ -141,9 +141,7 @@ export function ClientHeader() {
                 <span className="text-sm font-medium text-gray-900">
                   {user?.username || "Client"}
                 </span>
-                <span className="text-xs text-gray-500 capitalize">
-                  Client
-                </span>
+                <span className="text-xs text-gray-500 capitalize">Client</span>
               </div>
             </div>
 
@@ -179,16 +177,18 @@ export function ClientHeader() {
             >
               <div className="relative w-6 h-6">
                 <Menu
-                  className={`h-5 w-5 absolute transition-all duration-300 ${isMobileMenuOpen
+                  className={`h-5 w-5 absolute transition-all duration-300 ${
+                    isMobileMenuOpen
                       ? "opacity-0 rotate-180"
                       : "opacity-100 rotate-0"
-                    }`}
+                  }`}
                 />
                 <X
-                  className={`h-5 w-5 absolute transition-all duration-300 ${isMobileMenuOpen
+                  className={`h-5 w-5 absolute transition-all duration-300 ${
+                    isMobileMenuOpen
                       ? "opacity-100 rotate-0"
                       : "opacity-0 -rotate-180"
-                    }`}
+                  }`}
                 />
               </div>
             </Button>
@@ -211,7 +211,7 @@ export function ClientHeader() {
                 isOpen={isResetPassword}
                 onClose={() => setIsResetPassword(false)}
               />
-              
+
               {/* User Profile Card */}
               <div className="flex items-center space-x-3 px-4 py-3 rounded-xl bg-gray-50/50 mb-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center">
@@ -221,9 +221,7 @@ export function ClientHeader() {
                   <p className="text-sm font-medium text-gray-900">
                     {user?.username || "Client"}
                   </p>
-                  <p className="text-xs text-gray-500 capitalize">
-                    Client
-                  </p>
+                  <p className="text-xs text-gray-500 capitalize">Client</p>
                 </div>
               </div>
 

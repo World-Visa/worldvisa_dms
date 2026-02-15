@@ -43,7 +43,7 @@ export function useChecklist(applicationId: string) {
           if (!Array.isArray(result.data)) {
             console.warn(
               "useChecklist: API returned non-array data",
-              result.data
+              result.data,
             );
             return { ...result, data: [] };
           }
@@ -63,7 +63,7 @@ export function useChecklist(applicationId: string) {
             error.message.includes("Token expired"))
         ) {
           console.warn(
-            "useChecklist: Authentication error, returning empty checklist"
+            "useChecklist: Authentication error, returning empty checklist",
           );
           return { success: true, data: [] };
         }
@@ -126,10 +126,10 @@ export function useChecklistMutations(applicationId: string) {
             data: old.data.map((item: ChecklistItem) =>
               item.checklist_id === data.data.checklist_id
                 ? { ...item, ...data.data }
-                : item
+                : item,
             ),
           };
-        }
+        },
       );
 
       toast.success("Checklist item updated successfully");
@@ -155,20 +155,26 @@ export function useChecklistMutations(applicationId: string) {
       });
 
       // Snapshot the previous value
-      const previousData = queryClient.getQueryData(["checklist", applicationId]);
+      const previousData = queryClient.getQueryData([
+        "checklist",
+        applicationId,
+      ]);
       // Optimistically update the cache
-      queryClient.setQueryData(["checklist", applicationId], (old: ChecklistResponse | undefined) => {
-        if (!old?.data) return old;
+      queryClient.setQueryData(
+        ["checklist", applicationId],
+        (old: ChecklistResponse | undefined) => {
+          if (!old?.data) return old;
 
-        return {
-          ...old,
-          data: old.data.map((item: ChecklistItem) =>
-            item.checklist_id === newItem.checklist_id
-              ? { ...item, description: newItem.description }
-              : item
-          ),
-        };
-      });
+          return {
+            ...old,
+            data: old.data.map((item: ChecklistItem) =>
+              item.checklist_id === newItem.checklist_id
+                ? { ...item, description: newItem.description }
+                : item,
+            ),
+          };
+        },
+      );
 
       // Return a context object with the snapshotted value
       return { previousData };
@@ -179,9 +185,12 @@ export function useChecklistMutations(applicationId: string) {
     onError: (error: Error, newItem, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       if (context?.previousData) {
-        queryClient.setQueryData(["checklist", applicationId], context.previousData);
+        queryClient.setQueryData(
+          ["checklist", applicationId],
+          context.previousData,
+        );
       }
-      
+
       Sentry.captureException(error, {
         tags: {
           operation: "update_checklist_description",
@@ -213,10 +222,10 @@ export function useChecklistMutations(applicationId: string) {
             ...old,
             data: old.data.filter(
               (item: ChecklistItem) =>
-                item.checklist_id !== variables.checklist_id
+                item.checklist_id !== variables.checklist_id,
             ),
           };
-        }
+        },
       );
 
       toast.success("Checklist item deleted successfully");
@@ -263,15 +272,26 @@ export function useChecklistMutations(applicationId: string) {
 
       // Parse error message to provide more specific feedback
       let userMessage = "Failed to save checklist";
-      
+
       if (error.message.includes("Validation failed")) {
         userMessage = "Please check your document selections and try again";
-      } else if (error.message.includes("Failed to save") && error.message.includes("out of")) {
+      } else if (
+        error.message.includes("Failed to save") &&
+        error.message.includes("out of")
+      ) {
         // Partial failure case
-        userMessage = "Some documents could not be saved. Please try again or contact support if the issue persists";
-      } else if (error.message.includes("Network error") || error.message.includes("fetch")) {
-        userMessage = "Network error. Please check your connection and try again";
-      } else if (error.message.includes("401") || error.message.includes("Unauthorized")) {
+        userMessage =
+          "Some documents could not be saved. Please try again or contact support if the issue persists";
+      } else if (
+        error.message.includes("Network error") ||
+        error.message.includes("fetch")
+      ) {
+        userMessage =
+          "Network error. Please check your connection and try again";
+      } else if (
+        error.message.includes("401") ||
+        error.message.includes("Unauthorized")
+      ) {
         userMessage = "Session expired. Please refresh the page and try again";
       } else {
         userMessage = `Failed to save checklist: ${error.message}`;
@@ -291,7 +311,7 @@ export function useChecklistMutations(applicationId: string) {
       });
 
       toast.success(
-        `Checklist updated successfully (${data.data.length} items)`
+        `Checklist updated successfully (${data.data.length} items)`,
       );
     },
     onError: (error: Error) => {
@@ -319,14 +339,14 @@ export function useChecklistMutations(applicationId: string) {
             ...old,
             data: old.data.filter(
               (item: ChecklistItem) =>
-                !variables.includes(item.checklist_id || "")
+                !variables.includes(item.checklist_id || ""),
             ),
           };
-        }
+        },
       );
 
       toast.success(
-        `Checklist items deleted successfully (${variables.length} items)`
+        `Checklist items deleted successfully (${variables.length} items)`,
       );
     },
     onError: (error: Error) => {
@@ -340,7 +360,7 @@ export function useChecklistMutations(applicationId: string) {
       // Provide more user-friendly error messages
       if (error.message.includes("not found")) {
         toast.error(
-          "Some checklist items were already deleted or not found. Please refresh the page to see the current state."
+          "Some checklist items were already deleted or not found. Please refresh the page to see the current state.",
         );
       } else {
         toast.error(`Failed to delete checklist items: ${error.message}`);
@@ -364,4 +384,3 @@ export function useChecklistMutations(applicationId: string) {
     isBatchDeleting: batchDelete.isPending,
   };
 }
-

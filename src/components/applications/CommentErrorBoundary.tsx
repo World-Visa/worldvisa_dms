@@ -1,7 +1,7 @@
-import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Button } from '../ui/button';
-import { AlertCircle, RefreshCw } from 'lucide-react';
-import * as Sentry from '@sentry/nextjs';
+import React, { Component, ErrorInfo, ReactNode } from "react";
+import { Button } from "../ui/button";
+import { AlertCircle, RefreshCw } from "lucide-react";
+import * as Sentry from "@sentry/nextjs";
 
 interface Props {
   children: ReactNode;
@@ -25,18 +25,18 @@ class CommentErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Comment system error:', error, errorInfo);
-    
+    console.error("Comment system error:", error, errorInfo);
+
     // Log to Sentry
     Sentry.captureException(error, {
       tags: {
-        component: 'CommentErrorBoundary',
-        errorBoundary: true
+        component: "CommentErrorBoundary",
+        errorBoundary: true,
       },
       extra: {
         errorInfo,
-        componentStack: errorInfo.componentStack
-      }
+        componentStack: errorInfo.componentStack,
+      },
     });
 
     // Call custom error handler if provided
@@ -68,7 +68,7 @@ class CommentErrorBoundary extends Component<Props, State> {
                   Something went wrong while loading comments. Please try again.
                 </p>
               </div>
-              <Button 
+              <Button
                 onClick={this.handleRetry}
                 variant="outline"
                 className="mt-4"

@@ -1,23 +1,26 @@
-'use client';
+"use client";
 
-import React, { memo, useRef, useState, useEffect } from 'react';
-import Link from 'next/link';
-import { DocumentCategoryInfo } from '@/types/documents';
-import { CategoryButton } from './CategoryButton';
-import { AddCompanyButton } from './AddCompanyButton';
-import { ActionButtons } from './ActionButtons';
-import { Company } from '@/types/documents';
-import { ChecklistState } from '@/types/checklist';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import type { Document } from '@/types/applications';
+import React, { memo, useRef, useState, useEffect } from "react";
+import Link from "next/link";
+import { DocumentCategoryInfo } from "@/types/documents";
+import { CategoryButton } from "./CategoryButton";
+import { AddCompanyButton } from "./AddCompanyButton";
+import { ActionButtons } from "./ActionButtons";
+import { Company } from "@/types/documents";
+import { ChecklistState } from "@/types/checklist";
+import { ChevronRight, ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import type { Document } from "@/types/applications";
 
 interface CategoryChipsProps {
   categories: DocumentCategoryInfo[];
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
   onRemoveCompany?: (companyName: string) => void;
-  onRemoveCompanyWithCheck?: (companyName: string, companyCategory: string) => void;
+  onRemoveCompanyWithCheck?: (
+    companyName: string,
+    companyCategory: string,
+  ) => void;
   documents?: Document[];
   categoryCounts?: Record<string, number>;
   disabled: boolean;
@@ -33,7 +36,7 @@ interface CategoryChipsProps {
   onSaveChecklist?: () => void;
   onCancelChecklist?: () => void;
   isSavingChecklist: boolean;
-  checklistActions?: 'inline' | 'link';
+  checklistActions?: "inline" | "link";
   applicationId?: string;
 }
 
@@ -57,7 +60,7 @@ export const CategoryChips = memo(function CategoryChips({
   onSaveChecklist,
   onCancelChecklist,
   isSavingChecklist,
-  checklistActions = 'inline',
+  checklistActions = "inline",
   applicationId,
 }: CategoryChipsProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -67,7 +70,8 @@ export const CategoryChips = memo(function CategoryChips({
   // Check if there's more content to scroll
   const checkScrollPosition = () => {
     if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      const { scrollLeft, scrollWidth, clientWidth } =
+        scrollContainerRef.current;
       const isAtStart = scrollLeft <= 1; // At or near start
       const isAtEnd = scrollLeft + clientWidth >= scrollWidth - 1; // -1 for rounding errors
       setShowLeftArrow(!isAtStart);
@@ -81,12 +85,12 @@ export const CategoryChips = memo(function CategoryChips({
     const timeoutId = setTimeout(() => {
       checkScrollPosition();
     }, 100);
-    
+
     // Also check on window resize
-    window.addEventListener('resize', checkScrollPosition);
+    window.addEventListener("resize", checkScrollPosition);
     return () => {
       clearTimeout(timeoutId);
-      window.removeEventListener('resize', checkScrollPosition);
+      window.removeEventListener("resize", checkScrollPosition);
     };
   }, [categories, companies]);
 
@@ -101,7 +105,7 @@ export const CategoryChips = memo(function CategoryChips({
       const scrollAmount = 300; // Fixed scroll amount
       scrollContainerRef.current.scrollBy({
         left: -scrollAmount,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };
@@ -112,13 +116,14 @@ export const CategoryChips = memo(function CategoryChips({
       const scrollAmount = 300; // Fixed scroll amount
       scrollContainerRef.current.scrollBy({
         left: scrollAmount,
-        behavior: 'smooth'
+        behavior: "smooth",
       });
     }
   };
 
-  const useLinkMode = checklistActions === 'link' && applicationId && !isClientView;
-  const hasChecklist = checklistState === 'saved';
+  const useLinkMode =
+    checklistActions === "link" && applicationId && !isClientView;
+  const hasChecklist = checklistState === "saved";
 
   return (
     <div className="hidden md:block space-y-6">
@@ -127,12 +132,12 @@ export const CategoryChips = memo(function CategoryChips({
         {useLinkMode && (
           <Button variant="outline" size="sm" asChild>
             <Link href={`/admin/applications/${applicationId}/checklist`}>
-              {hasChecklist ? 'Edit checklist' : 'Create checklist'}
+              {hasChecklist ? "Edit checklist" : "Create checklist"}
             </Link>
           </Button>
         )}
         {!useLinkMode && (
-          <ActionButtons 
+          <ActionButtons
             isClientView={isClientView}
             checklistState={checklistState}
             onStartCreatingChecklist={onStartCreatingChecklist}
@@ -142,7 +147,7 @@ export const CategoryChips = memo(function CategoryChips({
             isSavingChecklist={isSavingChecklist}
           />
         )}
-        <AddCompanyButton 
+        <AddCompanyButton
           checklistState={checklistState}
           isClientView={isClientView}
           hasCompanyDocuments={hasCompanyDocuments}
@@ -160,8 +165,8 @@ export const CategoryChips = memo(function CategoryChips({
           onScroll={handleScroll}
         >
           {categories.map((category) => (
-            <CategoryButton 
-              key={category.id} 
+            <CategoryButton
+              key={category.id}
               category={category}
               selectedCategory={selectedCategory}
               onCategoryChange={onCategoryChange}

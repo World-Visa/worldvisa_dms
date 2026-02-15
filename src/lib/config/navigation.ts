@@ -1,4 +1,4 @@
-import { FileText, FileCheck, ClipboardList, Users } from 'lucide-react';
+import { FileText, FileCheck, ClipboardList, Users } from "lucide-react";
 
 export interface NavigationTab {
   id: string;
@@ -10,33 +10,33 @@ export interface NavigationTab {
 // Define all available navigation items
 export const NAVIGATION_ITEMS = {
   DASHBOARD: {
-    id: 'manage-users',
-    label: 'Manage Admins',
-    href: '/admin/manage-users',
+    id: "manage-users",
+    label: "Manage Admins",
+    href: "/admin/manage-users",
     icon: Users,
   },
   APPLICATIONS: {
-    id: 'applications',
-    label: 'All Applications',
-    href: '/admin/applications',
+    id: "applications",
+    label: "All Applications",
+    href: "/admin/applications",
     icon: FileCheck,
   },
   REQUESTED_DOCS: {
-    id: 'requested-docs',
-    label: 'Review Requested Docs',
-    href: '/admin/requested-docs',
+    id: "requested-docs",
+    label: "Review Requested Docs",
+    href: "/admin/requested-docs",
     icon: FileText,
   },
   QUALITY_CHECK: {
-    id: 'quality-check',
-    label: 'Quality Check',
-    href: '/admin/quality-check',
+    id: "quality-check",
+    label: "Quality Check",
+    href: "/admin/quality-check",
     icon: FileCheck,
   },
   CHECKLIST_REQUESTS: {
-    id: 'checklist-requests',
-    label: 'Checklist Requests',
-    href: '/admin/checklist-requests',
+    id: "checklist-requests",
+    label: "Checklist Requests",
+    href: "/admin/checklist-requests",
     icon: ClipboardList,
   },
 } as const;
@@ -72,16 +72,21 @@ export const ROLE_NAVIGATION_CONFIG = {
 export type SupportedRole = keyof typeof ROLE_NAVIGATION_CONFIG;
 
 // Utility function to get navigation tabs for a role
-export function getNavigationTabsForRole(role: SupportedRole | undefined): NavigationTab[] {
+export function getNavigationTabsForRole(
+  role: SupportedRole | undefined,
+): NavigationTab[] {
   if (!role || !(role in ROLE_NAVIGATION_CONFIG)) {
     return [...ROLE_NAVIGATION_CONFIG.admin]; // Default fallback
   }
-  
+
   return [...ROLE_NAVIGATION_CONFIG[role]];
 }
 
 // Utility function to check if a role has access to a specific navigation item
-export function hasNavigationAccess(role: SupportedRole | undefined, navigationId: string): boolean {
+export function hasNavigationAccess(
+  role: SupportedRole | undefined,
+  navigationId: string,
+): boolean {
   const tabs = getNavigationTabsForRole(role);
-  return tabs.some(tab => tab.id === navigationId);
+  return tabs.some((tab) => tab.id === navigationId);
 }

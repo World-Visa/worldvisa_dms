@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import { TablePagination } from '@/components/common/TablePagination';
-import { CardContent } from '@/components/ui/card';
+import { TablePagination } from "@/components/common/TablePagination";
+import { CardContent } from "@/components/ui/card";
 import {
   Table,
   TableBody,
@@ -9,13 +9,17 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { useDocumentCommentCounts } from '@/hooks/useDocumentCommentCounts';
-import { Document } from '@/types/applications';
-import { ChecklistDocument, ChecklistState, DocumentRequirement } from '@/types/checklist';
-import { FileText } from 'lucide-react';
-import { memo } from 'react';
-import { ChecklistTableRow } from './ChecklistTableRow';
+} from "@/components/ui/table";
+import { useDocumentCommentCounts } from "@/hooks/useDocumentCommentCounts";
+import { Document } from "@/types/applications";
+import {
+  ChecklistDocument,
+  ChecklistState,
+  DocumentRequirement,
+} from "@/types/checklist";
+import { FileText } from "lucide-react";
+import { memo } from "react";
+import { ChecklistTableRow } from "./ChecklistTableRow";
 
 interface ChecklistTableItem {
   category: string;
@@ -40,9 +44,13 @@ interface ChecklistTableBodyProps {
   endIndex: number;
   onPageChange: (page: number) => void;
   checklistState: ChecklistState;
-  activeTab: 'current' | 'available';
+  activeTab: "current" | "available";
   selectedCategory: string;
-  onUpdateDocumentRequirement?: (category: string, documentType: string, requirement: DocumentRequirement) => void;
+  onUpdateDocumentRequirement?: (
+    category: string,
+    documentType: string,
+    requirement: DocumentRequirement,
+  ) => void;
   onAddToPendingChanges: (document: ChecklistDocument) => Promise<void>;
   onAddToPendingDeletions?: (checklistId: string) => void;
   onRemoveFromPendingChanges?: (document: ChecklistDocument) => void;
@@ -52,8 +60,16 @@ interface ChecklistTableBodyProps {
   pendingDeletions: string[];
   handleViewDocuments: (documentType: string, companyCategory?: string) => void;
   handleUploadClick: (documentType: string, category: string) => void;
-  handleReuploadClick: (documentId: string, documentType: string, category: string) => void;
-  handleViewRejectionDetails: (document: Document, documentType: string, category: string) => void;
+  handleReuploadClick: (
+    documentId: string,
+    documentType: string,
+    category: string,
+  ) => void;
+  handleViewRejectionDetails: (
+    document: Document,
+    documentType: string,
+    category: string,
+  ) => void;
   getCategoryBadgeStyle: (category: string) => string;
   isAddingDocument: boolean;
   addingDocumentId?: string;
@@ -105,14 +121,14 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
 
   // Get document IDs for comment counts from uploaded documents
   const documentIds = paginatedItems
-    .filter(item => item.isUploaded && item.uploadedDocument)
-    .map(item => (item.uploadedDocument as Document)?._id)
+    .filter((item) => item.isUploaded && item.uploadedDocument)
+    .map((item) => (item.uploadedDocument as Document)?._id)
     .filter(Boolean) as string[];
 
   const { data: commentCounts = {} } = useDocumentCommentCounts(documentIds);
 
   return (
-    <CardContent className='p-0'>
+    <CardContent className="p-0">
       <div className="">
         {/* Search Results Indicator */}
         {searchQuery && (
@@ -127,8 +143,9 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
               <span>Showing all {filteredItems.length} documents</span>
             ) : (
               <span>
-                Showing {filteredItems.length} of {categoryFilteredItems.length} documents
-                {filteredItems.length === 0 && ' - no matches found'}
+                Showing {filteredItems.length} of {categoryFilteredItems.length}{" "}
+                documents
+                {filteredItems.length === 0 && " - no matches found"}
               </span>
             )}
           </div>
@@ -153,16 +170,16 @@ export const ChecklistTableBody = memo(function ChecklistTableBody({
                   <TableCell colSpan={6} className="text-center py-8">
                     <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                     <p className="text-muted-foreground">
-                      {selectedCategory === 'submitted'
-                        ? 'No documents uploaded yet'
-                        : 'No documents in this category'}
+                      {selectedCategory === "submitted"
+                        ? "No documents uploaded yet"
+                        : "No documents in this category"}
                     </p>
                   </TableCell>
                 </TableRow>
               ) : (
                 paginatedItems.map((item, index) => (
                   <ChecklistTableRow
-                    key={`${item.category}-${item.documentType}-${item.checklist_id || 'new'}-${index}`}
+                    key={`${item.category}-${item.documentType}-${item.checklist_id || "new"}-${index}`}
                     item={item}
                     index={index}
                     startIndex={startIndex}

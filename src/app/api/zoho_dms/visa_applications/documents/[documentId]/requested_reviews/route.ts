@@ -1,46 +1,46 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { authenticatedFetch } from '@/lib/zoho';
-import { parseToken, isTokenExpired } from '@/lib/auth';
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { NextRequest, NextResponse } from "next/server";
+import { authenticatedFetch } from "@/lib/zoho";
+import { parseToken, isTokenExpired } from "@/lib/auth";
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { documentId: string } }
+  { params }: { params: { documentId: string } },
 ) {
   try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       return NextResponse.json(
-        { 
-          status: 'error', 
-          message: 'Authorization token required' 
+        {
+          status: "error",
+          message: "Authorization token required",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const token = authHeader.substring(7);
-    
+
     // Parse and validate token
-    const payload = parseToken(token);    
+    const payload = parseToken(token);
     if (!payload) {
       return NextResponse.json(
-        { 
-          status: 'error', 
-          message: 'Invalid token' 
+        {
+          status: "error",
+          message: "Invalid token",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     // Check if token is expired
     if (isTokenExpired(token)) {
       return NextResponse.json(
-        { 
-          status: 'error', 
-          message: 'Token expired' 
+        {
+          status: "error",
+          message: "Token expired",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -49,42 +49,42 @@ export async function DELETE(
 
     if (!documentId) {
       return NextResponse.json(
-        { 
-          status: 'error', 
-          message: 'Document ID is required' 
+        {
+          status: "error",
+          message: "Document ID is required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     if (!body.reviewId) {
       return NextResponse.json(
-        { 
-          status: 'error', 
-          message: 'Review ID is required' 
+        {
+          status: "error",
+          message: "Review ID is required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
     // Use the existing authenticatedFetch from zoho.ts
     const zohoUrl = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews`;
-    
+
     try {
       const response = await authenticatedFetch(zohoUrl, token, {
-        method: 'DELETE',
+        method: "DELETE",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(body),
       });
 
       // Emit real-time event for requested document deletion
       // Note: In a real implementation, you would emit this through your WebSocket/SSE system
-      console.log('📄 Requested document deleted:', {
+      console.log("📄 Requested document deleted:", {
         documentId,
         reviewId: body.reviewId,
-        requestedBy: payload.username
+        requestedBy: payload.username,
       });
 
       // TODO: Emit real-time event here
@@ -93,29 +93,32 @@ export async function DELETE(
 
       return NextResponse.json({
         success: true,
-        message: 'Requested document deleted successfully',
-        data: response
+        message: "Requested document deleted successfully",
+        data: response,
       });
     } catch (error) {
-      console.error('Error deleting requested document:', error);
-      
+      console.error("Error deleting requested document:", error);
+
       // Return success response for DELETE operations even if backend returns error
       // as the document might still be deleted
       return NextResponse.json({
         success: true,
-        message: 'Requested document deletion completed',
-        data: null
+        message: "Requested document deletion completed",
+        data: null,
       });
     }
   } catch (error) {
-    console.error('Delete requested document API error:', error);
-    
+    console.error("Delete requested document API error:", error);
+
     return NextResponse.json(
-      { 
-        status: 'error', 
-        message: error instanceof Error ? error.message : 'Failed to delete requested document' 
+      {
+        status: "error",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to delete requested document",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

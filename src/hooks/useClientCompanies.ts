@@ -1,6 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Company } from '@/types/documents';
-import { parseCompaniesFromDocuments } from '@/utils/companyParsing';
+import { useState, useEffect, useMemo } from "react";
+import { Company } from "@/types/documents";
+import { parseCompaniesFromDocuments } from "@/utils/companyParsing";
 
 interface UseClientCompaniesProps {
   allDocuments: Array<{ document_category?: string }> | undefined;
@@ -17,7 +17,7 @@ export function useClientCompanies({ allDocuments }: UseClientCompaniesProps) {
   useEffect(() => {
     if (allDocuments && allDocuments.length > 0) {
       const parsedCompanies = parseCompaniesFromDocuments(allDocuments);
-      
+
       // Update companies state with parsed data
       if (parsedCompanies.length > 0) {
         setCompanies(parsedCompanies);
@@ -61,8 +61,8 @@ export function useClientCompanies({ allDocuments }: UseClientCompaniesProps) {
   const handleRemoveCompany = (companyName: string) => {
     setCompanies((prev) =>
       prev.filter(
-        (company) => company.name.toLowerCase() !== companyName.toLowerCase()
-      )
+        (company) => company.name.toLowerCase() !== companyName.toLowerCase(),
+      ),
     );
   };
 
@@ -72,7 +72,3 @@ export function useClientCompanies({ allDocuments }: UseClientCompaniesProps) {
     handleRemoveCompany,
   };
 }
-
-
-
-

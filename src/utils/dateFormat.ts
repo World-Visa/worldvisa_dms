@@ -7,23 +7,23 @@ export function formatDate(dateString: string): string {
   try {
     // Handle different date formats
     let date: Date;
-    
-    if (dateString.includes('-')) {
+
+    if (dateString.includes("-")) {
       // YYYY-MM-DD format - parse as UTC to avoid timezone issues
-      const [year, month, day] = dateString.split('-').map(Number);
+      const [year, month, day] = dateString.split("-").map(Number);
       date = new Date(year, month - 1, day); // month is 0-indexed
     } else {
       // Other formats - use the original parsing
       date = new Date(dateString);
     }
-    
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
+
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
     });
   } catch (error) {
-    console.error('Error formatting date:', error);
+    console.error("Error formatting date:", error);
     return dateString; // Return original string if formatting fails
   }
 }
@@ -40,7 +40,7 @@ export function formatDateRange(fromDate: string, toDate: string): string {
     const formattedTo = formatDate(toDate);
     return `${formattedFrom} - ${formattedTo}`;
   } catch (error) {
-    console.error('Error formatting date range:', error);
+    console.error("Error formatting date range:", error);
     return `${fromDate} - ${toDate}`; // Return original strings if formatting fails
   }
 }

@@ -1,24 +1,24 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { DateRangePicker } from '@/components/ui/date-range-picker';
-import { Search, Filter, X } from 'lucide-react';
-import { DateRange } from 'react-day-picker';
-import { cn } from '@/lib/utils';
+} from "@/components/ui/select";
+import { DateRangePicker } from "@/components/ui/date-range-picker";
+import { Search, Filter, X } from "lucide-react";
+import { DateRange } from "react-day-picker";
+import { cn } from "@/lib/utils";
 
 export interface QualityCheckFilters {
   search: string;
-  searchType: 'name' | 'email' | 'phone';
+  searchType: "name" | "email" | "phone";
   status: string;
   handledBy: string;
   qualityCheckFrom: string;
@@ -28,7 +28,7 @@ export interface QualityCheckFilters {
 
 interface QualityCheckFiltersProps {
   search: string;
-  searchType: 'name' | 'email' | 'phone';
+  searchType: "name" | "email" | "phone";
   status: string;
   handledBy: string;
   qualityCheckFrom: string;
@@ -36,7 +36,7 @@ interface QualityCheckFiltersProps {
   limit: number;
   isSearchMode: boolean;
   onSearchChange: (value: string) => void;
-  onSearchTypeChange: (type: 'name' | 'email' | 'phone') => void;
+  onSearchTypeChange: (type: "name" | "email" | "phone") => void;
   onSearchClick: () => void;
   onStatusChange: (status: string) => void;
   onHandledByChange: (handledBy: string) => void;
@@ -69,7 +69,12 @@ export function QualityCheckFilters({
 }: QualityCheckFiltersProps) {
   const [showFilters, setShowFilters] = useState(false);
 
-  const hasActiveFilters = status !== 'all' || handledBy !== '' || qualityCheckFrom !== '' || dateRange?.from || dateRange?.to;
+  const hasActiveFilters =
+    status !== "all" ||
+    handledBy !== "" ||
+    qualityCheckFrom !== "" ||
+    dateRange?.from ||
+    dateRange?.to;
 
   const handleFilterToggle = () => {
     setShowFilters(!showFilters);
@@ -83,9 +88,11 @@ export function QualityCheckFilters({
           <div className="p-1.5 bg-blue-100 rounded-lg">
             <Search className="h-4 w-4 text-blue-600" />
           </div>
-          <h3 className="text-lg font-semibold text-gray-900">Search Applications</h3>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Search Applications
+          </h3>
         </div>
-        
+
         <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <div className="flex gap-3">
@@ -118,25 +125,33 @@ export function QualityCheckFilters({
               </Button>
             </div>
           </div>
-          
+
           <div className="flex gap-2">
             <Button
               variant="outline"
               onClick={handleFilterToggle}
               className={cn(
                 "flex items-center gap-2 h-12 px-4 border-gray-200 rounded-xl shadow-sm",
-                showFilters && "bg-blue-50 border-blue-300 text-blue-700"
+                showFilters && "bg-blue-50 border-blue-300 text-blue-700",
               )}
             >
               <Filter className="h-4 w-4" />
               <span className="hidden sm:inline font-medium">Filters</span>
               {hasActiveFilters && (
                 <span className="ml-1 px-2 py-0.5 text-xs bg-blue-100 text-blue-800 rounded-full font-medium">
-                  {[status !== 'all', handledBy !== '', qualityCheckFrom !== '', dateRange?.from, dateRange?.to].filter(Boolean).length}
+                  {
+                    [
+                      status !== "all",
+                      handledBy !== "",
+                      qualityCheckFrom !== "",
+                      dateRange?.from,
+                      dateRange?.to,
+                    ].filter(Boolean).length
+                  }
                 </span>
               )}
             </Button>
-            
+
             {hasActiveFilters && (
               <Button
                 variant="outline"
@@ -158,9 +173,11 @@ export function QualityCheckFilters({
             <div className="p-1.5 bg-gray-100 rounded-lg">
               <Filter className="h-4 w-4 text-gray-600" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900">Advanced Filters</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Advanced Filters
+            </h3>
           </div>
-          
+
           <div className="p-6 bg-gradient-to-br from-gray-50 to-gray-100/50 border border-gray-200 rounded-2xl space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {/* Status Filter */}
@@ -227,8 +244,13 @@ export function QualityCheckFilters({
             {/* Results Per Page */}
             <div className="flex items-center justify-between pt-4 border-t border-gray-200">
               <div className="flex items-center gap-3">
-                <Label className="text-sm font-semibold text-gray-700">Results per page:</Label>
-                <Select value={limit.toString()} onValueChange={(value) => onLimitChange(Number(value))}>
+                <Label className="text-sm font-semibold text-gray-700">
+                  Results per page:
+                </Label>
+                <Select
+                  value={limit.toString()}
+                  onValueChange={(value) => onLimitChange(Number(value))}
+                >
                   <SelectTrigger className="w-24 h-9 border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm">
                     <SelectValue />
                   </SelectTrigger>
@@ -240,7 +262,7 @@ export function QualityCheckFilters({
                   </SelectContent>
                 </Select>
               </div>
-              
+
               {hasActiveFilters && (
                 <Button
                   variant="outline"
@@ -265,7 +287,9 @@ export function QualityCheckFilters({
                 <Search className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <p className="text-sm font-semibold text-blue-900">Search Active</p>
+                <p className="text-sm font-semibold text-blue-900">
+                  Search Active
+                </p>
                 <p className="text-xs text-blue-700">
                   Showing results for &quot;{search}&quot; in {searchType}
                 </p>

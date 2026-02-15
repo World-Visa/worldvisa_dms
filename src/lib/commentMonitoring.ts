@@ -1,4 +1,4 @@
-import * as Sentry from '@sentry/nextjs';
+import * as Sentry from "@sentry/nextjs";
 
 export interface CommentMetrics {
   totalComments: number;
@@ -15,7 +15,7 @@ export class CommentMonitor {
     commentsByUser: {},
     averageResponseTime: 0,
     errorRate: 0,
-    realtimeConnectionUptime: 0
+    realtimeConnectionUptime: 0,
   };
   private responseTimes: number[] = [];
   private errors: number = 0;
@@ -35,26 +35,26 @@ export class CommentMonitor {
     this.totalRequests++;
     this.responseTimes.push(responseTime);
     this.metrics.totalComments++;
-    
+
     if (!this.metrics.commentsByUser[user]) {
       this.metrics.commentsByUser[user] = 0;
     }
     this.metrics.commentsByUser[user]++;
 
     // Update average response time
-    this.metrics.averageResponseTime = 
+    this.metrics.averageResponseTime =
       this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length;
 
     // Log to Sentry for monitoring
     Sentry.addBreadcrumb({
-      message: 'Comment created',
-      category: 'comment',
+      message: "Comment created",
+      category: "comment",
       data: {
         user,
         responseTime,
-        totalComments: this.metrics.totalComments
+        totalComments: this.metrics.totalComments,
       },
-      level: 'info'
+      level: "info",
     });
   }
 
@@ -66,45 +66,45 @@ export class CommentMonitor {
 
     Sentry.captureException(error, {
       tags: {
-        component: 'comment_system',
-        operation: 'comment_creation'
+        component: "comment_system",
+        operation: "comment_creation",
       },
       extra: {
         ...context,
         errorRate: this.metrics.errorRate,
-        totalErrors: this.errors
-      }
+        totalErrors: this.errors,
+      },
     });
   }
 
   // Track real-time connection events
   trackRealtimeConnection(isConnected: boolean) {
     const now = Date.now();
-    
+
     if (isConnected && !this.isConnected) {
       // Connection established
       this.connectionStartTime = now;
       this.isConnected = true;
-      
+
       Sentry.addBreadcrumb({
-        message: 'Realtime connection established',
-        category: 'realtime',
-        level: 'info'
+        message: "Realtime connection established",
+        category: "realtime",
+        level: "info",
       });
     } else if (!isConnected && this.isConnected) {
       // Connection lost
       if (this.connectionStartTime > 0) {
         const uptime = now - this.connectionStartTime;
         this.metrics.realtimeConnectionUptime = uptime;
-        
+
         Sentry.addBreadcrumb({
-          message: 'Realtime connection lost',
-          category: 'realtime',
+          message: "Realtime connection lost",
+          category: "realtime",
           data: {
             uptimeMs: uptime,
-            uptimeMinutes: Math.round(uptime / 60000)
+            uptimeMinutes: Math.round(uptime / 60000),
           },
-          level: 'warning'
+          level: "warning",
         });
       }
       this.isConnected = false;
@@ -112,21 +112,25 @@ export class CommentMonitor {
   }
 
   // Track comment fetch performance
-  trackCommentFetch(documentId: string, responseTime: number, commentCount: number) {
+  trackCommentFetch(
+    documentId: string,
+    responseTime: number,
+    commentCount: number,
+  ) {
     this.responseTimes.push(responseTime);
-    this.metrics.averageResponseTime = 
+    this.metrics.averageResponseTime =
       this.responseTimes.reduce((a, b) => a + b, 0) / this.responseTimes.length;
 
     Sentry.addBreadcrumb({
-      message: 'Comments fetched',
-      category: 'comment',
+      message: "Comments fetched",
+      category: "comment",
       data: {
         documentId,
         responseTime,
         commentCount,
-        averageResponseTime: this.metrics.averageResponseTime
+        averageResponseTime: this.metrics.averageResponseTime,
       },
-      level: 'info'
+      level: "info",
     });
   }
 
@@ -142,7 +146,7 @@ export class CommentMonitor {
       commentsByUser: {},
       averageResponseTime: 0,
       errorRate: 0,
-      realtimeConnectionUptime: 0
+      realtimeConnectionUptime: 0,
     };
     this.responseTimes = [];
     this.errors = 0;
@@ -152,36 +156,41 @@ export class CommentMonitor {
   }
 
   // Report performance issues
-  reportPerformanceIssue(operation: string, responseTime: number, threshold: number = 2000) {
+  reportPerformanceIssue(
+    operation: string,
+    responseTime: number,
+    threshold: number = 2000,
+  ) {
     if (responseTime > threshold) {
       Sentry.captureMessage(`Slow comment operation: ${operation}`, {
-        level: 'warning',
+        level: "warning",
         tags: {
-          component: 'comment_system',
-          operation
+          component: "comment_system",
+          operation,
         },
         extra: {
           responseTime,
           threshold,
-          averageResponseTime: this.metrics.averageResponseTime
-        }
+          averageResponseTime: this.metrics.averageResponseTime,
+        },
       });
     }
   }
 
   // Report high error rate
   reportHighErrorRate() {
-    if (this.metrics.errorRate > 10) { // More than 10% error rate
-      Sentry.captureMessage('High comment system error rate detected', {
-        level: 'error',
+    if (this.metrics.errorRate > 10) {
+      // More than 10% error rate
+      Sentry.captureMessage("High comment system error rate detected", {
+        level: "error",
         tags: {
-          component: 'comment_system'
+          component: "comment_system",
         },
         extra: {
           errorRate: this.metrics.errorRate,
           totalErrors: this.errors,
-          totalRequests: this.totalRequests
-        }
+          totalRequests: this.totalRequests,
+        },
       });
     }
   }

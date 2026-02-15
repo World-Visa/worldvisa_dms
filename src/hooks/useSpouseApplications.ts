@@ -1,8 +1,14 @@
-'use client';
+"use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { getSpouseApplications, searchSpouseApplications } from "@/lib/api/spouseApplications";
-import { ApplicationsResponse, ApplicationsFilters } from "@/types/applications";
+import {
+  getSpouseApplications,
+  searchSpouseApplications,
+} from "@/lib/api/spouseApplications";
+import {
+  ApplicationsResponse,
+  ApplicationsFilters,
+} from "@/types/applications";
 
 /**
  * Hook to fetch spouse skill assessment applications with pagination and filters
@@ -20,15 +26,19 @@ export const useSpouseApplications = (filters: ApplicationsFilters) => {
     retry: 2,
     refetchOnWindowFocus: isRecentActivity, // Refetch on focus for recent activities
     meta: {
-      errorMessage: 'Failed to load spouse applications. Please try again.'
-    }
+      errorMessage: "Failed to load spouse applications. Please try again.",
+    },
   });
 };
 
 /**
  * Hook to search spouse applications by name, phone, or email
  */
-export const useSearchSpouseApplications = (searchParams: { name?: string; phone?: string; email?: string }) => {
+export const useSearchSpouseApplications = (searchParams: {
+  name?: string;
+  phone?: string;
+  email?: string;
+}) => {
   return useQuery<ApplicationsResponse>({
     queryKey: ["spouse-applications-search", searchParams],
     queryFn: () => searchSpouseApplications(searchParams),
@@ -38,7 +48,7 @@ export const useSearchSpouseApplications = (searchParams: { name?: string; phone
     retry: 2,
     refetchOnWindowFocus: false,
     meta: {
-      errorMessage: 'Failed to search spouse applications. Please try again.'
-    }
+      errorMessage: "Failed to search spouse applications. Please try again.",
+    },
   });
 };

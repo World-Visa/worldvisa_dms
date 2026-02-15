@@ -1,40 +1,44 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { DatePicker } from '@/components/ui/date-picker';
-import { Upload, X, FileText, File, Plus } from 'lucide-react';
-import Image from 'next/image';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { useAuth } from '@/hooks/useAuth';
-import { useUploadStage2Document, useUpdateStage2Document, useReuploadStage2Document } from '@/hooks/useStage2Documents';
-import { Combobox } from '@/components/ui/combobox';
-import { MultiSelect } from '@/components/ui/multi-select';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { DatePicker } from "@/components/ui/date-picker";
+import { Upload, X, FileText, File, Plus } from "lucide-react";
+import Image from "next/image";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  useUploadStage2Document,
+  useUpdateStage2Document,
+  useReuploadStage2Document,
+} from "@/hooks/useStage2Documents";
+import { Combobox } from "@/components/ui/combobox";
+import { MultiSelect } from "@/components/ui/multi-select";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   AUSTRALIAN_VISA_SUBCLASSES,
   AUSTRALIAN_STATES,
   ANZSCO_CODES,
   getAnzscoCodeByCode,
-} from '@/lib/constants/australianData';
-import type { EOIModalProps } from '@/types/stage2Documents';
+} from "@/lib/constants/australianData";
+import type { EOIModalProps } from "@/types/stage2Documents";
 
 interface UploadedFile {
   file: File;
@@ -47,27 +51,30 @@ export function EOIModal({
   onClose,
   applicationId,
   document,
-  mode = 'create',
+  mode = "create",
 }: EOIModalProps) {
   const { user } = useAuth();
-  const [subclass, setSubclass] = useState('');
+  const [subclass, setSubclass] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
-  const [point, setPoint] = useState('');
+  const [point, setPoint] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [selectedAnzscoCode, setSelectedAnzscoCode] = useState('');
+  const [selectedAnzscoCode, setSelectedAnzscoCode] = useState("");
   const [isCustomAnzscoMode, setIsCustomAnzscoMode] = useState(false);
-  const [customAnzscoCode, setCustomAnzscoCode] = useState('');
-  const [customAnzscoName, setCustomAnzscoName] = useState('');
-  const [customAssessingAuthority, setCustomAssessingAuthority] = useState('');
+  const [customAnzscoCode, setCustomAnzscoCode] = useState("");
+  const [customAnzscoName, setCustomAnzscoName] = useState("");
+  const [customAssessingAuthority, setCustomAssessingAuthority] = useState("");
   const [availableAnzscoOptions, setAvailableAnzscoOptions] = useState(
     ANZSCO_CODES.map((code) => ({
       value: code.anzsco_code,
       label: `${code.anzsco_code} - ${code.name} (${code.assessing_authority})`,
-    }))
+    })),
   );
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState({ current: 0, total: 0 });
+  const [uploadProgress, setUploadProgress] = useState({
+    current: 0,
+    total: 0,
+  });
   const [replacementFile, setReplacementFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
@@ -77,7 +84,7 @@ export function EOIModal({
   const reuploadMutation = useReuploadStage2Document();
 
   const subclassOptions = AUSTRALIAN_VISA_SUBCLASSES.filter((s) =>
-    ['189', '190', '491'].includes(s.code)
+    ["189", "190", "491"].includes(s.code),
   ).map((s) => ({
     value: s.code,
     label: s.label,
@@ -90,16 +97,16 @@ export function EOIModal({
 
   const pointOptions = Array.from(
     { length: Math.floor((110 - 65) / 5) + 1 },
-    (_, index) => (65 + index * 5).toString()
+    (_, index) => (65 + index * 5).toString(),
   );
 
   useEffect(() => {
-    if (mode === 'edit' && document) {
-      setSubclass(document.subclass || '');
+    if (mode === "edit" && document) {
+      setSubclass(document.subclass || "");
       setSelectedStates(document.state ? [document.state] : []);
-      setPoint(document.point?.toString() || '');
+      setPoint(document.point?.toString() || "");
       setDate(document.date ? new Date(document.date) : undefined);
-      const skillBody = document.skill_assessing_body || '';
+      const skillBody = document.skill_assessing_body || "";
       if (skillBody) {
         const matchingCode = getAnzscoCodeByCode(skillBody);
         if (matchingCode) {
@@ -108,28 +115,32 @@ export function EOIModal({
           setSelectedAnzscoCode(skillBody);
           setAvailableAnzscoOptions((prev) => {
             const exists = prev.some((opt) => opt.value === skillBody);
-            if (!exists) return [...prev, { value: skillBody, label: `Custom - ${skillBody}` }];
+            if (!exists)
+              return [
+                ...prev,
+                { value: skillBody, label: `Custom - ${skillBody}` },
+              ];
             return prev;
           });
         }
       } else {
-        setSelectedAnzscoCode('');
+        setSelectedAnzscoCode("");
       }
       setIsCustomAnzscoMode(false);
-      setCustomAnzscoCode('');
-      setCustomAnzscoName('');
-      setCustomAssessingAuthority('');
+      setCustomAnzscoCode("");
+      setCustomAnzscoName("");
+      setCustomAssessingAuthority("");
       setReplacementFile(null);
     } else {
-      setSubclass('');
+      setSubclass("");
       setSelectedStates([]);
-      setPoint('');
+      setPoint("");
       setDate(undefined);
-      setSelectedAnzscoCode('');
+      setSelectedAnzscoCode("");
       setIsCustomAnzscoMode(false);
-      setCustomAnzscoCode('');
-      setCustomAnzscoName('');
-      setCustomAssessingAuthority('');
+      setCustomAnzscoCode("");
+      setCustomAnzscoName("");
+      setCustomAssessingAuthority("");
       setUploadedFiles([]);
       setUploadProgress({ current: 0, total: 0 });
       setReplacementFile(null);
@@ -138,21 +149,28 @@ export function EOIModal({
 
   const validateFile = (file: File): boolean => {
     const fileName = file.name.toLowerCase();
-    const allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+    const allowedExtensions = [
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".jpg",
+      ".jpeg",
+      ".png",
+    ];
     const allowedMimeTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
     ];
     if (
       !allowedExtensions.some((ext) => fileName.endsWith(ext)) ||
       !allowedMimeTypes.includes(file.type)
     ) {
       toast.error(
-        `${file.name}: only PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png) are allowed.`
+        `${file.name}: only PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png) are allowed.`,
       );
       return false;
     }
@@ -176,7 +194,7 @@ export function EOIModal({
       id: Math.random().toString(36).substr(2, 9),
     }));
     setUploadedFiles((prev) => [...prev, ...newFiles]);
-    if (fileInputRef.current) fileInputRef.current.value = '';
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const removeFile = (fileId: string) => {
@@ -217,56 +235,56 @@ export function EOIModal({
         ]);
       }
       setSelectedAnzscoCode(code);
-      setCustomAnzscoCode('');
-      setCustomAnzscoName('');
-      setCustomAssessingAuthority('');
+      setCustomAnzscoCode("");
+      setCustomAnzscoName("");
+      setCustomAssessingAuthority("");
       setIsCustomAnzscoMode(false);
     }
   };
 
   const handleToggleCustomAnzscoMode = () => {
     setIsCustomAnzscoMode(!isCustomAnzscoMode);
-    setCustomAnzscoCode('');
-    setCustomAnzscoName('');
-    setCustomAssessingAuthority('');
-    if (!isCustomAnzscoMode) setSelectedAnzscoCode('');
+    setCustomAnzscoCode("");
+    setCustomAnzscoName("");
+    setCustomAssessingAuthority("");
+    if (!isCustomAnzscoMode) setSelectedAnzscoCode("");
   };
 
   const handleSubmit = async () => {
     if (!subclass) {
-      toast.error('Please select a subclass.');
+      toast.error("Please select a subclass.");
       return;
     }
     if (!point) {
-      toast.error('Please select points.');
+      toast.error("Please select points.");
       return;
     }
     if (!date) {
-      toast.error('Please select a date.');
+      toast.error("Please select a date.");
       return;
     }
-    if (mode === 'create') {
+    if (mode === "create") {
       if (selectedStates.length === 0) {
-        toast.error('Please select at least one state.');
+        toast.error("Please select at least one state.");
         return;
       }
       if (uploadedFiles.length === 0) {
-        toast.error('Please upload at least one file.');
+        toast.error("Please upload at least one file.");
         return;
       }
     }
     if (!user?.username) {
-      toast.error('User information not available. Please login again.');
+      toast.error("User information not available. Please login again.");
       return;
     }
 
-    const formattedDate = format(date, 'yyyy-MM-dd');
+    const formattedDate = format(date, "yyyy-MM-dd");
     const anzscoValue = selectedAnzscoCode || undefined;
 
     setIsUploading(true);
 
     try {
-      if (mode === 'edit' && document) {
+      if (mode === "edit" && document) {
         if (replacementFile) {
           await reuploadMutation.mutateAsync({
             applicationId,
@@ -319,7 +337,7 @@ export function EOIModal({
               document_name: documentName,
               document_type: documentType,
               uploaded_by: user.username,
-              type: 'eoi',
+              type: "eoi",
               subclass,
               state: stateCode,
               point: Number(point),
@@ -335,12 +353,14 @@ export function EOIModal({
       }
 
       if (failed.length > 0) {
-        toast.error(`Failed to upload: ${failed.slice(0, 3).join(', ')}${failed.length > 3 ? '...' : ''}`);
+        toast.error(
+          `Failed to upload: ${failed.slice(0, 3).join(", ")}${failed.length > 3 ? "..." : ""}`,
+        );
       } else {
         handleClose();
       }
     } catch (error) {
-      console.error('Submit error:', error);
+      console.error("Submit error:", error);
     } finally {
       setIsUploading(false);
       setUploadProgress({ current: 0, total: 0 });
@@ -349,41 +369,43 @@ export function EOIModal({
 
   const handleClose = () => {
     if (!isUploading) {
-      setSubclass('');
+      setSubclass("");
       setSelectedStates([]);
-      setPoint('');
+      setPoint("");
       setDate(undefined);
-      setSelectedAnzscoCode('');
+      setSelectedAnzscoCode("");
       setUploadedFiles([]);
       setReplacementFile(null);
-      if (replaceFileInputRef.current) replaceFileInputRef.current.value = '';
+      if (replaceFileInputRef.current) replaceFileInputRef.current.value = "";
       onClose();
     }
   };
 
-  const handleReplaceFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleReplaceFileSelect = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const file = event.target.files?.[0];
     if (!file) return;
     if (!validateFile(file)) return;
     setReplacementFile(file);
-    event.target.value = '';
+    event.target.value = "";
   };
 
   const clearReplacementFile = () => {
     setReplacementFile(null);
-    if (replaceFileInputRef.current) replaceFileInputRef.current.value = '';
+    if (replaceFileInputRef.current) replaceFileInputRef.current.value = "";
   };
 
   const totalUploads = uploadProgress.total;
   const currentUpload = uploadProgress.current;
-  const showProgress = mode === 'create' && isUploading && totalUploads > 0;
+  const showProgress = mode === "create" && isUploading && totalUploads > 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'edit' ? 'Edit EOI Document' : 'Create EOI Document'}
+            {mode === "edit" ? "Edit EOI Document" : "Create EOI Document"}
           </DialogTitle>
         </DialogHeader>
 
@@ -404,8 +426,8 @@ export function EOIModal({
 
           {/* States - multi-select in create, single display in edit */}
           <div className="space-y-2">
-            <Label>State{mode === 'create' ? 's' : ''} *</Label>
-            {mode === 'create' ? (
+            <Label>State{mode === "create" ? "s" : ""} *</Label>
+            {mode === "create" ? (
               <MultiSelect
                 options={stateOptions}
                 value={selectedStates}
@@ -416,9 +438,7 @@ export function EOIModal({
               />
             ) : (
               <div className="px-3 py-2 border rounded-md bg-muted/50 text-sm">
-                {document?.state
-                  ? getStateDisplay(document.state)
-                  : 'N/A'}
+                {document?.state ? getStateDisplay(document.state) : "N/A"}
               </div>
             )}
           </div>
@@ -442,7 +462,9 @@ export function EOIModal({
                     <span className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-xs">
-                    <span className="bg-background px-2 text-muted-foreground">or</span>
+                    <span className="bg-background px-2 text-muted-foreground">
+                      or
+                    </span>
                   </div>
                 </div>
                 <Button
@@ -470,13 +492,17 @@ export function EOIModal({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="custom-assessing-authority">Assessing Authority *</Label>
+                    <Label htmlFor="custom-assessing-authority">
+                      Assessing Authority *
+                    </Label>
                     <Input
                       id="custom-assessing-authority"
                       type="text"
                       placeholder="e.g., VETASSESS"
                       value={customAssessingAuthority}
-                      onChange={(e) => setCustomAssessingAuthority(e.target.value)}
+                      onChange={(e) =>
+                        setCustomAssessingAuthority(e.target.value)
+                      }
                       disabled={isUploading}
                     />
                   </div>
@@ -490,7 +516,9 @@ export function EOIModal({
                     value={customAnzscoName}
                     onChange={(e) => setCustomAnzscoName(e.target.value)}
                     disabled={isUploading}
-                    onKeyDown={(e) => e.key === 'Enter' && handleAddCustomAnzsco()}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleAddCustomAnzsco()
+                    }
                   />
                 </div>
                 <div className="flex items-center gap-2">
@@ -525,7 +553,11 @@ export function EOIModal({
           {/* Points */}
           <div className="space-y-2">
             <Label htmlFor="point">Points *</Label>
-            <Select value={point} onValueChange={setPoint} disabled={isUploading}>
+            <Select
+              value={point}
+              onValueChange={setPoint}
+              disabled={isUploading}
+            >
               <SelectTrigger id="point">
                 <SelectValue placeholder="Select points" />
               </SelectTrigger>
@@ -551,7 +583,7 @@ export function EOIModal({
           </div>
 
           {/* File Upload - create only */}
-          {mode === 'create' && (
+          {mode === "create" && (
             <div className="space-y-3">
               <Label>Upload Files *</Label>
               <div
@@ -571,7 +603,8 @@ export function EOIModal({
                   Drop your files here, or click to browse
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  <strong>PDF, Word, images</strong> • Max 5MB per file. Document name = file name.
+                  <strong>PDF, Word, images</strong> • Max 5MB per file.
+                  Document name = file name.
                 </p>
                 <input
                   ref={fileInputRef}
@@ -585,22 +618,27 @@ export function EOIModal({
             </div>
           )}
 
-          {mode === 'edit' && document && (
+          {mode === "edit" && document && (
             <div className="space-y-3">
               <Label>Current File</Label>
               <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted">
                 <FileText className="h-5 w-5 text-blue-600 shrink-0" />
-                <span className="text-sm font-medium">{document.file_name}</span>
+                <span className="text-sm font-medium">
+                  {document.file_name}
+                </span>
               </div>
               <div className="space-y-2">
                 <Label>Replace with new file</Label>
                 <p className="text-xs text-muted-foreground">
-                  Optionally choose a new file to replace the current document. Same types: PDF, Word, images. Max 5MB.
+                  Optionally choose a new file to replace the current document.
+                  Same types: PDF, Word, images. Max 5MB.
                 </p>
                 {replacementFile ? (
                   <div className="flex items-center gap-3 p-3 border rounded-lg bg-primary/5">
                     <FileText className="h-5 w-5 shrink-0" />
-                    <span className="text-sm font-medium flex-1 truncate">{replacementFile.name}</span>
+                    <span className="text-sm font-medium flex-1 truncate">
+                      {replacementFile.name}
+                    </span>
                     <Button
                       type="button"
                       variant="ghost"
@@ -617,7 +655,9 @@ export function EOIModal({
                     onClick={() => replaceFileInputRef.current?.click()}
                   >
                     <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">Click to choose a file</p>
+                    <p className="text-sm text-muted-foreground">
+                      Click to choose a file
+                    </p>
                     <input
                       ref={replaceFileInputRef}
                       type="file"
@@ -631,13 +671,14 @@ export function EOIModal({
             </div>
           )}
 
-          {mode === 'create' && uploadedFiles.length > 0 && (
+          {mode === "create" && uploadedFiles.length > 0 && (
             <div className="space-y-3">
               <Label>Files to Upload</Label>
               {uploadedFiles.length > 0 && selectedStates.length > 0 && (
                 <p className="text-xs text-muted-foreground">
-                  {uploadedFiles.length} file(s) × {selectedStates.length} state(s) ={' '}
-                  {uploadedFiles.length * selectedStates.length} EOI document(s) will be created.
+                  {uploadedFiles.length} file(s) × {selectedStates.length}{" "}
+                  state(s) = {uploadedFiles.length * selectedStates.length} EOI
+                  document(s) will be created.
                 </p>
               )}
               <div className="space-y-2">
@@ -660,13 +701,19 @@ export function EOIModal({
                       />
                     )}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{uf.file.name}</p>
+                      <p className="text-sm font-medium truncate">
+                        {uf.file.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {(uf.file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                     </div>
                     {!isUploading && (
-                      <Button variant="ghost" size="sm" onClick={() => removeFile(uf.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(uf.id)}
+                      >
                         <X className="h-4 w-4" />
                       </Button>
                     )}
@@ -679,30 +726,45 @@ export function EOIModal({
           {showProgress && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Uploading EOI documents...</span>
+                <span className="text-muted-foreground">
+                  Uploading EOI documents...
+                </span>
                 <span className="font-medium">
                   {currentUpload} of {totalUploads}
                 </span>
               </div>
-              <Progress value={totalUploads ? (currentUpload / totalUploads) * 100 : 0} className="h-2" />
+              <Progress
+                value={totalUploads ? (currentUpload / totalUploads) * 100 : 0}
+                className="h-2"
+              />
             </div>
           )}
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isUploading}>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isUploading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isUploading} className="flex items-center gap-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={isUploading}
+            className="flex items-center gap-2"
+          >
             {isUploading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-                {mode === 'edit' ? 'Updating...' : `Uploading ${currentUpload > 0 ? `${currentUpload}/${totalUploads}...` : '...'}`}
+                {mode === "edit"
+                  ? "Updating..."
+                  : `Uploading ${currentUpload > 0 ? `${currentUpload}/${totalUploads}...` : "..."}`}
               </>
             ) : (
               <>
                 <Upload className="h-4 w-4" />
-                {mode === 'edit' ? 'Update Document' : 'Upload Document(s)'}
+                {mode === "edit" ? "Update Document" : "Upload Document(s)"}
               </>
             )}
           </Button>

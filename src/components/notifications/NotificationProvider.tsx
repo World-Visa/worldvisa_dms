@@ -20,7 +20,7 @@ export function NotificationProvider({
     // We don't need to call useNotifications here since it's already called in NotificationBell and NotificationPanel
     // The issue was that calling it here was causing multiple registrations
     console.log(
-      "🔔 NotificationProvider: Skipping useNotifications call to prevent multiple registrations"
+      "🔔 NotificationProvider: Skipping useNotifications call to prevent multiple registrations",
     );
   }, []);
 
@@ -59,7 +59,7 @@ export function NotificationProvider({
             }
           };
         }
-      }
+      },
     );
 
     return unsubscribeNew;
@@ -79,7 +79,7 @@ export function NotificationProvider({
         audio.play().catch((error) => {
           console.warn("Failed to play notification sound:", error);
         });
-      }
+      },
     );
 
     return unsubscribeNew;
