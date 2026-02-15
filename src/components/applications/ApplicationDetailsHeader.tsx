@@ -10,9 +10,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { CheckCircle, RefreshCw, Download, Key, MoreVertical } from 'lucide-react';
+import type { MandatoryDocumentValidationDetail } from '@/utils/checklistValidation';
 
 interface ApplicationDetailsHeaderProps {
     areAllDocumentsApproved: boolean;
+    validationDetails?: MandatoryDocumentValidationDetail[];
     onPushForQualityCheck: () => void;
     onRefresh: () => void;
     isRefreshing: boolean;
@@ -24,6 +26,7 @@ interface ApplicationDetailsHeaderProps {
 
 export function ApplicationDetailsHeader({
     areAllDocumentsApproved,
+    validationDetails = [],
     onPushForQualityCheck,
     onRefresh,
     isRefreshing,
@@ -56,10 +59,40 @@ export function ApplicationDetailsHeader({
                         </Button>
                     </div>
                 </TooltipTrigger>
-                <TooltipContent>
-                    {areAllDocumentsApproved
-                        ? "All mandatory documents are reviewed or approved. Ready for quality check."
-                        : "All mandatory documents must be submitted and reviewed or approved before pushing for quality check."}
+                <TooltipContent className="max-w-sm">
+                    {areAllDocumentsApproved ? (
+                        "All mandatory documents are reviewed or approved. Ready for quality check."
+                    ) : (
+                        <div className="space-y-2">
+                            <p className="font-semibold">Cannot push for quality check:</p>
+                            {validationDetails.length === 0 ? (
+                                <p className="text-sm">All mandatory documents must be submitted and reviewed or approved.</p>
+                            ) : (
+                                <div className="text-sm space-y-1">
+                                    <p>The following mandatory documents need attention:</p>
+                                    <ul className="list-disc pl-4 space-y-1">
+                                        {validationDetails.slice(0, 5).map((detail, index) => (
+                                            <li key={index}>
+                                                <span className="font-medium">{detail.documentType}</span>
+                                                {detail.companyName && (
+                                                    <span className="text-gray-400"> ({detail.companyName})</span>
+                                                )}
+                                                {" - "}
+                                                <span className="text-yellow-400">
+                                                    {detail.status === 'missing' ? 'Not uploaded' : detail.status}
+                                                </span>
+                                            </li>
+                                        ))}
+                                        {validationDetails.length > 5 && (
+                                            <li className="text-gray-400">
+                                                ...and {validationDetails.length - 5} more
+                                            </li>
+                                        )}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </TooltipContent>
             </Tooltip>
 

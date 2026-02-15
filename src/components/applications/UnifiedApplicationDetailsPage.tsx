@@ -30,7 +30,7 @@ import { useEffect, useMemo, useCallback, lazy, Suspense, useState } from 'react
 import { useApplicationDetails } from '@/hooks/useApplicationDetails';
 import { TooltipProvider } from '../ui/tooltip';
 import type { DocumentCategory } from '@/types/documents';
-import { areAllMandatoryDocumentsReviewed } from '@/utils/checklistValidation';
+import { areAllMandatoryDocumentsReviewed, getMandatoryDocumentValidationDetails, type MandatoryDocumentValidationDetail } from '@/utils/checklistValidation';
 import { useDeleteDocument } from '@/hooks/useMutationsDocuments';
 import { getCompanyDocuments, filterDocumentsWithValidIds } from '@/utils/companyDocuments';
 import { RemoveCompanyDialog } from '@/components/applications/RemoveCompanyDialog';
@@ -143,14 +143,18 @@ export default function UnifiedApplicationDetailsPage({
   });
 
   const areAllDocumentsApproved = useMemo(() => {
-    if (isSpouseApplication) {
-      return false;
-    }
     return areAllMandatoryDocumentsReviewed(
       checklistState.checklistData?.data,
       allDocuments
     );
-  }, [allDocuments, isSpouseApplication, checklistState.checklistData]);
+  }, [allDocuments, checklistState.checklistData]);
+
+  const mandatoryDocValidationDetails = useMemo(() => {
+    return getMandatoryDocumentValidationDetails(
+      checklistState.checklistData?.data,
+      allDocuments
+    );
+  }, [allDocuments, checklistState.checklistData]);
 
   const [documentsPage, setDocumentsPage] = useState(1);
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -498,6 +502,7 @@ export default function UnifiedApplicationDetailsPage({
           </div>
           <ApplicationDetailsHeader
             areAllDocumentsApproved={areAllDocumentsApproved}
+            validationDetails={mandatoryDocValidationDetails}
             onPushForQualityCheck={handlePushForQualityCheck}
             onRefresh={handleRefresh}
             isRefreshing={isRefreshing}

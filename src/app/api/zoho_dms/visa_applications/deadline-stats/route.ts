@@ -39,7 +39,25 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const zohoUrl = `${ZOHO_BASE_URL}/visa_applications/deadline-stats?type=${type}`;
+    // Extract pagination params for each category
+    const approachingPage = searchParams.get('approachingPage');
+    const approachingLimit = searchParams.get('approachingLimit');
+    const overduePage = searchParams.get('overduePage');
+    const overdueLimit = searchParams.get('overdueLimit');
+    const noDeadlinePage = searchParams.get('noDeadlinePage');
+    const noDeadlineLimit = searchParams.get('noDeadlineLimit');
+
+    // Build query params for Zoho backend
+    const queryParams = new URLSearchParams({ type });
+
+    if (approachingPage) queryParams.append('approachingPage', approachingPage);
+    if (approachingLimit) queryParams.append('approachingLimit', approachingLimit);
+    if (overduePage) queryParams.append('overduePage', overduePage);
+    if (overdueLimit) queryParams.append('overdueLimit', overdueLimit);
+    if (noDeadlinePage) queryParams.append('noDeadlinePage', noDeadlinePage);
+    if (noDeadlineLimit) queryParams.append('noDeadlineLimit', noDeadlineLimit);
+
+    const zohoUrl = `${ZOHO_BASE_URL}/visa_applications/deadline-stats?${queryParams.toString()}`;
     const response = await authenticatedFetch<{ data: unknown }>(zohoUrl, token);
 
     return NextResponse.json(response);

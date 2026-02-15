@@ -4,6 +4,8 @@ import React, { useState, useCallback, useMemo, useEffect, Suspense, lazy, memo 
 import { useQueryClient } from '@tanstack/react-query';
 import { useApplications } from '@/hooks/useApplications';
 import { useSearchApplications } from '@/hooks/useSearchApplications';
+import { useDeadlineStats } from '@/hooks/useDeadlineStats';
+import { useAuth } from '@/hooks/useAuth';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { useQueryString } from '@/hooks/useQueryString';
@@ -12,7 +14,7 @@ import { LodgementDeadlineStatsCard } from '@/components/applications/LodgementD
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
 import { ApplicationsTableSkeleton, SearchResultsSkeleton } from '@/components/applications/ApplicationsTableSkeleton';
 import { Card, CardContent } from '@/components/ui/card';
-import { RefreshCw } from 'lucide-react';
+import { RefreshCw, CalendarClock } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -32,6 +34,8 @@ export const ApplicationsClient = memo(function ApplicationsClient({
 }: ApplicationsClientProps) {
   const { queryParams, updateQuery } = useQueryString();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canView = user?.role === 'master_admin' || user?.role === 'team_leader';
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -42,6 +46,7 @@ export const ApplicationsClient = memo(function ApplicationsClient({
   const [applicationStage, setApplicationStage] = useState<string[]>([]);
   const [applicationState, setApplicationState] = useState<'Active' | 'In-Active' | undefined>(undefined);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [deadlineCategory, setDeadlineCategory] = useState<'approaching' | 'overdue' | 'noDeadline' | null>(null);
 
   const [recentActivity, setRecentActivity] = useState(() => {
     return queryParams.recentActivity === 'true' || queryParams.recentActivity === true || initialRecentActivity;
@@ -94,7 +99,36 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     return filterParams;
   }, [page, limit, dateRange, recentActivity, handledBy, applicationStage, applicationState]);
 
-  const { data, isFetching, error } = useApplications(filters);
+  // Fetch regular applications
+  const { data: regularData, isFetching, error } = useApplications(filters);
+
+  // Fetch deadline-filtered data when deadline category is active
+  const { data: deadlineData, isLoading: isDeadlineLoading } = useDeadlineStats(
+    'visa',
+    canView && !!deadlineCategory,
+    deadlineCategory,
+    page,
+    limit
+  );
+
+  // Determine which data to display
+  const displayData = useMemo(() => {
+    if (deadlineCategory && deadlineData?.details) {
+      // Use deadline-filtered data
+      const categoryData = deadlineData.details[deadlineCategory];
+      return {
+        data: categoryData?.data || [],
+        pagination: categoryData?.pagination || {
+          currentPage: page,
+          totalPages: 0,
+          totalRecords: 0,
+          limit: limit
+        }
+      };
+    }
+    // Use regular applications data
+    return regularData;
+  }, [deadlineCategory, deadlineData, regularData, page, limit]);
 
   const searchParamsForAPI = useMemo(() => {
     if (!searchQuery.trim()) return {};
@@ -149,6 +183,15 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     }
   }, [queryParams.recentActivity, recentActivity]);
 
+  useEffect(() => {
+    const urlDeadlineCategory = queryParams.deadlineCategory;
+    if (urlDeadlineCategory && ['approaching', 'overdue', 'noDeadline'].includes(urlDeadlineCategory as string)) {
+      setDeadlineCategory(urlDeadlineCategory as 'approaching' | 'overdue' | 'noDeadline');
+    } else if (!urlDeadlineCategory && deadlineCategory) {
+      setDeadlineCategory(null);
+    }
+  }, [queryParams.deadlineCategory, deadlineCategory]);
+
   const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
     setDateRange(range);
     setPage(1);
@@ -169,6 +212,12 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     setPage(1);
   }, []);
 
+  const handleDeadlineCategoryClick = useCallback((category: 'approaching' | 'overdue' | 'noDeadline' | null) => {
+    setDeadlineCategory(category);
+    setPage(1);
+    updateQuery({ deadlineCategory: category || undefined });
+  }, [updateQuery]);
+
   const handleClearFilters = useCallback(() => {
     setSearch('');
     setSearchQuery('');
@@ -178,9 +227,10 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     setApplicationStage([]);
     setApplicationState(undefined);
     setRecentActivity(false);
+    setDeadlineCategory(null);
     setPage(1);
 
-    updateQuery({ recentActivity: undefined });
+    updateQuery({ recentActivity: undefined, deadlineCategory: undefined });
   }, [updateQuery]);
 
   const handleRecentActivityToggle = useCallback(() => {
@@ -209,12 +259,19 @@ export const ApplicationsClient = memo(function ApplicationsClient({
         queryKey: ['search-applications']
       });
 
+      await queryClient.invalidateQueries({
+        queryKey: ['deadline-stats']
+      });
+
       await Promise.all([
         queryClient.refetchQueries({
           queryKey: ['applications', filters]
         }),
         searchQuery.trim() && queryClient.refetchQueries({
           queryKey: ['search-applications', searchParamsForAPI]
+        }),
+        deadlineCategory && queryClient.refetchQueries({
+          queryKey: ['deadline-stats', 'visa', deadlineCategory, page, limit]
         })
       ].filter(Boolean));
 
@@ -223,12 +280,12 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     } finally {
       setIsRefreshing(false);
     }
-  }, [queryClient, filters, searchQuery, searchParamsForAPI]);
+  }, [queryClient, filters, searchQuery, searchParamsForAPI, deadlineCategory, page, limit]);
 
-  const totalApplications = data?.pagination.totalRecords || 0;
+  const totalApplications = displayData?.pagination.totalRecords || 0;
 
   const displayError = isSearchMode ? searchQueryError : error;
-  const displayLoading = isSearchMode ? isSearchQueryLoading : isFetching;
+  const displayLoading = isSearchMode ? isSearchQueryLoading : (deadlineCategory ? isDeadlineLoading : isFetching);
 
   return (
     <>
@@ -256,7 +313,11 @@ export const ApplicationsClient = memo(function ApplicationsClient({
         </Button>
       </div>
 
-      <LodgementDeadlineStatsCard type="visa" />
+      <LodgementDeadlineStatsCard
+        type="visa"
+        selectedCategory={deadlineCategory}
+        onCategoryClick={handleDeadlineCategoryClick}
+      />
 
 
       {/* Filters Toggle Section */}
@@ -309,6 +370,25 @@ export const ApplicationsClient = memo(function ApplicationsClient({
         </Badge>
       </div>
 
+      {/* Deadline Filter Indicator */}
+      {deadlineCategory && (
+        <div className="mb-4 flex items-center gap-2">
+          <Badge variant="secondary" className="flex items-center gap-1.5">
+            <CalendarClock className="h-3 w-3" />
+            Deadline: {deadlineCategory === 'approaching' ? 'Approaching' :
+                       deadlineCategory === 'overdue' ? 'Overdue' :
+                       'No Deadline'}
+            <button
+              onClick={() => handleDeadlineCategoryClick(null)}
+              className="ml-1 hover:text-destructive transition-colors"
+              aria-label="Clear deadline filter"
+            >
+              ×
+            </button>
+          </Badge>
+        </div>
+      )}
+
       {/* Error State */}
       {displayError && (
         <Card className="mb-6">
@@ -351,7 +431,7 @@ export const ApplicationsClient = memo(function ApplicationsClient({
       <div className="mb-6">
         <Suspense fallback={isSearchMode ? <SearchResultsSkeleton /> : <ApplicationsTableSkeleton />}>
           <LazyApplicationsTable
-            applications={data?.data || []}
+            applications={displayData?.data || []}
             currentPage={page}
             limit={limit}
             isLoading={displayLoading}
@@ -363,10 +443,10 @@ export const ApplicationsClient = memo(function ApplicationsClient({
       </div>
 
       {/* Pagination */}
-      {!isSearchMode && data && data.pagination.totalPages > 1 && (
+      {!isSearchMode && displayData && displayData.pagination.totalPages > 1 && (
         <ApplicationsPagination
           currentPage={page}
-          totalRecords={data.pagination.totalRecords}
+          totalRecords={displayData.pagination.totalRecords}
           limit={limit}
           onPageChange={handlePageChange}
         />

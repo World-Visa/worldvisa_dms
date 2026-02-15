@@ -10,10 +10,12 @@ import {
   User, 
   MessageSquare
 } from 'lucide-react';
-import { 
-  useRequestedDocumentMessages, 
-  useSendRequestedDocumentMessage, 
-  useDeleteRequestedDocumentMessage 
+import {
+  useRequestedDocumentMessages,
+  useSendRequestedDocumentMessage,
+  useDeleteRequestedDocumentMessage,
+  useRequestedDocumentMessagesRealtime,
+  useRealtimeConnection
 } from '@/hooks/useRequestedDocumentMessages';
 import { useAuth } from '@/hooks/useAuth';
 import { cn } from '@/lib/utils';
@@ -30,7 +32,10 @@ export function RequestedDocumentMessages({
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
+  // Authorization check - only specific roles can access messages
+  const canAccessMessages = user?.role && ['admin', 'team_leader', 'master_admin', 'supervisor'].includes(user.role);
+
   const {
     data: messagesData,
     isLoading: isLoadingMessages,
@@ -40,12 +45,25 @@ export function RequestedDocumentMessages({
   const sendMessageMutation = useSendRequestedDocumentMessage();
   const deleteMessageMutation = useDeleteRequestedDocumentMessage();
 
+  // Subscribe to real-time updates
+  useRequestedDocumentMessagesRealtime(documentId, reviewId);
+  const connectionState = useRealtimeConnection();
+
   const messages = useMemo(() => messagesData?.data || [], [messagesData?.data]);
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
+
+  // Early return for unauthorized users (after all hooks)
+  if (!canAccessMessages) {
+    return (
+      <div className="h-full flex items-center justify-center p-4">
+        <p className="text-sm text-gray-500">Unauthorized access</p>
+      </div>
+    );
+  }
 
   const handleSendMessage = async () => {
     if (!newMessage.trim() || !user?.username) {
@@ -122,14 +140,37 @@ export function RequestedDocumentMessages({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Messages Header */}
+      {/* Messages Header with Real-time Status */}
       <div className="p-4 border-b bg-gray-50">
-        <div className="flex items-center gap-2">
-          <MessageSquare className="h-5 w-5 text-gray-600" />
-          <h3 className="font-medium text-gray-900">Messages</h3>
-          {messages.length > 0 && (
-            <span className="text-sm text-gray-500">({messages.length})</span>
-          )}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <MessageSquare className="h-5 w-5 text-gray-600" />
+            <h3 className="font-medium text-gray-900">Messages</h3>
+            {messages.length > 0 && (
+              <span className="text-sm text-gray-500">({messages.length})</span>
+            )}
+          </div>
+          {/* Real-time connection status */}
+          <div className="flex items-center gap-2">
+            {connectionState.isConnected && (
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                <span className="text-xs text-green-600">Live</span>
+              </div>
+            )}
+            {connectionState.isConnecting && (
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
+                <span className="text-xs text-yellow-600">Connecting...</span>
+              </div>
+            )}
+            {!connectionState.isConnected && !connectionState.isConnecting && (
+              <div className="flex items-center gap-1.5">
+                <div className="h-2 w-2 rounded-full bg-red-500" />
+                <span className="text-xs text-red-600">Offline</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

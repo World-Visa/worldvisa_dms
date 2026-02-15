@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { CommentEvent, RealtimeConnectionState } from '@/types/comments';
+import { CommentEvent, MessageEvent, RealtimeConnectionState } from '@/types/comments';
 import { tokenStorage } from './auth';
 import * as Sentry from '@sentry/nextjs';
 
@@ -18,7 +18,7 @@ export class RealtimeManager {
   private reconnectDelay = 1000; // Start with 1 second
   private maxReconnectDelay = 30000; // Max 30 seconds
   private isConnecting = false;
-  private listeners = new Map<string, Set<(event: CommentEvent | RequestedDocumentEvent) => void>>();
+  private listeners = new Map<string, Set<(event: CommentEvent | RequestedDocumentEvent | MessageEvent) => void>>();
   private connectionState: RealtimeConnectionState = {
     isConnected: false,
     isConnecting: false,
@@ -39,7 +39,7 @@ export class RealtimeManager {
   }
 
   // Subscribe to events for a specific document or general events
-  subscribe(subscriptionKey: string, callback: (event: CommentEvent | RequestedDocumentEvent) => void): () => void {
+  subscribe(subscriptionKey: string, callback: (event: CommentEvent | RequestedDocumentEvent | MessageEvent) => void): () => void {
     if (!this.listeners.has(subscriptionKey)) {
       this.listeners.set(subscriptionKey, new Set());
     }
@@ -139,13 +139,16 @@ export class RealtimeManager {
         try {
           const eventData = JSON.parse(event.data);
           
-          // Check if it's a comment event or requested document event
+          // Check if it's a comment event, requested document event, or message event
           if (eventData.type && eventData.type.startsWith('comment_')) {
             const commentEvent: CommentEvent = eventData;
             this.handleCommentEvent(commentEvent);
           } else if (eventData.type && eventData.type.startsWith('requested_document_')) {
             const requestedDocumentEvent: RequestedDocumentEvent = eventData;
             this.handleRequestedDocumentEvent(requestedDocumentEvent);
+          } else if (eventData.type && eventData.type.startsWith('message_')) {
+            const messageEvent: MessageEvent = eventData;
+            this.handleMessageEvent(messageEvent);
           }
           
           this.updateConnectionState({ 
@@ -221,6 +224,27 @@ export class RealtimeManager {
           console.error('Error in document-specific requested document event callback:', error);
           Sentry.captureException(error, {
             tags: { operation: 'document_specific_requested_document_event_callback' },
+            extra: { event }
+          });
+        }
+      });
+    }
+  }
+
+  private handleMessageEvent(event: MessageEvent): void {
+    // Create subscription key for document+review combination
+    const subscriptionKey = `${event.document_id}:${event.review_id}`;
+
+    // Notify listeners for this specific document+review combo
+    const messageListeners = this.listeners.get(subscriptionKey);
+    if (messageListeners) {
+      messageListeners.forEach(callback => {
+        try {
+          callback(event);
+        } catch (error) {
+          console.error('Error in message event callback:', error);
+          Sentry.captureException(error, {
+            tags: { operation: 'message_event_callback' },
             extra: { event }
           });
         }
