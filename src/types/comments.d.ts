@@ -52,6 +52,21 @@ export interface CommentEvent {
   timestamp: string;
 }
 
+export interface RequestedDocumentMessage {
+  _id: string;
+  message: string;
+  username: string;
+  added_at: string;
+}
+
+export interface MessageEvent {
+  type: "message_added" | "message_deleted";
+  document_id: string;
+  review_id: string;
+  message: RequestedDocumentMessage;
+  timestamp: string;
+}
+
 export interface RealtimeConnectionState {
   isConnected: boolean;
   isConnecting: boolean;

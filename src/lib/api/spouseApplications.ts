@@ -13,13 +13,16 @@ export async function getSpouseApplications(
   // Add pagination parameters
   if (filters.page) searchParams.append('page', filters.page.toString());
   if (filters.limit) searchParams.append('limit', filters.limit.toString());
-  
+
   // Add date range filters
   if (filters.startDate) searchParams.append('startDate', filters.startDate);
   if (filters.endDate) searchParams.append('endDate', filters.endDate);
-  
+
   // Add recent activity filter
   if (filters.recentActivity) searchParams.append('recentActivity', 'true');
+
+  // Add deadline category filter
+  if (filters.deadlineCategory) searchParams.append('deadlineCategory', filters.deadlineCategory);
 
   const url = `${ZOHO_BASE_URL}/visa_applications/spouse/applications?${searchParams.toString()}`;
   

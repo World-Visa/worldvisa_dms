@@ -53,23 +53,17 @@ export function RequestedDocumentViewSheet({
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  // Use the custom hook to get real-time document data (like ViewDocumentSheet pattern)
   const { document: currentDoc } = useRequestedDocumentData(document?._id || '');
 
-  // Fallback to the passed document if not in cache
   const displayDoc = currentDoc || document;
 
-  // Fetch application details for the compact application details card
-  // Fetch from both endpoints to determine application type
   const regularApplicationQuery = useApplicationDetails(displayDoc?.record_id || '');
   const spouseApplicationQuery = useSpouseApplicationDetails(displayDoc?.record_id || '');
 
-  // Determine which query succeeded and use that data
   const applicationResponse = regularApplicationQuery.data || spouseApplicationQuery.data;
   const isApplicationLoading = regularApplicationQuery.isLoading || spouseApplicationQuery.isLoading;
   const application = (applicationResponse as ApplicationDetailsResponse)?.data;
 
-  // Ensure the document is cached for real-time updates
   useEffect(() => {
     if (displayDoc && !currentDoc && document) {
       queryClient.setQueryData(['requested-document', document._id], document);
@@ -80,7 +74,6 @@ export function RequestedDocumentViewSheet({
   const [isReviewing, setIsReviewing] = useState(false);
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
 
-  // Reset state when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
       setReviewComment('');
@@ -89,7 +82,6 @@ export function RequestedDocumentViewSheet({
     }
   }, [isOpen]);
 
-  // Define callbacks before early return to avoid conditional hook calls
   const handleMarkAsReviewed = useCallback(async () => {
     if (!displayDoc || !user?.username || !reviewComment.trim()) {
       toast.error('Please add a review comment');
@@ -97,7 +89,6 @@ export function RequestedDocumentViewSheet({
     }
 
     try {
-      // First, update the document status
       await updateStatusMutation.mutateAsync({
         documentId: displayDoc._id,
         data: {
@@ -109,7 +100,6 @@ export function RequestedDocumentViewSheet({
         }
       });
 
-      // Then, send the review comment as a message
       try {
         await sendRequestedDocumentMessage(
           displayDoc._id,
@@ -118,14 +108,17 @@ export function RequestedDocumentViewSheet({
         );
       } catch (messageError) {
         console.warn('Failed to send review comment as message:', messageError);
-        // Don't fail the entire operation if message sending fails
       }
 
       setReviewComment('');
-      setIsAccordionOpen(false); // Close accordion when review is submitted
+      setIsAccordionOpen(false);
       onClose();
-    } catch {
-      // Error is handled by the mutation
+    } catch (error) {
+      console.error('Failed to mark as reviewed:', error);
+      toast.error(
+        'Failed to mark as reviewed',
+        { description: error instanceof Error ? error.message : 'Please try again' }
+      );
     }
   }, [displayDoc, user?.username, reviewComment, updateStatusMutation, onClose]);
 
@@ -144,7 +137,6 @@ export function RequestedDocumentViewSheet({
       });
       onClose();
     } catch {
-      // Error is handled by the mutation
     }
   }, [displayDoc, deleteDocumentMutation, onClose]);
 
@@ -154,46 +146,44 @@ export function RequestedDocumentViewSheet({
       return;
     }
 
-    // Navigate to the appropriate application page based on Record_Type
     const route = application?.Record_Type === 'spouse_skill_assessment'
       ? `/admin/spouse-skill-assessment-applications/${displayDoc.record_id}`
       : `/admin/applications/${displayDoc.record_id}`;
 
     router.push(route);
-    onClose(); // Close the sheet after navigation
+    onClose();
   }, [displayDoc?.record_id, application?.Record_Type, router, onClose]);
 
   if (!displayDoc) return null;
 
   const isRequestedToMe = type === 'requested-to-me';
   const canReview = isRequestedToMe && displayDoc.requested_review.status === 'pending';
-  const canDelete = !isRequestedToMe; // Can only delete documents I requested
+  const canDelete = !isRequestedToMe;
+  const canAccessMessages = user?.role && ['admin', 'team_leader', 'master_admin', 'supervisor'].includes(user.role);
 
-  // Convert RequestedDocument to Document format for DocumentPreview
   const documentForPreview = {
     _id: displayDoc._id,
     file_name: displayDoc.file_name,
     document_name: displayDoc.document_name,
-    document_type: displayDoc.document_name || 'Document', // Use document_name as fallback
+    document_type: displayDoc.document_name || 'Document',
     document_category: displayDoc.document_category,
     document_link: displayDoc.document_link,
     uploaded_by: displayDoc.uploaded_by,
     uploaded_at: displayDoc.uploaded_at,
     status: displayDoc.status,
-    description: '', // RequestedDocument doesn't have description
+    description: '',
     workdrive_file_id: displayDoc.workdrive_file_id,
     record_id: displayDoc.record_id,
-    workdrive_parent_id: '', // Add missing property
-    history: displayDoc.history || [], // Add missing property
-    comments: displayDoc.comments || [], // Add missing property
-    __v: 0 // Add missing property
+    workdrive_parent_id: '',
+    history: displayDoc.history || [],
+    comments: displayDoc.comments || [],
+    __v: 0
   };
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="w-[95vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[1140px] max-w-[1140px]! p-0 rounded-l-3xl">
         <div className="flex flex-col h-full">
-          {/* Header Bar */}
           <SheetHeader className="p-4 border-b">
             <SheetTitle className="sr-only">Document Review</SheetTitle>
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mx-2 sm:mx-6">
@@ -247,14 +237,11 @@ export function RequestedDocumentViewSheet({
             </div>
           </SheetHeader>
 
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col lg:flex-row min-h-0">
-            {/* Document Section - Top on mobile, Left on desktop */}
+          <div className={`flex-1 flex flex-col ${canAccessMessages ? 'lg:flex-row' : ''} min-h-0`}>
             <div className="flex-1 h-full min-h-0 order-1 lg:order-1">
               <ScrollArea className="h-full">
                 <div className="p-2 sm:p-4 space-y-4">
 
-                  {/* Application Details Accordion */}
                   {displayDoc?.record_id && (
                     <ApplicationDetailsAccordion
                       application={application}
@@ -266,11 +253,8 @@ export function RequestedDocumentViewSheet({
 
                   <DocumentPreview document={documentForPreview} />
 
-                  {/* Action Buttons */}
                   <div className="space-y-2">
-                    {/* Top row buttons */}
                     <div className="flex flex-row gap-2">
-                      {/* View Application Button - Always visible */}
                       <Button
                         onClick={handleViewApplication}
                         variant="outline"
@@ -309,7 +293,6 @@ export function RequestedDocumentViewSheet({
                       )}
                     </div>
 
-                    {/* Review comment section */}
                     {isReviewing && (
                       <div className="space-y-2">
                         <textarea
@@ -332,13 +315,14 @@ export function RequestedDocumentViewSheet({
               </ScrollArea>
             </div>
 
-            {/* Messages Section - Bottom on mobile, Right on desktop */}
-            <div className="w-full lg:flex-shrink-0 lg:w-80 xl:w-96 h-[50vh] lg:h-full min-h-0 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
-              <RequestedDocumentMessages
-                documentId={displayDoc._id}
-                reviewId={displayDoc.requested_review._id}
-              />
-            </div>
+            {canAccessMessages && (
+              <div className="w-full lg:shrink-0 lg:w-80 xl:w-96 h-[50vh] lg:h-full min-h-0 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
+                <RequestedDocumentMessages
+                  documentId={displayDoc._id}
+                  reviewId={displayDoc.requested_review._id}
+                />
+              </div>
+            )}
           </div>
         </div>
       </SheetContent>

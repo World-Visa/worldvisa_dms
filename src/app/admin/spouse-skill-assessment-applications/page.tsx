@@ -3,6 +3,8 @@
 import React, { useState, useCallback, useMemo, useEffect, Suspense, lazy, memo } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useSpouseApplications, useSearchSpouseApplications } from '@/hooks/useSpouseApplications';
+import { useDeadlineStats } from '@/hooks/useDeadlineStats';
+import { useAuth } from '@/hooks/useAuth';
 import { useDebounce } from '@/hooks/useDebounce';
 import { usePerformanceMonitor } from '@/hooks/usePerformanceMonitor';
 import { useQueryString } from '@/hooks/useQueryString';
@@ -11,7 +13,7 @@ import { LodgementDeadlineStatsCard } from '@/components/applications/LodgementD
 import { ApplicationsPagination } from '@/components/applications/ApplicationsPagination';
 import { ApplicationsTableSkeleton, SearchResultsSkeleton } from '@/components/applications/ApplicationsTableSkeleton';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, FileText, RefreshCw } from 'lucide-react';
+import { Users, FileText, RefreshCw, CalendarClock } from 'lucide-react';
 import { DateRange } from 'react-day-picker';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -26,6 +28,8 @@ const LazyApplicationsTable = lazy(() =>
 const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApplications() {
   const { queryParams, updateQuery } = useQueryString();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
+  const canView = user?.role === 'master_admin' || user?.role === 'team_leader';
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -33,6 +37,7 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
   const [searchType, setSearchType] = useState<'name' | 'phone' | 'email'>('name');
   const [dateRange, setDateRange] = useState<DateRange | undefined>();
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [deadlineCategory, setDeadlineCategory] = useState<'approaching' | 'overdue' | 'noDeadline' | null>(null);
 
   // Initialize recentActivity from URL params, default to false
   const [recentActivity, setRecentActivity] = useState(() => {
@@ -87,8 +92,36 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
     return filterParams;
   }, [page, limit, dateRange, recentActivity]);
 
-  // Fetch spouse applications (only when not in search mode)
-  const { data, isLoading, error } = useSpouseApplications(filters);
+  // Fetch regular spouse applications
+  const { data: regularData, isLoading, error } = useSpouseApplications(filters);
+
+  // Fetch deadline-filtered data when deadline category is active
+  const { data: deadlineData, isLoading: isDeadlineLoading } = useDeadlineStats(
+    'spouse',
+    canView && !!deadlineCategory,
+    deadlineCategory,
+    page,
+    limit
+  );
+
+  // Determine which data to display
+  const displayData = useMemo(() => {
+    if (deadlineCategory && deadlineData?.details) {
+      // Use deadline-filtered data
+      const categoryData = deadlineData.details[deadlineCategory];
+      return {
+        data: categoryData?.data || [],
+        pagination: categoryData?.pagination || {
+          currentPage: page,
+          totalPages: 0,
+          totalRecords: 0,
+          limit: limit
+        }
+      };
+    }
+    // Use regular applications data
+    return regularData;
+  }, [deadlineCategory, deadlineData, regularData, page, limit]);
 
   // Create search params based on search type and value
   const searchParamsForAPI = useMemo(() => {
@@ -146,10 +179,26 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
     }
   }, [queryParams.recentActivity, recentActivity]);
 
+  // Sync deadlineCategory state with URL params
+  useEffect(() => {
+    const urlDeadlineCategory = queryParams.deadlineCategory;
+    if (urlDeadlineCategory && ['approaching', 'overdue', 'noDeadline'].includes(urlDeadlineCategory as string)) {
+      setDeadlineCategory(urlDeadlineCategory as 'approaching' | 'overdue' | 'noDeadline');
+    } else if (!urlDeadlineCategory && deadlineCategory) {
+      setDeadlineCategory(null);
+    }
+  }, [queryParams.deadlineCategory, deadlineCategory]);
+
   const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
     setDateRange(range);
     setPage(1);
   }, []);
+
+  const handleDeadlineCategoryClick = useCallback((category: 'approaching' | 'overdue' | 'noDeadline' | null) => {
+    setDeadlineCategory(category);
+    setPage(1);
+    updateQuery({ deadlineCategory: category || undefined });
+  }, [updateQuery]);
 
   const handleClearFilters = useCallback(() => {
     setSearch('');
@@ -157,10 +206,11 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
     setSearchType('name');
     setDateRange(undefined);
     setRecentActivity(false);
+    setDeadlineCategory(null);
     setPage(1);
 
     // Clear URL params when clearing filters
-    updateQuery({ recentActivity: undefined });
+    updateQuery({ recentActivity: undefined, deadlineCategory: undefined });
   }, [updateQuery]);
 
   const handleRecentActivityToggle = useCallback(() => {
@@ -194,6 +244,11 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
         queryKey: ['search-spouse-applications']
       });
 
+      // Clear deadline-stats cache
+      await queryClient.invalidateQueries({
+        queryKey: ['deadline-stats']
+      });
+
       // Force refetch current queries
       await Promise.all([
         queryClient.refetchQueries({
@@ -201,6 +256,9 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
         }),
         searchQuery.trim() && queryClient.refetchQueries({
           queryKey: ['search-spouse-applications', searchParamsForAPI]
+        }),
+        deadlineCategory && queryClient.refetchQueries({
+          queryKey: ['deadline-stats', 'spouse', deadlineCategory, page, limit]
         })
       ].filter(Boolean));
 
@@ -209,16 +267,20 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
     } finally {
       setIsRefreshing(false);
     }
-  }, [queryClient, filters, searchQuery, searchParamsForAPI]);
+  }, [queryClient, filters, searchQuery, searchParamsForAPI, deadlineCategory, page, limit]);
 
-  const totalApplications = data?.pagination.totalRecords || 0;
+  const totalApplications = displayData?.pagination.totalRecords || 0;
 
   const displayError = isSearchMode ? searchQueryError : error;
-  const displayLoading = isLoading;
+  const displayLoading = isSearchMode ? isSearchQueryLoading : (deadlineCategory ? isDeadlineLoading : isLoading);
 
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-      <LodgementDeadlineStatsCard type="spouse" />
+      <LodgementDeadlineStatsCard
+        type="spouse"
+        selectedCategory={deadlineCategory}
+        onCategoryClick={handleDeadlineCategoryClick}
+      />
       {/* Header */}
       <div className="flex flex-col w-full sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
         <div>
@@ -291,6 +353,25 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
 
       </div>
 
+      {/* Deadline Filter Indicator */}
+      {deadlineCategory && (
+        <div className="mb-4 flex items-center gap-2">
+          <Badge variant="secondary" className="flex items-center gap-1.5">
+            <CalendarClock className="h-3 w-3" />
+            Deadline: {deadlineCategory === 'approaching' ? 'Approaching' :
+                       deadlineCategory === 'overdue' ? 'Overdue' :
+                       'No Deadline'}
+            <button
+              onClick={() => handleDeadlineCategoryClick(null)}
+              className="ml-1 hover:text-destructive transition-colors"
+              aria-label="Clear deadline filter"
+            >
+              ×
+            </button>
+          </Badge>
+        </div>
+      )}
+
       {/* Error State */}
       {displayError && (
         <Card className="mb-6">
@@ -333,7 +414,7 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
       <div className="mb-6">
         <Suspense fallback={isSearchMode ? <SearchResultsSkeleton /> : <ApplicationsTableSkeleton />}>
           <LazyApplicationsTable
-            applications={data?.data || []}
+            applications={displayData?.data || []}
             currentPage={page}
             limit={limit}
             isLoading={displayLoading}
@@ -346,10 +427,10 @@ const SpouseSkillAssessmentApplications = memo(function SpouseSkillAssessmentApp
       </div>
 
       {/* Pagination (only show when not in search mode) */}
-      {!isSearchMode && data && data.pagination.totalPages > 1 && (
+      {!isSearchMode && displayData && displayData.pagination.totalPages > 1 && (
         <ApplicationsPagination
           currentPage={page}
-          totalRecords={data.pagination.totalRecords}
+          totalRecords={displayData.pagination.totalRecords}
           limit={limit}
           onPageChange={handlePageChange}
         />

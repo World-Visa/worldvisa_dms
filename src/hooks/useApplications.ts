@@ -17,6 +17,7 @@ export const useApplications = (filters: ApplicationsFilters) => {
         ? filters.applicationStage.join(",")
         : undefined,
     applicationState: filters.applicationState ?? undefined,
+    deadlineCategory: filters.deadlineCategory || undefined,
   };
 
   const query = qs.stringify(transformedFilters, {
@@ -32,7 +33,8 @@ export const useApplications = (filters: ApplicationsFilters) => {
     filters.startDate ||
     filters.endDate ||
     (filters.applicationStage && filters.applicationStage.length > 0) ||
-    filters.applicationState
+    filters.applicationState ||
+    filters.deadlineCategory
   );
 
   return useQuery<ApplicationsResponse>({

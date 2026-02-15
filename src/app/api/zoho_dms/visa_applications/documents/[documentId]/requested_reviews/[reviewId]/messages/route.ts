@@ -29,6 +29,15 @@ export async function GET(
       );
     }
 
+    // Check user role - only authorized roles can access messages
+    const allowedRoles = ['admin', 'team_leader', 'master_admin', 'supervisor'];
+    if (!parsedToken.role || !allowedRoles.includes(parsedToken.role)) {
+      return NextResponse.json(
+        { status: 'error', message: 'Forbidden - Only admin, team_leader, master_admin, and supervisor can access messages' },
+        { status: 403 }
+      );
+    }
+
     const { documentId, reviewId } = params;
 
     const zohoUrl = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`;
@@ -71,6 +80,15 @@ export async function POST(
       return NextResponse.json(
         { status: 'error', message: 'Invalid or expired token' },
         { status: 401 }
+      );
+    }
+
+    // Check user role - only authorized roles can access messages
+    const allowedRoles = ['admin', 'team_leader', 'master_admin', 'supervisor'];
+    if (!parsedToken.role || !allowedRoles.includes(parsedToken.role)) {
+      return NextResponse.json(
+        { status: 'error', message: 'Forbidden - Only admin, team_leader, master_admin, and supervisor can access messages' },
+        { status: 403 }
       );
     }
 
@@ -123,6 +141,15 @@ export async function DELETE(
       return NextResponse.json(
         { status: 'error', message: 'Invalid or expired token' },
         { status: 401 }
+      );
+    }
+
+    // Check user role - only authorized roles can access messages
+    const allowedRoles = ['admin', 'team_leader', 'master_admin', 'supervisor'];
+    if (!parsedToken.role || !allowedRoles.includes(parsedToken.role)) {
+      return NextResponse.json(
+        { status: 'error', message: 'Forbidden - Only admin, team_leader, master_admin, and supervisor can access messages' },
+        { status: 403 }
       );
     }
 

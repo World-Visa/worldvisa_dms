@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(pnpm lint:*)",
+      "Bash(pnpm check-format:*)",
+      "Bash(pnpm prettier:*)",
+      "Bash(pnpm eslint:*)",
+      "Bash(git log:*)",
+      "WebSearch",
+      "Bash(pnpm dev)"
+    ]
+  }
+}

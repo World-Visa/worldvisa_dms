@@ -268,3 +268,70 @@ export function areAllMandatoryDocumentsReviewed(
   return true;
 }
 
+export interface MandatoryDocumentValidationDetail {
+  documentType: string;
+  documentCategory: string;
+  companyName?: string;
+  status: 'missing' | 'pending' | 'rejected' | 'request_review' | 'approved' | 'reviewed';
+  fileName?: string;
+}
+
+export function getMandatoryDocumentValidationDetails(
+  checklistItems: ChecklistItem[] | undefined,
+  documents: Document[] | undefined
+): MandatoryDocumentValidationDetail[] {
+  const details: MandatoryDocumentValidationDetail[] = [];
+
+  if (!checklistItems || !Array.isArray(checklistItems) || checklistItems.length === 0) {
+    return details;
+  }
+
+  const mandatoryItems = checklistItems.filter(item => item.required === true);
+
+  if (mandatoryItems.length === 0) {
+    return details;
+  }
+
+  if (!documents || !Array.isArray(documents) || documents.length === 0) {
+    // All mandatory items are missing
+    return mandatoryItems.map(item => ({
+      documentType: item.document_type,
+      documentCategory: item.document_category,
+      companyName: item.company_name,
+      status: 'missing' as const
+    }));
+  }
+
+  const validDocuments = documents.filter(
+    (doc) => doc && typeof doc === "object" && doc.file_name
+  );
+
+  for (const mandatoryItem of mandatoryItems) {
+    const matchingDoc = validDocuments.find((doc) =>
+      matchDocumentToChecklistItem(doc, mandatoryItem)
+    );
+
+    if (!matchingDoc) {
+      details.push({
+        documentType: mandatoryItem.document_type,
+        documentCategory: mandatoryItem.document_category,
+        companyName: mandatoryItem.company_name,
+        status: 'missing'
+      });
+    } else {
+      const docStatus = matchingDoc.status?.toLowerCase();
+      if (docStatus !== 'reviewed' && docStatus !== 'approved') {
+        details.push({
+          documentType: mandatoryItem.document_type,
+          documentCategory: mandatoryItem.document_category,
+          companyName: mandatoryItem.company_name,
+          status: docStatus as any || 'missing',
+          fileName: matchingDoc.file_name
+        });
+      }
+    }
+  }
+
+  return details;
+}
+
