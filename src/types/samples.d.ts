@@ -1,6 +1,6 @@
 /**
  * Sample Document Types
- * 
+ *
  * This module defines types related to sample documents functionality
  * for the document checklist system.
  */
@@ -33,7 +33,13 @@ export interface SampleDocumentModalProps {
 }
 
 export interface SampleDocumentService {
-  getSampleDocument: (documentType: string, category: string) => SampleDocument | null;
-  downloadSampleDocument: (samplePath: string, fileName: string) => Promise<void>;
+  getSampleDocument: (
+    documentType: string,
+    category: string,
+  ) => SampleDocument | null;
+  downloadSampleDocument: (
+    samplePath: string,
+    fileName: string,
+  ) => Promise<void>;
   hasSampleDocument: (documentType: string, category: string) => boolean;
 }

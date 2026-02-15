@@ -1,11 +1,24 @@
-'use client';
+"use client";
 
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { formatDate } from '@/utils/format';
-import { Trash2 } from 'lucide-react';
-import type { SampleDocument } from '@/types/sampleDocuments';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { formatDate } from "@/utils/format";
+import { Trash2 } from "lucide-react";
+import type { SampleDocument } from "@/types/sampleDocuments";
 
 interface SampleDocumentGroup {
   key: string;
@@ -37,8 +50,10 @@ export function SampleDocumentsModal({
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>{group?.documentName ?? 'Documents'}</DialogTitle>
-          {group?.type && <DialogDescription>Type: {group.type}</DialogDescription>}
+          <DialogTitle>{group?.documentName ?? "Documents"}</DialogTitle>
+          {group?.type && (
+            <DialogDescription>Type: {group.type}</DialogDescription>
+          )}
         </DialogHeader>
         <div className="rounded-md border">
           <Table>
@@ -53,12 +68,20 @@ export function SampleDocumentsModal({
             <TableBody>
               {documents.map((document) => (
                 <TableRow key={document._id}>
-                  <TableCell className="font-medium">{document.document_name}</TableCell>
-                  <TableCell>{document.type ?? '—'}</TableCell>
-                  <TableCell>{formatDate(document.createdAt, 'short')}</TableCell>
+                  <TableCell className="font-medium">
+                    {document.document_name}
+                  </TableCell>
+                  <TableCell>{document.type ?? "—"}</TableCell>
+                  <TableCell>
+                    {formatDate(document.createdAt, "short")}
+                  </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => onViewDocument(document)}>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => onViewDocument(document)}
+                      >
                         View
                       </Button>
                       {!isClientView && (
@@ -82,5 +105,3 @@ export function SampleDocumentsModal({
     </Dialog>
   );
 }
-
-

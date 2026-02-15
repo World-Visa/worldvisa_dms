@@ -3,9 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Application } from "@/types/applications";
 import { formatDate } from "@/utils/format";
-import {
-  User,
-} from "lucide-react";
+import { User } from "lucide-react";
 import { useState } from "react";
 import { ApplicationDeadlineCard } from "./ApplicationDeadlineCard";
 import { DeadlineUpdateModal } from "./DeadlineUpdateModal";
@@ -209,7 +207,9 @@ export function ApplicantDetails({
                     Service Type
                   </p>
                   <span className="inline-block mt-1 px-2 py-0.5 bg-primary text-white text-[10px] font-bold rounded">
-                    {formatValue(application.Service_Finalized || "").toUpperCase()}
+                    {formatValue(
+                      application.Service_Finalized || "",
+                    ).toUpperCase()}
                   </span>
                 </div>
                 <div>

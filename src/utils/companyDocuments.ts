@@ -1,8 +1,8 @@
-import type { Document } from '@/types/applications';
+import type { Document } from "@/types/applications";
 
 export function getCompanyDocuments(
   companyCategory: string,
-  documents: Document[]
+  documents: Document[],
 ): Document[] {
   // Guard against invalid inputs
   if (!companyCategory?.trim() || !Array.isArray(documents)) {
@@ -26,8 +26,6 @@ export function filterDocumentsWithValidIds(documents: Document[]): Document[] {
   }
 
   return documents.filter((doc) => {
-    return doc?._id && 
-           typeof doc._id === 'string' && 
-           doc._id.trim() !== '';
+    return doc?._id && typeof doc._id === "string" && doc._id.trim() !== "";
   });
 }

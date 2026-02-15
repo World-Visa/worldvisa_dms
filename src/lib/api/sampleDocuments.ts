@@ -1,12 +1,12 @@
-import { tokenStorage } from '@/lib/auth';
+import { tokenStorage } from "@/lib/auth";
 import type {
   SampleDocumentsResponse,
   UploadSampleDocumentRequest,
   UploadSampleDocumentResponse,
   UpdateSampleDocumentRequest,
   DeleteSampleDocumentResponse,
-} from '@/types/sampleDocuments';
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+} from "@/types/sampleDocuments";
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -25,11 +25,13 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json() as Promise<T>;
 }
 
-export async function fetchSampleDocuments(applicationId: string): Promise<SampleDocumentsResponse> {
+export async function fetchSampleDocuments(
+  applicationId: string,
+): Promise<SampleDocumentsResponse> {
   const token = tokenStorage.get();
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   };
 
   if (token) {
@@ -39,7 +41,7 @@ export async function fetchSampleDocuments(applicationId: string): Promise<Sampl
   const url = `${ZOHO_BASE_URL}/visa_applications/${applicationId}/sample`;
 
   const response = await fetch(url, {
-    method: 'GET',
+    method: "GET",
     headers,
   });
 
@@ -47,20 +49,20 @@ export async function fetchSampleDocuments(applicationId: string): Promise<Sampl
 }
 
 export async function uploadSampleDocument(
-  request: UploadSampleDocumentRequest
+  request: UploadSampleDocumentRequest,
 ): Promise<UploadSampleDocumentResponse> {
   if (!request.files.length) {
-    throw new Error('Please select at least one file to upload.');
+    throw new Error("Please select at least one file to upload.");
   }
 
   const formData = new FormData();
 
   request.files.forEach((file) => {
-    formData.append('files', file);
+    formData.append("files", file);
   });
 
-  formData.append('document_name', request.document_name);
-  formData.append('type', request.type ?? 'skill-assessment');
+  formData.append("document_name", request.document_name);
+  formData.append("type", request.type ?? "skill-assessment");
 
   const token = tokenStorage.get();
 
@@ -72,7 +74,7 @@ export async function uploadSampleDocument(
   const url = `${ZOHO_BASE_URL}/visa_applications/${request.applicationId}/sample`;
 
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     body: formData,
     headers,
   });
@@ -81,12 +83,12 @@ export async function uploadSampleDocument(
 }
 
 export async function updateSampleDocument(
-  request: UpdateSampleDocumentRequest
+  request: UpdateSampleDocumentRequest,
 ): Promise<UploadSampleDocumentResponse> {
   const token = tokenStorage.get();
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   };
 
   if (token) {
@@ -96,7 +98,7 @@ export async function updateSampleDocument(
   const url = `${ZOHO_BASE_URL}/visa_applications/${request.applicationId}/sample/${request.documentId}`;
 
   const response = await fetch(url, {
-    method: 'PUT',
+    method: "PUT",
     headers,
     body: JSON.stringify(request.data),
   });
@@ -106,12 +108,12 @@ export async function updateSampleDocument(
 
 export async function deleteSampleDocument(
   applicationId: string,
-  documentId: string
+  documentId: string,
 ): Promise<DeleteSampleDocumentResponse> {
   const token = tokenStorage.get();
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   };
 
   if (token) {
@@ -121,12 +123,10 @@ export async function deleteSampleDocument(
   const url = `${ZOHO_BASE_URL}/visa_applications/${applicationId}`;
 
   const response = await fetch(url, {
-    method: 'DELETE',
+    method: "DELETE",
     headers,
     body: JSON.stringify({ document_id: documentId }),
   });
 
   return handleResponse<DeleteSampleDocumentResponse>(response);
 }
-
-

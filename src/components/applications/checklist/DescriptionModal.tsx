@@ -11,8 +11,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
-import { validateDescription, sanitizeDescription, DESCRIPTION_CONSTRAINTS } from '@/lib/validation/descriptionValidation';
-import { AlertCircle, Loader2 } from 'lucide-react';
+import {
+  validateDescription,
+  sanitizeDescription,
+  DESCRIPTION_CONSTRAINTS,
+} from "@/lib/validation/descriptionValidation";
+import { AlertCircle, Loader2 } from "lucide-react";
 import * as React from "react";
 
 interface DescriptionModalProps {
@@ -33,7 +37,7 @@ export function DescriptionModal({
   isLoading = false,
 }: DescriptionModalProps) {
   const [description, setDescription] = React.useState(
-    existingDescription || ""
+    existingDescription || "",
   );
   const [validationErrors, setValidationErrors] = React.useState<string[]>([]);
   const [isSaving, setIsSaving] = React.useState(false);
@@ -49,7 +53,7 @@ export function DescriptionModal({
 
   const handleDescriptionChange = (value: string) => {
     setDescription(value);
-    
+
     // Real-time validation
     if (mode === "edit") {
       const validation = validateDescription(value);
@@ -59,10 +63,10 @@ export function DescriptionModal({
 
   const handleSave = async () => {
     if (mode !== "edit") return;
-    
+
     const sanitizedDescription = sanitizeDescription(description);
     const validation = validateDescription(sanitizedDescription);
-    
+
     if (!validation.isValid) {
       setValidationErrors(validation.errors);
       return;
@@ -77,16 +81,17 @@ export function DescriptionModal({
       onOpenChange(false);
     } catch (error) {
       // Error handling is done in the parent component
-      console.error('Error saving description:', error);
+      console.error("Error saving description:", error);
     } finally {
       setIsSaving(false);
     }
   };
 
-  const isSaveDisabled = mode !== "edit" || 
-    isLoading || 
-    isSaving || 
-    !description.trim() || 
+  const isSaveDisabled =
+    mode !== "edit" ||
+    isLoading ||
+    isSaving ||
+    !description.trim() ||
     validationErrors.length > 0;
 
   // dynamic text based on mode and whether description exists
@@ -119,17 +124,21 @@ export function DescriptionModal({
               className="min-h-[100px]"
               disabled={isSaving || isLoading}
             />
-            
+
             {/* Character count */}
             <div className="text-xs text-muted-foreground text-right">
-              {description.length}/{DESCRIPTION_CONSTRAINTS.MAX_LENGTH} characters
+              {description.length}/{DESCRIPTION_CONSTRAINTS.MAX_LENGTH}{" "}
+              characters
             </div>
-            
+
             {/* Validation errors */}
             {validationErrors.length > 0 && (
               <div className="space-y-1">
                 {validationErrors.map((error, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm text-red-600">
+                  <div
+                    key={index}
+                    className="flex items-center gap-2 text-sm text-red-600"
+                  >
                     <AlertCircle className="h-4 w-4" />
                     <span>{error}</span>
                   </div>
@@ -139,7 +148,9 @@ export function DescriptionModal({
           </div>
         ) : (
           <div className="py-2 min-h-[200px] max-h-[500px] overflow-y-auto">
-            <p className="whitespace-pre-wrap">{description || "No description available."}</p>
+            <p className="whitespace-pre-wrap">
+              {description || "No description available."}
+            </p>
           </div>
         )}
 
@@ -150,8 +161,8 @@ export function DescriptionModal({
             </Button>
           </DialogClose>
           {mode === "edit" && (
-            <Button 
-              onClick={handleSave} 
+            <Button
+              onClick={handleSave}
               disabled={isSaveDisabled}
               className="min-w-[80px]"
             >

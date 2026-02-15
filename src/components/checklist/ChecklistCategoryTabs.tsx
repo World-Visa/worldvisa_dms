@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React, { memo, useRef, useState, useEffect } from 'react';
-import { DocumentCategoryInfo } from '@/types/documents';
-import { CategoryButton } from '@/components/applications/filter/CategoryButton';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import type { Document } from '@/types/applications';
+import React, { memo, useRef, useState, useEffect } from "react";
+import { DocumentCategoryInfo } from "@/types/documents";
+import { CategoryButton } from "@/components/applications/filter/CategoryButton";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { Document } from "@/types/applications";
 
 interface ChecklistCategoryTabsProps {
   categories: DocumentCategoryInfo[];
@@ -27,7 +27,8 @@ export const ChecklistCategoryTabs = memo(function ChecklistCategoryTabs({
 
   const checkScrollPosition = () => {
     if (scrollContainerRef.current) {
-      const { scrollLeft, scrollWidth, clientWidth } = scrollContainerRef.current;
+      const { scrollLeft, scrollWidth, clientWidth } =
+        scrollContainerRef.current;
       setShowLeftArrow(scrollLeft > 1);
       setShowRightArrow(scrollLeft + clientWidth < scrollWidth - 1);
     }
@@ -35,15 +36,15 @@ export const ChecklistCategoryTabs = memo(function ChecklistCategoryTabs({
 
   useEffect(() => {
     const t = setTimeout(checkScrollPosition, 100);
-    window.addEventListener('resize', checkScrollPosition);
+    window.addEventListener("resize", checkScrollPosition);
     return () => {
       clearTimeout(t);
-      window.removeEventListener('resize', checkScrollPosition);
+      window.removeEventListener("resize", checkScrollPosition);
     };
   }, [categories]);
 
   const scroll = (delta: number) => {
-    scrollContainerRef.current?.scrollBy({ left: delta, behavior: 'smooth' });
+    scrollContainerRef.current?.scrollBy({ left: delta, behavior: "smooth" });
   };
 
   if (categories.length === 0) return null;

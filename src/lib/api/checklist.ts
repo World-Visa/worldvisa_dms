@@ -12,11 +12,10 @@ import {
   AddDescriptionResponse,
 } from "@/types/description";
 
-import { ZOHO_BASE_URL } from '@/lib/config/api';
-
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export async function getChecklist(
-  applicationId: string
+  applicationId: string,
 ): Promise<ChecklistResponse> {
   const url = `${ZOHO_BASE_URL}/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
@@ -42,7 +41,7 @@ export async function getChecklist(
     required: item.required,
     description: item.description,
   }));
-  
+
   return {
     success: response.status === "success",
     data: transformedData,
@@ -54,7 +53,7 @@ export async function getChecklist(
  */
 export async function createChecklistItem(
   applicationId: string,
-  item: ChecklistCreateRequest
+  item: ChecklistCreateRequest,
 ): Promise<ChecklistApiResponse<ChecklistItem>> {
   const url = `${ZOHO_BASE_URL}/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
@@ -68,7 +67,7 @@ export async function createChecklistItem(
     {
       method: "POST",
       body: JSON.stringify(requestItem),
-    }
+    },
   );
 }
 
@@ -77,7 +76,7 @@ export async function createChecklistItem(
  */
 export async function updateChecklistItem(
   applicationId: string,
-  item: ChecklistUpdateRequest
+  item: ChecklistUpdateRequest,
 ): Promise<ChecklistApiResponse<ChecklistItem>> {
   const url = `${ZOHO_BASE_URL}/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
@@ -91,45 +90,48 @@ export async function updateChecklistItem(
     {
       method: "PUT",
       body: JSON.stringify(requestItem),
-    }
+    },
   );
 }
 
 export async function updateDescription(
   applicationId: string,
-  item: AddDescriptionRequest
+  item: AddDescriptionRequest,
 ): Promise<AddDescriptionResponse> {
   // Validate input parameters
   if (!applicationId || !item.checklist_id) {
-    throw new Error('Application ID and Checklist ID are required');
+    throw new Error("Application ID and Checklist ID are required");
   }
 
   if (!item.description || item.description.trim().length === 0) {
-    throw new Error('Description cannot be empty');
+    throw new Error("Description cannot be empty");
   }
 
   if (item.description.length > 1000) {
-    throw new Error('Description cannot exceed 1000 characters');
+    throw new Error("Description cannot exceed 1000 characters");
   }
 
   const url = `${ZOHO_BASE_URL}/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
 
   try {
-    const response = await fetcher<AddDescriptionResponse>(`${url}?${params.toString()}`, {
-      method: "PUT",
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetcher<AddDescriptionResponse>(
+      `${url}?${params.toString()}`,
+      {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          description: item.description.trim(),
+          checklist_id: item.checklist_id,
+        }),
       },
-      body: JSON.stringify({
-        description: item.description.trim(),
-        checklist_id: item.checklist_id,
-      }),
-    });
+    );
 
     // Validate response
-    if (!response || response.status !== 'success') {
-      throw new Error(response?.message || 'Failed to update description');
+    if (!response || response.status !== "success") {
+      throw new Error(response?.message || "Failed to update description");
     }
 
     return response;
@@ -138,7 +140,7 @@ export async function updateDescription(
     if (error instanceof Error) {
       throw new Error(`Failed to update description: ${error.message}`);
     }
-    throw new Error('An unexpected error occurred while updating description');
+    throw new Error("An unexpected error occurred while updating description");
   }
 }
 
@@ -147,7 +149,7 @@ export async function updateDescription(
  */
 export async function deleteChecklistItem(
   applicationId: string,
-  request: ChecklistDeleteRequest
+  request: ChecklistDeleteRequest,
 ): Promise<ChecklistApiResponse<void>> {
   const url = `${ZOHO_BASE_URL}/visa_applications/checklist/${applicationId}`;
   const params = new URLSearchParams({ record_id: applicationId });
@@ -164,33 +166,33 @@ export async function deleteChecklistItem(
  */
 export async function saveChecklist(
   applicationId: string,
-  items: ChecklistCreateRequest[]
+  items: ChecklistCreateRequest[],
 ): Promise<ChecklistApiResponse<ChecklistItem[]>> {
   // Input validation
-  if (!applicationId || typeof applicationId !== 'string') {
-    throw new Error('Valid application ID is required');
+  if (!applicationId || typeof applicationId !== "string") {
+    throw new Error("Valid application ID is required");
   }
-  
+
   if (!Array.isArray(items) || items.length === 0) {
-    throw new Error('At least one checklist item is required');
+    throw new Error("At least one checklist item is required");
   }
 
   // Validate each item before processing
   const validationErrors: string[] = [];
   items.forEach((item, index) => {
-    if (!item.document_type || typeof item.document_type !== 'string') {
+    if (!item.document_type || typeof item.document_type !== "string") {
       validationErrors.push(`Item ${index + 1}: document_type is required`);
     }
-    if (!item.document_category || typeof item.document_category !== 'string') {
+    if (!item.document_category || typeof item.document_category !== "string") {
       validationErrors.push(`Item ${index + 1}: document_category is required`);
     }
-    if (typeof item.required !== 'boolean') {
+    if (typeof item.required !== "boolean") {
       validationErrors.push(`Item ${index + 1}: required must be a boolean`);
     }
   });
 
   if (validationErrors.length > 0) {
-    throw new Error(`Validation failed: ${validationErrors.join(', ')}`);
+    throw new Error(`Validation failed: ${validationErrors.join(", ")}`);
   }
 
   // Process items in batches to avoid overwhelming the server
@@ -201,7 +203,11 @@ export async function saveChecklist(
   }
 
   const successful: ChecklistItem[] = [];
-  const errors: Array<{ index: number; item: ChecklistCreateRequest; error: string }> = [];
+  const errors: Array<{
+    index: number;
+    item: ChecklistCreateRequest;
+    error: string;
+  }> = [];
 
   // Process each batch sequentially to avoid rate limiting
   for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
@@ -209,26 +215,31 @@ export async function saveChecklist(
     const batchPromises = batch.map((item, itemIndex) => {
       const globalIndex = batchIndex * BATCH_SIZE + itemIndex;
       return createChecklistItem(applicationId, item)
-        .then(result => ({ success: true, data: result.data, index: globalIndex, item }))
-        .catch(error => ({ 
-          success: false, 
-          error: error.message || 'Unknown error', 
-          index: globalIndex, 
-          item 
+        .then((result) => ({
+          success: true,
+          data: result.data,
+          index: globalIndex,
+          item,
+        }))
+        .catch((error) => ({
+          success: false,
+          error: error.message || "Unknown error",
+          index: globalIndex,
+          item,
         }));
     });
 
     const batchResults = await Promise.allSettled(batchPromises);
-    
+
     batchResults.forEach((result) => {
-      if (result.status === 'fulfilled') {
-        if (result.value.success && 'data' in result.value) {
+      if (result.status === "fulfilled") {
+        if (result.value.success && "data" in result.value) {
           successful.push(result.value.data);
-        } else if (!result.value.success && 'error' in result.value) {
+        } else if (!result.value.success && "error" in result.value) {
           errors.push({
             index: result.value.index,
             item: result.value.item,
-            error: result.value.error
+            error: result.value.error,
           });
         }
       } else {
@@ -236,36 +247,41 @@ export async function saveChecklist(
         errors.push({
           index: -1,
           item: {} as ChecklistCreateRequest,
-          error: result.reason?.message || 'Unknown error'
+          error: result.reason?.message || "Unknown error",
         });
       }
     });
 
     // Add a small delay between batches to be respectful to the server
     if (batchIndex < batches.length - 1) {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
     }
   }
 
   // Enhanced error reporting with specific details
   if (errors.length > 0) {
-    const errorDetails = errors.map(({ index, item, error }) => 
-      `Item ${index + 1} (${item.document_type}): ${error}`
-    ).join('; ');
-    
+    const errorDetails = errors
+      .map(
+        ({ index, item, error }) =>
+          `Item ${index + 1} (${item.document_type}): ${error}`,
+      )
+      .join("; ");
+
     // If we have some successful saves, provide partial success information
     if (successful.length > 0) {
-      console.warn(`Partial success: ${successful.length} items saved, ${errors.length} failed`);
+      console.warn(
+        `Partial success: ${successful.length} items saved, ${errors.length} failed`,
+      );
       // For now, we'll still throw an error, but you could modify this to return partial success
       throw new Error(
         `Failed to save ${errors.length} out of ${items.length} items. ` +
-        `Successfully saved: ${successful.length} items. ` +
-        `Errors: ${errorDetails}`
+          `Successfully saved: ${successful.length} items. ` +
+          `Errors: ${errorDetails}`,
       );
     } else {
       throw new Error(
         `Failed to save all ${items.length} items. ` +
-        `Errors: ${errorDetails}`
+          `Errors: ${errorDetails}`,
       );
     }
   }
@@ -281,10 +297,10 @@ export async function saveChecklist(
  */
 export async function updateChecklist(
   applicationId: string,
-  items: ChecklistUpdateRequest[]
+  items: ChecklistUpdateRequest[],
 ): Promise<ChecklistApiResponse<ChecklistItem[]>> {
   const promises = items.map((item) =>
-    updateChecklistItem(applicationId, item)
+    updateChecklistItem(applicationId, item),
   );
   const results = await Promise.allSettled(promises);
 
@@ -297,8 +313,8 @@ export async function updateChecklist(
     } else {
       errors.push(
         new Error(
-          `Failed to update item ${index + 1}: ${result.reason.message}`
-        )
+          `Failed to update item ${index + 1}: ${result.reason.message}`,
+        ),
       );
     }
   });
@@ -307,7 +323,7 @@ export async function updateChecklist(
     throw new Error(
       `Failed to update ${errors.length} items: ${errors
         .map((e) => e.message)
-        .join(", ")}`
+        .join(", ")}`,
     );
   }
 
@@ -322,10 +338,10 @@ export async function updateChecklist(
  */
 export async function deleteChecklist(
   applicationId: string,
-  checklistIds: string[]
+  checklistIds: string[],
 ): Promise<ChecklistApiResponse<void>> {
   const promises = checklistIds.map((id) =>
-    deleteChecklistItem(applicationId, { checklist_id: id })
+    deleteChecklistItem(applicationId, { checklist_id: id }),
   );
   const results = await Promise.allSettled(promises);
 
@@ -344,7 +360,7 @@ export async function deleteChecklist(
         successfulDeletions.push(index + 1);
       } else {
         errors.push(
-          new Error(`Failed to delete item ${index + 1}: ${errorMessage}`)
+          new Error(`Failed to delete item ${index + 1}: ${errorMessage}`),
         );
       }
     } else {
@@ -357,7 +373,7 @@ export async function deleteChecklist(
     throw new Error(
       `Failed to delete ${errors.length} items: ${errors
         .map((e) => e.message)
-        .join(", ")}`
+        .join(", ")}`,
     );
   }
 

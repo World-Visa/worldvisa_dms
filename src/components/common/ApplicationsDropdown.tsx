@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { ChevronDown, FileCheck, Users } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import React, { useState, useRef, useEffect } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ChevronDown, FileCheck, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ApplicationsDropdownProps {
   className?: string;
@@ -18,35 +18,40 @@ export function ApplicationsDropdown({ className }: ApplicationsDropdownProps) {
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener("mousedown", handleClickOutside);
     };
   }, []);
 
   // Check if any of the dropdown items are active
-  const isActive = pathname.startsWith('/admin/applications') || pathname.startsWith('/admin/spouse-skill-assessment-applications');
+  const isActive =
+    pathname.startsWith("/admin/applications") ||
+    pathname.startsWith("/admin/spouse-skill-assessment-applications");
 
   const menuItems = [
     {
-      id: 'visa-applications',
-      label: 'Visa Applications',
-      href: '/admin/applications',
+      id: "visa-applications",
+      label: "Visa Applications",
+      href: "/admin/applications",
       icon: FileCheck,
-      description: 'View and manage all visa applications'
+      description: "View and manage all visa applications",
     },
     {
-      id: 'spouse-skill-assessment',
-      label: 'Spouse Skill Assessment',
-      href: '/admin/spouse-skill-assessment-applications',
+      id: "spouse-skill-assessment",
+      label: "Spouse Skill Assessment",
+      href: "/admin/spouse-skill-assessment-applications",
       icon: Users,
-      description: 'View and manage spouse skill assessment applications'
-    }
+      description: "View and manage spouse skill assessment applications",
+    },
   ];
 
   const handleItemClick = () => {
@@ -62,14 +67,14 @@ export function ApplicationsDropdown({ className }: ApplicationsDropdownProps) {
           "flex items-center px-1 py-4 text-sm font-medium border-b-2 transition-colors",
           isActive
             ? "border-blue-500 text-blue-600"
-            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
         )}
       >
         All Applications
         <ChevronDown
           className={cn(
             "h-4 w-4 ml-1 transition-transform duration-200",
-            isOpen ? "rotate-180" : "rotate-0"
+            isOpen ? "rotate-180" : "rotate-0",
           )}
         />
       </button>
@@ -88,14 +93,16 @@ export function ApplicationsDropdown({ className }: ApplicationsDropdownProps) {
                   onClick={handleItemClick}
                   className={cn(
                     "flex items-start px-4 py-3 hover:bg-gray-50 transition-colors",
-                    isItemActive && "bg-blue-50 "
+                    isItemActive && "bg-blue-50 ",
                   )}
                 >
                   <div className="flex-1 min-w-0">
-                    <div className={cn(
-                      "text-sm font-medium",
-                      isItemActive ? "text-blue-600" : "text-gray-900"
-                    )}>
+                    <div
+                      className={cn(
+                        "text-sm font-medium",
+                        isItemActive ? "text-blue-600" : "text-gray-900",
+                      )}
+                    >
                       {item.label}
                     </div>
                   </div>

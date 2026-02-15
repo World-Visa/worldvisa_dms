@@ -8,23 +8,25 @@ function mapCategoryLabel(category: string): string {
   if (category === "Identity") return "Identity Documents";
   if (category === "Education") return "Education Documents";
   if (category === "Other") return "Other Documents";
-  if (category === "Self Employment/Freelance") return "Self Employment/Freelance";
+  if (category === "Self Employment/Freelance")
+    return "Self Employment/Freelance";
   if (category === "Company") return "Company Documents";
-  
+
   if (category.includes("Company Documents")) {
-    return category; 
+    return category;
   }
-  
+
   return category;
 }
-
 
 function normalizeCompanyName(name: string | null | undefined): string | null {
   if (!name) return null;
   return name.replace(/\s+/g, " ").trim().toLowerCase();
 }
 
-function extractCompanyNameFromLabel(label: string | null | undefined): string | null {
+function extractCompanyNameFromLabel(
+  label: string | null | undefined,
+): string | null {
   if (!label) return null;
   const suffixPattern = /\s*company documents$/i;
   if (!suffixPattern.test(label)) {
@@ -38,7 +40,7 @@ function matchesCompanyRequirement(
   doc: Document,
   checklistItem: ChecklistItem,
   categoryLabel: string,
-  originalCategory: string
+  originalCategory: string,
 ): boolean {
   const normalizedCategoryLabel = categoryLabel.toLowerCase();
   if (!normalizedCategoryLabel.includes("company documents")) {
@@ -58,7 +60,8 @@ function matchesCompanyRequirement(
     extractCompanyNameFromLabel(originalCategory);
 
   const docCompanyName =
-    normalizeCompanyName(doc.company_name) ?? extractCompanyNameFromLabel(doc.document_category);
+    normalizeCompanyName(doc.company_name) ??
+    extractCompanyNameFromLabel(doc.document_category);
 
   if (requiredCompanyName) {
     if (docCompanyName && docCompanyName === requiredCompanyName) {
@@ -77,55 +80,85 @@ function matchesCompanyRequirement(
     }
   }
 
-  if (normalizedOriginalCategory === "company" || normalizedCategoryLabel === "company documents") {
+  if (
+    normalizedOriginalCategory === "company" ||
+    normalizedCategoryLabel === "company documents"
+  ) {
     return docCategory.includes("company documents");
   }
 
-  return docCategory.trim().replace(/\s+/g, " ") === normalizedCategoryLabel.trim().replace(/\s+/g, " ");
+  return (
+    docCategory.trim().replace(/\s+/g, " ") ===
+    normalizedCategoryLabel.trim().replace(/\s+/g, " ")
+  );
 }
 
 function matchDocumentToChecklistItem(
   doc: Document,
-  checklistItem: ChecklistItem
+  checklistItem: ChecklistItem,
 ): boolean {
   if (!doc || !doc.file_name) return false;
 
   const expectedDocType = checklistItem.document_type
     .toLowerCase()
     .replace(/\s+/g, "_");
-  
+
   let categoryLabel = mapCategoryLabel(checklistItem.document_category);
-    
+
   const docTypeFromName = doc.document_name;
-  
+
   if (docTypeFromName) {
-    const normalizedDocName = docTypeFromName.toLowerCase().replace(/\s+/g, "_");
+    const normalizedDocName = docTypeFromName
+      .toLowerCase()
+      .replace(/\s+/g, "_");
     const normalizedExpectedType = expectedDocType.toLowerCase();
-    
+
     if (normalizedDocName === normalizedExpectedType) {
       const docCategory = doc.document_category;
       if (docCategory) {
         if (doc.document_category === categoryLabel) {
-          return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+          return matchesCompanyRequirement(
+            doc,
+            checklistItem,
+            categoryLabel,
+            checklistItem.document_category,
+          );
         }
         if (
           categoryLabel.includes("Company Documents") &&
           doc.document_category?.includes("Company Documents")
         ) {
-          if (matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category)) {
+          if (
+            matchesCompanyRequirement(
+              doc,
+              checklistItem,
+              categoryLabel,
+              checklistItem.document_category,
+            )
+          ) {
             return true;
           }
           return false;
         }
         const mappedCategory = mapCategoryLabel(docCategory);
         if (mappedCategory === categoryLabel) {
-          return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+          return matchesCompanyRequirement(
+            doc,
+            checklistItem,
+            categoryLabel,
+            checklistItem.document_category,
+          );
         }
         return false;
       }
-      return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+      return matchesCompanyRequirement(
+        doc,
+        checklistItem,
+        categoryLabel,
+        checklistItem.document_category,
+      );
     }
-    
+
     if (
       normalizedDocName.includes(normalizedExpectedType) ||
       normalizedExpectedType.includes(normalizedDocName)
@@ -142,14 +175,26 @@ function matchDocumentToChecklistItem(
         ) {
           // Direct match
           if (doc.document_category === categoryLabel) {
-            return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+            return matchesCompanyRequirement(
+              doc,
+              checklistItem,
+              categoryLabel,
+              checklistItem.document_category,
+            );
           }
           // Check if both are company documents
           if (
             doc.document_category?.includes("Company Documents") &&
             categoryLabel.includes("Company Documents")
           ) {
-          if (matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category)) {
+            if (
+              matchesCompanyRequirement(
+                doc,
+                checklistItem,
+                categoryLabel,
+                checklistItem.document_category,
+              )
+            ) {
               return true;
             }
             return false;
@@ -157,44 +202,81 @@ function matchDocumentToChecklistItem(
           // Check mapped category
           const mappedCategory = mapCategoryLabel(docCategory);
           if (mappedCategory === categoryLabel) {
-            return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+            return matchesCompanyRequirement(
+              doc,
+              checklistItem,
+              categoryLabel,
+              checklistItem.document_category,
+            );
           }
           return false;
         }
         const mappedCategory = mapCategoryLabel(docCategory);
         if (mappedCategory === categoryLabel) {
-          return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+          return matchesCompanyRequirement(
+            doc,
+            checklistItem,
+            categoryLabel,
+            checklistItem.document_category,
+          );
         }
         return false;
       }
-      return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+      return matchesCompanyRequirement(
+        doc,
+        checklistItem,
+        categoryLabel,
+        checklistItem.document_category,
+      );
     }
   }
 
   const docTypeFromField = doc.document_type;
-  
+
   if (docTypeFromField && docTypeFromField === expectedDocType) {
     const docCategory = doc.document_category;
     if (docCategory) {
       if (doc.document_category === categoryLabel) {
-        return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+        return matchesCompanyRequirement(
+          doc,
+          checklistItem,
+          categoryLabel,
+          checklistItem.document_category,
+        );
       }
       if (
         categoryLabel.includes("Company Documents") &&
         doc.document_category?.includes("Company Documents")
       ) {
-          if (matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category)) {
+        if (
+          matchesCompanyRequirement(
+            doc,
+            checklistItem,
+            categoryLabel,
+            checklistItem.document_category,
+          )
+        ) {
           return true;
         }
         return false;
       }
       const mappedCategory = mapCategoryLabel(docCategory);
       if (mappedCategory === categoryLabel) {
-        return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+        return matchesCompanyRequirement(
+          doc,
+          checklistItem,
+          categoryLabel,
+          checklistItem.document_category,
+        );
       }
       return false;
     }
-    return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+    return matchesCompanyRequirement(
+      doc,
+      checklistItem,
+      categoryLabel,
+      checklistItem.document_category,
+    );
   }
 
   const fileName = doc.file_name.toLowerCase();
@@ -205,39 +287,66 @@ function matchDocumentToChecklistItem(
     const docCategory = doc.document_category;
     if (docCategory) {
       if (doc.document_category === categoryLabel) {
-        return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+        return matchesCompanyRequirement(
+          doc,
+          checklistItem,
+          categoryLabel,
+          checklistItem.document_category,
+        );
       }
       if (
         categoryLabel.includes("Company Documents") &&
         doc.document_category?.includes("Company Documents")
       ) {
-        if (matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category)) {
+        if (
+          matchesCompanyRequirement(
+            doc,
+            checklistItem,
+            categoryLabel,
+            checklistItem.document_category,
+          )
+        ) {
           return true;
         }
         return false;
       }
       const mappedCategory = mapCategoryLabel(docCategory);
       if (mappedCategory === categoryLabel) {
-        return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+        return matchesCompanyRequirement(
+          doc,
+          checklistItem,
+          categoryLabel,
+          checklistItem.document_category,
+        );
       }
       return false;
     }
-    return matchesCompanyRequirement(doc, checklistItem, categoryLabel, checklistItem.document_category);
+    return matchesCompanyRequirement(
+      doc,
+      checklistItem,
+      categoryLabel,
+      checklistItem.document_category,
+    );
   }
 
   return false;
 }
 
-
 export function areAllMandatoryDocumentsReviewed(
   checklistItems: ChecklistItem[] | undefined,
-  documents: Document[] | undefined
+  documents: Document[] | undefined,
 ): boolean {
-  if (!checklistItems || !Array.isArray(checklistItems) || checklistItems.length === 0) {
+  if (
+    !checklistItems ||
+    !Array.isArray(checklistItems) ||
+    checklistItems.length === 0
+  ) {
     return false;
   }
 
-  const mandatoryItems = checklistItems.filter(item => item.required === true);
+  const mandatoryItems = checklistItems.filter(
+    (item) => item.required === true,
+  );
 
   if (mandatoryItems.length === 0) {
     return true;
@@ -248,7 +357,7 @@ export function areAllMandatoryDocumentsReviewed(
   }
 
   const validDocuments = documents.filter(
-    (doc) => doc && typeof doc === "object" && doc.file_name
+    (doc) => doc && typeof doc === "object" && doc.file_name,
   );
 
   for (const mandatoryItem of mandatoryItems) {
@@ -272,21 +381,33 @@ export interface MandatoryDocumentValidationDetail {
   documentType: string;
   documentCategory: string;
   companyName?: string;
-  status: 'missing' | 'pending' | 'rejected' | 'request_review' | 'approved' | 'reviewed';
+  status:
+    | "missing"
+    | "pending"
+    | "rejected"
+    | "request_review"
+    | "approved"
+    | "reviewed";
   fileName?: string;
 }
 
 export function getMandatoryDocumentValidationDetails(
   checklistItems: ChecklistItem[] | undefined,
-  documents: Document[] | undefined
+  documents: Document[] | undefined,
 ): MandatoryDocumentValidationDetail[] {
   const details: MandatoryDocumentValidationDetail[] = [];
 
-  if (!checklistItems || !Array.isArray(checklistItems) || checklistItems.length === 0) {
+  if (
+    !checklistItems ||
+    !Array.isArray(checklistItems) ||
+    checklistItems.length === 0
+  ) {
     return details;
   }
 
-  const mandatoryItems = checklistItems.filter(item => item.required === true);
+  const mandatoryItems = checklistItems.filter(
+    (item) => item.required === true,
+  );
 
   if (mandatoryItems.length === 0) {
     return details;
@@ -294,21 +415,21 @@ export function getMandatoryDocumentValidationDetails(
 
   if (!documents || !Array.isArray(documents) || documents.length === 0) {
     // All mandatory items are missing
-    return mandatoryItems.map(item => ({
+    return mandatoryItems.map((item) => ({
       documentType: item.document_type,
       documentCategory: item.document_category,
       companyName: item.company_name,
-      status: 'missing' as const
+      status: "missing" as const,
     }));
   }
 
   const validDocuments = documents.filter(
-    (doc) => doc && typeof doc === "object" && doc.file_name
+    (doc) => doc && typeof doc === "object" && doc.file_name,
   );
 
   for (const mandatoryItem of mandatoryItems) {
     const matchingDoc = validDocuments.find((doc) =>
-      matchDocumentToChecklistItem(doc, mandatoryItem)
+      matchDocumentToChecklistItem(doc, mandatoryItem),
     );
 
     if (!matchingDoc) {
@@ -316,17 +437,17 @@ export function getMandatoryDocumentValidationDetails(
         documentType: mandatoryItem.document_type,
         documentCategory: mandatoryItem.document_category,
         companyName: mandatoryItem.company_name,
-        status: 'missing'
+        status: "missing",
       });
     } else {
       const docStatus = matchingDoc.status?.toLowerCase();
-      if (docStatus !== 'reviewed' && docStatus !== 'approved') {
+      if (docStatus !== "reviewed" && docStatus !== "approved") {
         details.push({
           documentType: mandatoryItem.document_type,
           documentCategory: mandatoryItem.document_category,
           companyName: mandatoryItem.company_name,
-          status: docStatus as any || 'missing',
-          fileName: matchingDoc.file_name
+          status: (docStatus as any) || "missing",
+          fileName: matchingDoc.file_name,
         });
       }
     }
@@ -334,4 +455,3 @@ export function getMandatoryDocumentValidationDetails(
 
   return details;
 }
-

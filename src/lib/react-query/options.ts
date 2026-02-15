@@ -1,4 +1,4 @@
-import type { DefaultOptions } from '@tanstack/react-query';
+import type { DefaultOptions } from "@tanstack/react-query";
 
 export const queryClientDefaultOptions: DefaultOptions = {
   queries: {
@@ -9,5 +9,3 @@ export const queryClientDefaultOptions: DefaultOptions = {
     refetchOnWindowFocus: false,
   },
 };
-
-

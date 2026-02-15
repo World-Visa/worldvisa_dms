@@ -50,5 +50,3 @@ export interface DeleteSampleDocumentResponse {
   success: boolean;
   message: string;
 }
-
-

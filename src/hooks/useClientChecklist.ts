@@ -1,6 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
-import { fetcher } from '@/lib/fetcher';
-import { ChecklistResponse } from '@/types/checklist';
+import { useQuery } from "@tanstack/react-query";
+import { fetcher } from "@/lib/fetcher";
+import { ChecklistResponse } from "@/types/checklist";
 
 interface ChecklistApiResponse {
   status: string;
@@ -16,21 +16,27 @@ interface ChecklistApiResponse {
   };
 }
 
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export function useClientChecklist(applicationId: string) {
   return useQuery({
-    queryKey: ['client-checklist', applicationId],
+    queryKey: ["client-checklist", applicationId],
     queryFn: async (): Promise<ChecklistResponse> => {
       try {
         // Use the client checklist endpoint with applicationId as query parameter
         const url = `${ZOHO_BASE_URL}/clients/checklist/`;
         const params = new URLSearchParams({ record_id: applicationId });
-        
-        const response = await fetcher<ChecklistApiResponse>(`${url}?${params.toString()}`);
-        
+
+        const response = await fetcher<ChecklistApiResponse>(
+          `${url}?${params.toString()}`,
+        );
+
         // Handle the actual API response structure
-        if (response.status === 'success' && response.data && response.data.checklist) {
+        if (
+          response.status === "success" &&
+          response.data &&
+          response.data.checklist
+        ) {
           return {
             success: true,
             data: response.data.checklist.map((item) => ({
@@ -39,22 +45,23 @@ export function useClientChecklist(applicationId: string) {
               document_type: item.document_type,
               required: item.required,
               company_name: item.company_name,
-              description: item.description
-            }))
+              description: item.description,
+            })),
           };
         }
-        
+
         // Fallback to original response format
         return {
           success: true,
-          data: []
+          data: [],
         };
       } catch (error) {
-        if (error instanceof Error && (
-          error.message.includes('User not found') || 
-          error.message.includes('404') ||
-          error.message.includes('Not found')
-        )) {
+        if (
+          error instanceof Error &&
+          (error.message.includes("User not found") ||
+            error.message.includes("404") ||
+            error.message.includes("Not found"))
+        ) {
           return { success: true, data: [] };
         }
         throw error;

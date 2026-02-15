@@ -1,5 +1,5 @@
 export interface ApiResponse<T = unknown> {
-  status: 'success' | 'error';
+  status: "success" | "error";
   message?: string;
   data?: T;
   error?: string;
@@ -9,7 +9,7 @@ export interface PaginationParams {
   page: number;
   limit: number;
   sort?: string;
-  order?: 'asc' | 'desc';
+  order?: "asc" | "desc";
 }
 
 export interface PaginatedResponse<T> {
@@ -24,9 +24,17 @@ export interface PaginatedResponse<T> {
   };
 }
 
-export type UserRole = 'admin' | 'client' | 'master-admin' | 'team-leader' | 'supervisor';
+export type UserRole =
+  | "admin"
+  | "client"
+  | "master-admin"
+  | "team-leader"
+  | "supervisor";
 
-export type RequestedDocumentType = 'requested-to-me' | 'my-requests' | 'all-requests';
+export type RequestedDocumentType =
+  | "requested-to-me"
+  | "my-requests"
+  | "all-requests";
 
 export interface FilterParams {
   search?: string;

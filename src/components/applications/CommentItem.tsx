@@ -37,7 +37,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
 }) => {
   const { user } = useAuth();
   const isImportant =
-    comment.is_important || (comment.added_by ?? '').toLowerCase().includes("moshin");
+    comment.is_important ||
+    (comment.added_by ?? "").toLowerCase().includes("moshin");
 
   // Determine if current user can delete this comment
   const canDelete =
@@ -66,10 +67,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
         isImportant
           ? "border-l-4 border-l-red-500 bg-gradient-to-r from-gray-50 to-red-50"
           : isClientComment
-          ? "border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50"
-          : isAdminComment
-          ? "border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-emerald-50"
-          : "border-l-4 border-l-gray-300 bg-white"
+            ? "border-l-4 border-l-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50"
+            : isAdminComment
+              ? "border-l-4 border-l-green-500 bg-gradient-to-r from-green-50 to-emerald-50"
+              : "border-l-4 border-l-gray-300 bg-white"
       }`}
     >
       <div className="flex items-start space-x-3">
@@ -78,10 +79,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
             isImportant
               ? "bg-gradient-to-r from-gray-100 to-red-100"
               : isClientComment
-              ? "bg-gradient-to-r from-blue-100 to-indigo-100"
-              : isAdminComment
-              ? "bg-gradient-to-r from-green-100 to-emerald-100"
-              : "bg-gray-100"
+                ? "bg-gradient-to-r from-blue-100 to-indigo-100"
+                : isAdminComment
+                  ? "bg-gradient-to-r from-green-100 to-emerald-100"
+                  : "bg-gray-100"
           }`}
         >
           {isClientComment ? (
@@ -92,8 +93,8 @@ const CommentItem: React.FC<CommentItemProps> = ({
                 isImportant
                   ? "text-red-600"
                   : isAdminComment
-                  ? "text-green-600"
-                  : "text-gray-600"
+                    ? "text-green-600"
+                    : "text-gray-600"
               }`}
             />
           )}
@@ -106,10 +107,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   isImportant
                     ? "text-red-900"
                     : isClientComment
-                    ? "text-blue-900"
-                    : isAdminComment
-                    ? "text-green-900"
-                    : "text-gray-900"
+                      ? "text-blue-900"
+                      : isAdminComment
+                        ? "text-green-900"
+                        : "text-gray-900"
                 }`}
               >
                 {comment.added_by}
@@ -188,10 +189,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
               isImportant
                 ? "text-purple-800"
                 : isClientComment
-                ? "text-blue-800"
-                : isAdminComment
-                ? "text-green-800"
-                : "text-gray-700"
+                  ? "text-blue-800"
+                  : isAdminComment
+                    ? "text-green-800"
+                    : "text-gray-700"
             }`}
           >
             {comment.comment}

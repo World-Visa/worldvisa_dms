@@ -1,6 +1,6 @@
-import { useQueryClient } from '@tanstack/react-query';
-import { Document } from '@/types/applications';
-import { ClientDocumentsResponse } from '@/types/client';
+import { useQueryClient } from "@tanstack/react-query";
+import { Document } from "@/types/applications";
+import { ClientDocumentsResponse } from "@/types/client";
 
 interface UseClientDocumentHandlersProps {
   applicationId: string;
@@ -57,11 +57,15 @@ export function useClientDocumentHandlers({
   const handleReuploadDocument = (
     documentId: string,
     documentType: string,
-    category: string
-  ): { document: Document | null; documentType: string; category: string } | null => {
+    category: string,
+  ): {
+    document: Document | null;
+    documentType: string;
+    category: string;
+  } | null => {
     // Find the document to reupload
     const documentToReupload = documentsData?.data?.documents?.find(
-      (doc) => doc._id === documentId
+      (doc) => doc._id === documentId,
     );
     if (!documentToReupload) {
       console.error("Document not found for reupload:", documentId);
@@ -82,7 +86,3 @@ export function useClientDocumentHandlers({
     handleReuploadDocument,
   };
 }
-
-
-
-

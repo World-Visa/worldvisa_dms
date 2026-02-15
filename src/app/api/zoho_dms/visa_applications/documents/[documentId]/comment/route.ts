@@ -8,13 +8,12 @@ import {
   ZohoComment,
 } from "@/types/comments";
 import * as Sentry from "@sentry/nextjs";
-import { ZOHO_BASE_URL } from '@/lib/config/api';
-
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 // GET /api/zoho_dms/visa_applications/documents/[documentId]/comment
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ documentId: string }> }
+  { params }: { params: Promise<{ documentId: string }> },
 ) {
   try {
     const { documentId } = await params;
@@ -25,7 +24,7 @@ export async function GET(
           status: "error",
           message: "Document ID is required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -36,7 +35,7 @@ export async function GET(
           status: "error",
           message: "Authorization token required",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -50,7 +49,7 @@ export async function GET(
           status: "error",
           message: "Invalid token",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -61,7 +60,7 @@ export async function GET(
           status: "error",
           message: "Token expired",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -86,7 +85,7 @@ export async function GET(
           status: "error",
           message: "Access denied - valid user role required",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -115,7 +114,7 @@ export async function GET(
         comments = response.data
           .filter(
             (comment: ZohoComment) =>
-              comment.comment && comment.comment.trim().length > 0
+              comment.comment && comment.comment.trim().length > 0,
           )
           .map((comment: ZohoComment) => ({
             _id: comment._id,
@@ -125,10 +124,9 @@ export async function GET(
             document_id: documentId,
             is_important: Boolean(
               comment.added_by &&
-                comment.added_by.toLowerCase().includes("moshin")
+                comment.added_by.toLowerCase().includes("moshin"),
             ),
           }));
-
       }
 
       const responseData: GetCommentsResponse = {
@@ -169,7 +167,7 @@ export async function GET(
         message:
           error instanceof Error ? error.message : "Failed to fetch comments",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -177,7 +175,7 @@ export async function GET(
 // POST /api/zoho_dms/visa_applications/documents/[documentId]/comment
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ documentId: string }> }
+  { params }: { params: Promise<{ documentId: string }> },
 ) {
   try {
     const { documentId } = await params;
@@ -188,7 +186,7 @@ export async function POST(
           status: "error",
           message: "Document ID is required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -199,7 +197,7 @@ export async function POST(
           status: "error",
           message: "Authorization token required",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -213,7 +211,7 @@ export async function POST(
           status: "error",
           message: "Invalid token",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -224,7 +222,7 @@ export async function POST(
           status: "error",
           message: "Token expired",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -249,7 +247,7 @@ export async function POST(
           status: "error",
           message: "Access denied - valid user role required",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -267,7 +265,7 @@ export async function POST(
           status: "error",
           message: "Comment and added_by are required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -278,7 +276,7 @@ export async function POST(
           status: "error",
           message: "Comment cannot be empty",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -288,7 +286,7 @@ export async function POST(
           status: "error",
           message: "Comment is too long (max 1000 characters)",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -335,7 +333,7 @@ export async function POST(
             document_id: documentId,
             is_important: Boolean(
               latestComment.added_by &&
-                latestComment.added_by.toLowerCase().includes("moshin")
+                latestComment.added_by.toLowerCase().includes("moshin"),
             ),
           };
 
@@ -352,7 +350,7 @@ export async function POST(
               status: "error",
               message: "No comment found in response",
             },
-            { status: 400 }
+            { status: 400 },
           );
         }
       } else {
@@ -361,7 +359,7 @@ export async function POST(
             status: "error",
             message: zohoResponse.message || "Failed to create comment",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     } catch (zohoError) {
@@ -373,7 +371,7 @@ export async function POST(
           message:
             "Comment creation service is currently unavailable. Please try again later or contact support.",
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
   } catch (error) {
@@ -395,7 +393,7 @@ export async function POST(
         message:
           error instanceof Error ? error.message : "Failed to add comment",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -403,7 +401,7 @@ export async function POST(
 // DELETE /api/zoho_dms/visa_applications/documents/[documentId]/comment
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: Promise<{ documentId: string }> }
+  { params }: { params: Promise<{ documentId: string }> },
 ) {
   try {
     const { documentId } = await params;
@@ -414,7 +412,7 @@ export async function DELETE(
           status: "error",
           message: "Document ID is required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -425,7 +423,7 @@ export async function DELETE(
           status: "error",
           message: "Authorization token required",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -438,7 +436,7 @@ export async function DELETE(
           status: "error",
           message: "Invalid token",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -448,7 +446,7 @@ export async function DELETE(
           status: "error",
           message: "Token expired",
         },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -471,12 +469,15 @@ export async function DELETE(
           status: "error",
           message: "Access denied - valid user role required",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const body = await request.json();
-    const { commentId, addedBy } = body as { commentId: string; addedBy?: string };
+    const { commentId, addedBy } = body as {
+      commentId: string;
+      addedBy?: string;
+    };
 
     if (!commentId) {
       return NextResponse.json(
@@ -484,7 +485,7 @@ export async function DELETE(
           status: "error",
           message: "Comment ID is required",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -493,9 +494,10 @@ export async function DELETE(
         return NextResponse.json(
           {
             status: "error",
-            message: "Comment author information is required for client deletion",
+            message:
+              "Comment author information is required for client deletion",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
 
@@ -506,7 +508,7 @@ export async function DELETE(
             status: "error",
             message: "You can only delete your own comments",
           },
-          { status: 403 }
+          { status: 403 },
         );
       }
     }
@@ -538,7 +540,7 @@ export async function DELETE(
             status: "error",
             message: zohoResponse.message || "Failed to delete comment",
           },
-          { status: 400 }
+          { status: 400 },
         );
       }
     } catch (zohoError) {
@@ -550,7 +552,7 @@ export async function DELETE(
           message:
             "Comment deletion service is currently unavailable. Please try again later or contact support.",
         },
-        { status: 503 }
+        { status: 503 },
       );
     }
   } catch (error) {
@@ -572,7 +574,7 @@ export async function DELETE(
         message:
           error instanceof Error ? error.message : "Failed to delete comment",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

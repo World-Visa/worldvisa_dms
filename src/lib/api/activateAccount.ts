@@ -1,5 +1,5 @@
-import { fetcher } from '@/lib/fetcher';
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { fetcher } from "@/lib/fetcher";
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export interface AccountStatus {
   emailValid: boolean;
@@ -22,7 +22,7 @@ export interface CheckClientAccountResponseClient {
 }
 
 export interface CheckClientAccountResponse {
-  status: 'success';
+  status: "success";
   data: {
     client: CheckClientAccountResponseClient;
   };
@@ -30,7 +30,7 @@ export interface CheckClientAccountResponse {
 
 export type CheckClientAccountResult =
   | CheckClientAccountResponse
-  | { status: 'fail'; message: string };
+  | { status: "fail"; message: string };
 
 export interface UpdateClientAccountPayload {
   email?: string;
@@ -51,7 +51,7 @@ export interface UpdateClientAccountResponseClient {
 }
 
 export interface UpdateClientAccountResponse {
-  status: 'success';
+  status: "success";
   message: string;
   data: {
     client: UpdateClientAccountResponseClient;
@@ -80,37 +80,39 @@ export interface CreateClientAccountResponseClient {
 }
 
 export interface CreateClientAccountResponse {
-  status: 'success';
+  status: "success";
   message?: string;
   data: {
     client: CreateClientAccountResponseClient;
   };
 }
 
-export async function checkClientAccount(leadId: string): Promise<CheckClientAccountResult> {
+export async function checkClientAccount(
+  leadId: string,
+): Promise<CheckClientAccountResult> {
   const url = `${ZOHO_BASE_URL}/clients/admin/check/${leadId}`;
-  return fetcher<CheckClientAccountResult>(url, { method: 'GET' });
+  return fetcher<CheckClientAccountResult>(url, { method: "GET" });
 }
 
 export async function updateClientAccount(
   leadId: string,
-  payload: UpdateClientAccountPayload
+  payload: UpdateClientAccountPayload,
 ): Promise<UpdateClientAccountResponse> {
   const url = `${ZOHO_BASE_URL}/clients/admin/update/${leadId}`;
   return fetcher<UpdateClientAccountResponse>(url, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 }
 
 export async function createClientAccount(
-  payload: CreateClientAccountPayload
+  payload: CreateClientAccountPayload,
 ): Promise<CreateClientAccountResponse> {
   const url = `${ZOHO_BASE_URL}/clients/signup`;
   return fetcher<CreateClientAccountResponse>(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
 }

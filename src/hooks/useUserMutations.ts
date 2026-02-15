@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetcher } from "@/lib/fetcher";
 import { toast } from "sonner";
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 // 1. Update User Role
 interface UpdateRolePayload {
@@ -10,16 +10,13 @@ interface UpdateRolePayload {
 }
 
 const updateUserRole = async (payload: UpdateRolePayload) => {
-  return fetcher(
-    `${ZOHO_BASE_URL}/users/update_role`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        newRole: payload.newRole,
-        username: payload.username,
-      }),
-    }
-  );
+  return fetcher(`${ZOHO_BASE_URL}/users/update_role`, {
+    method: "POST",
+    body: JSON.stringify({
+      newRole: payload.newRole,
+      username: payload.username,
+    }),
+  });
 };
 
 export function useUpdateUserRole() {
@@ -43,16 +40,13 @@ interface ResetPasswordPayload {
 }
 
 const resetUserPassword = async (payload: ResetPasswordPayload) => {
-  return fetcher(
-    `${ZOHO_BASE_URL}/users/reset`,
-    {
-      method: "POST",
-      body: JSON.stringify({
-        username: payload.username,
-        newPassword: payload.newPassword,
-      }),
-    }
-  );
+  return fetcher(`${ZOHO_BASE_URL}/users/reset`, {
+    method: "POST",
+    body: JSON.stringify({
+      username: payload.username,
+      newPassword: payload.newPassword,
+    }),
+  });
 };
 
 export function useResetUserPassword() {
@@ -109,21 +103,20 @@ interface DeleteUserResponse {
   message: string;
 }
 
-const deleteUser = async (payload: DeleteUserPayload): Promise<DeleteUserResponse> => {
-  return fetcher<DeleteUserResponse>(
-    `${ZOHO_BASE_URL}/users/remove`,
-    {
-      method: "DELETE",
-      body: JSON.stringify({
-        username: payload.username,
-      }),
-    }
-  );
+const deleteUser = async (
+  payload: DeleteUserPayload,
+): Promise<DeleteUserResponse> => {
+  return fetcher<DeleteUserResponse>(`${ZOHO_BASE_URL}/users/remove`, {
+    method: "DELETE",
+    body: JSON.stringify({
+      username: payload.username,
+    }),
+  });
 };
 
 export function useDeleteUser() {
   const queryClient = useQueryClient();
-  
+
   return useMutation<DeleteUserResponse, Error, DeleteUserPayload>({
     mutationFn: deleteUser,
     onMutate: async ({ username }) => {

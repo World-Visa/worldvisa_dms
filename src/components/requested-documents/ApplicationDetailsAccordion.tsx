@@ -1,15 +1,23 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from '@/components/ui/accordion';
-import { Badge } from '@/components/ui/badge';
-import { User, Mail, Globe, Target, FileText, Briefcase, Library } from 'lucide-react';
-import { Application } from '@/types/applications';
+} from "@/components/ui/accordion";
+import { Badge } from "@/components/ui/badge";
+import {
+  User,
+  Mail,
+  Globe,
+  Target,
+  FileText,
+  Briefcase,
+  Library,
+} from "lucide-react";
+import { Application } from "@/types/applications";
 
 interface ApplicationDetailsAccordionProps {
   application: Application | undefined;
@@ -22,9 +30,8 @@ export function ApplicationDetailsAccordion({
   application,
   isLoading,
   isOpen,
-  onToggle
+  onToggle,
 }: ApplicationDetailsAccordionProps) {
-
   const getServiceBadgeVariant = (service: string) => {
     switch (service?.toLowerCase()) {
       case "permanent residency":
@@ -69,14 +76,18 @@ export function ApplicationDetailsAccordion({
                     <User className="h-3 w-3" />
                     Applicant Name
                   </label>
-                  <p className="text-sm font-medium">{application.Name || 'Not provided'}</p>
+                  <p className="text-sm font-medium">
+                    {application.Name || "Not provided"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
                     <Mail className="h-3 w-3" />
                     Email
                   </label>
-                  <p className="text-sm">{application.Email || 'Not provided'}</p>
+                  <p className="text-sm">
+                    {application.Email || "Not provided"}
+                  </p>
                 </div>
               </div>
 
@@ -87,7 +98,9 @@ export function ApplicationDetailsAccordion({
                     <Globe className="h-3 w-3" />
                     Target Country
                   </label>
-                  <p className="text-sm">{application.Qualified_Country || 'Not provided'}</p>
+                  <p className="text-sm">
+                    {application.Qualified_Country || "Not provided"}
+                  </p>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-medium text-muted-foreground flex items-center gap-1">
@@ -95,7 +108,7 @@ export function ApplicationDetailsAccordion({
                     Assessing Authority
                   </label>
                   <p className="text-xs">
-                    {(application.Assessing_Authority || "")}
+                    {application.Assessing_Authority || ""}
                   </p>
                 </div>
               </div>
@@ -109,11 +122,11 @@ export function ApplicationDetailsAccordion({
                   </label>
                   <Badge
                     variant={getServiceBadgeVariant(
-                      application.Service_Finalized || ""
+                      application.Service_Finalized || "",
                     )}
                     className="text-xs"
                   >
-                    {(application.Service_Finalized || "")}
+                    {application.Service_Finalized || ""}
                   </Badge>
                 </div>
                 <div className="space-y-1">
@@ -122,7 +135,7 @@ export function ApplicationDetailsAccordion({
                     Suggested ANZSCO
                   </label>
                   <p className="text-sm">
-                    {(application.Suggested_Anzsco || "")}
+                    {application.Suggested_Anzsco || ""}
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -130,15 +143,15 @@ export function ApplicationDetailsAccordion({
                     <Library className="h-3 w-3" />
                     Record Type
                   </label>
-                  <p className="text-sm">
-                    {(application.Record_Type || "")}
-                  </p>
+                  <p className="text-sm">{application.Record_Type || ""}</p>
                 </div>
               </div>
             </div>
           ) : (
             <div className="text-center py-4">
-              <p className="text-sm text-muted-foreground">Application details not available</p>
+              <p className="text-sm text-muted-foreground">
+                Application details not available
+              </p>
             </div>
           )}
         </AccordionContent>

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Company } from '@/types/documents';
+import { Company } from "@/types/documents";
 
 /**
  * Parse date string without timezone conversion to avoid day shifts
@@ -8,22 +8,21 @@ import { Company } from '@/types/documents';
 function parseDateString(dateStr: string): string {
   const date = new Date(dateStr);
   const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 }
 
-
 export function parseCompanyFromDescription(
   documentCategory: string,
-  description?: string
+  description?: string,
 ): Company | null {
-  if (!documentCategory.includes('Company Documents')) {
+  if (!documentCategory.includes("Company Documents")) {
     return null;
   }
 
   const companyName = documentCategory
-    .replace(' Company Documents', '')
+    .replace(" Company Documents", "")
     .toLowerCase();
 
   // Don't use default dates - return null if we can't parse dates from description
@@ -32,9 +31,8 @@ export function parseCompanyFromDescription(
   let isCurrentEmployment = false;
 
   if (description) {
-    
     const currentMatch = description.match(
-      /Working at ([^\s]+(?:\s+[^\s]+)*) since (\w+\s+\d{1,2},\s+\d{4})\s+\(([^)]+)\)/i
+      /Working at ([^\s]+(?:\s+[^\s]+)*) since (\w+\s+\d{1,2},\s+\d{4})\s+\(([^)]+)\)/i,
     );
 
     if (currentMatch) {
@@ -48,7 +46,7 @@ export function parseCompanyFromDescription(
       }
     } else {
       const pastMatch = description.match(
-        /Worked at ([^\s]+(?:\s+[^\s]+)*) from (\w+\s+\d{1,2},\s+\d{4})\s+to\s+(\w+\s+\d{1,2},\s+\d{4})\s+\(([^)]+)\)/i
+        /Worked at ([^\s]+(?:\s+[^\s]+)*) from (\w+\s+\d{1,2},\s+\d{4})\s+to\s+(\w+\s+\d{1,2},\s+\d{4})\s+\(([^)]+)\)/i,
       );
 
       if (pastMatch) {
@@ -62,7 +60,7 @@ export function parseCompanyFromDescription(
         }
       } else {
         const legacyMatch = description.match(
-          /From (\w+\s+\d{1,2},\s+\d{4})\s+to\s+(\w+\s+\d{1,2},\s+\d{4})\s+\(([^)]+)\)/i
+          /From (\w+\s+\d{1,2},\s+\d{4})\s+to\s+(\w+\s+\d{1,2},\s+\d{4})\s+\(([^)]+)\)/i,
         );
 
         if (legacyMatch) {
@@ -90,7 +88,7 @@ export function parseCompanyFromDescription(
       toDate,
       isCurrentEmployment,
       category: documentCategory,
-      description: description || ''
+      description: description || "",
     };
   }
 
@@ -106,8 +104,14 @@ export function parseCompaniesFromDocuments(documents: any[]): Company[] {
   const companyMap = new Map<string, Company>();
 
   documents.forEach((doc) => {
-    if (doc.document_category && doc.document_category.includes('Company Documents')) {
-      const company = parseCompanyFromDescription(doc.document_category, doc.description);
+    if (
+      doc.document_category &&
+      doc.document_category.includes("Company Documents")
+    ) {
+      const company = parseCompanyFromDescription(
+        doc.document_category,
+        doc.description,
+      );
       if (company) {
         const existing = companyMap.get(company.name);
         if (!existing || (!existing.description && company.description)) {
@@ -121,7 +125,7 @@ export function parseCompaniesFromDocuments(documents: any[]): Company[] {
 }
 
 export function migrateCompanyData(company: any): Company {
-  if (typeof company.isCurrentEmployment === 'boolean') {
+  if (typeof company.isCurrentEmployment === "boolean") {
     return company as Company;
   }
 
@@ -134,6 +138,6 @@ export function migrateCompanyData(company: any): Company {
     toDate: isCurrent ? null : toDate,
     isCurrentEmployment: isCurrent,
     category: company.category,
-    description: company.description
+    description: company.description,
   };
 }

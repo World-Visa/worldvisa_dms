@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 
 interface DescriptionDialogProps {
   isOpen: boolean;

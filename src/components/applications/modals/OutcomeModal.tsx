@@ -1,34 +1,40 @@
-'use client';
+"use client";
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Progress } from '@/components/ui/progress';
-import { DatePicker } from '@/components/ui/date-picker';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Upload, X, FileText, File, Plus } from 'lucide-react';
-import Image from 'next/image';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { useAuth } from '@/hooks/useAuth';
-import { useUploadStage2Document, useUpdateStage2Document } from '@/hooks/useStage2Documents';
-import type { OutcomeModalProps } from '@/types/stage2Documents';
-import { Combobox } from '@/components/ui/combobox';
-import { ANZSCO_CODES, getAnzscoCodeByCode } from '@/lib/constants/australianData';
+} from "@/components/ui/select";
+import { Upload, X, FileText, File, Plus } from "lucide-react";
+import Image from "next/image";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  useUploadStage2Document,
+  useUpdateStage2Document,
+} from "@/hooks/useStage2Documents";
+import type { OutcomeModalProps } from "@/types/stage2Documents";
+import { Combobox } from "@/components/ui/combobox";
+import {
+  ANZSCO_CODES,
+  getAnzscoCodeByCode,
+} from "@/lib/constants/australianData";
 
 interface UploadedFile {
   file: File;
@@ -41,21 +47,21 @@ export function OutcomeModal({
   onClose,
   applicationId,
   document,
-  mode = 'create',
+  mode = "create",
 }: OutcomeModalProps) {
   const { user } = useAuth();
   const [outcomeDate, setOutcomeDate] = useState<Date | undefined>(undefined);
-  const [outcome, setOutcome] = useState('');
-  const [selectedAnzscoCode, setSelectedAnzscoCode] = useState('');
+  const [outcome, setOutcome] = useState("");
+  const [selectedAnzscoCode, setSelectedAnzscoCode] = useState("");
   const [isCustomMode, setIsCustomMode] = useState(false);
-  const [customAnzscoCode, setCustomAnzscoCode] = useState('');
-  const [customAnzscoName, setCustomAnzscoName] = useState('');
-  const [customAssessingAuthority, setCustomAssessingAuthority] = useState('');
+  const [customAnzscoCode, setCustomAnzscoCode] = useState("");
+  const [customAnzscoName, setCustomAnzscoName] = useState("");
+  const [customAssessingAuthority, setCustomAssessingAuthority] = useState("");
   const [availableOptions, setAvailableOptions] = useState(
     ANZSCO_CODES.map((code) => ({
       value: code.anzsco_code,
       label: `${code.anzsco_code} - ${code.name} (${code.assessing_authority})`,
-    }))
+    })),
   );
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -66,11 +72,13 @@ export function OutcomeModal({
 
   // Pre-fill form in edit mode
   useEffect(() => {
-    if (mode === 'edit' && document) {
-      setOutcomeDate(document.outcome_date ? new Date(document.outcome_date) : undefined);
-      setOutcome(document.outcome || '');
+    if (mode === "edit" && document) {
+      setOutcomeDate(
+        document.outcome_date ? new Date(document.outcome_date) : undefined,
+      );
+      setOutcome(document.outcome || "");
       // skill_assessing_body contains the anzsco_code
-      const skillBody = document.skill_assessing_body || '';
+      const skillBody = document.skill_assessing_body || "";
       if (skillBody) {
         // Check if it's a valid ANZSCO code
         const matchingCode = getAnzscoCodeByCode(skillBody);
@@ -82,54 +90,66 @@ export function OutcomeModal({
           setAvailableOptions((prev) => {
             const exists = prev.some((opt) => opt.value === skillBody);
             if (!exists) {
-              return [...prev, { value: skillBody, label: `Custom - ${skillBody}` }];
+              return [
+                ...prev,
+                { value: skillBody, label: `Custom - ${skillBody}` },
+              ];
             }
             return prev;
           });
         }
       } else {
-        setSelectedAnzscoCode('');
+        setSelectedAnzscoCode("");
       }
-      
+
       setIsCustomMode(false);
-      setCustomAnzscoCode('');
-      setCustomAnzscoName('');
-      setCustomAssessingAuthority('');
+      setCustomAnzscoCode("");
+      setCustomAnzscoName("");
+      setCustomAssessingAuthority("");
     } else {
       setOutcomeDate(undefined);
-      setOutcome('');
-      setSelectedAnzscoCode('');
+      setOutcome("");
+      setSelectedAnzscoCode("");
       setIsCustomMode(false);
-      setCustomAnzscoCode('');
-      setCustomAnzscoName('');
-      setCustomAssessingAuthority('');
+      setCustomAnzscoCode("");
+      setCustomAnzscoName("");
+      setCustomAssessingAuthority("");
       setUploadedFiles([]);
     }
   }, [mode, document, isOpen]);
 
   const validateFile = (file: File): boolean => {
     const fileName = file.name.toLowerCase();
-    const allowedExtensions = ['.pdf', '.doc', '.docx', '.jpg', '.jpeg', '.png'];
+    const allowedExtensions = [
+      ".pdf",
+      ".doc",
+      ".docx",
+      ".jpg",
+      ".jpeg",
+      ".png",
+    ];
     const allowedMimeTypes = [
-      'application/pdf',
-      'application/msword',
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
+      "application/pdf",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+      "image/jpeg",
+      "image/jpg",
+      "image/png",
     ];
 
-    const hasValidExtension = allowedExtensions.some((ext) => fileName.endsWith(ext));
+    const hasValidExtension = allowedExtensions.some((ext) =>
+      fileName.endsWith(ext),
+    );
     if (!hasValidExtension) {
       toast.error(
-        `${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png) are allowed.`
+        `${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png) are allowed.`,
       );
       return false;
     }
 
     if (!allowedMimeTypes.includes(file.type)) {
       toast.error(
-        `${file.name} has an unsupported MIME type. Only PDF, Word, and image files are allowed.`
+        `${file.name} has an unsupported MIME type. Only PDF, Word, and image files are allowed.`,
       );
       return false;
     }
@@ -160,7 +180,7 @@ export function OutcomeModal({
     setUploadedFiles((prev) => [...prev, ...newFiles]);
 
     if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+      fileInputRef.current.value = "";
     }
   };
 
@@ -169,33 +189,40 @@ export function OutcomeModal({
   };
 
   const handleAddCustomAnzscoCode = () => {
-    if (customAnzscoCode.trim() && customAnzscoName.trim() && customAssessingAuthority.trim()) {
+    if (
+      customAnzscoCode.trim() &&
+      customAnzscoName.trim() &&
+      customAssessingAuthority.trim()
+    ) {
       const customCode = customAnzscoCode.trim();
       const customName = customAnzscoName.trim();
       const customAuthority = customAssessingAuthority.trim();
-      
+
       // Check if it already exists
       if (!availableOptions.some((opt) => opt.value === customCode)) {
         setAvailableOptions((prev) => [
           ...prev,
-          { value: customCode, label: `${customCode} - ${customName} (${customAuthority})` },
+          {
+            value: customCode,
+            label: `${customCode} - ${customName} (${customAuthority})`,
+          },
         ]);
       }
       setSelectedAnzscoCode(customCode);
-      setCustomAnzscoCode('');
-      setCustomAnzscoName('');
-      setCustomAssessingAuthority('');
+      setCustomAnzscoCode("");
+      setCustomAnzscoName("");
+      setCustomAssessingAuthority("");
       setIsCustomMode(false);
     }
   };
 
   const handleToggleCustomMode = () => {
     setIsCustomMode(!isCustomMode);
-    setCustomAnzscoCode('');
-    setCustomAnzscoName('');
-    setCustomAssessingAuthority('');
+    setCustomAnzscoCode("");
+    setCustomAnzscoName("");
+    setCustomAssessingAuthority("");
     if (!isCustomMode) {
-      setSelectedAnzscoCode('');
+      setSelectedAnzscoCode("");
     }
   };
 
@@ -222,24 +249,24 @@ export function OutcomeModal({
 
   const handleSubmit = async () => {
     if (!outcomeDate) {
-      toast.error('Please select an outcome date.');
+      toast.error("Please select an outcome date.");
       return;
     }
 
     if (!outcome.trim()) {
-      toast.error('Please select an outcome.');
+      toast.error("Please select an outcome.");
       return;
     }
 
-    const formattedOutcomeDate = format(outcomeDate, 'yyyy-MM-dd');
+    const formattedOutcomeDate = format(outcomeDate, "yyyy-MM-dd");
 
-    if (mode === 'create' && uploadedFiles.length === 0) {
-      toast.error('Please upload at least one file.');
+    if (mode === "create" && uploadedFiles.length === 0) {
+      toast.error("Please upload at least one file.");
       return;
     }
 
     if (!user?.username) {
-      toast.error('User information not available. Please login again.');
+      toast.error("User information not available. Please login again.");
       return;
     }
 
@@ -249,7 +276,7 @@ export function OutcomeModal({
       // Pass the anzsco_code directly to skill_assessing_body
       const anzscoCodeValue = selectedAnzscoCode || undefined;
 
-      if (mode === 'edit' && document) {
+      if (mode === "edit" && document) {
         // Update existing document metadata
         await updateMutation.mutateAsync({
           applicationId,
@@ -266,7 +293,10 @@ export function OutcomeModal({
         // Simulate progress
         const progressInterval = setInterval(() => {
           setUploadedFiles((prev) =>
-            prev.map((file) => ({ ...file, progress: Math.min(file.progress + 5, 90) }))
+            prev.map((file) => ({
+              ...file,
+              progress: Math.min(file.progress + 5, 90),
+            })),
           );
         }, 200);
 
@@ -278,13 +308,15 @@ export function OutcomeModal({
             document_name: uploadedFiles[0].file.name,
             document_type: uploadedFiles[0].file.type,
             uploaded_by: user.username,
-            type: 'outcome',
+            type: "outcome",
             outcome_date: formattedOutcomeDate,
             outcome,
             skill_assessing_body: anzscoCodeValue,
           });
 
-          setUploadedFiles((prev) => prev.map((file) => ({ ...file, progress: 100 })));
+          setUploadedFiles((prev) =>
+            prev.map((file) => ({ ...file, progress: 100 })),
+          );
           clearInterval(progressInterval);
         } catch (error) {
           clearInterval(progressInterval);
@@ -294,7 +326,7 @@ export function OutcomeModal({
 
       handleClose();
     } catch (error) {
-      console.error('Submit error:', error);
+      console.error("Submit error:", error);
     } finally {
       setIsUploading(false);
     }
@@ -303,12 +335,12 @@ export function OutcomeModal({
   const handleClose = () => {
     if (!isUploading) {
       setOutcomeDate(undefined);
-      setOutcome('');
-      setSelectedAnzscoCode('');
+      setOutcome("");
+      setSelectedAnzscoCode("");
       setIsCustomMode(false);
-      setCustomAnzscoCode('');
-      setCustomAnzscoName('');
-      setCustomAssessingAuthority('');
+      setCustomAnzscoCode("");
+      setCustomAnzscoName("");
+      setCustomAssessingAuthority("");
       setUploadedFiles([]);
       onClose();
     }
@@ -319,7 +351,9 @@ export function OutcomeModal({
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            {mode === 'edit' ? 'Edit Outcome Document' : 'Create Outcome Document'}
+            {mode === "edit"
+              ? "Edit Outcome Document"
+              : "Create Outcome Document"}
           </DialogTitle>
         </DialogHeader>
 
@@ -336,11 +370,15 @@ export function OutcomeModal({
                 <SelectValue placeholder="Select outcome" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="Skill Assessment Outcome">Skill Assessment Outcome</SelectItem>
+                <SelectItem value="Skill Assessment Outcome">
+                  Skill Assessment Outcome
+                </SelectItem>
                 <SelectItem value="APHRA">APHRA</SelectItem>
                 <SelectItem value="ECA">ECA</SelectItem>
                 <SelectItem value="Visa grant">Visa grant</SelectItem>
-                <SelectItem value="License/ Registration">License/ Registration</SelectItem>
+                <SelectItem value="License/ Registration">
+                  License/ Registration
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -375,7 +413,9 @@ export function OutcomeModal({
                     <span className="w-full border-t border-gray-200"></span>
                   </div>
                   <div className="relative flex justify-center text-xs">
-                    <span className="bg-background px-2 text-muted-foreground">or</span>
+                    <span className="bg-background px-2 text-muted-foreground">
+                      or
+                    </span>
                   </div>
                 </div>
                 <Button
@@ -403,13 +443,17 @@ export function OutcomeModal({
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="custom-assessing-authority">Assessing Authority *</Label>
+                    <Label htmlFor="custom-assessing-authority">
+                      Assessing Authority *
+                    </Label>
                     <Input
                       id="custom-assessing-authority"
                       type="text"
                       placeholder="e.g., VETASSESS"
                       value={customAssessingAuthority}
-                      onChange={(e) => setCustomAssessingAuthority(e.target.value)}
+                      onChange={(e) =>
+                        setCustomAssessingAuthority(e.target.value)
+                      }
                       disabled={isUploading}
                     />
                   </div>
@@ -424,7 +468,7 @@ export function OutcomeModal({
                     onChange={(e) => setCustomAnzscoName(e.target.value)}
                     disabled={isUploading}
                     onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
+                      if (e.key === "Enter") {
                         handleAddCustomAnzscoCode();
                       }
                     }}
@@ -435,7 +479,12 @@ export function OutcomeModal({
                     variant="outline"
                     size="sm"
                     onClick={handleAddCustomAnzscoCode}
-                    disabled={!customAnzscoCode.trim() || !customAnzscoName.trim() || !customAssessingAuthority.trim() || isUploading}
+                    disabled={
+                      !customAnzscoCode.trim() ||
+                      !customAnzscoName.trim() ||
+                      !customAssessingAuthority.trim() ||
+                      isUploading
+                    }
                     className="flex items-center gap-1"
                   >
                     <Plus className="h-4 w-4" />
@@ -455,7 +504,7 @@ export function OutcomeModal({
           </div>
 
           {/* File Upload - Only in create mode */}
-          {mode === 'create' && (
+          {mode === "create" && (
             <div className="space-y-3">
               <Label>Upload Files *</Label>
               <div
@@ -475,8 +524,10 @@ export function OutcomeModal({
                   Drop your files here, or click to browse
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  <strong>PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png)</strong> •
-                  Max file size 5MB per file
+                  <strong>
+                    PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png)
+                  </strong>{" "}
+                  • Max file size 5MB per file
                 </p>
                 <input
                   ref={fileInputRef}
@@ -491,29 +542,45 @@ export function OutcomeModal({
           )}
 
           {/* Show existing file name in edit mode */}
-          {mode === 'edit' && document && (
+          {mode === "edit" && document && (
             <div className="space-y-2">
               <Label>Current File</Label>
               <div className="flex items-center gap-3 p-3 border rounded-lg bg-muted">
                 <FileText className="h-5 w-5 text-blue-600 shrink-0" />
-                <span className="text-sm font-medium">{document.file_name}</span>
+                <span className="text-sm font-medium">
+                  {document.file_name}
+                </span>
               </div>
             </div>
           )}
 
           {/* Uploaded Files List - Only in create mode */}
-          {mode === 'create' && uploadedFiles.length > 0 && (
+          {mode === "create" && uploadedFiles.length > 0 && (
             <div className="space-y-3">
               <Label>Files to Upload</Label>
               <div className="space-y-2">
                 {uploadedFiles.map((uploadedFile) => (
-                  <div key={uploadedFile.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                  <div
+                    key={uploadedFile.id}
+                    className="flex items-center gap-3 p-3 border rounded-lg"
+                  >
                     {(() => {
                       const fileName = uploadedFile.file.name.toLowerCase();
-                      if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg') || fileName.endsWith('.png')) {
-                        return <File className="h-5 w-5 text-green-600 shrink-0" />;
-                      } else if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) {
-                        return <FileText className="h-5 w-5 text-blue-600 shrink-0" />;
+                      if (
+                        fileName.endsWith(".jpg") ||
+                        fileName.endsWith(".jpeg") ||
+                        fileName.endsWith(".png")
+                      ) {
+                        return (
+                          <File className="h-5 w-5 text-green-600 shrink-0" />
+                        );
+                      } else if (
+                        fileName.endsWith(".doc") ||
+                        fileName.endsWith(".docx")
+                      ) {
+                        return (
+                          <FileText className="h-5 w-5 text-blue-600 shrink-0" />
+                        );
                       } else {
                         return (
                           <Image
@@ -527,13 +594,18 @@ export function OutcomeModal({
                       }
                     })()}
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate">{uploadedFile.file.name}</p>
+                      <p className="text-sm font-medium truncate">
+                        {uploadedFile.file.name}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB
                       </p>
                       {isUploading && (
                         <div className="mt-2">
-                          <Progress value={uploadedFile.progress} className="h-2" />
+                          <Progress
+                            value={uploadedFile.progress}
+                            className="h-2"
+                          />
                           <p className="text-xs text-muted-foreground mt-1">
                             {uploadedFile.progress}%
                           </p>
@@ -541,7 +613,11 @@ export function OutcomeModal({
                       )}
                     </div>
                     {!isUploading && (
-                      <Button variant="ghost" size="sm" onClick={() => removeFile(uploadedFile.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(uploadedFile.id)}
+                      >
                         <X className="h-4 w-4" />
                       </Button>
                     )}
@@ -553,19 +629,27 @@ export function OutcomeModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose} disabled={isUploading}>
+          <Button
+            variant="outline"
+            onClick={handleClose}
+            disabled={isUploading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSubmit} disabled={isUploading} className="flex items-center gap-2">
+          <Button
+            onClick={handleSubmit}
+            disabled={isUploading}
+            className="flex items-center gap-2"
+          >
             {isUploading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                {mode === 'edit' ? 'Updating...' : 'Uploading...'}
+                {mode === "edit" ? "Updating..." : "Uploading..."}
               </>
             ) : (
               <>
                 <Upload className="h-4 w-4" />
-                {mode === 'edit' ? 'Update Document' : 'Upload Document'}
+                {mode === "edit" ? "Update Document" : "Upload Document"}
               </>
             )}
           </Button>
@@ -574,4 +658,3 @@ export function OutcomeModal({
     </Dialog>
   );
 }
-

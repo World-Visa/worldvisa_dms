@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { useMemo, useCallback, memo } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useMemo, useCallback, memo } from "react";
+import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
@@ -9,12 +9,12 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { VisaApplication } from '@/types/applications';
-import { formatDate } from '@/utils/format';
-import { Loader2 } from 'lucide-react';
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { VisaApplication } from "@/types/applications";
+import { formatDate } from "@/utils/format";
+import { Loader2 } from "lucide-react";
 
 interface ApplicationsTableProps {
   applications: VisaApplication[];
@@ -46,14 +46,14 @@ const LoadingState = memo(function LoadingState() {
 });
 
 const EmptyState = memo(function EmptyState({
-  isSearchMode
+  isSearchMode,
 }: {
-  isSearchMode: boolean
+  isSearchMode: boolean;
 }) {
   return (
     <TableRow>
       <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-        {isSearchMode ? 'No search results found' : 'No applications found'}
+        {isSearchMode ? "No search results found" : "No applications found"}
       </TableCell>
     </TableRow>
   );
@@ -82,25 +82,26 @@ const TableRowComponent = memo(function TableRowComponent({
       <TableCell className="font-medium">
         {isSearchMode ? index + 1 : getSerialNumber(index)}
       </TableCell>
-      <TableCell className="font-medium">
-        {application.Name}
-      </TableCell>
+      <TableCell className="font-medium">{application.Name}</TableCell>
       <TableCell>{application.Email}</TableCell>
-      <TableCell>{application.Phone || 'N/A'}</TableCell>
+      <TableCell>{application.Phone || "N/A"}</TableCell>
       <TableCell>
         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          {application.Application_Handled_By || 'N/A'}
+          {application.Application_Handled_By || "N/A"}
         </span>
       </TableCell>
       <TableCell>
-        {application.Created_Time ? formatDate(application.Created_Time, 'time') : 'N/A'}
+        {application.Created_Time
+          ? formatDate(application.Created_Time, "time")
+          : "N/A"}
       </TableCell>
       <TableCell className="text-center">
         <Badge
           variant="secondary"
-          className={hasAttachments
-            ? "bg-green-600 hover:bg-green-400 text-white"
-            : "bg-gray-400 hover:bg-gray-300 text-white"
+          className={
+            hasAttachments
+              ? "bg-green-600 hover:bg-green-400 text-white"
+              : "bg-gray-400 hover:bg-gray-300 text-white"
           }
         >
           {application.AttachmentCount}
@@ -123,35 +124,44 @@ export const ApplicationsTable = memo(function ApplicationsTable({
   const router = useRouter();
 
   // Memoize data calculations to prevent unnecessary re-renders
-  const displayData = useMemo(() =>
-    isSearchMode ? searchResults : applications,
-    [isSearchMode, searchResults, applications]
+  const displayData = useMemo(
+    () => (isSearchMode ? searchResults : applications),
+    [isSearchMode, searchResults, applications],
   );
 
-  const displayLoading = useMemo(() =>
-    isSearchMode ? isSearchLoading : isLoading,
-    [isSearchMode, isSearchLoading, isLoading]
+  const displayLoading = useMemo(
+    () => (isSearchMode ? isSearchLoading : isLoading),
+    [isSearchMode, isSearchLoading, isLoading],
   );
 
-  const getSerialNumber = useCallback((index: number) => {
-    return (currentPage - 1) * limit + index + 1;
-  }, [currentPage, limit]);
+  const getSerialNumber = useCallback(
+    (index: number) => {
+      return (currentPage - 1) * limit + index + 1;
+    },
+    [currentPage, limit],
+  );
 
-  const handleRowClick = useCallback((applicationId: string) => {
-    const path = isSpouseApplication
-      ? `/admin/spouse-skill-assessment-applications/${applicationId}`
-      : `/admin/applications/${applicationId}`;
-    router.push(path);
-  }, [router, isSpouseApplication]);
+  const handleRowClick = useCallback(
+    (applicationId: string) => {
+      const path = isSpouseApplication
+        ? `/admin/spouse-skill-assessment-applications/${applicationId}`
+        : `/admin/applications/${applicationId}`;
+      router.push(path);
+    },
+    [router, isSpouseApplication],
+  );
 
-  const resultCount = useMemo(() => searchResults.length, [searchResults.length]);
+  const resultCount = useMemo(
+    () => searchResults.length,
+    [searchResults.length],
+  );
 
   if (displayLoading) {
     return <LoadingState />;
   }
 
   return (
-    <div className='space-y-4'>
+    <div className="space-y-4">
       <>
         <div className="rounded-md border">
           <Table>

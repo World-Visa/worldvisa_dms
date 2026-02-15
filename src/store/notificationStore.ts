@@ -1,20 +1,20 @@
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { Notification } from '@/types/notifications';
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import type { Notification } from "@/types/notifications";
 
 interface NotificationStore {
   // UI State
   isNotificationPanelOpen: boolean;
   lastReadTimestamp: string | null;
   isNavigating: boolean;
-  
+
   // Actions
   toggleNotificationPanel: () => void;
   openNotificationPanel: () => void;
   closeNotificationPanel: () => void;
   updateLastReadTimestamp: (timestamp: string) => void;
   setNavigating: (isNavigating: boolean) => void;
-  
+
   // Preferences
   soundEnabled: boolean;
   desktopNotificationsEnabled: boolean;
@@ -34,8 +34,8 @@ export const useNotificationStore = create<NotificationStore>()(
 
       // Actions
       toggleNotificationPanel: () => {
-        set(state => ({ 
-          isNotificationPanelOpen: !state.isNotificationPanelOpen 
+        set((state) => ({
+          isNotificationPanelOpen: !state.isNotificationPanelOpen,
         }));
       },
 
@@ -64,12 +64,12 @@ export const useNotificationStore = create<NotificationStore>()(
       },
     }),
     {
-      name: 'notification-preferences',
+      name: "notification-preferences",
       partialize: (state) => ({
         soundEnabled: state.soundEnabled,
         desktopNotificationsEnabled: state.desktopNotificationsEnabled,
         lastReadTimestamp: state.lastReadTimestamp,
       }),
-    }
-  )
+    },
+  ),
 );

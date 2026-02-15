@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { usePagination } from '@/hooks/usePagination';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import { usePagination } from "@/hooks/usePagination";
 
 interface ApplicationsPaginationProps {
   currentPage: number;
@@ -43,7 +43,7 @@ export function ApplicationsPagination({
       <div className="text-xs sm:text-sm text-muted-foreground text-center sm:text-left">
         Showing {startIndex} to {endIndex} of {totalRecords} results
       </div>
-      
+
       {/* Pagination controls */}
       <div className="flex items-center justify-center space-x-1 sm:space-x-2">
         {/* Previous button */}
@@ -58,13 +58,15 @@ export function ApplicationsPagination({
           <span className="hidden xs:inline sm:inline">Previous</span>
           <span className="xs:hidden">Prev</span>
         </Button>
-        
+
         {/* Page numbers */}
         <div className="flex items-center space-x-1">
           {paginationRange.map((page, index) => (
             <React.Fragment key={index}>
-              {page === '...' ? (
-                <span className="px-1 sm:px-2 py-1 text-xs sm:text-sm text-muted-foreground">...</span>
+              {page === "..." ? (
+                <span className="px-1 sm:px-2 py-1 text-xs sm:text-sm text-muted-foreground">
+                  ...
+                </span>
               ) : (
                 <Button
                   variant={page === currentPage ? "default" : "outline"}
@@ -78,7 +80,7 @@ export function ApplicationsPagination({
             </React.Fragment>
           ))}
         </div>
-        
+
         {/* Next button */}
         <Button
           variant="outline"

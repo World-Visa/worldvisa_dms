@@ -1,12 +1,16 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { X, Building2, Calendar } from 'lucide-react';
-import { Company } from '@/types/documents';
-import { RemoveCompanyDialog } from './RemoveCompanyDialog';
-import { calculateDuration, formatDateForDisplay, generateCompanyDescription } from '@/utils/dateCalculations';
+import React, { useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { X, Building2, Calendar } from "lucide-react";
+import { Company } from "@/types/documents";
+import { RemoveCompanyDialog } from "./RemoveCompanyDialog";
+import {
+  calculateDuration,
+  formatDateForDisplay,
+  generateCompanyDescription,
+} from "@/utils/dateCalculations";
 
 interface CompanyHeaderProps {
   company: Company;
@@ -40,15 +44,21 @@ export function CompanyHeader({ company, onRemove }: CompanyHeaderProps) {
               <div className="flex items-center gap-4 text-sm text-gray-600">
                 <div className="flex items-center gap-1">
                   <Calendar className="h-3 w-3" />
-                  <span>{formatDateForDisplay(company.fromDate)} - {formatDateForDisplay(company?.toDate || '')}</span>
+                  <span>
+                    {formatDateForDisplay(company.fromDate)} -{" "}
+                    {formatDateForDisplay(company?.toDate || "")}
+                  </span>
                 </div>
                 <div className="text-gray-400">•</div>
                 <span className="font-medium text-blue-600">
-                  {calculateDuration(company.fromDate, company?.toDate || '')}
+                  {calculateDuration(company.fromDate, company?.toDate || "")}
                 </span>
               </div>
               <div className="mt-1 text-xs text-gray-500">
-                {generateCompanyDescription(company.fromDate, company?.toDate || '')}
+                {generateCompanyDescription(
+                  company.fromDate,
+                  company?.toDate || "",
+                )}
               </div>
             </div>
           </div>

@@ -1,5 +1,5 @@
-import { useMutation } from '@tanstack/react-query';
-import { toast } from 'sonner';
+import { useMutation } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   checkClientAccount,
   updateClientAccount,
@@ -10,9 +10,9 @@ import {
   type UpdateClientAccountResponse,
   type CreateClientAccountPayload,
   type CreateClientAccountResponse,
-} from '@/lib/api/activateAccount';
+} from "@/lib/api/activateAccount";
 
-const NOT_FOUND_MESSAGE = 'Client account not found';
+const NOT_FOUND_MESSAGE = "Client account not found";
 
 function isNotFoundMessage(msg: string): boolean {
   return msg.includes(NOT_FOUND_MESSAGE);
@@ -28,27 +28,29 @@ export function useCheckClientAccount(options?: UseCheckClientAccountOptions) {
   return useMutation<CheckClientAccountResult, Error, string>({
     mutationFn: (leadId: string) => checkClientAccount(leadId),
     onSuccess: (data) => {
-      if (data.status === 'fail' && isNotFoundMessage(data.message)) {
+      if (data.status === "fail" && isNotFoundMessage(data.message)) {
         options?.onNotFound?.();
         return;
       }
-      if (data.status !== 'success') {
-        const msg = data.status === 'fail' ? data.message : 'Check failed.';
+      if (data.status !== "success") {
+        const msg = data.status === "fail" ? data.message : "Check failed.";
         toast.error(msg);
         options?.onError?.(new Error(msg));
         return;
       }
-      toast.success('Client account found.');
+      toast.success("Client account found.");
       options?.onSuccess?.(data);
     },
     onError: (error: Error) => {
       if (isNotFoundMessage(error.message)) {
-        toast.info('Account not found.');
+        toast.info("Account not found.");
         options?.onNotFound?.();
         return;
       }
-      console.error('Check client account failed:', error);
-      toast.error(error.message || 'Failed to check account. Please try again.');
+      console.error("Check client account failed:", error);
+      toast.error(
+        error.message || "Failed to check account. Please try again.",
+      );
       options?.onError?.(error);
     },
   });
@@ -59,7 +61,9 @@ interface UseUpdateClientAccountOptions {
   onError?: (error: Error) => void;
 }
 
-export function useUpdateClientAccount(options?: UseUpdateClientAccountOptions) {
+export function useUpdateClientAccount(
+  options?: UseUpdateClientAccountOptions,
+) {
   return useMutation<
     UpdateClientAccountResponse,
     Error,
@@ -67,12 +71,14 @@ export function useUpdateClientAccount(options?: UseUpdateClientAccountOptions) 
   >({
     mutationFn: ({ leadId, payload }) => updateClientAccount(leadId, payload),
     onSuccess: (data) => {
-      toast.success(data.message || 'Client account updated successfully.');
+      toast.success(data.message || "Client account updated successfully.");
       options?.onSuccess?.(data);
     },
     onError: (error: Error) => {
-      console.error('Update client account failed:', error);
-      toast.error(error.message || 'Failed to update account. Please try again.');
+      console.error("Update client account failed:", error);
+      toast.error(
+        error.message || "Failed to update account. Please try again.",
+      );
       options?.onError?.(error);
     },
   });
@@ -83,16 +89,24 @@ interface UseCreateClientAccountOptions {
   onError?: (error: Error) => void;
 }
 
-export function useCreateClientAccount(options?: UseCreateClientAccountOptions) {
-  return useMutation<CreateClientAccountResponse, Error, CreateClientAccountPayload>({
+export function useCreateClientAccount(
+  options?: UseCreateClientAccountOptions,
+) {
+  return useMutation<
+    CreateClientAccountResponse,
+    Error,
+    CreateClientAccountPayload
+  >({
     mutationFn: (payload) => createClientAccount(payload),
     onSuccess: (data) => {
-      toast.success(data.message || 'Account created successfully.');
+      toast.success(data.message || "Account created successfully.");
       options?.onSuccess?.(data);
     },
     onError: (error: Error) => {
-      console.error('Create client account failed:', error);
-      toast.error(error.message || 'Failed to create account. Please try again.');
+      console.error("Create client account failed:", error);
+      toast.error(
+        error.message || "Failed to create account. Please try again.",
+      );
       options?.onError?.(error);
     },
   });

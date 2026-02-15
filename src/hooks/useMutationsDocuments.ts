@@ -1,7 +1,7 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { addDocument, AddDocumentRequest } from '@/lib/api/addDocument';
-import { deleteDocument } from '@/lib/api/deleteDocument';
-import { toast } from 'sonner';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { addDocument, AddDocumentRequest } from "@/lib/api/addDocument";
+import { deleteDocument } from "@/lib/api/deleteDocument";
+import { toast } from "sonner";
 
 export function useAddDocument() {
   const queryClient = useQueryClient();
@@ -13,49 +13,54 @@ export function useAddDocument() {
       Promise.all([
         // Admin view queries
         queryClient.invalidateQueries({
-          queryKey: ['application-documents', variables.applicationId],
+          queryKey: ["application-documents", variables.applicationId],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['application-documents-paginated', variables.applicationId],
+          queryKey: [
+            "application-documents-paginated",
+            variables.applicationId,
+          ],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['application-documents-all', variables.applicationId],
+          queryKey: ["application-documents-all", variables.applicationId],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['application-documents'],
+          queryKey: ["application-documents"],
         }),
-        
+
         // Client view queries
         queryClient.invalidateQueries({
-          queryKey: ['client-documents'],
+          queryKey: ["client-documents"],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['client-documents-all'],
+          queryKey: ["client-documents-all"],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['client-checklist', variables.applicationId],
+          queryKey: ["client-checklist", variables.applicationId],
         }),
-        
+
         // Application details
         queryClient.invalidateQueries({
-          queryKey: ['application-details', variables.applicationId],
+          queryKey: ["application-details", variables.applicationId],
         }),
-        
+
         // Document comment counts
         queryClient.invalidateQueries({
-          queryKey: ['document-comment-counts'],
+          queryKey: ["document-comment-counts"],
         }),
-        
+
         // Checklist queries
         queryClient.invalidateQueries({
-          queryKey: ['checklist', variables.applicationId],
+          queryKey: ["checklist", variables.applicationId],
         }),
-      ]).then(() => {
-        toast.success('Document uploaded successfully');
-      }).catch((error) => {
-        console.error('Error invalidating queries after upload:', error);
-        toast.success('Document uploaded successfully');
-      });
+      ])
+        .then(() => {
+          toast.success("Document uploaded successfully");
+        })
+        .catch((error) => {
+          console.error("Error invalidating queries after upload:", error);
+          toast.success("Document uploaded successfully");
+        });
     },
     onError: (error: Error) => {
       toast.error(`Failed to upload document: ${error.message}`);
@@ -73,49 +78,51 @@ export function useDeleteDocument() {
       Promise.all([
         // Admin view queries
         queryClient.invalidateQueries({
-          queryKey: ['application-documents'],
+          queryKey: ["application-documents"],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['application-documents-paginated'],
+          queryKey: ["application-documents-paginated"],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['application-documents-all'],
+          queryKey: ["application-documents-all"],
         }),
-        
+
         // Client view queries
         queryClient.invalidateQueries({
-          queryKey: ['client-documents'],
+          queryKey: ["client-documents"],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['client-documents-all'],
+          queryKey: ["client-documents-all"],
         }),
         queryClient.invalidateQueries({
-          queryKey: ['client-checklist'],
+          queryKey: ["client-checklist"],
         }),
-        
+
         // Application details
         queryClient.invalidateQueries({
-          queryKey: ['application-details'],
+          queryKey: ["application-details"],
         }),
-        
+
         // Document comment counts
         queryClient.invalidateQueries({
-          queryKey: ['document-comment-counts'],
+          queryKey: ["document-comment-counts"],
         }),
-        
+
         // Checklist queries
         queryClient.invalidateQueries({
-          queryKey: ['checklist'],
+          queryKey: ["checklist"],
         }),
-      ]).then(() => {
-        toast.success('Document deleted successfully');
-      }).catch((error) => {
-        console.error('Error invalidating queries after deletion:', error);
-        toast.success('Document deleted successfully');
-      });
+      ])
+        .then(() => {
+          toast.success("Document deleted successfully");
+        })
+        .catch((error) => {
+          console.error("Error invalidating queries after deletion:", error);
+          toast.success("Document deleted successfully");
+        });
     },
     onError: (error: Error) => {
-      console.error('Delete document error:', error);
+      console.error("Delete document error:", error);
       toast.error(`Failed to delete document: ${error.message}`);
     },
   });

@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
+} from "@/components/ui/sheet";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
 import {
   User,
   Calendar,
@@ -16,36 +16,39 @@ import {
   Trash2,
   AlertTriangle,
   ExternalLink,
-  Clock
-} from 'lucide-react';
-import { RequestedDocument } from '@/lib/api/requestedDocuments';
-import { StatusBadge } from './StatusBadge';
-import { useUpdateDocumentStatus, useDeleteRequestedDocument } from '@/hooks/useRequestedDocumentActions';
-import { useRequestedDocumentData } from '@/hooks/useRequestedDocumentData';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
-import DocumentPreview from '@/components/applications/DocumentPreview';
-import { RequestedDocumentMessages } from './RequestedDocumentMessages';
-import { useQueryClient } from '@tanstack/react-query';
-import { useRouter } from 'next/navigation';
-import { sendRequestedDocumentMessage } from '@/lib/api/requestedDocumentMessages';
-import { useApplicationDetails } from '@/hooks/useApplicationDetails';
-import { useSpouseApplicationDetails } from '@/hooks/useSpouseApplicationDetails';
-import { ApplicationDetailsAccordion } from './ApplicationDetailsAccordion';
-import { ApplicationDetailsResponse } from '@/types/applications';
+  Clock,
+} from "lucide-react";
+import { RequestedDocument } from "@/lib/api/requestedDocuments";
+import { StatusBadge } from "./StatusBadge";
+import {
+  useUpdateDocumentStatus,
+  useDeleteRequestedDocument,
+} from "@/hooks/useRequestedDocumentActions";
+import { useRequestedDocumentData } from "@/hooks/useRequestedDocumentData";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
+import DocumentPreview from "@/components/applications/DocumentPreview";
+import { RequestedDocumentMessages } from "./RequestedDocumentMessages";
+import { useQueryClient } from "@tanstack/react-query";
+import { useRouter } from "next/navigation";
+import { sendRequestedDocumentMessage } from "@/lib/api/requestedDocumentMessages";
+import { useApplicationDetails } from "@/hooks/useApplicationDetails";
+import { useSpouseApplicationDetails } from "@/hooks/useSpouseApplicationDetails";
+import { ApplicationDetailsAccordion } from "./ApplicationDetailsAccordion";
+import { ApplicationDetailsResponse } from "@/types/applications";
 
 interface RequestedDocumentViewSheetProps {
   document: RequestedDocument | null;
   isOpen: boolean;
   onClose: () => void;
-  type: 'requested-to-me' | 'my-requests' | 'all-requests';
+  type: "requested-to-me" | "my-requests" | "all-requests";
 }
 
 export function RequestedDocumentViewSheet({
   document,
   isOpen,
   onClose,
-  type
+  type,
 }: RequestedDocumentViewSheetProps) {
   const { user } = useAuth();
   const updateStatusMutation = useUpdateDocumentStatus();
@@ -53,30 +56,38 @@ export function RequestedDocumentViewSheet({
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const { document: currentDoc } = useRequestedDocumentData(document?._id || '');
+  const { document: currentDoc } = useRequestedDocumentData(
+    document?._id || "",
+  );
 
   const displayDoc = currentDoc || document;
 
-  const regularApplicationQuery = useApplicationDetails(displayDoc?.record_id || '');
-  const spouseApplicationQuery = useSpouseApplicationDetails(displayDoc?.record_id || '');
+  const regularApplicationQuery = useApplicationDetails(
+    displayDoc?.record_id || "",
+  );
+  const spouseApplicationQuery = useSpouseApplicationDetails(
+    displayDoc?.record_id || "",
+  );
 
-  const applicationResponse = regularApplicationQuery.data || spouseApplicationQuery.data;
-  const isApplicationLoading = regularApplicationQuery.isLoading || spouseApplicationQuery.isLoading;
+  const applicationResponse =
+    regularApplicationQuery.data || spouseApplicationQuery.data;
+  const isApplicationLoading =
+    regularApplicationQuery.isLoading || spouseApplicationQuery.isLoading;
   const application = (applicationResponse as ApplicationDetailsResponse)?.data;
 
   useEffect(() => {
     if (displayDoc && !currentDoc && document) {
-      queryClient.setQueryData(['requested-document', document._id], document);
+      queryClient.setQueryData(["requested-document", document._id], document);
     }
   }, [displayDoc, currentDoc, document, queryClient]);
 
-  const [reviewComment, setReviewComment] = useState('');
+  const [reviewComment, setReviewComment] = useState("");
   const [isReviewing, setIsReviewing] = useState(false);
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
 
   useEffect(() => {
     if (!isOpen) {
-      setReviewComment('');
+      setReviewComment("");
       setIsReviewing(false);
       setIsAccordionOpen(false);
     }
@@ -84,7 +95,7 @@ export function RequestedDocumentViewSheet({
 
   const handleMarkAsReviewed = useCallback(async () => {
     if (!displayDoc || !user?.username || !reviewComment.trim()) {
-      toast.error('Please add a review comment');
+      toast.error("Please add a review comment");
       return;
     }
 
@@ -96,35 +107,41 @@ export function RequestedDocumentViewSheet({
           requested_by: displayDoc.requested_review.requested_by,
           requested_to: displayDoc.requested_review.requested_to,
           message: reviewComment.trim(),
-          status: 'reviewed'
-        }
+          status: "reviewed",
+        },
       });
 
       try {
         await sendRequestedDocumentMessage(
           displayDoc._id,
           displayDoc.requested_review._id,
-          { message: reviewComment.trim() }
+          { message: reviewComment.trim() },
         );
       } catch (messageError) {
-        console.warn('Failed to send review comment as message:', messageError);
+        console.warn("Failed to send review comment as message:", messageError);
       }
 
-      setReviewComment('');
+      setReviewComment("");
       setIsAccordionOpen(false);
       onClose();
     } catch (error) {
-      console.error('Failed to mark as reviewed:', error);
-      toast.error(
-        'Failed to mark as reviewed',
-        { description: error instanceof Error ? error.message : 'Please try again' }
-      );
+      console.error("Failed to mark as reviewed:", error);
+      toast.error("Failed to mark as reviewed", {
+        description:
+          error instanceof Error ? error.message : "Please try again",
+      });
     }
-  }, [displayDoc, user?.username, reviewComment, updateStatusMutation, onClose]);
+  }, [
+    displayDoc,
+    user?.username,
+    reviewComment,
+    updateStatusMutation,
+    onClose,
+  ]);
 
   const handleDeleteRequest = useCallback(async () => {
     if (!displayDoc || !displayDoc.requested_review._id) {
-      toast.error('Cannot delete: Review ID not found');
+      toast.error("Cannot delete: Review ID not found");
       return;
     }
 
@@ -132,23 +149,23 @@ export function RequestedDocumentViewSheet({
       await deleteDocumentMutation.mutateAsync({
         documentId: displayDoc._id,
         data: {
-          reviewId: displayDoc.requested_review._id
-        }
+          reviewId: displayDoc.requested_review._id,
+        },
       });
       onClose();
-    } catch {
-    }
+    } catch {}
   }, [displayDoc, deleteDocumentMutation, onClose]);
 
   const handleViewApplication = useCallback(() => {
     if (!displayDoc?.record_id) {
-      toast.error('Application record ID not found');
+      toast.error("Application record ID not found");
       return;
     }
 
-    const route = application?.Record_Type === 'spouse_skill_assessment'
-      ? `/admin/spouse-skill-assessment-applications/${displayDoc.record_id}`
-      : `/admin/applications/${displayDoc.record_id}`;
+    const route =
+      application?.Record_Type === "spouse_skill_assessment"
+        ? `/admin/spouse-skill-assessment-applications/${displayDoc.record_id}`
+        : `/admin/applications/${displayDoc.record_id}`;
 
     router.push(route);
     onClose();
@@ -156,28 +173,31 @@ export function RequestedDocumentViewSheet({
 
   if (!displayDoc) return null;
 
-  const isRequestedToMe = type === 'requested-to-me';
-  const canReview = isRequestedToMe && displayDoc.requested_review.status === 'pending';
+  const isRequestedToMe = type === "requested-to-me";
+  const canReview =
+    isRequestedToMe && displayDoc.requested_review.status === "pending";
   const canDelete = !isRequestedToMe;
-  const canAccessMessages = user?.role && ['admin', 'team_leader', 'master_admin', 'supervisor'].includes(user.role);
+  const canAccessMessages =
+    user?.role &&
+    ["admin", "team_leader", "master_admin", "supervisor"].includes(user.role);
 
   const documentForPreview = {
     _id: displayDoc._id,
     file_name: displayDoc.file_name,
     document_name: displayDoc.document_name,
-    document_type: displayDoc.document_name || 'Document',
+    document_type: displayDoc.document_name || "Document",
     document_category: displayDoc.document_category,
     document_link: displayDoc.document_link,
     uploaded_by: displayDoc.uploaded_by,
     uploaded_at: displayDoc.uploaded_at,
     status: displayDoc.status,
-    description: '',
+    description: "",
     workdrive_file_id: displayDoc.workdrive_file_id,
     record_id: displayDoc.record_id,
-    workdrive_parent_id: '',
+    workdrive_parent_id: "",
     history: displayDoc.history || [],
     comments: displayDoc.comments || [],
-    __v: 0
+    __v: 0,
   };
 
   return (
@@ -198,28 +218,32 @@ export function RequestedDocumentViewSheet({
                   <Calendar className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-600">
                     {displayDoc.requested_review.requested_at
-                      ? new Date(displayDoc.requested_review.requested_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        timeZone: 'UTC'
-                      })
-                      : 'Unknown date'
-                    }
+                      ? new Date(
+                          displayDoc.requested_review.requested_at,
+                        ).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          timeZone: "UTC",
+                        })
+                      : "Unknown date"}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-600">
-                    Uploaded at {displayDoc.uploaded_at
-                      ? new Date(displayDoc.uploaded_at).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric',
-                        timeZone: 'UTC'
-                      })
-                      : 'Unknown date'
-                    }
+                    Uploaded at{" "}
+                    {displayDoc.uploaded_at
+                      ? new Date(displayDoc.uploaded_at).toLocaleDateString(
+                          "en-US",
+                          {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            timeZone: "UTC",
+                          },
+                        )
+                      : "Unknown date"}
                   </span>
                 </div>
                 {displayDoc.isOverdue && (
@@ -237,11 +261,12 @@ export function RequestedDocumentViewSheet({
             </div>
           </SheetHeader>
 
-          <div className={`flex-1 flex flex-col ${canAccessMessages ? 'lg:flex-row' : ''} min-h-0`}>
+          <div
+            className={`flex-1 flex flex-col ${canAccessMessages ? "lg:flex-row" : ""} min-h-0`}
+          >
             <div className="flex-1 h-full min-h-0 order-1 lg:order-1">
               <ScrollArea className="h-full">
                 <div className="p-2 sm:p-4 space-y-4">
-
                   {displayDoc?.record_id && (
                     <ApplicationDetailsAccordion
                       application={application}
@@ -276,7 +301,7 @@ export function RequestedDocumentViewSheet({
                           className="flex-1"
                         >
                           <CheckCircle className="h-4 w-4 mr-2" />
-                          {isReviewing ? 'Cancel Review' : 'Mark as Reviewed'}
+                          {isReviewing ? "Cancel Review" : "Mark as Reviewed"}
                         </Button>
                       )}
 
@@ -288,7 +313,9 @@ export function RequestedDocumentViewSheet({
                           className="flex-1"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          {deleteDocumentMutation.isPending ? 'Deleting...' : 'Delete Request'}
+                          {deleteDocumentMutation.isPending
+                            ? "Deleting..."
+                            : "Delete Request"}
                         </Button>
                       )}
                     </div>
@@ -303,10 +330,15 @@ export function RequestedDocumentViewSheet({
                         />
                         <Button
                           onClick={handleMarkAsReviewed}
-                          disabled={updateStatusMutation.isPending || !reviewComment.trim()}
+                          disabled={
+                            updateStatusMutation.isPending ||
+                            !reviewComment.trim()
+                          }
                           className="w-full"
                         >
-                          {updateStatusMutation.isPending ? 'Marking...' : 'Submit Review'}
+                          {updateStatusMutation.isPending
+                            ? "Marking..."
+                            : "Submit Review"}
                         </Button>
                       </div>
                     )}

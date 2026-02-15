@@ -19,13 +19,13 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
   retryCondition: (error: Error) => {
     // Retry on network errors, timeouts, and 5xx server errors
     return (
-      error.message.includes('fetch') ||
-      error.message.includes('timeout') ||
-      error.message.includes('5') ||
-      error.message.includes('ECONNRESET') ||
-      error.message.includes('ENOTFOUND')
+      error.message.includes("fetch") ||
+      error.message.includes("timeout") ||
+      error.message.includes("5") ||
+      error.message.includes("ECONNRESET") ||
+      error.message.includes("ENOTFOUND")
     );
-  }
+  },
 };
 
 /**
@@ -33,7 +33,7 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
  */
 export async function withRetry<T>(
   fn: () => Promise<T>,
-  options: RetryOptions = {}
+  options: RetryOptions = {},
 ): Promise<T> {
   const opts = { ...DEFAULT_OPTIONS, ...options };
   let lastError: Error;
@@ -43,7 +43,7 @@ export async function withRetry<T>(
       return await fn();
     } catch (error) {
       lastError = error as Error;
-      
+
       // Don't retry if it's the last attempt or if retry condition is not met
       if (attempt === opts.maxAttempts || !opts.retryCondition(lastError)) {
         throw lastError;
@@ -52,11 +52,14 @@ export async function withRetry<T>(
       // Calculate delay with exponential backoff
       const delay = Math.min(
         opts.baseDelay * Math.pow(opts.backoffMultiplier, attempt - 1),
-        opts.maxDelay
+        opts.maxDelay,
       );
 
-      console.warn(`Attempt ${attempt} failed, retrying in ${delay}ms:`, lastError.message);
-      await new Promise(resolve => setTimeout(resolve, delay));
+      console.warn(
+        `Attempt ${attempt} failed, retrying in ${delay}ms:`,
+        lastError.message,
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
 
@@ -68,8 +71,8 @@ export async function withRetry<T>(
  */
 export async function withRetryParallel<T>(
   functions: Array<() => Promise<T>>,
-  options: RetryOptions = {}
+  options: RetryOptions = {},
 ): Promise<T[]> {
-  const promises = functions.map(fn => withRetry(fn, options));
+  const promises = functions.map((fn) => withRetry(fn, options));
   return Promise.all(promises);
 }

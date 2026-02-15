@@ -1,21 +1,21 @@
-'use client';
+"use client";
 
-import React, { memo, useState } from 'react';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
-import { ChevronDown, Check } from 'lucide-react';
+import React, { memo, useState } from "react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, Check } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { DocumentCategoryInfo } from '@/types/documents';
-import { AddCompanyButton } from './AddCompanyButton';
-import { ActionButtons } from './ActionButtons';
-import { Company } from '@/types/documents';
-import { ChecklistState } from '@/types/checklist';
-import { formatDateRange } from '@/utils/dateFormat';
+} from "@/components/ui/dropdown-menu";
+import { DocumentCategoryInfo } from "@/types/documents";
+import { AddCompanyButton } from "./AddCompanyButton";
+import { ActionButtons } from "./ActionButtons";
+import { Company } from "@/types/documents";
+import { ChecklistState } from "@/types/checklist";
+import { formatDateRange } from "@/utils/dateFormat";
 
 interface CategoryDropdownProps {
   categories: DocumentCategoryInfo[];
@@ -34,7 +34,7 @@ interface CategoryDropdownProps {
   onSaveChecklist?: () => void;
   onCancelChecklist?: () => void;
   isSavingChecklist: boolean;
-  checklistActions?: 'inline' | 'link';
+  checklistActions?: "inline" | "link";
   applicationId?: string;
 }
 
@@ -54,14 +54,17 @@ export const CategoryDropdown = memo(function CategoryDropdown({
   onSaveChecklist,
   onCancelChecklist,
   isSavingChecklist,
-  checklistActions = 'inline',
+  checklistActions = "inline",
   applicationId,
 }: CategoryDropdownProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const useLinkMode = checklistActions === 'link' && !!applicationId && !isClientView;
-  const hasChecklist = checklistState === 'saved';
+  const useLinkMode =
+    checklistActions === "link" && !!applicationId && !isClientView;
+  const hasChecklist = checklistState === "saved";
 
-  const selectedCategoryInfo = categories.find(cat => cat.id === selectedCategory);
+  const selectedCategoryInfo = categories.find(
+    (cat) => cat.id === selectedCategory,
+  );
 
   const handleCategorySelect = (categoryId: string) => {
     onCategoryChange(categoryId);
@@ -79,7 +82,9 @@ export const CategoryDropdown = memo(function CategoryDropdown({
               className="flex items-center gap-2 px-4 py-3 h-auto w-full justify-between text-left"
             >
               <span className="truncate text-sm">
-                {disabled ? 'Loading...' : (selectedCategoryInfo?.label || 'Select Category')}
+                {disabled
+                  ? "Loading..."
+                  : selectedCategoryInfo?.label || "Select Category"}
               </span>
               {disabled ? (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
@@ -88,7 +93,10 @@ export const CategoryDropdown = memo(function CategoryDropdown({
               )}
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-[calc(100vw-2rem)] max-w-[320px]" align="start">
+          <DropdownMenuContent
+            className="w-[calc(100vw-2rem)] max-w-[320px]"
+            align="start"
+          >
             {categories.map((category) => (
               <DropdownMenuItem
                 key={category.id}
@@ -111,8 +119,8 @@ export const CategoryDropdown = memo(function CategoryDropdown({
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="w-full flex flex-col gap-2">  
-          <AddCompanyButton 
+        <div className="w-full flex flex-col gap-2">
+          <AddCompanyButton
             checklistState={checklistState}
             isClientView={isClientView}
             hasCompanyDocuments={hasCompanyDocuments}
@@ -123,11 +131,11 @@ export const CategoryDropdown = memo(function CategoryDropdown({
           {useLinkMode ? (
             <Button variant="outline" size="sm" asChild className="w-full">
               <Link href={`/admin/applications/${applicationId}/checklist`}>
-                {hasChecklist ? 'Edit checklist' : 'Create checklist'}
+                {hasChecklist ? "Edit checklist" : "Create checklist"}
               </Link>
             </Button>
           ) : (
-            <ActionButtons 
+            <ActionButtons
               isClientView={isClientView}
               checklistState={checklistState}
               onStartCreatingChecklist={onStartCreatingChecklist}

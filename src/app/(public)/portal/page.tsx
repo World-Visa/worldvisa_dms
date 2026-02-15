@@ -1,13 +1,19 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { gsap } from 'gsap';
-import { ArrowRight, Shield, User } from 'lucide-react';
-import Image from 'next/image';
-import Link from 'next/link';
-import { useEffect, useRef } from 'react';
-import loginBackground from '../../../../public/background/login background.png';
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { gsap } from "gsap";
+import { ArrowRight, Shield, User } from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useEffect, useRef } from "react";
+import loginBackground from "../../../../public/background/login background.png";
 
 export default function PortalPage() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -35,10 +41,7 @@ export default function PortalPage() {
 
   return (
     <div className="h-screen bg-linear-to-br from-violet-50 via-purple-50 to-sky-100 flex items-center justify-center">
-      <div
-        className="w-full h-full mx-auto flex"
-      >
-
+      <div className="w-full h-full mx-auto flex">
         {/* Left Side - Image with Overlay */}
         <div
           ref={leftRef}
@@ -73,10 +76,8 @@ export default function PortalPage() {
         </div>
 
         {/* Right Side - Portal Selection */}
-        <div
-          className="flex w-full md:w-1/2  md:min-w-[480px] items-center justify-center"
-        >
-          <div className='space-y-6 w-[90%] md:min-w-[450px]'>
+        <div className="flex w-full md:w-1/2  md:min-w-[480px] items-center justify-center">
+          <div className="space-y-6 w-[90%] md:min-w-[450px]">
             <div className="relative m-auto my-3 h-12 w-48">
               <Image
                 src="/logos/world-visa-logo.webp"
@@ -84,7 +85,7 @@ export default function PortalPage() {
                 fill
                 className="object-contain"
               />
-            </div> 
+            </div>
             <div className="text-center lg:text-left">
               <h2 className="text-2xl lg:text-3xl font-bold text-gray-900 mb-2">
                 Welcome to WorldVisa DMS
@@ -156,12 +157,8 @@ export default function PortalPage() {
                 </CardContent>
               </Card>
             </div>
-
-
-
           </div>
         </div>
-
       </div>
     </div>
   );

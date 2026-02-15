@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import React, { memo } from 'react';
-import { ChecklistCategoryTabs } from './ChecklistCategoryTabs';
-import { ChecklistEditorTable } from './ChecklistEditorTable';
-import { ChecklistTabs } from '@/components/applications/checklist/ChecklistTabs';
-import { SearchBox } from '@/components/ui/SearchBox';
-import type { ChecklistPageMode } from './types';
+import React, { memo } from "react";
+import { ChecklistCategoryTabs } from "./ChecklistCategoryTabs";
+import { ChecklistEditorTable } from "./ChecklistEditorTable";
+import { ChecklistTabs } from "@/components/applications/checklist/ChecklistTabs";
+import { SearchBox } from "@/components/ui/SearchBox";
+import type { ChecklistPageMode } from "./types";
 
 interface ChecklistTableItem {
   category: string;
   documentType: string;
-  requirement?: 'mandatory' | 'optional' | 'not_required';
+  requirement?: "mandatory" | "optional" | "not_required";
   checklist_id?: string;
   isSelected?: boolean;
   description?: string;
@@ -18,7 +18,7 @@ interface ChecklistTableItem {
 
 interface ChecklistEditorProps {
   mode: ChecklistPageMode;
-  activeTab: 'current' | 'available';
+  activeTab: "current" | "available";
   categories: Array<{ id: string; label: string; count: number }>;
   selectedCategory: string;
   searchQuery: string;
@@ -27,9 +27,13 @@ interface ChecklistEditorProps {
   tabCounts: { currentCount: number; availableCount: number };
   pendingDeletions: string[];
   onCategoryChange: (category: string) => void;
-  onTabChange: (tab: 'current' | 'available') => void;
+  onTabChange: (tab: "current" | "available") => void;
   onSearchChange: (query: string) => void;
-  onUpdateRequirement: (category: string, documentType: string, requirement: 'mandatory' | 'optional' | 'not_required') => void;
+  onUpdateRequirement: (
+    category: string,
+    documentType: string,
+    requirement: "mandatory" | "optional" | "not_required",
+  ) => void;
   onAddToPending: (item: ChecklistTableItem) => void;
   onAddToPendingDeletions: (checklistId: string) => void;
   onRemoveFromPendingDeletions: (checklistId: string) => void;
@@ -59,7 +63,7 @@ export const ChecklistEditor = memo(function ChecklistEditor({
   categoryCounts,
   applicationId,
 }: ChecklistEditorProps) {
-  const isEdit = mode === 'edit';
+  const isEdit = mode === "edit";
 
   return (
     <div className="space-y-4">
@@ -102,7 +106,7 @@ export const ChecklistEditor = memo(function ChecklistEditor({
 
         <ChecklistEditorTable
           items={filteredItems}
-          mode={mode as 'create' | 'edit'}
+          mode={mode as "create" | "edit"}
           activeTab={activeTab}
           searchQuery={searchQuery}
           pendingDeletions={pendingDeletions}

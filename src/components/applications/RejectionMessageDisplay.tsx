@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { AlertCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { AlertCircle, ChevronDown, ChevronUp } from "lucide-react";
 
 interface RejectionMessageDisplayProps {
   message: string;
@@ -15,14 +15,15 @@ export function RejectionMessageDisplay({
   message,
   maxLength = 100,
   onReadMore,
-  showReadMoreButton = true
+  showReadMoreButton = true,
 }: RejectionMessageDisplayProps) {
   const [isExpanded, setIsExpanded] = useState(false);
-  
+
   const shouldTruncate = message.length > maxLength;
-  const displayMessage = shouldTruncate && !isExpanded 
-    ? message.substring(0, maxLength) + '...' 
-    : message;
+  const displayMessage =
+    shouldTruncate && !isExpanded
+      ? message.substring(0, maxLength) + "..."
+      : message;
 
   const handleToggle = () => {
     if (onReadMore && !isExpanded) {
@@ -42,7 +43,7 @@ export function RejectionMessageDisplay({
           </div>
         </div>
       </div>
-      
+
       {shouldTruncate && showReadMoreButton && (
         <Button
           variant="ghost"

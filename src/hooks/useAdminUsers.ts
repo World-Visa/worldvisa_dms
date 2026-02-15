@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export interface AdminUser {
   _id: string;
@@ -14,13 +14,11 @@ interface AdminUsersResponse {
 
 const fetchAdminUsers = async (): Promise<AdminUser[]> => {
   try {
-    const response = await fetch(
-      `${ZOHO_BASE_URL}/users/all`
-    );
+    const response = await fetch(`${ZOHO_BASE_URL}/users/all`);
 
     if (!response.ok) {
       throw new Error(
-        `Failed to fetch admin users: ${response.status} ${response.statusText}`
+        `Failed to fetch admin users: ${response.status} ${response.statusText}`,
       );
     }
 
@@ -51,7 +49,9 @@ export function useAdminUsers() {
       // Filter and sort admin users
       return data
         .filter((user) =>
-          ["admin", "team_leader", "master_admin", "supervisor"].includes(user.role)
+          ["admin", "team_leader", "master_admin", "supervisor"].includes(
+            user.role,
+          ),
         )
         .map((user) => ({
           ...user,

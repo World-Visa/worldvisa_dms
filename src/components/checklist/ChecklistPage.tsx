@@ -1,48 +1,67 @@
-'use client';
+"use client";
 
-import React, { useMemo } from 'react';
-import { useApplicationDetails } from '@/hooks/useApplicationDetails';
-import { useAllApplicationDocuments } from '@/hooks/useApplicationDocuments';
-import { parseCompaniesFromDocuments } from '@/utils/companyParsing';
-import { useChecklistPage } from './useChecklistPage';
-import { ChecklistLayout } from './ChecklistLayout';
-import { ChecklistEditor } from './ChecklistEditor';
-import { Card } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import type { Document } from '@/types/applications';
+import React, { useMemo } from "react";
+import { useApplicationDetails } from "@/hooks/useApplicationDetails";
+import { useAllApplicationDocuments } from "@/hooks/useApplicationDocuments";
+import { parseCompaniesFromDocuments } from "@/utils/companyParsing";
+import { useChecklistPage } from "./useChecklistPage";
+import { ChecklistLayout } from "./ChecklistLayout";
+import { ChecklistEditor } from "./ChecklistEditor";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { Document } from "@/types/applications";
 
 function computeCategoryCounts(
   categories: Array<{ id: string; label: string; count?: number }>,
-  documents: Document[] | undefined
+  documents: Document[] | undefined,
 ): Record<string, number> {
   const map: Record<string, number> = {};
   if (!documents?.length) return map;
   for (const cat of categories) {
-    if (cat.id === 'submitted' || cat.id === 'all' || cat.id === 'checklist') {
+    if (cat.id === "submitted" || cat.id === "all" || cat.id === "checklist") {
       map[cat.id] = documents.length;
-    } else if (cat.id === 'identity' || cat.label === 'Identity Documents') {
-      map[cat.id] = documents.filter(
-        (d) => d.document_category === 'Identity Documents' || d.document_category === 'Identity'
-      ).length;
-    } else if (cat.id === 'education' || cat.label === 'Education Documents') {
-      map[cat.id] = documents.filter(
-        (d) => d.document_category === 'Education Documents' || d.document_category === 'Education'
-      ).length;
-    } else if (cat.id === 'other' || cat.label === 'Other Documents') {
-      map[cat.id] = documents.filter(
-        (d) => d.document_category === 'Other Documents' || d.document_category === 'Other'
-      ).length;
-    } else if (cat.id === 'self_employment' || cat.label === 'Self Employment/Freelance') {
-      map[cat.id] = documents.filter((d) => d.document_category === 'Self Employment/Freelance').length;
-    } else if (cat.id === 'company') {
+    } else if (cat.id === "identity" || cat.label === "Identity Documents") {
       map[cat.id] = documents.filter(
         (d) =>
-          d.document_category?.includes('Company Documents') || d.document_category === 'Company'
+          d.document_category === "Identity Documents" ||
+          d.document_category === "Identity",
       ).length;
-    } else if (cat.label?.includes('Company Documents') && cat.label !== 'Company Documents') {
-      map[cat.id] = documents.filter((d) => d.document_category === cat.label).length;
+    } else if (cat.id === "education" || cat.label === "Education Documents") {
+      map[cat.id] = documents.filter(
+        (d) =>
+          d.document_category === "Education Documents" ||
+          d.document_category === "Education",
+      ).length;
+    } else if (cat.id === "other" || cat.label === "Other Documents") {
+      map[cat.id] = documents.filter(
+        (d) =>
+          d.document_category === "Other Documents" ||
+          d.document_category === "Other",
+      ).length;
+    } else if (
+      cat.id === "self_employment" ||
+      cat.label === "Self Employment/Freelance"
+    ) {
+      map[cat.id] = documents.filter(
+        (d) => d.document_category === "Self Employment/Freelance",
+      ).length;
+    } else if (cat.id === "company") {
+      map[cat.id] = documents.filter(
+        (d) =>
+          d.document_category?.includes("Company Documents") ||
+          d.document_category === "Company",
+      ).length;
+    } else if (
+      cat.label?.includes("Company Documents") &&
+      cat.label !== "Company Documents"
+    ) {
+      map[cat.id] = documents.filter(
+        (d) => d.document_category === cat.label,
+      ).length;
     } else {
-      map[cat.id] = documents.filter((d) => d.document_category === cat.label).length;
+      map[cat.id] = documents.filter(
+        (d) => d.document_category === cat.label,
+      ).length;
     }
   }
   return map;
@@ -55,16 +74,20 @@ interface ChecklistPageProps {
 
 export function ChecklistPage({ applicationId }: ChecklistPageProps) {
   const { data: applicationData } = useApplicationDetails(applicationId);
-  const { data: documentsData, isLoading: isDocsLoading, error: docsError } = useAllApplicationDocuments(
-    applicationId
-  );
+  const {
+    data: documentsData,
+    isLoading: isDocsLoading,
+    error: docsError,
+  } = useAllApplicationDocuments(applicationId);
 
   const documents = documentsData?.data;
   const companies = useMemo(
     () => parseCompaniesFromDocuments(documents ?? []),
-    [documents]
+    [documents],
   );
-  const recordType = (applicationData as { data?: { Record_Type?: string } })?.data?.Record_Type ?? 'default_record_type';
+  const recordType =
+    (applicationData as { data?: { Record_Type?: string } })?.data
+      ?.Record_Type ?? "default_record_type";
 
   const page = useChecklistPage({
     applicationId,
@@ -75,7 +98,7 @@ export function ChecklistPage({ applicationId }: ChecklistPageProps) {
 
   const categoryCounts = useMemo(
     () => computeCategoryCounts(page.categories, documents),
-    [page.categories, documents]
+    [page.categories, documents],
   );
 
   if (isDocsLoading || page.isChecklistLoading) {
@@ -96,7 +119,9 @@ export function ChecklistPage({ applicationId }: ChecklistPageProps) {
     return (
       <Card className="p-6">
         <p className="text-destructive">Failed to load documents.</p>
-        <p className="text-sm text-muted-foreground mt-1">{String(docsError)}</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {String(docsError)}
+        </p>
       </Card>
     );
   }

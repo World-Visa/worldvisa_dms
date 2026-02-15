@@ -1,5 +1,5 @@
-import { fetcher } from '@/lib/fetcher';
-import { API_CONFIG } from '@/lib/config/api';
+import { fetcher } from "@/lib/fetcher";
+import { API_CONFIG } from "@/lib/config/api";
 
 export interface RequestedDocumentMessage {
   _id: string;
@@ -9,7 +9,7 @@ export interface RequestedDocumentMessage {
 }
 
 export interface RequestedDocumentMessagesResponse {
-  status: 'success' | 'error';
+  status: "success" | "error";
   data: RequestedDocumentMessage[];
   message?: string;
 }
@@ -19,7 +19,7 @@ export interface SendMessageRequest {
 }
 
 export interface SendMessageResponse {
-  status: 'success' | 'error';
+  status: "success" | "error";
   data: {
     _id: string;
     message: string;
@@ -34,7 +34,7 @@ export interface DeleteMessageRequest {
 }
 
 export interface DeleteMessageResponse {
-  status: 'success' | 'error';
+  status: "success" | "error";
   message?: string;
 }
 
@@ -43,10 +43,10 @@ export interface DeleteMessageResponse {
  */
 export async function getRequestedDocumentMessages(
   documentId: string,
-  reviewId: string
+  reviewId: string,
 ): Promise<RequestedDocumentMessagesResponse> {
   return fetcher<RequestedDocumentMessagesResponse>(
-    API_CONFIG.ENDPOINTS.REVIEW_REQUEST_MESSAGES(documentId, reviewId)
+    API_CONFIG.ENDPOINTS.REVIEW_REQUEST_MESSAGES(documentId, reviewId),
   );
 }
 
@@ -56,15 +56,15 @@ export async function getRequestedDocumentMessages(
 export async function sendRequestedDocumentMessage(
   documentId: string,
   reviewId: string,
-  data: SendMessageRequest
+  data: SendMessageRequest,
 ): Promise<SendMessageResponse> {
   return fetcher<SendMessageResponse>(
     API_CONFIG.ENDPOINTS.REVIEW_REQUEST_MESSAGES(documentId, reviewId),
     {
-      method: 'POST',
+      method: "POST",
       headers: API_CONFIG.DEFAULT_HEADERS,
       body: JSON.stringify(data),
-    }
+    },
   );
 }
 
@@ -74,14 +74,14 @@ export async function sendRequestedDocumentMessage(
 export async function deleteRequestedDocumentMessage(
   documentId: string,
   reviewId: string,
-  data: DeleteMessageRequest
+  data: DeleteMessageRequest,
 ): Promise<DeleteMessageResponse> {
   return fetcher<DeleteMessageResponse>(
     API_CONFIG.ENDPOINTS.REVIEW_REQUEST_MESSAGES(documentId, reviewId),
     {
-      method: 'DELETE',
+      method: "DELETE",
       headers: API_CONFIG.DEFAULT_HEADERS,
       body: JSON.stringify(data),
-    }
+    },
   );
 }

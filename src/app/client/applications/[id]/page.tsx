@@ -3,4 +3,3 @@ import ClientApplicationDetailsPageContent from "@/components/applications/Clien
 export default function ClientApplicationDetailsPage() {
   return <ClientApplicationDetailsPageContent />;
 }
-

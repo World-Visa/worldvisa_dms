@@ -1,6 +1,10 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { requestChecklist, ChecklistRequestPayload, ChecklistRequestResponse } from '@/lib/api/checklistRequest';
-import { toast } from 'sonner';
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import {
+  requestChecklist,
+  ChecklistRequestPayload,
+  ChecklistRequestResponse,
+} from "@/lib/api/checklistRequest";
+import { toast } from "sonner";
 
 interface UseChecklistRequestOptions {
   onSuccess?: (response: ChecklistRequestResponse) => void;
@@ -21,25 +25,25 @@ export function useChecklistRequest(options: UseChecklistRequestOptions = {}) {
       if (leadId) {
         // Invalidate related queries to trigger refetch
         await queryClient.invalidateQueries({
-          queryKey: ['application', leadId],
+          queryKey: ["application", leadId],
         });
         await queryClient.invalidateQueries({
-          queryKey: ['clientApplication', leadId],
+          queryKey: ["clientApplication", leadId],
         });
       }
 
       // Show optimistic toast
-      toast.loading('Requesting checklist...', {
-        id: 'checklist-request',
+      toast.loading("Requesting checklist...", {
+        id: "checklist-request",
       });
     },
     onSuccess: (data, variables) => {
       // Dismiss loading toast
-      toast.dismiss('checklist-request');
+      toast.dismiss("checklist-request");
 
       // Show success message
-      toast.success('Checklist requested successfully!', {
-        description: 'Your document checklist will be generated shortly.',
+      toast.success("Checklist requested successfully!", {
+        description: "Your document checklist will be generated shortly.",
         duration: 5000,
       });
 
@@ -51,20 +55,20 @@ export function useChecklistRequest(options: UseChecklistRequestOptions = {}) {
       // Invalidate and refetch application data to update the UI
       if (leadId) {
         queryClient.invalidateQueries({
-          queryKey: ['application', leadId],
+          queryKey: ["application", leadId],
         });
         queryClient.invalidateQueries({
-          queryKey: ['clientApplication', leadId],
+          queryKey: ["clientApplication", leadId],
         });
       }
     },
     onError: (error: Error, variables) => {
       // Dismiss loading toast
-      toast.dismiss('checklist-request');
+      toast.dismiss("checklist-request");
 
       // Show error message
-      toast.error('Failed to request checklist', {
-        description: error.message || 'Please try again later.',
+      toast.error("Failed to request checklist", {
+        description: error.message || "Please try again later.",
         duration: 5000,
       });
 
@@ -74,7 +78,7 @@ export function useChecklistRequest(options: UseChecklistRequestOptions = {}) {
       }
 
       // Log error for debugging
-      console.error('Checklist request failed:', {
+      console.error("Checklist request failed:", {
         error: error.message,
         variables,
         timestamp: new Date().toISOString(),
@@ -82,13 +86,13 @@ export function useChecklistRequest(options: UseChecklistRequestOptions = {}) {
     },
     onSettled: () => {
       // Always dismiss loading toast, even if it wasn't shown
-      toast.dismiss('checklist-request');
+      toast.dismiss("checklist-request");
     },
   });
 
   const requestChecklistForApplication = async (applicationLeadId: string) => {
     if (!applicationLeadId) {
-      throw new Error('Application Lead ID is required');
+      throw new Error("Application Lead ID is required");
     }
 
     return mutation.mutateAsync({

@@ -1,21 +1,31 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Send, Loader2, FileText, Users, AlertCircle } from 'lucide-react';
-import { Document } from '@/types/applications';
-import { MultiSelect, MultiSelectOption } from '@/components/ui/multi-select';
-import { useAdminUsers } from '@/hooks/useAdminUsers';
-import { useReviewRequest } from '@/hooks/useReviewRequest';
-import { useAuth } from '@/hooks/useAuth';
-import { toast } from 'sonner';
+import React, { useState, useMemo } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Send, Loader2, FileText, Users, AlertCircle } from "lucide-react";
+import { Document } from "@/types/applications";
+import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
+import { useAdminUsers } from "@/hooks/useAdminUsers";
+import { useReviewRequest } from "@/hooks/useReviewRequest";
+import { useAuth } from "@/hooks/useAuth";
+import { toast } from "sonner";
 
 interface SendDocumentModalProps {
   documents: Document[];
   selectedDocument: Document;
-  onSend?: (documentIds: string[], notes: string, sendToUsers: string[]) => void;
+  onSend?: (
+    documentIds: string[],
+    notes: string,
+    sendToUsers: string[],
+  ) => void;
   applicationId?: string; // Add applicationId for review requests
 }
 
@@ -25,8 +35,12 @@ export function SendDocumentModal({
   onSend,
 }: SendDocumentModalProps) {
   const { user } = useAuth();
-  const { data: adminUsers, isLoading: isLoadingAdmins, error: adminError } = useAdminUsers();
-  
+  const {
+    data: adminUsers,
+    isLoading: isLoadingAdmins,
+    error: adminError,
+  } = useAdminUsers();
+
   // Review request mutation
   const reviewRequestMutation = useReviewRequest({
     onSuccess: (documentIds, requestedTo) => {
@@ -34,132 +48,145 @@ export function SendDocumentModal({
       onSend?.(documentIds, notes, requestedTo);
     },
     onError: (error) => {
-      console.error('Review request failed:', error);
-    }
+      console.error("Review request failed:", error);
+    },
   });
-  
+
   const [isOpen, setIsOpen] = useState(false);
-  const [notes, setNotes] = useState('');
-  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([selectedDocument._id]);
+  const [notes, setNotes] = useState("");
+  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([
+    selectedDocument._id,
+  ]);
   const [selectedAdmins, setSelectedAdmins] = useState<string[]>([]);
 
   // Memoize admin options for performance - role-based filtering
   const adminOptions: MultiSelectOption[] = useMemo(() => {
     if (!adminUsers || !user?.role) return [];
-    
+
     // Define role-based permissions
     const getRolePermissions = (userRole: string) => {
       switch (userRole) {
-        case 'admin':
-          return ['team_leader'];
-        case 'team_leader':
-          return ['master_admin', 'supervisor', 'admin'];
-        case 'master_admin':
-          return ['team_leader', 'supervisor', 'admin', 'master_admin'];
-        case 'supervisor':
-          return ['team_leader', 'master_admin', 'admin', 'supervisor'];
+        case "admin":
+          return ["team_leader"];
+        case "team_leader":
+          return ["master_admin", "supervisor", "admin"];
+        case "master_admin":
+          return ["team_leader", "supervisor", "admin", "master_admin"];
+        case "supervisor":
+          return ["team_leader", "master_admin", "admin", "supervisor"];
         default:
           return [];
       }
     };
-    
+
     const allowedRoles = getRolePermissions(user.role);
-    
+
     return adminUsers
-      .filter(admin => 
-        allowedRoles.includes(admin.role) && 
-        admin.username !== user.username // Exclude current user
+      .filter(
+        (admin) =>
+          allowedRoles.includes(admin.role) && admin.username !== user.username, // Exclude current user
       )
-      .map(admin => ({
+      .map((admin) => ({
         value: admin.username,
         label: admin.username,
-        role: admin.role
+        role: admin.role,
       }));
   }, [adminUsers, user?.role, user?.username]);
 
   const handleDocumentToggle = (documentId: string) => {
-    setSelectedDocuments(prev => 
+    setSelectedDocuments((prev) =>
       prev.includes(documentId)
-        ? prev.filter(id => id !== documentId)
-        : [...prev, documentId]
+        ? prev.filter((id) => id !== documentId)
+        : [...prev, documentId],
     );
   };
 
   const handleSend = async () => {
     // Comprehensive input validation
     if (!user?.username) {
-      toast.error('You must be logged in to send review requests.');
+      toast.error("You must be logged in to send review requests.");
       return;
     }
 
     if (selectedDocuments.length === 0) {
-      toast.error('Please select at least one document to send for review.');
+      toast.error("Please select at least one document to send for review.");
       return;
     }
 
     if (selectedAdmins.length === 0) {
-      toast.error('Please select at least one admin to send the documents to.');
+      toast.error("Please select at least one admin to send the documents to.");
       return;
     }
 
     // Validate document IDs
-    const invalidDocuments = selectedDocuments.filter(id => !id || typeof id !== 'string');
+    const invalidDocuments = selectedDocuments.filter(
+      (id) => !id || typeof id !== "string",
+    );
     if (invalidDocuments.length > 0) {
-      toast.error('Some selected documents have invalid IDs. Please refresh and try again.');
+      toast.error(
+        "Some selected documents have invalid IDs. Please refresh and try again.",
+      );
       return;
     }
 
     // Validate admin usernames
-    const invalidAdmins = selectedAdmins.filter(admin => !admin || typeof admin !== 'string');
+    const invalidAdmins = selectedAdmins.filter(
+      (admin) => !admin || typeof admin !== "string",
+    );
     if (invalidAdmins.length > 0) {
-      toast.error('Some selected admins have invalid usernames. Please refresh and try again.');
+      toast.error(
+        "Some selected admins have invalid usernames. Please refresh and try again.",
+      );
       return;
     }
 
     // Check for duplicate selections
     const uniqueDocuments = [...new Set(selectedDocuments)];
     const uniqueAdmins = [...new Set(selectedAdmins)];
-    
+
     if (uniqueDocuments.length !== selectedDocuments.length) {
-      toast.error('Duplicate documents detected. Please refresh and try again.');
+      toast.error(
+        "Duplicate documents detected. Please refresh and try again.",
+      );
       return;
     }
 
     if (uniqueAdmins.length !== selectedAdmins.length) {
-      toast.error('Duplicate admins detected. Please refresh and try again.');
+      toast.error("Duplicate admins detected. Please refresh and try again.");
       return;
     }
 
     // Validate message length
-    const message = notes.trim() || 'Please review these documents for verification.';
+    const message =
+      notes.trim() || "Please review these documents for verification.";
     if (message.length > 500) {
-      toast.error('Message is too long. Please keep it under 500 characters.');
+      toast.error("Message is too long. Please keep it under 500 characters.");
       return;
     }
-    
+
     try {
       // Use the review request mutation
       await reviewRequestMutation.mutateAsync({
         documentIds: uniqueDocuments,
         requestedTo: uniqueAdmins,
         message,
-        requestedBy: user.username
+        requestedBy: user.username,
       });
-      
+
       // Reset form state
       setIsOpen(false);
-      setNotes('');
+      setNotes("");
       setSelectedDocuments([selectedDocument._id]);
       setSelectedAdmins([]);
     } catch (error) {
       // Error handling is done in the mutation hook
-      console.error('Failed to send review requests:', error);
+      console.error("Failed to send review requests:", error);
     }
   };
 
   const selectedCount = selectedDocuments.length;
   const isSubmitting = reviewRequestMutation.isPending;
-  
+
   // Enhanced validation states
   const hasValidSelection = selectedCount > 0 && selectedAdmins.length > 0;
   const isFormValid = hasValidSelection && !!user?.username && !isSubmitting;
@@ -174,9 +201,11 @@ export function SendDocumentModal({
       </DialogTrigger>
       <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] mx-4 flex flex-col">
         <DialogHeader className="pb-4 flex-shrink-0">
-          <DialogTitle className="text-lg font-semibold">Send Documents for Verification</DialogTitle>
+          <DialogTitle className="text-lg font-semibold">
+            Send Documents for Verification
+          </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4 flex-1 overflow-y-auto pr-2">
           {/* Document Selection */}
           <div className="space-y-3">
@@ -189,10 +218,12 @@ export function SendDocumentModal({
                   key={document._id}
                   className={`flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 rounded-lg border cursor-pointer transition-colors ${
                     selectedDocuments.includes(document._id)
-                      ? 'bg-blue-50 border-blue-200'
-                      : 'bg-white border-gray-200 hover:bg-gray-50'
+                      ? "bg-blue-50 border-blue-200"
+                      : "bg-white border-gray-200 hover:bg-gray-50"
                   }`}
-                  onClick={() => !isSubmitting && handleDocumentToggle(document._id)}
+                  onClick={() =>
+                    !isSubmitting && handleDocumentToggle(document._id)
+                  }
                 >
                   <input
                     type="checkbox"
@@ -207,7 +238,8 @@ export function SendDocumentModal({
                       {document.file_name?.slice(0, 15)}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
-                      Uploaded by {document.uploaded_by} • {new Date(document.uploaded_at).toLocaleDateString()}
+                      Uploaded by {document.uploaded_by} •{" "}
+                      {new Date(document.uploaded_at).toLocaleDateString()}
                     </p>
                   </div>
                   {document._id === selectedDocument._id && (
@@ -228,7 +260,7 @@ export function SendDocumentModal({
                 Send to Admins *
               </h3>
             </div>
-            
+
             {!user?.username ? (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
@@ -262,17 +294,21 @@ export function SendDocumentModal({
                 className="w-full"
               />
             )}
-            
+
             {selectedAdmins.length > 0 && (
               <div className="text-xs text-gray-500">
-                {selectedAdmins.length} admin{selectedAdmins.length !== 1 ? 's' : ''} selected
+                {selectedAdmins.length} admin
+                {selectedAdmins.length !== 1 ? "s" : ""} selected
               </div>
             )}
           </div>
 
           {/* Notes Section */}
           <div className="space-y-4">
-            <label htmlFor="notes" className="text-sm font-medium text-gray-900">
+            <label
+              htmlFor="notes"
+              className="text-sm font-medium text-gray-900"
+            >
               Notes (Optional)
             </label>
             <Textarea
@@ -290,15 +326,16 @@ export function SendDocumentModal({
               </span>
               <div className="flex flex-col sm:flex-row gap-2 text-xs text-gray-500">
                 <span>
-                  {selectedCount} document{selectedCount !== 1 ? 's' : ''} selected
+                  {selectedCount} document{selectedCount !== 1 ? "s" : ""}{" "}
+                  selected
                 </span>
                 <span>
-                  {selectedAdmins.length} admin{selectedAdmins.length !== 1 ? 's' : ''} selected
+                  {selectedAdmins.length} admin
+                  {selectedAdmins.length !== 1 ? "s" : ""} selected
                 </span>
               </div>
             </div>
           </div>
-
         </div>
 
         {/* Action Buttons - Fixed at bottom */}
@@ -324,7 +361,9 @@ export function SendDocumentModal({
             ) : (
               <>
                 <Send className="h-4 w-4 mr-2" />
-                Send {selectedCount} Document{selectedCount !== 1 ? 's' : ''} to {selectedAdmins.length} Admin{selectedAdmins.length !== 1 ? 's' : ''}
+                Send {selectedCount} Document{selectedCount !== 1 ? "s" : ""} to{" "}
+                {selectedAdmins.length} Admin
+                {selectedAdmins.length !== 1 ? "s" : ""}
               </>
             )}
           </Button>

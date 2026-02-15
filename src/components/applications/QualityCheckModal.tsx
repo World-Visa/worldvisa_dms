@@ -1,14 +1,26 @@
-'use client';
+"use client";
 
-import React, { useState, useMemo } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { CheckCircle, Loader2, Users, AlertCircle, Send } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAdminUsers } from '@/hooks/useAdminUsers';
-import { useQualityCheck } from '@/hooks/useQualityCheck';
-import { useAuth } from '@/hooks/useAuth';
+import React, { useState, useMemo } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { CheckCircle, Loader2, Users, AlertCircle, Send } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useAdminUsers } from "@/hooks/useAdminUsers";
+import { useQualityCheck } from "@/hooks/useQualityCheck";
+import { useAuth } from "@/hooks/useAuth";
 
 interface QualityCheckModalProps {
   applicationId: string;
@@ -25,55 +37,60 @@ export function QualityCheckModal({
   isOpen,
   onOpenChange,
   disabled = false,
-  recordType = 'default_record_type'
+  recordType = "default_record_type",
 }: QualityCheckModalProps) {
   const { user } = useAuth();
-  const { data: adminUsers, isLoading: isLoadingAdmins, error: adminError } = useAdminUsers();
-  
+  const {
+    data: adminUsers,
+    isLoading: isLoadingAdmins,
+    error: adminError,
+  } = useAdminUsers();
+
   // Quality check mutation
   const qualityCheckMutation = useQualityCheck({
     onSuccess: () => {
       // Reset form state
-      setSelectedUser('');
-      setNotes('');
+      setSelectedUser("");
+      setNotes("");
       onOpenChange(false);
     },
     onError: (error) => {
-      console.error('Quality check failed:', error);
-    }
+      console.error("Quality check failed:", error);
+    },
   });
-  
-  const [selectedUser, setSelectedUser] = useState('');
-  const [notes, setNotes] = useState('');
+
+  const [selectedUser, setSelectedUser] = useState("");
+  const [notes, setNotes] = useState("");
 
   // Filter admin users to show only team_leader, master_admin, and supervisor
   // Exclude the currently logged-in user
   const eligibleUsers = useMemo(() => {
     if (!adminUsers) return [];
-    
-    return adminUsers.filter(admin => 
-      ['team_leader', 'master_admin', 'supervisor'].includes(admin.role) &&
-      admin.username !== user?.username
+
+    return adminUsers.filter(
+      (admin) =>
+        ["team_leader", "master_admin", "supervisor"].includes(admin.role) &&
+        admin.username !== user?.username,
     );
   }, [adminUsers, user?.username]);
 
   const handleSend = async () => {
     if (!selectedUser || !user?.username) return;
-    
+
     try {
       // Use the quality check mutation with selected user as reqUserName
       await qualityCheckMutation.mutateAsync({
         data: {
           reqUserName: selectedUser, // Use selected user instead of current user
           leadId: leadId,
-          recordType: recordType
+          recordType: recordType,
         },
         page: 1,
         limit: 10,
       });
     } catch (error) {
       // Error handling is done in the mutation hook
-      console.error('Failed to send quality check request:', error);
+      console.error("Failed to send quality check request:", error);
     }
   };
 
@@ -89,16 +106,19 @@ export function QualityCheckModal({
             Push for Quality Check
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6 flex-1 overflow-y-auto pr-2">
           {/* Application Info */}
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle className="h-4 w-4 text-blue-600" />
-              <h3 className="text-sm font-medium text-blue-900">Application Ready for Quality Check</h3>
+              <h3 className="text-sm font-medium text-blue-900">
+                Application Ready for Quality Check
+              </h3>
             </div>
             <p className="text-sm text-blue-700">
-              All submitted documents have been reviewed. This application is ready to be pushed for quality check for approval.
+              All submitted documents have been reviewed. This application is
+              ready to be pushed for quality check for approval.
             </p>
             <div className="mt-2 text-xs text-blue-600">
               Application ID: {applicationId}
@@ -113,7 +133,7 @@ export function QualityCheckModal({
                 Select Quality Check Reviewer *
               </h3>
             </div>
-            
+
             {!user?.username ? (
               <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                 <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
@@ -132,11 +152,16 @@ export function QualityCheckModal({
               <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                 <AlertCircle className="h-4 w-4 text-yellow-500 flex-shrink-0" />
                 <div className="text-sm text-yellow-700">
-                  No eligible reviewers available (Team Leaders, Master Admins, or Supervisors).
+                  No eligible reviewers available (Team Leaders, Master Admins,
+                  or Supervisors).
                 </div>
               </div>
             ) : (
-              <Select value={selectedUser} onValueChange={setSelectedUser} disabled={isLoadingAdmins || isSubmitting}>
+              <Select
+                value={selectedUser}
+                onValueChange={setSelectedUser}
+                disabled={isLoadingAdmins || isSubmitting}
+              >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select a reviewer..." />
                 </SelectTrigger>
@@ -146,7 +171,7 @@ export function QualityCheckModal({
                       <div className="flex items-center gap-2">
                         <span className="font-medium">{admin.username}</span>
                         <span className="text-xs text-gray-500 capitalize">
-                          ({admin.role.replace('_', ' ')})
+                          ({admin.role.replace("_", " ")})
                         </span>
                       </div>
                     </SelectItem>
@@ -154,13 +179,14 @@ export function QualityCheckModal({
                 </SelectContent>
               </Select>
             )}
-            
+
             {selectedUser && (
               <div className="text-xs text-gray-500">
-                Selected reviewer: <span className="font-medium">{selectedUser}</span>
+                Selected reviewer:{" "}
+                <span className="font-medium">{selectedUser}</span>
               </div>
             )}
-          </div>          
+          </div>
         </div>
 
         {/* Action Buttons - Fixed at bottom */}
@@ -186,7 +212,7 @@ export function QualityCheckModal({
             ) : (
               <>
                 <Send className="h-4 w-4 mr-2" />
-                Send to {selectedUser || 'Reviewer'}
+                Send to {selectedUser || "Reviewer"}
               </>
             )}
           </Button>

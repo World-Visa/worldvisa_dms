@@ -1,16 +1,16 @@
-'use client';
+"use client";
 
-import { QueryClient } from '@tanstack/react-query';
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import { AuthState, AdminLoginRequest, ClientLoginRequest } from '@/types/auth';
-import { adminLogin, clientLogin } from '@/lib/zoho';
-import { tokenStorage, parseToken, isTokenExpired } from '@/lib/auth';
-import { clearAllCacheData } from '@/lib/cacheUtils';
+import { QueryClient } from "@tanstack/react-query";
+import { create } from "zustand";
+import { persist } from "zustand/middleware";
+import { AuthState, AdminLoginRequest, ClientLoginRequest } from "@/types/auth";
+import { adminLogin, clientLogin } from "@/lib/zoho";
+import { tokenStorage, parseToken, isTokenExpired } from "@/lib/auth";
+import { clearAllCacheData } from "@/lib/cacheUtils";
 
 // Type for client login response structure
 interface ClientLoginResponse {
-  status: 'success' | 'error';
+  status: "success" | "error";
   token: string;
   _id?: string;
   id?: string;
@@ -18,11 +18,14 @@ interface ClientLoginResponse {
   name?: string;
   email?: string;
   lead_id?: string;
-  role?: 'admin' | 'client' | 'master_admin' | 'team_leader' | 'supervisor';
+  role?: "admin" | "client" | "master_admin" | "team_leader" | "supervisor";
 }
 
 interface AuthStore extends AuthState {
-  login: (credentials: AdminLoginRequest | ClientLoginRequest, type: 'admin' | 'client') => Promise<void>;
+  login: (
+    credentials: AdminLoginRequest | ClientLoginRequest,
+    type: "admin" | "client",
+  ) => Promise<void>;
   logout: (queryClient?: QueryClient) => void;
   checkAuth: () => Promise<void>;
   clearError: () => void;
@@ -39,15 +42,16 @@ export const useAuth = create<AuthStore>()(
 
       login: async (credentials, type) => {
         set({ isLoading: true, error: null });
-        
-        try {
-          const response = type === 'admin' 
-            ? await adminLogin(credentials as AdminLoginRequest)
-            : await clientLogin(credentials as ClientLoginRequest);
 
-          if (response.status === 'success') {
+        try {
+          const response =
+            type === "admin"
+              ? await adminLogin(credentials as AdminLoginRequest)
+              : await clientLogin(credentials as ClientLoginRequest);
+
+          if (response.status === "success") {
             const token = response.token;
-            
+
             // Handle different response structures for admin vs client login
             let userData;
             if (response.data && response.data.user) {
@@ -64,20 +68,20 @@ export const useAuth = create<AuthStore>()(
                 role: clientResponse.role,
               };
             }
-          
+
             const user = {
-              _id: userData._id || '',
+              _id: userData._id || "",
               username: userData.username,
               email: userData.email,
               lead_id: userData.lead_id,
-              role: userData?.role || 'client',
-            };            
+              role: userData?.role || "client",
+            };
             // Store token, role, and user data
             tokenStorage.set(token);
-            if (typeof window !== 'undefined') {
-              localStorage.setItem('user_data', JSON.stringify(user));
+            if (typeof window !== "undefined") {
+              localStorage.setItem("user_data", JSON.stringify(user));
             }
-                        
+
             set({
               user,
               token,
@@ -86,10 +90,11 @@ export const useAuth = create<AuthStore>()(
               error: null,
             });
           } else {
-            throw new Error('Login failed');
+            throw new Error("Login failed");
           }
         } catch (error) {
-          const errorMessage = error instanceof Error ? error.message : 'Login failed';
+          const errorMessage =
+            error instanceof Error ? error.message : "Login failed";
           set({
             user: null,
             token: null,
@@ -104,7 +109,7 @@ export const useAuth = create<AuthStore>()(
       logout: (queryClient?: QueryClient) => {
         // Clear all cache data including React Query cache, localStorage, and sockets
         clearAllCacheData(queryClient);
-        
+
         // Clear auth state
         set({
           user: null,
@@ -117,7 +122,7 @@ export const useAuth = create<AuthStore>()(
 
       checkAuth: async () => {
         const token = tokenStorage.get();
-        
+
         if (!token) {
           set({
             user: null,
@@ -130,13 +135,16 @@ export const useAuth = create<AuthStore>()(
         }
 
         set({ isLoading: true });
-        
+
         try {
-          const payload = parseToken(token);          
+          const payload = parseToken(token);
           if (payload && !isTokenExpired(token)) {
             // Try to get stored user data from localStorage
-            const storedUserData = typeof window !== 'undefined' ? localStorage.getItem('user_data') : null;
-            
+            const storedUserData =
+              typeof window !== "undefined"
+                ? localStorage.getItem("user_data")
+                : null;
+
             let user;
             if (storedUserData) {
               // Use stored user data if available
@@ -147,11 +155,11 @@ export const useAuth = create<AuthStore>()(
                 _id: payload.id,
                 username: payload.username,
                 email: payload.email,
-                role: role ,
+                role: role,
                 lead_id: payload.lead_id,
               };
             }
-            
+
             set({
               user,
               token,
@@ -162,8 +170,8 @@ export const useAuth = create<AuthStore>()(
           } else {
             // Token is invalid or expired, clear auth state
             tokenStorage.remove();
-            if (typeof window !== 'undefined') {
-              localStorage.removeItem('user_data');
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("user_data");
             }
             set({
               user: null,
@@ -175,8 +183,8 @@ export const useAuth = create<AuthStore>()(
           }
         } catch {
           tokenStorage.remove();
-          if (typeof window !== 'undefined') {
-            localStorage.removeItem('user_data');
+          if (typeof window !== "undefined") {
+            localStorage.removeItem("user_data");
           }
           set({
             user: null,
@@ -193,12 +201,12 @@ export const useAuth = create<AuthStore>()(
       },
     }),
     {
-      name: 'auth-storage',
+      name: "auth-storage",
       partialize: (state) => ({
         user: state.user,
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
-    }
-  )
+    },
+  ),
 );

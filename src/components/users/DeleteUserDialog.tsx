@@ -1,14 +1,14 @@
-'use client';
+"use client";
 
-import React, { memo } from 'react';
+import React, { memo } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, Trash2 } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { AlertTriangle, Trash2 } from "lucide-react";
 
 interface DeleteUserDialogProps {
   isOpen: boolean;
@@ -44,16 +44,13 @@ export const DeleteUserDialog = memo(function DeleteUserDialog({
                 Are you sure you want to delete user &quot;{username}&quot;?
               </p>
               <p className="text-sm text-red-600 mt-1">
-                This action cannot be undone. The user will be permanently removed from the system.
+                This action cannot be undone. The user will be permanently
+                removed from the system.
               </p>
             </div>
           </div>
           <div className="flex justify-end gap-3">
-            <Button
-              variant="outline"
-              onClick={onClose}
-              disabled={isDeleting}
-            >
+            <Button variant="outline" onClick={onClose} disabled={isDeleting}>
               Cancel
             </Button>
             <Button

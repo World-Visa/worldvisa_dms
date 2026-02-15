@@ -1,11 +1,18 @@
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { IconFolderCode } from '@tabler/icons-react';
-import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from '@/components/ui/empty';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { useState, useMemo } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { IconFolderCode } from "@tabler/icons-react";
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from "@/components/ui/empty";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -13,20 +20,23 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertCircle, MoreHorizontal, Eye, Pencil, Trash2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { useStage2Documents, useDeleteStage2Document } from '@/hooks/useStage2Documents';
-import { EOIModal } from '@/components/applications/modals/EOIModal';
-import { formatDate } from '@/utils/format';
+} from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle, MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  useStage2Documents,
+  useDeleteStage2Document,
+} from "@/hooks/useStage2Documents";
+import { EOIModal } from "@/components/applications/modals/EOIModal";
+import { formatDate } from "@/utils/format";
 import {
   getVisaSubclassByCode,
   getStateByCode,
   getAnzscoCodeByCode,
-} from '@/lib/constants/australianData';
-import type { EOILayoutProps, Stage2Document } from '@/types/stage2Documents';
+} from "@/lib/constants/australianData";
+import type { EOILayoutProps, Stage2Document } from "@/types/stage2Documents";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -36,42 +46,48 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
+} from "@/components/ui/alert-dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+} from "@/components/ui/dropdown-menu";
 
 interface EOILayoutComponentProps extends EOILayoutProps {
   isClientView?: boolean;
 }
 
-export function EOILayout({ applicationId, isClientView = false }: EOILayoutComponentProps) {
+export function EOILayout({
+  applicationId,
+  isClientView = false,
+}: EOILayoutComponentProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingDocument, setEditingDocument] = useState<Stage2Document | null>(null);
-  const [documentToDelete, setDocumentToDelete] = useState<Stage2Document | null>(null);
+  const [editingDocument, setEditingDocument] = useState<Stage2Document | null>(
+    null,
+  );
+  const [documentToDelete, setDocumentToDelete] =
+    useState<Stage2Document | null>(null);
 
-  const { data, isLoading, error } = useStage2Documents(applicationId, 'eoi');
+  const { data, isLoading, error } = useStage2Documents(applicationId, "eoi");
   const deleteMutation = useDeleteStage2Document();
 
   const documents = data?.data || [];
 
   const sortedDocuments = useMemo(() => {
     return [...documents].sort((a, b) => {
-      const fileCompare = (a.document_name || a.file_name || '').localeCompare(
-        b.document_name || b.file_name || ''
+      const fileCompare = (a.document_name || a.file_name || "").localeCompare(
+        b.document_name || b.file_name || "",
       );
       if (fileCompare !== 0) return fileCompare;
-      return (a.state || '').localeCompare(b.state || '');
+      return (a.state || "").localeCompare(b.state || "");
     });
   }, [documents]);
 
   const handleView = (document: Stage2Document) => {
     const url = document.document_link || document.download_url;
     if (!url) {
-      toast.error('Document URL not available');
+      toast.error("Document URL not available");
       return;
     }
     const width = 800;
@@ -80,8 +96,8 @@ export function EOILayout({ applicationId, isClientView = false }: EOILayoutComp
     const left = (window.screen.width - width) / 2;
     window.open(
       url,
-      '_blank',
-      `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`
+      "_blank",
+      `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`,
     );
   };
 
@@ -103,7 +119,7 @@ export function EOILayout({ applicationId, isClientView = false }: EOILayoutComp
         });
         setDocumentToDelete(null);
       } catch (error) {
-        console.error('Delete error:', error);
+        console.error("Delete error:", error);
       }
     }
   };
@@ -114,26 +130,29 @@ export function EOILayout({ applicationId, isClientView = false }: EOILayoutComp
   };
 
   const getSubclassDisplay = (code?: string) => {
-    if (!code) return 'N/A';
+    if (!code) return "N/A";
     const subclass = getVisaSubclassByCode(code);
     return subclass ? subclass.label : code;
   };
 
   const getStateDisplay = (code?: string) => {
-    if (!code) return 'N/A';
+    if (!code) return "N/A";
     const state = getStateByCode(code);
     return state ? `${state.code} - ${state.name}` : code;
   };
 
   const getAnzscoDisplay = (code?: string) => {
-    if (!code) return 'N/A';
+    if (!code) return "N/A";
     const data = getAnzscoCodeByCode(code);
-    if (data) return `${data.anzsco_code} - ${data.name} (${data.assessing_authority})`;
+    if (data)
+      return `${data.anzsco_code} - ${data.name} (${data.assessing_authority})`;
     return code;
   };
 
   const uniqueFileCount = useMemo(() => {
-    const names = new Set(sortedDocuments.map((d) => d.file_name || d.document_name));
+    const names = new Set(
+      sortedDocuments.map((d) => d.file_name || d.document_name),
+    );
     return names.size;
   }, [sortedDocuments]);
 
@@ -176,7 +195,10 @@ export function EOILayout({ applicationId, isClientView = false }: EOILayoutComp
               {!isClientView && (
                 <EmptyContent>
                   <div className="flex gap-2">
-                    <Button className="cursor-pointer" onClick={() => setIsModalOpen(true)}>
+                    <Button
+                      className="cursor-pointer"
+                      onClick={() => setIsModalOpen(true)}
+                    >
                       Create EOI
                     </Button>
                   </div>
@@ -187,15 +209,18 @@ export function EOILayout({ applicationId, isClientView = false }: EOILayoutComp
             <div>
               {!isClientView && (
                 <div className="flex justify-end mb-4">
-                  <Button onClick={() => setIsModalOpen(true)}>Add EOI Document</Button>
+                  <Button onClick={() => setIsModalOpen(true)}>
+                    Add EOI Document
+                  </Button>
                 </div>
               )}
               {documents.length > 1 && (
                 <p className="text-sm text-muted-foreground mb-3">
-                  {documents.length} EOI document{documents.length !== 1 ? 's' : ''}
+                  {documents.length} EOI document
+                  {documents.length !== 1 ? "s" : ""}
                   {uniqueFileCount > 1 || uniqueStateCount > 1
-                    ? ` (${uniqueFileCount} file${uniqueFileCount !== 1 ? 's' : ''} across ${uniqueStateCount} state${uniqueStateCount !== 1 ? 's' : ''})`
-                    : ''}
+                    ? ` (${uniqueFileCount} file${uniqueFileCount !== 1 ? "s" : ""} across ${uniqueStateCount} state${uniqueStateCount !== 1 ? "s" : ""})`
+                    : ""}
                 </p>
               )}
               <div className="rounded-md border overflow-x-auto max-h-[60vh] overflow-y-auto">
@@ -208,12 +233,15 @@ export function EOILayout({ applicationId, isClientView = false }: EOILayoutComp
                       <TableHead>State</TableHead>
                       <TableHead>Points</TableHead>
                       <TableHead>ANZSCO</TableHead>
-                      <TableHead className="text-right w-[80px]">Actions</TableHead>
+                      <TableHead className="text-right w-[80px]">
+                        Actions
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {sortedDocuments.map((document, index) => {
-                      const prevDoc = index > 0 ? sortedDocuments[index - 1] : null;
+                      const prevDoc =
+                        index > 0 ? sortedDocuments[index - 1] : null;
                       const sameFileAsPrev =
                         prevDoc &&
                         (prevDoc.file_name || prevDoc.document_name) ===
@@ -221,20 +249,31 @@ export function EOILayout({ applicationId, isClientView = false }: EOILayoutComp
                       return (
                         <TableRow
                           key={document._id}
-                          className={sameFileAsPrev ? 'bg-muted/20' : undefined}
+                          className={sameFileAsPrev ? "bg-muted/20" : undefined}
                         >
                           <TableCell className="font-medium">
                             {document.document_name || document.file_name}
                           </TableCell>
-                          <TableCell>{formatDate(document.date, 'short')}</TableCell>
-                          <TableCell>{getSubclassDisplay(document.subclass)}</TableCell>
+                          <TableCell>
+                            {formatDate(document.date, "short")}
+                          </TableCell>
+                          <TableCell>
+                            {getSubclassDisplay(document.subclass)}
+                          </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="font-normal">
-                              {document.state ? getStateDisplay(document.state) : 'N/A'}
+                              {document.state
+                                ? getStateDisplay(document.state)
+                                : "N/A"}
                             </Badge>
                           </TableCell>
-                          <TableCell>{document.point ?? 'N/A'}</TableCell>
-                          <TableCell className="max-w-[200px] truncate" title={getAnzscoDisplay(document.skill_assessing_body)}>
+                          <TableCell>{document.point ?? "N/A"}</TableCell>
+                          <TableCell
+                            className="max-w-[200px] truncate"
+                            title={getAnzscoDisplay(
+                              document.skill_assessing_body,
+                            )}
+                          >
                             {getAnzscoDisplay(document.skill_assessing_body)}
                           </TableCell>
                           <TableCell className="text-right">
@@ -251,22 +290,32 @@ export function EOILayout({ applicationId, isClientView = false }: EOILayoutComp
                               ) : (
                                 <DropdownMenu>
                                   <DropdownMenuTrigger asChild>
-                                    <Button variant="outline" size="sm" title="Actions">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      title="Actions"
+                                    >
                                       <MoreHorizontal className="h-4 w-4" />
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleView(document)}>
+                                    <DropdownMenuItem
+                                      onClick={() => handleView(document)}
+                                    >
                                       <Eye className="h-4 w-4 mr-2" />
                                       View
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleEditClick(document)}>
+                                    <DropdownMenuItem
+                                      onClick={() => handleEditClick(document)}
+                                    >
                                       <Pencil className="h-4 w-4 mr-2" />
                                       Edit
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
-                                      onClick={() => handleDeleteClick(document)}
-                                      variant='destructive'
+                                      onClick={() =>
+                                        handleDeleteClick(document)
+                                      }
+                                      variant="destructive"
                                     >
                                       <Trash2 className="h-4 w-4 mr-2" />
                                       Delete
@@ -294,16 +343,21 @@ export function EOILayout({ applicationId, isClientView = false }: EOILayoutComp
             onClose={handleModalClose}
             applicationId={applicationId}
             document={editingDocument || undefined}
-            mode={editingDocument ? 'edit' : 'create'}
+            mode={editingDocument ? "edit" : "create"}
           />
 
-          <AlertDialog open={!!documentToDelete} onOpenChange={() => setDocumentToDelete(null)}>
+          <AlertDialog
+            open={!!documentToDelete}
+            onOpenChange={() => setDocumentToDelete(null)}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete the document &quot;{documentToDelete?.document_name || documentToDelete?.file_name}&quot;.
-                  This action cannot be undone.
+                  This will permanently delete the document &quot;
+                  {documentToDelete?.document_name ||
+                    documentToDelete?.file_name}
+                  &quot;. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

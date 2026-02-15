@@ -1,94 +1,103 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { authenticatedFetch } from '@/lib/zoho';
-import { parseToken, isTokenExpired } from '@/lib/auth';
-import { ZOHO_BASE_URL } from '@/lib/config/api';
+import { NextRequest, NextResponse } from "next/server";
+import { authenticatedFetch } from "@/lib/zoho";
+import { parseToken, isTokenExpired } from "@/lib/auth";
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { documentId: string; reviewId: string } }
+  { params }: { params: { documentId: string; reviewId: string } },
 ) {
   try {
     // Try to get token from Authorization header first, then from cookies
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
-      : request.cookies.get('auth-token')?.value;
-    
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : request.cookies.get("auth-token")?.value;
+
     if (!token) {
       return NextResponse.json(
-        { status: 'error', message: 'Authentication token not found' },
-        { status: 401 }
+        { status: "error", message: "Authentication token not found" },
+        { status: 401 },
       );
     }
 
     const parsedToken = parseToken(token);
     if (!parsedToken || isTokenExpired(parsedToken)) {
       return NextResponse.json(
-        { status: 'error', message: 'Invalid or expired token' },
-        { status: 401 }
+        { status: "error", message: "Invalid or expired token" },
+        { status: 401 },
       );
     }
 
     // Check user role - only authorized roles can access messages
-    const allowedRoles = ['admin', 'team_leader', 'master_admin', 'supervisor'];
+    const allowedRoles = ["admin", "team_leader", "master_admin", "supervisor"];
     if (!parsedToken.role || !allowedRoles.includes(parsedToken.role)) {
       return NextResponse.json(
-        { status: 'error', message: 'Forbidden - Only admin, team_leader, master_admin, and supervisor can access messages' },
-        { status: 403 }
+        {
+          status: "error",
+          message:
+            "Forbidden - Only admin, team_leader, master_admin, and supervisor can access messages",
+        },
+        { status: 403 },
       );
     }
 
     const { documentId, reviewId } = params;
 
     const zohoUrl = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`;
-    
+
     const response = await authenticatedFetch(zohoUrl, token);
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Requested document messages API error:', error);
+    console.error("Requested document messages API error:", error);
     return NextResponse.json(
-      { 
-        status: 'error', 
-        message: error instanceof Error ? error.message : 'Failed to fetch messages' 
+      {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to fetch messages",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { documentId: string; reviewId: string } }
+  { params }: { params: { documentId: string; reviewId: string } },
 ) {
   try {
     // Try to get token from Authorization header first, then from cookies
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
-      : request.cookies.get('auth-token')?.value;
-    
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : request.cookies.get("auth-token")?.value;
+
     if (!token) {
       return NextResponse.json(
-        { status: 'error', message: 'Authentication token not found' },
-        { status: 401 }
+        { status: "error", message: "Authentication token not found" },
+        { status: 401 },
       );
     }
 
     const parsedToken = parseToken(token);
     if (!parsedToken || isTokenExpired(parsedToken)) {
       return NextResponse.json(
-        { status: 'error', message: 'Invalid or expired token' },
-        { status: 401 }
+        { status: "error", message: "Invalid or expired token" },
+        { status: 401 },
       );
     }
 
     // Check user role - only authorized roles can access messages
-    const allowedRoles = ['admin', 'team_leader', 'master_admin', 'supervisor'];
+    const allowedRoles = ["admin", "team_leader", "master_admin", "supervisor"];
     if (!parsedToken.role || !allowedRoles.includes(parsedToken.role)) {
       return NextResponse.json(
-        { status: 'error', message: 'Forbidden - Only admin, team_leader, master_admin, and supervisor can access messages' },
-        { status: 403 }
+        {
+          status: "error",
+          message:
+            "Forbidden - Only admin, team_leader, master_admin, and supervisor can access messages",
+        },
+        { status: 403 },
       );
     }
 
@@ -96,60 +105,69 @@ export async function POST(
     const body = await request.json();
 
     const zohoUrl = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`;
-    
-    const response = await authenticatedFetch(zohoUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
+
+    const response = await authenticatedFetch(
+      zohoUrl,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    }, token);
+      token,
+    );
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Send requested document message API error:', error);
+    console.error("Send requested document message API error:", error);
     return NextResponse.json(
-      { 
-        status: 'error', 
-        message: error instanceof Error ? error.message : 'Failed to send message' 
+      {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to send message",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { documentId: string; reviewId: string } }
+  { params }: { params: { documentId: string; reviewId: string } },
 ) {
   try {
     // Try to get token from Authorization header first, then from cookies
-    const authHeader = request.headers.get('authorization');
-    const token = authHeader?.startsWith('Bearer ') 
-      ? authHeader.substring(7) 
-      : request.cookies.get('auth-token')?.value;
-    
+    const authHeader = request.headers.get("authorization");
+    const token = authHeader?.startsWith("Bearer ")
+      ? authHeader.substring(7)
+      : request.cookies.get("auth-token")?.value;
+
     if (!token) {
       return NextResponse.json(
-        { status: 'error', message: 'Authentication token not found' },
-        { status: 401 }
+        { status: "error", message: "Authentication token not found" },
+        { status: 401 },
       );
     }
 
     const parsedToken = parseToken(token);
     if (!parsedToken || isTokenExpired(parsedToken)) {
       return NextResponse.json(
-        { status: 'error', message: 'Invalid or expired token' },
-        { status: 401 }
+        { status: "error", message: "Invalid or expired token" },
+        { status: 401 },
       );
     }
 
     // Check user role - only authorized roles can access messages
-    const allowedRoles = ['admin', 'team_leader', 'master_admin', 'supervisor'];
+    const allowedRoles = ["admin", "team_leader", "master_admin", "supervisor"];
     if (!parsedToken.role || !allowedRoles.includes(parsedToken.role)) {
       return NextResponse.json(
-        { status: 'error', message: 'Forbidden - Only admin, team_leader, master_admin, and supervisor can access messages' },
-        { status: 403 }
+        {
+          status: "error",
+          message:
+            "Forbidden - Only admin, team_leader, master_admin, and supervisor can access messages",
+        },
+        { status: 403 },
       );
     }
 
@@ -157,24 +175,29 @@ export async function DELETE(
     const body = await request.json();
 
     const zohoUrl = `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`;
-    
-    const response = await authenticatedFetch(zohoUrl, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
+
+    const response = await authenticatedFetch(
+      zohoUrl,
+      {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(body),
       },
-      body: JSON.stringify(body),
-    }, token);
+      token,
+    );
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Delete requested document message API error:', error);
+    console.error("Delete requested document message API error:", error);
     return NextResponse.json(
-      { 
-        status: 'error', 
-        message: error instanceof Error ? error.message : 'Failed to delete message' 
+      {
+        status: "error",
+        message:
+          error instanceof Error ? error.message : "Failed to delete message",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

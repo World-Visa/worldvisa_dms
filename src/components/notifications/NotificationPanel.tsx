@@ -43,7 +43,7 @@ export const NotificationPanel = memo(() => {
         console.error("Failed to mark notification as read:", error);
       }
     },
-    [updateReadStatus]
+    [updateReadStatus],
   );
 
   const handleDelete = useCallback(
@@ -54,7 +54,7 @@ export const NotificationPanel = memo(() => {
         console.error("Failed to delete notification:", error);
       }
     },
-    [deleteNotification]
+    [deleteNotification],
   );
 
   const handleMarkAllAsRead = useCallback(async () => {

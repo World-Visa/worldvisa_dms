@@ -1,6 +1,6 @@
-import Fuse, { FuseResultMatch, IFuseOptions } from 'fuse.js';
-import { filterByQuery } from './highlight';
-import { useMemo } from 'react';
+import Fuse, { FuseResultMatch, IFuseOptions } from "fuse.js";
+import { filterByQuery } from "./highlight";
+import { useMemo } from "react";
 
 export interface SearchOptions {
   keys: string[];
@@ -16,10 +16,9 @@ export interface SearchResult<T> {
   matches?: readonly FuseResultMatch[];
 }
 
-
 export function createFuseInstance<T>(
   items: T[],
-  options: SearchOptions = { keys: [], threshold: 0.3 }
+  options: SearchOptions = { keys: [], threshold: 0.3 },
 ): Fuse<T> {
   const fuseOptions: IFuseOptions<T> = {
     keys: options.keys,
@@ -27,11 +26,11 @@ export function createFuseInstance<T>(
     distance: options.distance || 100,
     includeScore: options.includeScore || false,
     includeMatches: options.includeMatches || false,
-    
+
     minMatchCharLength: 1,
     shouldSort: true,
     findAllMatches: true,
-    
+
     ignoreLocation: true,
     useExtendedSearch: false,
   };
@@ -39,17 +38,16 @@ export function createFuseInstance<T>(
   return new Fuse(items, fuseOptions);
 }
 
-
 export function fuzzySearch<T>(
   fuse: Fuse<T>,
-  query: string
+  query: string,
 ): SearchResult<T>[] {
   if (!query.trim()) {
     return [];
   }
 
   const results = fuse.search(query);
-  return results.map(result => ({
+  return results.map((result) => ({
     item: result.item,
     score: result.score,
     matches: result.matches,
@@ -63,52 +61,48 @@ export function comprehensiveSearch<T>(
   items: T[],
   query: string,
   getText: (item: T) => string,
-  options: SearchOptions = { keys: ['text'], threshold: 0.3 }
+  options: SearchOptions = { keys: ["text"], threshold: 0.3 },
 ): T[] {
   if (!query.trim()) {
     return items;
   }
 
-  
   const exactMatches = filterByQuery(items, query, getText);
-  
+
   if (exactMatches.length > 0) {
     return exactMatches;
   }
 
-  
   // For Fuse.js, we need to create a searchable object structure
-  const searchableItems = items.map(item => ({
+  const searchableItems = items.map((item) => ({
     originalItem: item,
-    searchableText: getText(item)
+    searchableText: getText(item),
   }));
-  
+
   const fuse = createFuseInstance(searchableItems, {
     ...options,
-    keys: ['searchableText'],
+    keys: ["searchableText"],
   });
 
   const fuzzyResults = fuzzySearch(fuse, query);
-  return fuzzyResults.map(result => result.item.originalItem);
+  return fuzzyResults.map((result) => result.item.originalItem);
 }
-
 
 export function useSearchMemo<T>(
   items: T[],
   query: string,
   getText: (item: T) => string,
-  options?: SearchOptions
+  options?: SearchOptions,
 ): T[] {
   return useMemo(() => {
     return comprehensiveSearch(items, query, getText, options);
   }, [items, query, getText, options]);
 }
 
-
 export function getSearchStats<T>(
   items: T[],
   filteredItems: T[],
-  query: string
+  query: string,
 ): {
   totalItems: number;
   filteredItems: number;
@@ -117,7 +111,8 @@ export function getSearchStats<T>(
 } {
   const totalItems = items.length;
   const filteredCount = filteredItems.length;
-  const matchPercentage = totalItems > 0 ? (filteredCount / totalItems) * 100 : 0;
+  const matchPercentage =
+    totalItems > 0 ? (filteredCount / totalItems) * 100 : 0;
 
   return {
     totalItems,

@@ -1,18 +1,23 @@
-'use client';
+"use client";
 
-import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { FileText } from 'lucide-react';
-import ViewDocumentSheet from './ViewDocumentSheet';
-import { Document } from '@/types/applications';
-import { DeleteDocumentDialog } from './DeleteDocumentDialog';
-import { useDeleteDocument } from '@/hooks/useMutationsDocuments';
-import { DocumentRow } from './DocumentRow';
-import { useQueryClient } from '@tanstack/react-query';
-import { useDocumentStatusUpdate } from '@/hooks/useDocumentStatusUpdate';
-import { useAuth } from '@/hooks/useAuth';
-import { ReuploadDocumentModal } from './ReuploadDocumentModal';
-import { ReviewedDocumentAlertDialog } from './ReviewedDocumentAlertDialog';
+import React, { useState, useEffect } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FileText } from "lucide-react";
+import ViewDocumentSheet from "./ViewDocumentSheet";
+import { Document } from "@/types/applications";
+import { DeleteDocumentDialog } from "./DeleteDocumentDialog";
+import { useDeleteDocument } from "@/hooks/useMutationsDocuments";
+import { DocumentRow } from "./DocumentRow";
+import { useQueryClient } from "@tanstack/react-query";
+import { useDocumentStatusUpdate } from "@/hooks/useDocumentStatusUpdate";
+import { useAuth } from "@/hooks/useAuth";
+import { ReuploadDocumentModal } from "./ReuploadDocumentModal";
+import { ReviewedDocumentAlertDialog } from "./ReviewedDocumentAlertDialog";
 
 interface DocumentListModalProps {
   isOpen: boolean;
@@ -21,13 +26,16 @@ interface DocumentListModalProps {
   documents: Document[];
   applicationId: string;
   onDocumentDeleted?: () => void;
-  onReuploadDocument?: (documentId: string, documentType: string, category: string) => void;
+  onReuploadDocument?: (
+    documentId: string,
+    documentType: string,
+    category: string,
+  ) => void;
   category?: string;
   isClientView?: boolean;
   /** When provided, ViewDocumentSheet navigates across all application documents instead of only `documents`. */
   allApplicationDocuments?: Document[];
 }
-
 
 export function DocumentListModal({
   isOpen,
@@ -39,18 +47,32 @@ export function DocumentListModal({
   onReuploadDocument,
   category,
   isClientView = false,
-  allApplicationDocuments
+  allApplicationDocuments,
 }: DocumentListModalProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [documentToDelete, setDocumentToDelete] = useState<{ id: string; name: string } | null>(null);
+  const [documentToDelete, setDocumentToDelete] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
-  const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
-  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(null);
-  const [patchingDocumentId, setPatchingDocumentId] = useState<string | null>(null);
+  const [selectedDocument, setSelectedDocument] = useState<Document | null>(
+    null,
+  );
+  const [deletingDocumentId, setDeletingDocumentId] = useState<string | null>(
+    null,
+  );
+  const [patchingDocumentId, setPatchingDocumentId] = useState<string | null>(
+    null,
+  );
   const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
-  const [selectedReuploadDocument, setSelectedReuploadDocument] = useState<Document | null>(null);
-  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] = useState<string>('');
-  const [selectedReuploadDocumentCategory, setSelectedReuploadDocumentCategory] = useState<string>('');
+  const [selectedReuploadDocument, setSelectedReuploadDocument] =
+    useState<Document | null>(null);
+  const [selectedReuploadDocumentType, setSelectedReuploadDocumentType] =
+    useState<string>("");
+  const [
+    selectedReuploadDocumentCategory,
+    setSelectedReuploadDocumentCategory,
+  ] = useState<string>("");
   const [reviewedAlertOpen, setReviewedAlertOpen] = useState(false);
   const [reviewedAlertDocument, setReviewedAlertDocument] = useState<{
     id: string;
@@ -61,25 +83,25 @@ export function DocumentListModal({
   const deleteDocumentMutation = useDeleteDocument();
   const queryClient = useQueryClient();
   const { user } = useAuth();
-  
+
   // Hook for updating document status
   const updateDocumentStatusMutation = useDocumentStatusUpdate({
     applicationId,
-    documentId: patchingDocumentId || '',
+    documentId: patchingDocumentId || "",
     onSuccess: () => {
       setPatchingDocumentId(null);
       onDocumentDeleted?.();
     },
     onError: () => {
       setPatchingDocumentId(null);
-    }
+    },
   });
 
   // Ensure all documents are cached for real-time updates when modal opens
   useEffect(() => {
     if (isOpen && documents.length > 0) {
-      documents.forEach(doc => {
-        queryClient.setQueryData(['document', doc._id], doc);
+      documents.forEach((doc) => {
+        queryClient.setQueryData(["document", doc._id], doc);
       });
     }
   }, [isOpen, documents, queryClient]);
@@ -91,8 +113,8 @@ export function DocumentListModal({
       setPatchingDocumentId(null);
       setIsReuploadModalOpen(false);
       setSelectedReuploadDocument(null);
-      setSelectedReuploadDocumentType('');
-      setSelectedReuploadDocumentCategory('');
+      setSelectedReuploadDocumentType("");
+      setSelectedReuploadDocumentCategory("");
       setReviewedAlertOpen(false);
       setReviewedAlertDocument(null);
     }
@@ -116,27 +138,31 @@ export function DocumentListModal({
 
   const handlePatchToPending = async (documentId: string) => {
     if (!user?.username) {
-      console.error('User not authenticated');
+      console.error("User not authenticated");
       return;
     }
 
     setPatchingDocumentId(documentId);
-    
+
     try {
       await updateDocumentStatusMutation.mutateAsync({
         documentId,
-        status: 'pending',
-        changedBy: user.username
+        status: "pending",
+        changedBy: user.username,
       });
     } catch (error) {
-      console.error('Failed to patch document to pending:', error);
+      console.error("Failed to patch document to pending:", error);
     }
   };
 
-  const handleOpenReuploadModal = (documentId: string, documentType: string, category: string) => {
-    const documentToReupload = documents.find(doc => doc._id === documentId);
+  const handleOpenReuploadModal = (
+    documentId: string,
+    documentType: string,
+    category: string,
+  ) => {
+    const documentToReupload = documents.find((doc) => doc._id === documentId);
     if (!documentToReupload) {
-      console.error('Document not found for reupload:', documentId);
+      console.error("Document not found for reupload:", documentId);
       return;
     }
 
@@ -149,15 +175,15 @@ export function DocumentListModal({
   const handleReuploadModalClose = () => {
     setIsReuploadModalOpen(false);
     setSelectedReuploadDocument(null);
-    setSelectedReuploadDocumentType('');
-    setSelectedReuploadDocumentCategory('');
+    setSelectedReuploadDocumentType("");
+    setSelectedReuploadDocumentCategory("");
   };
 
   const handleClientReviewedDeleteClick = (doc: Document) => {
     setReviewedAlertDocument({
       id: doc._id,
-      documentType: doc.document_name || doc.document_type || 'Document',
-      category: doc.document_category || 'Other Documents',
+      documentType: doc.document_name || doc.document_type || "Document",
+      category: doc.document_category || "Other Documents",
     });
     setReviewedAlertOpen(true);
   };
@@ -180,26 +206,27 @@ export function DocumentListModal({
     setSelectedDocument(null);
   };
 
-
   const confirmDelete = async () => {
     if (!documentToDelete) return;
-    
+
     setDeletingDocumentId(documentToDelete.id);
-    
+
     try {
       await deleteDocumentMutation.mutateAsync(documentToDelete.id);
       setDeleteDialogOpen(false);
       setDocumentToDelete(null);
-      
+
       // Call the callback to refresh the parent component's data
       onDocumentDeleted?.();
-      
+
       // Also manually refresh the documents list in this modal
       // by invalidating the relevant queries
-      queryClient.invalidateQueries({ queryKey: ['client-documents-all'] });
-      queryClient.invalidateQueries({ queryKey: ['application-documents-all'] });
-      queryClient.invalidateQueries({ queryKey: ['client-documents'] });
-      queryClient.invalidateQueries({ queryKey: ['application-documents'] });
+      queryClient.invalidateQueries({ queryKey: ["client-documents-all"] });
+      queryClient.invalidateQueries({
+        queryKey: ["application-documents-all"],
+      });
+      queryClient.invalidateQueries({ queryKey: ["client-documents"] });
+      queryClient.invalidateQueries({ queryKey: ["application-documents"] });
     } catch {
       // Error is handled in the mutation hook
     } finally {
@@ -211,13 +238,13 @@ export function DocumentListModal({
     setDeleteDialogOpen(false);
     setDocumentToDelete(null);
   };
-  
+
   // Calculate dynamic height based on document count
   const getModalHeight = () => {
-    if (documents.length === 0) return 'h-auto max-h-[50vh]';
-    if (documents.length === 1) return 'h-auto max-h-[60vh]';
-    if (documents.length <= 3) return 'h-auto max-h-[70vh]';
-    return 'h-[80vh]'; // Fixed height for many documents
+    if (documents.length === 0) return "h-auto max-h-[50vh]";
+    if (documents.length === 1) return "h-auto max-h-[60vh]";
+    if (documents.length <= 3) return "h-auto max-h-[70vh]";
+    return "h-[80vh]"; // Fixed height for many documents
   };
 
   return (
@@ -243,7 +270,9 @@ export function DocumentListModal({
                   onReupload={handleReuploadDocument}
                   isClientView={isClientView}
                   isDeleting={deletingDocumentId === document._id}
-                  onPatchToPending={(documentId) => handlePatchToPending(documentId)}
+                  onPatchToPending={(documentId) =>
+                    handlePatchToPending(documentId)
+                  }
                   isPatching={patchingDocumentId === document._id}
                   onOpenReuploadModal={handleOpenReuploadModal}
                   onClientReviewedDeleteClick={
@@ -261,7 +290,7 @@ export function DocumentListModal({
         isOpen={deleteDialogOpen}
         onClose={cancelDelete}
         onConfirm={confirmDelete}
-        documentName={documentToDelete?.name || ''}
+        documentName={documentToDelete?.name || ""}
         isDeleting={deletingDocumentId === documentToDelete?.id}
       />
 

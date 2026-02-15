@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,8 +10,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { AlertCircle } from 'lucide-react';
+} from "@/components/ui/alert-dialog";
+import { AlertCircle } from "lucide-react";
 
 interface ReviewedDocumentAlertDialogProps {
   isOpen: boolean;

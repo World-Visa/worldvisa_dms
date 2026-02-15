@@ -44,7 +44,7 @@ const NotificationItem = memo(
           if (notification?.applicationType) {
             if (notification.applicationType === "Spouse_Skill_Assessment") {
               router.push(
-                `/admin/spouse-skill-assessment-applications/${notification.leadId}`
+                `/admin/spouse-skill-assessment-applications/${notification.leadId}`,
               );
             } else {
               router.push(`/admin/applications/${notification.leadId}`);
@@ -178,7 +178,7 @@ const NotificationItem = memo(
         </div>
       </div>
     );
-  }
+  },
 );
 
 NotificationItem.displayName = "NotificationItem";

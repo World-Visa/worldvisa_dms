@@ -77,8 +77,12 @@ export function ClientApplicationDetails({
           </CardHeader>
           <CardContent>
             <div className="text-center py-8">
-              <p className="text-destructive">Failed to load application details</p>
-              <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
+              <p className="text-destructive">
+                Failed to load application details
+              </p>
+              <p className="text-sm text-muted-foreground mt-1">
+                {error.message}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -100,7 +104,9 @@ export function ClientApplicationDetails({
           </CardHeader>
           <CardContent>
             <div className="text-center py-8">
-              <p className="text-muted-foreground">No application data available</p>
+              <p className="text-muted-foreground">
+                No application data available
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -150,7 +156,8 @@ export function ClientApplicationDetails({
     const approaching = isDeadlineApproaching(deadline);
     if (passed) {
       return {
-        container: "bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30",
+        container:
+          "bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30",
         iconContainer: "bg-red-500/10 dark:bg-red-500/20",
         icon: "text-red-600 dark:text-red-400",
         label: "text-red-600/70 dark:text-red-400/70",
@@ -161,7 +168,8 @@ export function ClientApplicationDetails({
     }
     if (approaching) {
       return {
-        container: "bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30",
+        container:
+          "bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30",
         iconContainer: "bg-orange-500/10 dark:bg-orange-500/20",
         icon: "text-orange-600 dark:text-orange-400",
         label: "text-orange-600/70 dark:text-orange-400/70",
@@ -171,7 +179,8 @@ export function ClientApplicationDetails({
       };
     }
     return {
-      container: "bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30",
+      container:
+        "bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30",
       iconContainer: "bg-blue-500/10 dark:bg-blue-500/20",
       icon: "text-blue-600 dark:text-blue-400",
       label: "text-blue-600/70 dark:text-blue-400/70",
@@ -184,41 +193,61 @@ export function ClientApplicationDetails({
   return (
     <div className="space-y-6">
       {/* Deadline Card - match admin ApplicantDetails */}
-      {application.Deadline_For_Lodgment ? (() => {
-        const deadline = application.Deadline_For_Lodgment;
-        const styles = getDeadlineStyles(deadline);
-        const daysRemaining = getDaysRemaining(deadline);
-        const passed = isDeadlinePassed(deadline);
-        const approaching = isDeadlineApproaching(deadline);
-        return (
-          <div className={`${styles.container} rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6`}>
-            <div className="flex items-center space-x-5">
-              <div className={`w-12 h-12 ${styles.iconContainer} rounded-xl flex items-center justify-center`}>
-                <Calendar className={`h-6 w-6 ${styles.icon}`} />
+      {application.Deadline_For_Lodgment ? (
+        (() => {
+          const deadline = application.Deadline_For_Lodgment;
+          const styles = getDeadlineStyles(deadline);
+          const daysRemaining = getDaysRemaining(deadline);
+          const passed = isDeadlinePassed(deadline);
+          const approaching = isDeadlineApproaching(deadline);
+          return (
+            <div
+              className={`${styles.container} rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6`}
+            >
+              <div className="flex items-center space-x-5">
+                <div
+                  className={`w-12 h-12 ${styles.iconContainer} rounded-xl flex items-center justify-center`}
+                >
+                  <Calendar className={`h-6 w-6 ${styles.icon}`} />
+                </div>
+                <div>
+                  <p
+                    className={`${styles.label} text-sm font-medium uppercase tracking-wider flex items-center gap-2`}
+                  >
+                    Application Deadline
+                    {passed && (
+                      <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />
+                    )}
+                    {approaching && !passed && (
+                      <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />
+                    )}
+                  </p>
+                  <h2 className={`${styles.date} text-2xl font-bold`}>
+                    {formatDate(deadline)}
+                  </h2>
+                  <p className={`${styles.subtitle} text-xs`}>
+                    {passed
+                      ? "⚠️ Deadline has passed"
+                      : approaching
+                        ? "⚠️ Deadline approaching"
+                        : "Final lodgement target date"}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className={`${styles.label} text-sm font-medium uppercase tracking-wider flex items-center gap-2`}>
-                  Application Deadline
-                  {passed && <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />}
-                  {approaching && !passed && <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />}
-                </p>
-                <h2 className={`${styles.date} text-2xl font-bold`}>{formatDate(deadline)}</h2>
-                <p className={`${styles.subtitle} text-xs`}>
-                  {passed ? "⚠️ Deadline has passed" : approaching ? "⚠️ Deadline approaching" : "Final lodgement target date"}
-                </p>
+              <div className="flex items-center gap-8">
+                <div className="text-center">
+                  <p className={`${styles.days} text-3xl font-black`}>
+                    {daysRemaining}
+                  </p>
+                  <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest">
+                    Days Remaining
+                  </p>
+                </div>
               </div>
             </div>
-            <div className="flex items-center gap-8">
-              <div className="text-center">
-                <p className={`${styles.days} text-3xl font-black`}>{daysRemaining}</p>
-                <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest">
-                  Days Remaining
-                </p>
-              </div>
-            </div>
-          </div>
-        );
-      })() : (
+          );
+        })()
+      ) : (
         <div className="bg-gray-50 dark:bg-gray-900/10 border border-gray-200 dark:border-gray-800/30 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center space-x-5">
             <div className="w-12 h-12 bg-gray-500/10 dark:bg-gray-500/20 rounded-xl flex items-center justify-center">
@@ -228,7 +257,9 @@ export function ClientApplicationDetails({
               <p className="text-gray-600/70 dark:text-gray-400/70 text-sm font-medium uppercase tracking-wider">
                 Application Deadline
               </p>
-              <h2 className="text-slate-800 dark:text-white text-2xl font-bold">No deadline set</h2>
+              <h2 className="text-slate-800 dark:text-white text-2xl font-bold">
+                No deadline set
+              </h2>
               <p className="text-gray-600/60 dark:text-gray-400/60 text-xs">
                 Application lodgement deadline not configured
               </p>
@@ -260,20 +291,36 @@ export function ClientApplicationDetails({
               </h4>
               <div className="space-y-3">
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Full Name</p>
-                  <p className="text-sm font-semibold">{formatValue(application.Name)}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Full Name
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {formatValue(application.Name)}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Email</p>
-                  <p className="text-sm font-semibold">{formatValue(application.Email)}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Email
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {formatValue(application.Email)}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Phone</p>
-                  <p className="text-sm font-semibold">{formatValue(application.Phone)}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Phone
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {formatValue(application.Phone)}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Application ID</p>
-                  <p className="text-sm font-semibold font-mono">{formatValue(application.id)}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Application ID
+                  </p>
+                  <p className="text-sm font-semibold font-mono">
+                    {formatValue(application.id)}
+                  </p>
                 </div>
               </div>
             </div>
@@ -283,18 +330,30 @@ export function ClientApplicationDetails({
               </h4>
               <div className="space-y-3">
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Target Country</p>
-                  <p className="text-sm font-semibold">{formatValue(application.Qualified_Country || "")}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Target Country
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {formatValue(application.Qualified_Country || "")}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Service Type</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Service Type
+                  </p>
                   <span className="inline-block mt-1 px-2 py-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded">
-                    {formatValue(application.Service_Finalized || "").toUpperCase()}
+                    {formatValue(
+                      application.Service_Finalized || "",
+                    ).toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Suggested ANZSCO</p>
-                  <p className="text-sm font-semibold">{formatValue(application.Suggested_Anzsco || "")}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Suggested ANZSCO
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {formatValue(application.Suggested_Anzsco || "")}
+                  </p>
                 </div>
               </div>
             </div>
@@ -304,18 +363,30 @@ export function ClientApplicationDetails({
               </h4>
               <div className="space-y-3">
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Handled By</p>
-                  <p className="text-sm font-semibold">{formatValue(application.Application_Handled_By)}</p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Created Date</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Handled By
+                  </p>
                   <p className="text-sm font-semibold">
-                    {application.Created_Time ? formatDate(application.Created_Time, "time") : "Not available"}
+                    {formatValue(application.Application_Handled_By)}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Assessing Authority</p>
-                  <p className="text-sm font-semibold">{formatValue(application.Assessing_Authority || "")}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Created Date
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {application.Created_Time
+                      ? formatDate(application.Created_Time, "time")
+                      : "Not available"}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Assessing Authority
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {formatValue(application.Assessing_Authority || "")}
+                  </p>
                 </div>
               </div>
             </div>
@@ -325,11 +396,17 @@ export function ClientApplicationDetails({
               </h4>
               <div className="space-y-3">
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Record Type</p>
-                  <p className="text-sm font-semibold">{formatValue(application.Record_Type || "")}</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Record Type
+                  </p>
+                  <p className="text-sm font-semibold">
+                    {formatValue(application.Record_Type || "")}
+                  </p>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">Total Attachments</p>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
+                    Total Attachments
+                  </p>
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
                     {application.AttachmentCount || 0} Documents
                   </span>

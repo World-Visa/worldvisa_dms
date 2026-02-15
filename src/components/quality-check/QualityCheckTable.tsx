@@ -155,7 +155,7 @@ export function QualityCheckTable({
               key={`${application.id}-${index}`}
               className={cn(
                 "hover:bg-gray-50 transition-colors cursor-pointer",
-                hoveredRow === application.id && "bg-blue-50"
+                hoveredRow === application.id && "bg-blue-50",
               )}
               onMouseEnter={() => setHoveredRow(application.id)}
               onMouseLeave={() => setHoveredRow(null)}
@@ -195,11 +195,11 @@ export function QualityCheckTable({
                 <div
                   className={cn(
                     "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium border",
-                    getStatusColor(application.DMS_Application_Status)
+                    getStatusColor(application.DMS_Application_Status),
                   )}
                 >
                   {getStatusIcon(application.DMS_Application_Status)}
-                  {application.DMS_Application_Status || 'N/A'}
+                  {application.DMS_Application_Status || "N/A"}
                 </div>
               </TableCell>
 

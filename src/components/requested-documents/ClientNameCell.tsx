@@ -1,20 +1,19 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { User, AlertCircle } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import { useApplicationDetails } from '@/hooks/useApplicationDetails';
-import { useSpouseApplicationDetails } from '@/hooks/useSpouseApplicationDetails';
-import { ApplicationDetailsResponse } from '@/types/applications';
+import React from "react";
+import { User, AlertCircle } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useApplicationDetails } from "@/hooks/useApplicationDetails";
+import { useSpouseApplicationDetails } from "@/hooks/useSpouseApplicationDetails";
+import { ApplicationDetailsResponse } from "@/types/applications";
 
 interface ClientNameCellProps {
   recordId: string;
   clientName?: string;
 }
 
-
 export function ClientNameCell({ recordId, clientName }: ClientNameCellProps) {
-  if (clientName != null && clientName.trim() !== '') {
+  if (clientName != null && clientName.trim() !== "") {
     return (
       <div className="flex items-center gap-2">
         <span
@@ -57,7 +56,10 @@ export function ClientNameCell({ recordId, clientName }: ClientNameCellProps) {
   return (
     <div className="flex items-center gap-2">
       <User className="h-4 w-4 text-gray-400 shrink-0" />
-      <span className="text-sm font-medium text-gray-900 truncate max-w-[180px]" title={application.Name}>
+      <span
+        className="text-sm font-medium text-gray-900 truncate max-w-[180px]"
+        title={application.Name}
+      >
         {application.Name}
       </span>
     </div>

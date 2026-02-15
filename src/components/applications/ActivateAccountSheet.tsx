@@ -1,9 +1,9 @@
-'use client';
+"use client";
 
-import React, { useEffect, useMemo, useCallback } from 'react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useEffect, useMemo, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Sheet,
   SheetClose,
@@ -12,20 +12,20 @@ import {
   SheetFooter,
   SheetHeader,
   SheetTitle,
-} from '@/components/ui/sheet';
-import { Badge } from '@/components/ui/badge';
-import { Loader2, Eye, EyeOff, Check, X } from 'lucide-react';
+} from "@/components/ui/sheet";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Eye, EyeOff, Check, X } from "lucide-react";
 import {
   useCheckClientAccount,
   useUpdateClientAccount,
   useCreateClientAccount,
-} from '@/hooks/useActivateAccount';
-import type { CheckClientAccountResponseClient } from '@/lib/api/activateAccount';
+} from "@/hooks/useActivateAccount";
+import type { CheckClientAccountResponseClient } from "@/lib/api/activateAccount";
 
 const MIN_PHONE_DIGITS = 10;
 
 function stripNonDigits(value: string): string {
-  return value.replace(/\D/g, '');
+  return value.replace(/\D/g, "");
 }
 
 function isPhoneValid(value: string): boolean {
@@ -41,7 +41,7 @@ function getPhoneError(value: string): string | null {
   return null;
 }
 
-type Phase = 'check' | 'edit' | 'create';
+type Phase = "check" | "edit" | "create";
 
 export interface ActivateAccountSheetApplication {
   id?: string;
@@ -65,36 +65,37 @@ export function ActivateAccountSheet({
   leadId,
   application,
 }: ActivateAccountSheetProps) {
-  const [phase, setPhase] = React.useState<Phase>('check');
-  const [client, setClient] = React.useState<CheckClientAccountResponseClient | null>(null);
-  const [email, setEmail] = React.useState('');
-  const [phone, setPhone] = React.useState('');
-  const [password, setPassword] = React.useState('');
-  const [initialEmail, setInitialEmail] = React.useState('');
-  const [initialPhone, setInitialPhone] = React.useState('');
-  const [initialPassword, setInitialPassword] = React.useState('');
+  const [phase, setPhase] = React.useState<Phase>("check");
+  const [client, setClient] =
+    React.useState<CheckClientAccountResponseClient | null>(null);
+  const [email, setEmail] = React.useState("");
+  const [phone, setPhone] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const [initialEmail, setInitialEmail] = React.useState("");
+  const [initialPhone, setInitialPhone] = React.useState("");
+  const [initialPassword, setInitialPassword] = React.useState("");
   const [showPassword, setShowPassword] = React.useState(false);
 
-  const [createName, setCreateName] = React.useState('');
-  const [createEmail, setCreateEmail] = React.useState('');
-  const [createPhone, setCreatePhone] = React.useState('');
-  const [createLeadOwner, setCreateLeadOwner] = React.useState('');
-  const [createRecordType, setCreateRecordType] = React.useState('');
-  const [createPassword, setCreatePassword] = React.useState('');
+  const [createName, setCreateName] = React.useState("");
+  const [createEmail, setCreateEmail] = React.useState("");
+  const [createPhone, setCreatePhone] = React.useState("");
+  const [createLeadOwner, setCreateLeadOwner] = React.useState("");
+  const [createRecordType, setCreateRecordType] = React.useState("");
+  const [createPassword, setCreatePassword] = React.useState("");
   const [createShowPassword, setCreateShowPassword] = React.useState(false);
 
   const prefillCreateForm = useCallback(() => {
-    setCreateName(application?.Name ?? '');
-    setCreateEmail(application?.Email ?? '');
-    setCreatePhone(application?.Phone ?? '');
-    setCreateLeadOwner(application?.Application_Handled_By ?? '');
-    setCreateRecordType(application?.Record_Type ?? '');
-    setCreatePassword('');
+    setCreateName(application?.Name ?? "");
+    setCreateEmail(application?.Email ?? "");
+    setCreatePhone(application?.Phone ?? "");
+    setCreateLeadOwner(application?.Application_Handled_By ?? "");
+    setCreateRecordType(application?.Record_Type ?? "");
+    setCreatePassword("");
   }, [application]);
 
   const handleNotFound = useCallback(() => {
     prefillCreateForm();
-    setPhase('create');
+    setPhase("create");
   }, [prefillCreateForm]);
 
   const checkMutation = useCheckClientAccount({
@@ -107,7 +108,7 @@ export function ActivateAccountSheet({
       setInitialEmail(c.email);
       setInitialPhone(c.phone);
       setInitialPassword(c.password_value);
-      setPhase('edit');
+      setPhase("edit");
     },
     onNotFound: handleNotFound,
   });
@@ -128,27 +129,27 @@ export function ActivateAccountSheet({
 
   useEffect(() => {
     if (!open) {
-      setPhase('check');
+      setPhase("check");
       setClient(null);
-      setEmail('');
-      setPhone('');
-      setPassword('');
-      setInitialEmail('');
-      setInitialPhone('');
-      setInitialPassword('');
+      setEmail("");
+      setPhone("");
+      setPassword("");
+      setInitialEmail("");
+      setInitialPhone("");
+      setInitialPassword("");
       setShowPassword(false);
-      setCreateName('');
-      setCreateEmail('');
-      setCreatePhone('');
-      setCreateLeadOwner('');
-      setCreateRecordType('');
-      setCreatePassword('');
+      setCreateName("");
+      setCreateEmail("");
+      setCreatePhone("");
+      setCreateLeadOwner("");
+      setCreateRecordType("");
+      setCreatePassword("");
       setCreateShowPassword(false);
     }
   }, [open]);
 
   useEffect(() => {
-    if (phase === 'create' && open && application) {
+    if (phase === "create" && open && application) {
       prefillCreateForm();
     }
   }, [phase, open, application, prefillCreateForm]);
@@ -164,13 +165,24 @@ export function ActivateAccountSheet({
 
   const dirty = useMemo(
     () =>
-      phase === 'edit' &&
-      (email !== initialEmail || phone !== initialPhone || password !== initialPassword),
-    [phase, email, phone, password, initialEmail, initialPhone, initialPassword]
+      phase === "edit" &&
+      (email !== initialEmail ||
+        phone !== initialPhone ||
+        password !== initialPassword),
+    [
+      phase,
+      email,
+      phone,
+      password,
+      initialEmail,
+      initialPhone,
+      initialPassword,
+    ],
   );
 
   const createFormValid = useMemo(() => {
-    if (!createName.trim() || !createEmail.trim() || !createPassword.trim()) return false;
+    if (!createName.trim() || !createEmail.trim() || !createPassword.trim())
+      return false;
     if (!createPhoneValid) return false;
     return true;
   }, [createName, createEmail, createPhoneValid, createPassword]);
@@ -213,11 +225,11 @@ export function ActivateAccountSheet({
   ]);
 
   const createDescription =
-    phase === 'check'
-      ? 'Verify that a client account exists for this lead.'
-      : phase === 'edit'
-        ? 'View and update client account details. Save when you&apos;re done.'
-        : 'Account not found. Create a new client account using the form below.';
+    phase === "check"
+      ? "Verify that a client account exists for this lead."
+      : phase === "edit"
+        ? "View and update client account details. Save when you&apos;re done."
+        : "Account not found. Create a new client account using the form below.";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -228,9 +240,11 @@ export function ActivateAccountSheet({
         </SheetHeader>
 
         <div className="grid flex-1 auto-rows-min gap-6 px-4 overflow-y-auto">
-          {phase === 'check' && (
+          {phase === "check" && (
             <div className="grid gap-3">
-              <Label htmlFor="activate-account-lead-id">Lead ID (record ID)</Label>
+              <Label htmlFor="activate-account-lead-id">
+                Lead ID (record ID)
+              </Label>
               <Input
                 id="activate-account-lead-id"
                 value={leadId}
@@ -241,7 +255,7 @@ export function ActivateAccountSheet({
             </div>
           )}
 
-          {phase === 'edit' && client && (
+          {phase === "edit" && client && (
             <>
               <div className="grid gap-3">
                 <Label htmlFor="activate-account-name">Name</Label>
@@ -273,7 +287,7 @@ export function ActivateAccountSheet({
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="Phone"
                   disabled={isUpdatePending}
-                  className={editPhoneError ? 'border-destructive' : ''}
+                  className={editPhoneError ? "border-destructive" : ""}
                 />
                 {editPhoneError && (
                   <p className="text-sm text-destructive" role="alert">
@@ -286,7 +300,7 @@ export function ActivateAccountSheet({
                 <div className="relative">
                   <Input
                     id="activate-account-password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="Password"
@@ -318,8 +332,8 @@ export function ActivateAccountSheet({
                       variant="outline"
                       className={
                         client.accountStatus.emailValid
-                          ? 'bg-green-500/10 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-800'
-                          : 'bg-red-500/10 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800'
+                          ? "bg-green-500/10 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-800"
+                          : "bg-red-500/10 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800"
                       }
                     >
                       {client.accountStatus.emailValid ? (
@@ -333,8 +347,8 @@ export function ActivateAccountSheet({
                       variant="outline"
                       className={
                         client.accountStatus.phoneValid
-                          ? 'bg-green-500/10 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-800'
-                          : 'bg-red-500/10 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800'
+                          ? "bg-green-500/10 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-800"
+                          : "bg-red-500/10 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800"
                       }
                     >
                       {client.accountStatus.phoneValid ? (
@@ -348,8 +362,8 @@ export function ActivateAccountSheet({
                       variant="outline"
                       className={
                         client.accountStatus.emailExists
-                          ? 'bg-green-500/10 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-800'
-                          : 'bg-red-500/10 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800'
+                          ? "bg-green-500/10 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-800"
+                          : "bg-red-500/10 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800"
                       }
                     >
                       {client.accountStatus.emailExists ? (
@@ -363,8 +377,8 @@ export function ActivateAccountSheet({
                       variant="outline"
                       className={
                         client.accountStatus.phoneExists
-                          ? 'bg-green-500/10 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-800'
-                          : 'bg-red-500/10 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800'
+                          ? "bg-green-500/10 text-green-700 border-green-200 dark:bg-green-500/10 dark:text-green-400 dark:border-green-800"
+                          : "bg-red-500/10 text-red-700 border-red-200 dark:bg-red-500/10 dark:text-red-400 dark:border-red-800"
                       }
                     >
                       {client.accountStatus.phoneExists ? (
@@ -380,7 +394,7 @@ export function ActivateAccountSheet({
             </>
           )}
 
-          {phase === 'create' && (
+          {phase === "create" && (
             <>
               <div className="grid gap-3">
                 <Label htmlFor="create-account-name">Name</Label>
@@ -412,7 +426,7 @@ export function ActivateAccountSheet({
                   onChange={(e) => setCreatePhone(e.target.value)}
                   placeholder="Phone"
                   disabled={isCreatePending}
-                  className={createPhoneError ? 'border-destructive' : ''}
+                  className={createPhoneError ? "border-destructive" : ""}
                 />
                 {createPhoneError && (
                   <p className="text-sm text-destructive" role="alert">
@@ -455,7 +469,7 @@ export function ActivateAccountSheet({
                 <div className="relative">
                   <Input
                     id="create-account-password"
-                    type={createShowPassword ? 'text' : 'password'}
+                    type={createShowPassword ? "text" : "password"}
                     value={createPassword}
                     onChange={(e) => setCreatePassword(e.target.value)}
                     placeholder="Password"
@@ -483,7 +497,7 @@ export function ActivateAccountSheet({
         </div>
 
         <SheetFooter className="flex-row gap-2 sm:gap-2">
-          {phase === 'check' && (
+          {phase === "check" && (
             <>
               <Button
                 onClick={handleCheck}
@@ -496,7 +510,7 @@ export function ActivateAccountSheet({
                     Checking...
                   </>
                 ) : (
-                  'Check account exist'
+                  "Check account exist"
                 )}
               </Button>
               <SheetClose asChild>
@@ -504,7 +518,7 @@ export function ActivateAccountSheet({
               </SheetClose>
             </>
           )}
-          {phase === 'edit' && (
+          {phase === "edit" && (
             <>
               <Button
                 onClick={handleSave}
@@ -517,7 +531,7 @@ export function ActivateAccountSheet({
                     Saving...
                   </>
                 ) : (
-                  'Save changes'
+                  "Save changes"
                 )}
               </Button>
               <SheetClose asChild>
@@ -525,7 +539,7 @@ export function ActivateAccountSheet({
               </SheetClose>
             </>
           )}
-          {phase === 'create' && (
+          {phase === "create" && (
             <>
               <Button
                 onClick={handleCreate}
@@ -538,7 +552,7 @@ export function ActivateAccountSheet({
                     Creating...
                   </>
                 ) : (
-                  'Create account'
+                  "Create account"
                 )}
               </Button>
               <SheetClose asChild>

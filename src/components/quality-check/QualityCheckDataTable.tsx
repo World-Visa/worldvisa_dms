@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,9 +8,9 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ColumnDef,
   SortingState,
@@ -18,11 +18,11 @@ import {
   getCoreRowModel,
   getSortedRowModel,
   useReactTable,
-} from '@tanstack/react-table';
-import { ArrowUpDown, ChevronLeft, ChevronRight, FileText } from 'lucide-react';
-import { QualityCheckApplication } from '@/lib/api/qualityCheck';
-import { useRouter } from 'next/navigation';
-import { usePagination } from '@/hooks/usePagination';
+} from "@tanstack/react-table";
+import { ArrowUpDown, ChevronLeft, ChevronRight, FileText } from "lucide-react";
+import { QualityCheckApplication } from "@/lib/api/qualityCheck";
+import { useRouter } from "next/navigation";
+import { usePagination } from "@/hooks/usePagination";
 
 interface QualityCheckDataTableProps {
   applications: QualityCheckApplication[];
@@ -62,12 +62,12 @@ export function QualityCheckDataTable({
   const columns = useMemo<ColumnDef<QualityCheckApplication>[]>(
     () => [
       {
-        accessorKey: 'Name',
+        accessorKey: "Name",
         header: ({ column }) => (
           <Button
             variant="ghost"
             className="-ml-3 h-8 font-medium"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Applicant
             <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
@@ -86,8 +86,8 @@ export function QualityCheckDataTable({
         enableSorting: true,
       },
       {
-        accessorKey: 'Email',
-        header: 'Contact',
+        accessorKey: "Email",
+        header: "Contact",
         cell: ({ row }) => (
           <div className="space-y-1 min-w-[140px]">
             <p className="text-sm text-neutral-600 truncate">
@@ -99,8 +99,8 @@ export function QualityCheckDataTable({
         enableSorting: false,
       },
       {
-        accessorKey: 'Application_Handled_By',
-        header: 'Handled By',
+        accessorKey: "Application_Handled_By",
+        header: "Handled By",
         cell: ({ row }) => (
           <span className="text-sm text-neutral-700">
             {row.original.Application_Handled_By}
@@ -109,8 +109,8 @@ export function QualityCheckDataTable({
         enableSorting: true,
       },
       {
-        accessorKey: 'Quality_Check_From',
-        header: 'QC From',
+        accessorKey: "Quality_Check_From",
+        header: "QC From",
         cell: ({ row }) => (
           <span className="text-sm text-neutral-700">
             {row.original.Quality_Check_From}
@@ -119,12 +119,12 @@ export function QualityCheckDataTable({
         enableSorting: true,
       },
       {
-        accessorKey: 'Created_Time',
+        accessorKey: "Created_Time",
         header: ({ column }) => (
           <Button
             variant="ghost"
             className="-ml-3 h-8 font-medium"
-            onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+            onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
             Created
             <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
@@ -134,19 +134,19 @@ export function QualityCheckDataTable({
           const date = new Date(row.original.Created_Time);
           return (
             <div className="text-sm text-neutral-700">
-              {date.toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                year: 'numeric',
+              {date.toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+                year: "numeric",
               })}
             </div>
           );
         },
         enableSorting: true,
-        sortingFn: 'datetime',
+        sortingFn: "datetime",
       },
       {
-        id: 'actions',
+        id: "actions",
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
           <Button
@@ -164,7 +164,7 @@ export function QualityCheckDataTable({
         enableSorting: false,
       },
     ],
-    [router]
+    [router],
   );
 
   const table = useReactTable({
@@ -223,7 +223,7 @@ export function QualityCheckDataTable({
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 ))}
@@ -241,15 +241,12 @@ export function QualityCheckDataTable({
                   <TableCell
                     key={cell.id}
                     onClick={(e) => {
-                      if (cell.column.id === 'actions') {
+                      if (cell.column.id === "actions") {
                         e.stopPropagation();
                       }
                     }}
                   >
-                    {flexRender(
-                      cell.column.columnDef.cell,
-                      cell.getContext()
-                    )}
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
                   </TableCell>
                 ))}
               </TableRow>
@@ -277,7 +274,7 @@ export function QualityCheckDataTable({
             </Button>
             <div className="flex items-center gap-0.5">
               {paginationRange.map((page, index) =>
-                page === '...' ? (
+                page === "..." ? (
                   <span
                     key={`ellipsis-${index}`}
                     className="px-2 py-1 text-sm text-neutral-500"
@@ -287,14 +284,14 @@ export function QualityCheckDataTable({
                 ) : (
                   <Button
                     key={page}
-                    variant={page === currentPage ? 'default' : 'ghost'}
+                    variant={page === currentPage ? "default" : "ghost"}
                     size="sm"
                     onClick={() => onPageChange(page as number)}
                     className="h-8 w-8 p-0"
                   >
                     {page}
                   </Button>
-                )
+                ),
               )}
             </div>
             <Button

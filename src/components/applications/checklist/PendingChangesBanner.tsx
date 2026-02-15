@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import React, { memo } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { memo } from "react";
+import { Button } from "@/components/ui/button";
 
 interface PendingChangesBannerProps {
   pendingAdditions: unknown[];
@@ -16,28 +16,31 @@ export const PendingChangesBanner = memo(function PendingChangesBanner({
   pendingDeletions,
   pendingUpdates,
   onClearPendingChanges,
-  onSavePendingChanges
+  onSavePendingChanges,
 }: PendingChangesBannerProps) {
-  const hasChanges = pendingAdditions.length > 0 || pendingDeletions.length > 0 || pendingUpdates.length > 0;
-  
+  const hasChanges =
+    pendingAdditions.length > 0 ||
+    pendingDeletions.length > 0 ||
+    pendingUpdates.length > 0;
+
   if (!hasChanges) return null;
 
   const getChangesText = () => {
     const parts = [];
-    
+
     if (pendingAdditions.length > 0) {
       parts.push(`${pendingAdditions.length} to add`);
     }
-    
+
     if (pendingDeletions.length > 0) {
       parts.push(`${pendingDeletions.length} to remove`);
     }
-    
+
     if (pendingUpdates.length > 0) {
       parts.push(`${pendingUpdates.length} to update`);
     }
-    
-    return parts.join(', ');
+
+    return parts.join(", ");
   };
 
   return (
@@ -50,9 +53,7 @@ export const PendingChangesBanner = memo(function PendingChangesBanner({
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-blue-700">
-            {getChangesText()}
-          </span>
+          <span className="text-sm text-blue-700">{getChangesText()}</span>
           <div className="flex gap-2">
             <Button
               variant="outline"

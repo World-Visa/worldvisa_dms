@@ -1,27 +1,30 @@
-'use client';
+"use client";
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { 
-  FileText, 
-  Download, 
-  AlertCircle, 
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  FileText,
+  Download,
+  AlertCircle,
   Loader2,
   Eye,
-  File
-} from 'lucide-react';
-import { toast } from 'sonner';
-import type { SampleDocumentModalProps } from '@/types/samples';
-import { useSampleDocument, useDownloadSampleDocument } from '@/hooks/useSampleDocuments';
+  File,
+} from "lucide-react";
+import { toast } from "sonner";
+import type { SampleDocumentModalProps } from "@/types/samples";
+import {
+  useSampleDocument,
+  useDownloadSampleDocument,
+} from "@/hooks/useSampleDocuments";
 
 export function SampleDocumentModal({
   isOpen,
@@ -29,26 +32,27 @@ export function SampleDocumentModal({
   documentType,
   category,
   samplePath: propSamplePath,
-  companyName
+  companyName,
 }: SampleDocumentModalProps) {
   const [isDownloading, setIsDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Get sample document data
-  const { data: sampleDocument, isLoading: isLoadingSample } = useSampleDocument({
-    documentType,
-    category,
-    enabled: isOpen
-  });
+  const { data: sampleDocument, isLoading: isLoadingSample } =
+    useSampleDocument({
+      documentType,
+      category,
+      enabled: isOpen,
+    });
 
   const { downloadSample } = useDownloadSampleDocument();
 
   // Use the sample path from the hook if not provided as prop
-  const samplePath = propSamplePath || sampleDocument?.path || '';
+  const samplePath = propSamplePath || sampleDocument?.path || "";
 
   const handleDownload = useCallback(async () => {
     if (!samplePath) {
-      setError('Sample document not available');
+      setError("Sample document not available");
       return;
     }
 
@@ -56,18 +60,21 @@ export function SampleDocumentModal({
     setError(null);
 
     try {
-      const result = await downloadSample(samplePath, `${documentType} Sample.docx`);
-      
+      const result = await downloadSample(
+        samplePath,
+        `${documentType} Sample.docx`,
+      );
+
       if (result.success) {
-        toast.success('Sample document download started');
+        toast.success("Sample document download started");
       } else {
-        setError(result.error || 'Failed to download sample document');
-        toast.error('Download failed');
+        setError(result.error || "Failed to download sample document");
+        toast.error("Download failed");
       }
     } catch (err) {
-      console.error('Download failed:', err);
-      setError('Failed to download sample document. Please try again.');
-      toast.error('Download failed');
+      console.error("Download failed:", err);
+      setError("Failed to download sample document. Please try again.");
+      toast.error("Download failed");
     } finally {
       setIsDownloading(false);
     }
@@ -75,29 +82,29 @@ export function SampleDocumentModal({
 
   const handleViewInNewTab = useCallback(() => {
     if (!samplePath) {
-      setError('Sample document not available');
+      setError("Sample document not available");
       return;
     }
 
     try {
-      window.open(samplePath, '_blank', 'noopener,noreferrer');
+      window.open(samplePath, "_blank", "noopener,noreferrer");
     } catch (err) {
-      console.error('Failed to open document:', err);
-      setError('Failed to open sample document');
-      toast.error('Failed to open document');
+      console.error("Failed to open document:", err);
+      setError("Failed to open sample document");
+      toast.error("Failed to open document");
     }
   }, [samplePath]);
 
   const getFileIcon = () => {
-    if (samplePath?.toLowerCase().includes('.docx')) {
+    if (samplePath?.toLowerCase().includes(".docx")) {
       return <FileText className="h-8 w-8 text-blue-600" />;
     }
     return <File className="h-8 w-8 text-gray-600" />;
   };
 
   const getCategoryBadgeVariant = () => {
-    if (category.includes('Company')) return 'default';
-    return 'secondary';
+    if (category.includes("Company")) return "default";
+    return "secondary";
   };
 
   return (
@@ -162,7 +169,7 @@ export function SampleDocumentModal({
                     size="sm"
                     onClick={handleDownload}
                     disabled={isDownloading}
-                    className='cursor-pointer'
+                    className="cursor-pointer"
                   >
                     {isDownloading ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -177,7 +184,9 @@ export function SampleDocumentModal({
               <div className="space-y-3">
                 <AlertCircle className="h-8 w-8 text-muted-foreground mx-auto" />
                 <div>
-                  <p className="font-medium text-muted-foreground">Sample Not Available</p>
+                  <p className="font-medium text-muted-foreground">
+                    Sample Not Available
+                  </p>
                   <p className="text-sm text-muted-foreground">
                     No sample document found for this document type
                   </p>
@@ -191,7 +200,10 @@ export function SampleDocumentModal({
             <h4 className="font-medium text-blue-900 mb-2">Important Notes:</h4>
             <ul className="text-sm text-blue-800 space-y-1">
               <li>• This is a sample template for reference only</li>
-              <li>• Please customize the content according to your specific situation</li>
+              <li>
+                • Please customize the content according to your specific
+                situation
+              </li>
               <li>• Ensure all information is accurate and up-to-date</li>
               <li>• Contact your case manager if you need assistance</li>
             </ul>

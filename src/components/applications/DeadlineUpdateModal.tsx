@@ -30,7 +30,7 @@ export function DeadlineUpdateModal({
   leadId,
   currentDeadline,
   applicationName,
-  recordType = 'default_record_type',
+  recordType = "default_record_type",
 }: DeadlineUpdateModalProps) {
   const [deadlineDate, setDeadlineDate] = useState("");
   const deadlineUpdate = useDeadlineUpdate();
@@ -43,8 +43,8 @@ export function DeadlineUpdateModal({
         const date = new Date(currentDeadline);
         // Use local date components to avoid timezone conversion issues
         const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
+        const month = String(date.getMonth() + 1).padStart(2, "0");
+        const day = String(date.getDate()).padStart(2, "0");
         const formattedDate = `${year}-${month}-${day}`;
         setDeadlineDate(formattedDate);
       } catch (error) {
@@ -58,7 +58,7 @@ export function DeadlineUpdateModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!deadlineDate) {
       return;
     }
@@ -92,14 +92,14 @@ export function DeadlineUpdateModal({
             Update Application Deadline
           </DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           {applicationName && (
             <div className="text-sm text-muted-foreground">
               <strong>Application:</strong> {applicationName}
             </div>
           )}
-          
+
           {currentDeadline && (
             <div className="text-sm text-muted-foreground">
               <strong>Current Deadline:</strong> {formatDate(currentDeadline)}
@@ -118,7 +118,7 @@ export function DeadlineUpdateModal({
               onChange={(e) => setDeadlineDate(e.target.value)}
               className="w-full"
               required
-              min={new Date().toISOString().split('T')[0]} // Prevent selecting past dates
+              min={new Date().toISOString().split("T")[0]} // Prevent selecting past dates
             />
             <p className="text-xs text-muted-foreground">
               Select the deadline for application lodgement

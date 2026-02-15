@@ -17,7 +17,7 @@ export function useDocumentComments(documentId: string) {
 
       try {
         const response = await fetcher<GetCommentsResponse>(
-          `/api/zoho_dms/visa_applications/documents/${documentId}/comment`
+          `/api/zoho_dms/visa_applications/documents/${documentId}/comment`,
         );
 
         const responseTime = Date.now() - startTime;
@@ -32,7 +32,7 @@ export function useDocumentComments(documentId: string) {
         commentMonitor.trackCommentFetch(
           documentId,
           responseTime,
-          comments.length
+          comments.length,
         );
         commentMonitor.reportPerformanceIssue("fetch_comments", responseTime);
 
@@ -77,7 +77,7 @@ export function useDocumentComments(documentId: string) {
               case "comment_added":
                 // Check if comment already exists to avoid duplicates
                 const commentExists = existingComments.some(
-                  (c) => c._id === event.comment._id
+                  (c) => c._id === event.comment._id,
                 );
                 if (!commentExists) {
                   // Add new comment and sort by priority (Moshin's comments first, then by date)
@@ -88,19 +88,19 @@ export function useDocumentComments(documentId: string) {
 
               case "comment_updated":
                 return existingComments.map((comment) =>
-                  comment._id === event.comment._id ? event.comment : comment
+                  comment._id === event.comment._id ? event.comment : comment,
                 );
 
               case "comment_deleted":
                 return existingComments.filter(
-                  (comment) => comment._id !== event.comment._id
+                  (comment) => comment._id !== event.comment._id,
                 );
             }
 
             return existingComments;
-          }
+          },
         );
-      }
+      },
     );
 
     // Cleanup subscription on unmount
@@ -154,8 +154,8 @@ export function useDocumentComments(documentId: string) {
 function sortCommentsByPriority(comments: Comment[]): Comment[] {
   return comments.sort((a, b) => {
     // Moshin's comments first
-    const aIsMoshin = (a.added_by ?? '').toLowerCase().includes("moshin");
-    const bIsMoshin = (b.added_by ?? '').toLowerCase().includes("moshin");
+    const aIsMoshin = (a.added_by ?? "").toLowerCase().includes("moshin");
+    const bIsMoshin = (b.added_by ?? "").toLowerCase().includes("moshin");
 
     if (aIsMoshin && !bIsMoshin) return -1;
     if (!aIsMoshin && bIsMoshin) return 1;
@@ -169,7 +169,7 @@ function sortCommentsByPriority(comments: Comment[]): Comment[] {
 // Hook for real-time connection state
 export function useRealtimeConnection() {
   const [connectionState, setConnectionState] = useState(
-    realtimeManager.getConnectionState()
+    realtimeManager.getConnectionState(),
   );
 
   useEffect(() => {

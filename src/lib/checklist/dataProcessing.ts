@@ -39,8 +39,10 @@ interface ChecklistTableItem {
   instruction?: string;
 }
 
-
-function getAllowedDocumentCount(category: string, documentType: string): number | undefined {
+function getAllowedDocumentCount(
+  category: string,
+  documentType: string,
+): number | undefined {
   const allBaseDocuments = [
     ...IDENTITY_DOCUMENTS,
     ...EDUCATION_DOCUMENTS,
@@ -49,13 +51,17 @@ function getAllowedDocumentCount(category: string, documentType: string): number
     ...COMPANY_DOCUMENTS,
   ];
 
-  const foundDoc = allBaseDocuments.find(doc => 
-    doc.category === category && doc.documentType === documentType
+  const foundDoc = allBaseDocuments.find(
+    (doc) => doc.category === category && doc.documentType === documentType,
   );
 
   // Return undefined if allowedDocument is not specified (allows multiple uploads)
   // Return the specific number if allowedDocument is specified (limits uploads)
-  if (foundDoc && 'allowedDocument' in foundDoc && typeof foundDoc.allowedDocument === 'number') {
+  if (
+    foundDoc &&
+    "allowedDocument" in foundDoc &&
+    typeof foundDoc.allowedDocument === "number"
+  ) {
     return foundDoc.allowedDocument;
   }
   return undefined;
@@ -64,7 +70,10 @@ function getAllowedDocumentCount(category: string, documentType: string): number
 /**
  * Helper function to get instruction from base document types
  */
-function getInstruction(category: string, documentType: string): string | undefined {
+function getInstruction(
+  category: string,
+  documentType: string,
+): string | undefined {
   const allBaseDocuments = [
     ...IDENTITY_DOCUMENTS,
     ...EDUCATION_DOCUMENTS,
@@ -73,12 +82,16 @@ function getInstruction(category: string, documentType: string): string | undefi
     ...COMPANY_DOCUMENTS,
   ];
 
-  const foundDoc = allBaseDocuments.find(doc => 
-    doc.category === category && doc.documentType === documentType
+  const foundDoc = allBaseDocuments.find(
+    (doc) => doc.category === category && doc.documentType === documentType,
   );
 
   // Return instruction if it exists
-  if (foundDoc && 'instruction' in foundDoc && typeof foundDoc.instruction === 'string') {
+  if (
+    foundDoc &&
+    "instruction" in foundDoc &&
+    typeof foundDoc.instruction === "string"
+  ) {
     return foundDoc.instruction;
   }
   return undefined;
@@ -87,7 +100,7 @@ function getInstruction(category: string, documentType: string): string | undefi
 export function generateAllDocumentTypes(
   companies: Company[],
   isClientView: boolean,
-  checklistData?: { success: boolean; data: ChecklistItem[] }
+  checklistData?: { success: boolean; data: ChecklistItem[] },
 ): DocumentType[] {
   if (isClientView && checklistData?.data) {
     return checklistData.data.map(
@@ -106,7 +119,10 @@ export function generateAllDocumentTypes(
         }
 
         // Get allowedDocument and instruction from the base document types
-        const allowedDocument = getAllowedDocumentCount(categoryLabel, item.document_type);
+        const allowedDocument = getAllowedDocumentCount(
+          categoryLabel,
+          item.document_type,
+        );
         const instruction = getInstruction(categoryLabel, item.document_type);
 
         return {
@@ -115,7 +131,7 @@ export function generateAllDocumentTypes(
           allowedDocument,
           instruction,
         };
-      }
+      },
     );
   }
 
@@ -131,23 +147,25 @@ export function generateAllDocumentTypes(
       ...doc,
       category: company.category,
       companyName: company.name,
-    }))
+    })),
   );
 
   // If no companies are added yet, still include generic company documents
   // so users can see them in the checklist creation mode
-  const genericCompanyDocuments = companies.length === 0 ? 
-    COMPANY_DOCUMENTS.map(doc => ({
-      ...doc,
-      category: 'Company Documents',
-      companyName: undefined
-    })) : [];
+  const genericCompanyDocuments =
+    companies.length === 0
+      ? COMPANY_DOCUMENTS.map((doc) => ({
+          ...doc,
+          category: "Company Documents",
+          companyName: undefined,
+        }))
+      : [];
 
   return [...baseDocuments, ...companyDocuments, ...genericCompanyDocuments];
 }
 
 export function extractCompaniesFromDocuments(
-  documents: Document[]
+  documents: Document[],
 ): Company[] {
   if (!documents || documents.length === 0) return [];
 
@@ -161,19 +179,20 @@ export function mapCategoryLabel(category: string): string {
   if (category === "Identity") return "Identity Documents";
   if (category === "Education") return "Education Documents";
   if (category === "Other") return "Other Documents";
-  if (category === "Self Employment/Freelance") return "Self Employment/Freelance";
+  if (category === "Self Employment/Freelance")
+    return "Self Employment/Freelance";
   if (category === "Company") return "Company Documents";
-  
+
   if (category.includes("Company Documents")) {
-    return category; 
+    return category;
   }
-  
+
   return category;
 }
 
 export function matchesCategory(
   itemCategory: string,
-  targetCategory: string
+  targetCategory: string,
 ): boolean {
   const categoryLabel = mapCategoryLabel(itemCategory);
 
@@ -208,7 +227,7 @@ export function generateCreatingItems(
   checklistState: ChecklistState,
   filteredDocuments: DocumentType[],
   requirementMap: Record<string, DocumentRequirement>,
-  selectedDocuments: ChecklistDocument[]
+  selectedDocuments: ChecklistDocument[],
 ): ChecklistTableItem[] {
   if (checklistState !== "creating") return [];
 
@@ -218,7 +237,7 @@ export function generateCreatingItems(
     const isSelected = selectedDocuments.some(
       (doc) =>
         doc.category === docType.category &&
-        doc.documentType === docType.documentType
+        doc.documentType === docType.documentType,
     );
 
     return {
@@ -236,7 +255,7 @@ export function generateCreatingItems(
 
 export function generateEditingCurrentItems(
   checklistState: ChecklistState,
-  currentChecklistDocuments: ChecklistDocument[]
+  currentChecklistDocuments: ChecklistDocument[],
 ): ChecklistTableItem[] {
   if (checklistState !== "editing") return [];
 
@@ -251,7 +270,7 @@ export function generateEditingAvailableItems(
   checklistState: ChecklistState,
   availableDocumentsForEditing: DocumentType[],
   requirementMap: Record<string, DocumentRequirement>,
-  pendingAdditions: ChecklistDocument[]
+  pendingAdditions: ChecklistDocument[],
 ): ChecklistTableItem[] {
   if (checklistState !== "editing") return [];
 
@@ -261,7 +280,7 @@ export function generateEditingAvailableItems(
     const pendingAddition = pendingAdditions.find(
       (doc) =>
         doc.category === docType.category &&
-        doc.documentType === docType.documentType
+        doc.documentType === docType.documentType,
     );
 
     const requirement =
@@ -283,27 +302,23 @@ export function generateEditingAvailableItems(
 export function generateDefaultItems(
   checklistState: ChecklistState,
   allDocumentTypes: DocumentType[],
-  documents: Document[]
+  documents: Document[],
 ): ChecklistTableItem[] {
   if (checklistState !== "none" && checklistState !== "saved") return [];
 
-
   const validDocuments =
     documents?.filter(
-      (doc) => doc && typeof doc === "object" && doc.file_name
+      (doc) => doc && typeof doc === "object" && doc.file_name,
     ) || [];
 
- 
   return allDocumentTypes.map((docType: DocumentType) => {
     const expectedDocType = docType.documentType
       .toLowerCase()
       .replace(/\s+/g, "_");
 
-  
     const uploadedDoc = validDocuments.find((doc) => {
       if (!doc || !doc.file_name) return false;
 
-     
       // First, try to match by document_name field (API field)
       const docTypeFromName = doc.document_name;
       if (docTypeFromName) {
@@ -345,7 +360,7 @@ export function generateDefaultItems(
                 return true;
               }
             }
-           
+
             return false;
           }
           const docCategory = doc.document_category;
@@ -387,7 +402,6 @@ export function generateDefaultItems(
               // Check mapped category
               const mappedCategory = mapCategoryLabel(docCategory);
               if (mappedCategory === docType.category) {
-               
                 return true;
               }
             }
@@ -461,7 +475,6 @@ export function generateDefaultItems(
           if (docCategory) {
             // Direct match
             if (doc.document_category === docType.category) {
-             
               return true;
             }
             // Check if both are company documents (exact match only)
@@ -475,7 +488,6 @@ export function generateDefaultItems(
             // Check mapped category
             const mappedCategory = mapCategoryLabel(docCategory);
             if (mappedCategory === docType.category) {
-             
               return true;
             }
           }
@@ -492,8 +504,6 @@ export function generateDefaultItems(
 
       // Special case for promotion letters - try more aggressive matching
       if (docType.documentType.toLowerCase().includes("promotion")) {
-       
-
         // Check if the document name or filename contains "promotion"
         const docNameContainsPromotion =
           doc.document_name?.toLowerCase().includes("promotion") ||
@@ -514,7 +524,6 @@ export function generateDefaultItems(
             if (docCategory) {
               // Direct match
               if (doc.document_category === docType.category) {
-               
                 return true;
               }
               // Check if both are company documents (exact match only)
@@ -528,14 +537,11 @@ export function generateDefaultItems(
               // Check mapped category
               const mappedCategory = mapCategoryLabel(docCategory);
               if (mappedCategory === docType.category) {
-               
                 return true;
               }
             }
           }
         }
-
-       
       }
       return false;
     });
@@ -557,7 +563,7 @@ export function generateSavedItems(
   checklistData: { success: boolean; data: ChecklistItem[] } | undefined,
   documents: Document[],
   selectedCategory: string,
-  extractedCompanies: Company[]
+  extractedCompanies: Company[],
 ): ChecklistTableItem[] {
   if (
     checklistState !== "saved" ||
@@ -583,16 +589,16 @@ export function generateSavedItems(
       currentCompanyForSavedItems = null;
     } else {
       currentCompanyForSavedItems = extractedCompanies.find(
-        (company) => company.category.toLowerCase() === categoryLabel.toLowerCase()
+        (company) =>
+          company.category.toLowerCase() === categoryLabel.toLowerCase(),
       );
     }
   }
 
   const validDocuments =
     documents?.filter(
-      (doc) => doc && typeof doc === "object" && doc.file_name
+      (doc) => doc && typeof doc === "object" && doc.file_name,
     ) || [];
-
 
   return checklistData.data.map((checklistItem: ChecklistItem) => {
     let categoryLabel = mapCategoryLabel(checklistItem.document_category);
@@ -613,13 +619,13 @@ export function generateSavedItems(
     const uploadedDoc = validDocuments.find((doc) => {
       if (!doc || !doc.file_name) return false;
 
-       // First, try to match by document_name field (API field)
-       const docTypeFromName = doc.document_name;
-      
-       if (
-         docTypeFromName &&
-         docTypeFromName.toLowerCase().replace(/\s+/g, "_") === expectedDocType
-       ) {
+      // First, try to match by document_name field (API field)
+      const docTypeFromName = doc.document_name;
+
+      if (
+        docTypeFromName &&
+        docTypeFromName.toLowerCase().replace(/\s+/g, "_") === expectedDocType
+      ) {
         // Check category match with mapping
         const docCategory = doc.document_category;
         if (docCategory) {
@@ -637,31 +643,31 @@ export function generateSavedItems(
           return mappedCategory === categoryLabel;
         }
         return true;
-       }
+      }
 
-       // Fallback: try to match by document_type field
-       const docTypeFromField = doc.document_type;
-      
-       if (docTypeFromField && docTypeFromField === expectedDocType) {
-         // Check category match with mapping
-         const docCategory = doc.document_category;
-         if (docCategory) {
-           // Direct match
-           if (doc.document_category === categoryLabel) return true;
-           // For company documents, only match if it's the exact same company category
-           if (
-             categoryLabel.includes("Company Documents") &&
-             doc.document_category?.includes("Company Documents")
-           ) {
-             // Only match if it's the exact same company category
-             return doc.document_category === categoryLabel;
-           }
-           // Check mapped category
-           const mappedCategory = mapCategoryLabel(docCategory);
-           return mappedCategory === categoryLabel;
-         }
-         return true;
-       }
+      // Fallback: try to match by document_type field
+      const docTypeFromField = doc.document_type;
+
+      if (docTypeFromField && docTypeFromField === expectedDocType) {
+        // Check category match with mapping
+        const docCategory = doc.document_category;
+        if (docCategory) {
+          // Direct match
+          if (doc.document_category === categoryLabel) return true;
+          // For company documents, only match if it's the exact same company category
+          if (
+            categoryLabel.includes("Company Documents") &&
+            doc.document_category?.includes("Company Documents")
+          ) {
+            // Only match if it's the exact same company category
+            return doc.document_category === categoryLabel;
+          }
+          // Check mapped category
+          const mappedCategory = mapCategoryLabel(docCategory);
+          return mappedCategory === categoryLabel;
+        }
+        return true;
+      }
 
       // Fallback: try to match by filename
       const fileName = doc.file_name.toLowerCase();
@@ -693,7 +699,10 @@ export function generateSavedItems(
     });
 
     // Get instruction from base document types
-    const instruction = getInstruction(categoryLabel, checklistItem.document_type);
+    const instruction = getInstruction(
+      categoryLabel,
+      checklistItem.document_type,
+    );
 
     return {
       category: categoryLabel,
@@ -714,13 +723,13 @@ export function generateSavedItems(
 
 export function filterItemsByCategory(
   checklistItems: ChecklistTableItem[],
-  selectedCategory: string
+  selectedCategory: string,
 ): ChecklistTableItem[] {
   // Handle company documents
   if (selectedCategory === "company") {
     return checklistItems.filter(
       (item) =>
-        item.category === "Company Documents" || item.category === "Company"
+        item.category === "Company Documents" || item.category === "Company",
     );
   }
 
@@ -734,7 +743,7 @@ export function filterItemsByCategory(
     const categoryLabel = `${companyName} Company Documents`;
 
     return checklistItems.filter(
-      (item) => item.category.toLowerCase() === categoryLabel.toLowerCase()
+      (item) => item.category.toLowerCase() === categoryLabel.toLowerCase(),
     );
   }
 
@@ -742,22 +751,22 @@ export function filterItemsByCategory(
     case "identity":
     case "identity_documents":
       return checklistItems.filter(
-        (item) => item.category === "Identity Documents"
+        (item) => item.category === "Identity Documents",
       );
     case "education":
     case "education_documents":
       return checklistItems.filter(
-        (item) => item.category === "Education Documents"
+        (item) => item.category === "Education Documents",
       );
     case "other":
     case "other_documents":
       return checklistItems.filter(
-        (item) => item.category === "Other Documents"
+        (item) => item.category === "Other Documents",
       );
     case "self_employment":
     case "self_employment/freelance":
       return checklistItems.filter(
-        (item) => item.category === "Self Employment/Freelance"
+        (item) => item.category === "Self Employment/Freelance",
       );
     case "all":
     default:
@@ -768,9 +777,12 @@ export function filterItemsByCategory(
 export function getCategoryBadgeStyle(category: string): string {
   if (
     category.endsWith(" Documents") &&
-    !["Identity Documents", "Education Documents", "Other Documents", "Self Employment/Freelance"].includes(
-      category
-    )
+    ![
+      "Identity Documents",
+      "Education Documents",
+      "Other Documents",
+      "Self Employment/Freelance",
+    ].includes(category)
   ) {
     return "bg-orange-500 hover:bg-orange-600"; // Company documents
   }

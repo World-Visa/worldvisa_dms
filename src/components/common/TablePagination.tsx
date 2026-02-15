@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { TablePaginationProps } from '@/types/documents';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { TablePaginationProps } from "@/types/documents";
 
 export function TablePagination({
   currentPage,
@@ -28,7 +28,7 @@ export function TablePagination({
     }
 
     if (currentPage - delta > 2) {
-      rangeWithDots.push(1, '...');
+      rangeWithDots.push(1, "...");
     } else {
       rangeWithDots.push(1);
     }
@@ -36,7 +36,7 @@ export function TablePagination({
     rangeWithDots.push(...range);
 
     if (currentPage + delta < totalPages - 1) {
-      rangeWithDots.push('...', totalPages);
+      rangeWithDots.push("...", totalPages);
     } else if (totalPages > 1) {
       rangeWithDots.push(totalPages);
     }
@@ -47,7 +47,8 @@ export function TablePagination({
   return (
     <div className="flex flex-col px-4 py-2 sm:flex-row items-center justify-between gap-4">
       <div className="text-sm text-muted-foreground text-center sm:text-left">
-        Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of {totalItems} items
+        Showing {startIndex + 1} to {Math.min(endIndex, totalItems)} of{" "}
+        {totalItems} items
       </div>
       <div className="flex items-center space-x-1 sm:space-x-2">
         <Button
@@ -63,8 +64,10 @@ export function TablePagination({
         <div className="flex items-center space-x-1">
           {getVisiblePages().map((page, index) => (
             <React.Fragment key={index}>
-              {page === '...' ? (
-                <span className="px-1 sm:px-2 py-1 text-xs sm:text-sm text-muted-foreground">...</span>
+              {page === "..." ? (
+                <span className="px-1 sm:px-2 py-1 text-xs sm:text-sm text-muted-foreground">
+                  ...
+                </span>
               ) : (
                 <Button
                   variant={currentPage === page ? "default" : "outline"}

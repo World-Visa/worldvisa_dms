@@ -1,17 +1,26 @@
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
-import { Application } from '@/types/applications';
-import { formatDate } from '@/utils/format';
-import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { User, Mail, Phone, Calendar, Globe, FileText, Target, Briefcase } from 'lucide-react';
+} from "@/components/ui/dialog";
+import { Application } from "@/types/applications";
+import { formatDate } from "@/utils/format";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  Globe,
+  FileText,
+  Target,
+  Briefcase,
+} from "lucide-react";
 
 interface ApplicationDetailsModalProps {
   application: Application | undefined;
@@ -19,24 +28,28 @@ interface ApplicationDetailsModalProps {
   onClose: () => void;
 }
 
-export function ApplicationDetailsModal({ application, isOpen, onClose }: ApplicationDetailsModalProps) {
+export function ApplicationDetailsModal({
+  application,
+  isOpen,
+  onClose,
+}: ApplicationDetailsModalProps) {
   if (!application) return null;
 
   const formatValue = (value: string) => {
-    if (!value || value === 'N/A') return 'Not provided';
+    if (!value || value === "N/A") return "Not provided";
     return value;
   };
 
   const getServiceBadgeVariant = (service: string) => {
     switch (service?.toLowerCase()) {
-      case 'permanent residency':
-        return 'default';
-      case 'work visa':
-        return 'secondary';
-      case 'student visa':
-        return 'outline';
+      case "permanent residency":
+        return "default";
+      case "work visa":
+        return "secondary";
+      case "student visa":
+        return "outline";
       default:
-        return 'secondary';
+        return "secondary";
     }
   };
 
@@ -49,7 +62,7 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
             Application Details
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-6">
           {/* Personal Information */}
           <Card>
@@ -73,21 +86,27 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
                     <Mail className="h-3 w-3" />
                     Email
                   </label>
-                  <p className="font-medium">{formatValue(application.Email)}</p>
+                  <p className="font-medium">
+                    {formatValue(application.Email)}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                     <Phone className="h-3 w-3" />
                     Phone
                   </label>
-                  <p className="font-medium">{formatValue(application.Phone)}</p>
+                  <p className="font-medium">
+                    {formatValue(application.Phone)}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                     <Calendar className="h-3 w-3" />
                     Application ID
                   </label>
-                  <p className="font-mono text-sm">{formatValue(application.id)}</p>
+                  <p className="font-mono text-sm">
+                    {formatValue(application.id)}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -108,15 +127,21 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
                     <Globe className="h-3 w-3" />
                     Target Country
                   </label>
-                  <p className="font-medium">{formatValue(application.Qualified_Country || '')}</p>
+                  <p className="font-medium">
+                    {formatValue(application.Qualified_Country || "")}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                     <Target className="h-3 w-3" />
                     Service Type
                   </label>
-                  <Badge variant={getServiceBadgeVariant(application.Service_Finalized || '')}>
-                    {formatValue(application.Service_Finalized || '')}
+                  <Badge
+                    variant={getServiceBadgeVariant(
+                      application.Service_Finalized || "",
+                    )}
+                  >
+                    {formatValue(application.Service_Finalized || "")}
                   </Badge>
                 </div>
                 <div className="space-y-2">
@@ -124,14 +149,18 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
                     <Briefcase className="h-3 w-3" />
                     Suggested ANZSCO
                   </label>
-                  <p className="font-medium">{formatValue(application.Suggested_Anzsco || '')}</p>
+                  <p className="font-medium">
+                    {formatValue(application.Suggested_Anzsco || "")}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
                     <FileText className="h-3 w-3" />
                     Assessment Service
                   </label>
-                  <p className="font-medium text-sm">{formatValue(application.Send_Check_List || '')}</p>
+                  <p className="font-medium text-sm">
+                    {formatValue(application.Send_Check_List || "")}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -152,7 +181,9 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
                     <User className="h-3 w-3" />
                     Handled By
                   </label>
-                  <p className="font-medium">{formatValue(application.Application_Handled_By)}</p>
+                  <p className="font-medium">
+                    {formatValue(application.Application_Handled_By)}
+                  </p>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-muted-foreground flex items-center gap-1">
@@ -160,7 +191,9 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
                     Created Date
                   </label>
                   <p className="font-medium">
-                    {application.Created_Time ? formatDate(application.Created_Time, 'time') : 'Not available'}
+                    {application.Created_Time
+                      ? formatDate(application.Created_Time, "time")
+                      : "Not available"}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -168,7 +201,10 @@ export function ApplicationDetailsModal({ application, isOpen, onClose }: Applic
                     <FileText className="h-3 w-3" />
                     Attachments
                   </label>
-                  <Badge variant="secondary" className="bg-green-600 hover:bg-green-400 text-white">
+                  <Badge
+                    variant="secondary"
+                    className="bg-green-600 hover:bg-green-400 text-white"
+                  >
                     {application.AttachmentCount || 0} documents
                   </Badge>
                 </div>

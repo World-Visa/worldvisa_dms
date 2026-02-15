@@ -15,7 +15,6 @@ export function useDeadlineUpdate() {
       deadlineDate: string;
       recordType: string;
     }) => {
-    
       return updateDeadlineForLodgement(leadId, deadlineDate, recordType);
     },
     onSuccess: (_, variables) => {
@@ -29,7 +28,7 @@ export function useDeadlineUpdate() {
       queryClient.invalidateQueries({
         queryKey: ["application"],
       });
-      
+
       toast.success("Deadline updated successfully");
     },
     onError: (error: Error & { status?: number; response?: unknown }) => {
@@ -37,7 +36,7 @@ export function useDeadlineUpdate() {
       console.error("Error details:", {
         message: error.message,
         status: error.status,
-        response: error.response
+        response: error.response,
       });
       toast.error("Failed to update deadline. Please try again.");
     },

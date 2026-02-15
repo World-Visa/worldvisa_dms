@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import { useMemo, useState } from 'react';
-import { DocumentCategoryFilter } from '@/components/applications/DocumentCategoryFilter';
-import { DocumentChecklistTable } from '@/components/applications/DocumentChecklistTable';
-import { DocumentsSummary } from '@/components/applications/DocumentsSummary';
-import { DocumentsTable } from '@/components/applications/DocumentsTable';
-import { SampleDocumentsTable } from '@/components/applications/sample-documents/SampleDocumentsTable';
-import { Document } from '@/types/applications';
-import { Company, DocumentCategory } from '@/types/documents';
+import { useMemo, useState } from "react";
+import { DocumentCategoryFilter } from "@/components/applications/DocumentCategoryFilter";
+import { DocumentChecklistTable } from "@/components/applications/DocumentChecklistTable";
+import { DocumentsSummary } from "@/components/applications/DocumentsSummary";
+import { DocumentsTable } from "@/components/applications/DocumentsTable";
+import { SampleDocumentsTable } from "@/components/applications/sample-documents/SampleDocumentsTable";
+import { Document } from "@/types/applications";
+import { Company, DocumentCategory } from "@/types/documents";
 
 interface SkillAssessmentLayoutProps {
   allDocuments: Document[] | undefined;
@@ -18,7 +18,10 @@ interface SkillAssessmentLayoutProps {
   companies: Company[];
   onAddCompany: () => void;
   onRemoveCompany: (companyName: string) => void;
-  onRemoveCompanyWithCheck?: (companyName: string, companyCategory: string) => void;
+  onRemoveCompanyWithCheck?: (
+    companyName: string,
+    companyCategory: string,
+  ) => void;
   maxCompanies: number;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   checklistState: any;
@@ -27,7 +30,11 @@ interface SkillAssessmentLayoutProps {
   onSaveChecklist: () => Promise<void>;
   onCancelChecklist: () => void;
   applicationId: string;
-  onReuploadDocument: (documentId: string, documentType: string, category: string) => void;
+  onReuploadDocument: (
+    documentId: string,
+    documentType: string,
+    category: string,
+  ) => void;
   isClientView?: boolean;
   showSampleDocuments: boolean;
   onToggleSampleDocuments: () => void;
@@ -55,7 +62,9 @@ export function SkillAssessmentLayout({
   showSampleDocuments,
   onToggleSampleDocuments,
 }: SkillAssessmentLayoutProps) {
-  const [documentStatusFilter, setDocumentStatusFilter] = useState<Document['status'] | null>(null);
+  const [documentStatusFilter, setDocumentStatusFilter] = useState<
+    Document["status"] | null
+  >(null);
 
   const documentsForTables = useMemo(() => {
     if (!documentStatusFilter || !allDocuments) return allDocuments ?? [];
@@ -65,7 +74,10 @@ export function SkillAssessmentLayout({
   return (
     <>
       {showSampleDocuments ? (
-        <SampleDocumentsTable applicationId={applicationId} isClientView={isClientView} />
+        <SampleDocumentsTable
+          applicationId={applicationId}
+          isClientView={isClientView}
+        />
       ) : (
         <div className="space-y-10">
           <DocumentsSummary
@@ -73,7 +85,11 @@ export function SkillAssessmentLayout({
             isLoading={isAllDocumentsLoading}
             error={allDocumentsError}
             selectedStatus={documentStatusFilter}
-            onStatusClick={(status) => setDocumentStatusFilter((prev) => (prev === status ? null : status))}
+            onStatusClick={(status) =>
+              setDocumentStatusFilter((prev) =>
+                prev === status ? null : status,
+              )
+            }
           />
 
           <div className="space-y-8">
@@ -92,7 +108,7 @@ export function SkillAssessmentLayout({
               onStartCreatingChecklist={onStartCreatingChecklist}
               onStartEditingChecklist={onStartEditingChecklist}
               onSaveChecklist={
-                checklistState.state === 'editing'
+                checklistState.state === "editing"
                   ? checklistState.savePendingChanges
                   : onSaveChecklist
               }
@@ -102,7 +118,7 @@ export function SkillAssessmentLayout({
               applicationId={applicationId}
             />
 
-            {selectedCategory === 'submitted' ? (
+            {selectedCategory === "submitted" ? (
               <DocumentsTable
                 applicationId={applicationId}
                 documents={documentsForTables}
@@ -123,21 +139,31 @@ export function SkillAssessmentLayout({
                 isClientView={isClientView}
                 checklistState={checklistState.state}
                 filteredDocuments={checklistState.filteredDocuments}
-                currentChecklistDocuments={checklistState.currentChecklistDocuments}
-                availableDocumentsForEditing={checklistState.availableDocumentsForEditing}
+                currentChecklistDocuments={
+                  checklistState.currentChecklistDocuments
+                }
+                availableDocumentsForEditing={
+                  checklistState.availableDocumentsForEditing
+                }
                 selectedDocuments={checklistState.selectedDocuments}
                 requirementMap={checklistState.requirementMap}
                 onSelectDocument={checklistState.selectDocument}
-                onUpdateDocumentRequirement={checklistState.updateDocumentRequirement}
+                onUpdateDocumentRequirement={
+                  checklistState.updateDocumentRequirement
+                }
                 onUpdateChecklist={checklistState.updateChecklist}
                 checklistData={checklistState.checklistData}
                 pendingAdditions={checklistState.pendingAdditions}
                 pendingDeletions={checklistState.pendingDeletions}
                 pendingUpdates={[]}
                 onAddToPendingChanges={checklistState.addToPendingChanges}
-                onRemoveFromPendingChanges={checklistState.removeFromPendingChanges}
+                onRemoveFromPendingChanges={
+                  checklistState.removeFromPendingChanges
+                }
                 onAddToPendingDeletions={checklistState.addToPendingDeletions}
-                onRemoveFromPendingDeletions={checklistState.removeFromPendingDeletions}
+                onRemoveFromPendingDeletions={
+                  checklistState.removeFromPendingDeletions
+                }
                 onSavePendingChanges={checklistState.savePendingChanges}
                 onClearPendingChanges={checklistState.clearPendingChanges}
                 isBatchDeleting={checklistState.isBatchDeleting}
@@ -149,4 +175,3 @@ export function SkillAssessmentLayout({
     </>
   );
 }
-

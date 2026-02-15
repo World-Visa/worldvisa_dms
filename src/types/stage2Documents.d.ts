@@ -1,6 +1,6 @@
 // Type definitions for Stage 2 Documents (Outcome, EOI, Invitation)
 
-export type Stage2DocumentType = 'outcome' | 'eoi' | 'invitation';
+export type Stage2DocumentType = "outcome" | "eoi" | "invitation";
 
 export interface Stage2Document {
   _id: string;
@@ -66,7 +66,7 @@ export interface UpdateStage2DocumentRequest {
 }
 
 export interface Stage2DocumentsResponse {
-  status: 'success' | 'error';
+  status: "success" | "error";
   data: Stage2Document[];
   message?: string;
 }
@@ -89,7 +89,7 @@ export interface OutcomeModalProps {
   onClose: () => void;
   applicationId: string;
   document?: Stage2Document;
-  mode?: 'create' | 'edit';
+  mode?: "create" | "edit";
 }
 
 export interface EOIModalProps {
@@ -97,7 +97,7 @@ export interface EOIModalProps {
   onClose: () => void;
   applicationId: string;
   document?: Stage2Document;
-  mode?: 'create' | 'edit';
+  mode?: "create" | "edit";
 }
 
 export interface InvitationModalProps {
@@ -105,7 +105,7 @@ export interface InvitationModalProps {
   onClose: () => void;
   applicationId: string;
   document?: Stage2Document;
-  mode?: 'create' | 'edit';
+  mode?: "create" | "edit";
 }
 
 // Layout Props Interfaces
@@ -121,4 +121,3 @@ export interface EOILayoutProps {
 export interface InvitationLayoutProps {
   applicationId: string;
 }
-

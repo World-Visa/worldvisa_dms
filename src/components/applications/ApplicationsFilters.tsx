@@ -133,7 +133,7 @@ export function ApplicationsFilters({
         value: stage,
         label: stage,
       })),
-    []
+    [],
   );
 
   const hasActiveFilters =
@@ -315,7 +315,7 @@ export function ApplicationsFilters({
                     onApplicationStateChange?.(
                       value === APPLICATION_STATE_ALL
                         ? undefined
-                        : (value as ApplicationStateValue)
+                        : (value as ApplicationStateValue),
                     )
                   }
                 >
@@ -349,16 +349,28 @@ export function ApplicationsFilters({
                   </SelectTrigger>
                   <SelectContent className="rounded-lg shadow-lg">
                     <SelectGroup>
-                      <SelectItem value="10" className="rounded-md py-2 text-sm">
+                      <SelectItem
+                        value="10"
+                        className="rounded-md py-2 text-sm"
+                      >
                         10 results
                       </SelectItem>
-                      <SelectItem value="20" className="rounded-md py-2 text-sm">
+                      <SelectItem
+                        value="20"
+                        className="rounded-md py-2 text-sm"
+                      >
                         20 results
                       </SelectItem>
-                      <SelectItem value="50" className="rounded-md py-2 text-sm">
+                      <SelectItem
+                        value="50"
+                        className="rounded-md py-2 text-sm"
+                      >
                         50 results
                       </SelectItem>
-                      <SelectItem value="100" className="rounded-md py-2 text-sm">
+                      <SelectItem
+                        value="100"
+                        className="rounded-md py-2 text-sm"
+                      >
                         100 results
                       </SelectItem>
                     </SelectGroup>
@@ -425,27 +437,29 @@ export function ApplicationsFilters({
               </button>
             </Badge>
           )}
-          {applicationStage && applicationStage.length > 0 && onApplicationStageChange && (
-            <Badge
-              variant="secondary"
-              className="gap-1.5 py-1.5 pl-2.5 pr-1 text-sm font-medium"
-            >
-              <Layers className="h-3 w-3" />
-              <span>
-                {applicationStage.length === 1
-                  ? applicationStage[0]
-                  : `${applicationStage.length} stages`}
-              </span>
-              <button
-                type="button"
-                onClick={() => onApplicationStageChange([])}
-                className="rounded-full p-0.5 hover:bg-muted transition-colors"
-                aria-label="Remove application stage filter"
+          {applicationStage &&
+            applicationStage.length > 0 &&
+            onApplicationStageChange && (
+              <Badge
+                variant="secondary"
+                className="gap-1.5 py-1.5 pl-2.5 pr-1 text-sm font-medium"
               >
-                <X className="h-3 w-3" />
-              </button>
-            </Badge>
-          )}
+                <Layers className="h-3 w-3" />
+                <span>
+                  {applicationStage.length === 1
+                    ? applicationStage[0]
+                    : `${applicationStage.length} stages`}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => onApplicationStageChange([])}
+                  className="rounded-full p-0.5 hover:bg-muted transition-colors"
+                  aria-label="Remove application stage filter"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            )}
           {applicationState && onApplicationStateChange && (
             <Badge
               variant="secondary"

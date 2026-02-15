@@ -19,7 +19,7 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
   const { data, isLoading, error, refetch } = useChecklistRequests({
     page,
     limit,
-    staleTime: 5 * 60 * 1000, 
+    staleTime: 5 * 60 * 1000,
   });
 
   const handlePageChange = useCallback(
@@ -31,11 +31,11 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }, "pageChange");
     },
-    [measureAsync, page]
+    [measureAsync, page],
   );
 
   const handleRefresh = useCallback(async () => {
-    if (isRefreshing) return; 
+    if (isRefreshing) return;
 
     setIsRefreshing(true);
     try {
@@ -59,7 +59,7 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
 
     const valid = rawRequests.filter(
       (req) =>
-        req.id && req.id.trim() !== "" && req.Checklist_Requested === true
+        req.id && req.id.trim() !== "" && req.Checklist_Requested === true,
     );
 
     return {
@@ -70,7 +70,7 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
 
   const isDataLoading = useMemo(
     () => isLoading || isRefreshing,
-    [isLoading, isRefreshing]
+    [isLoading, isRefreshing],
   );
 
   return (

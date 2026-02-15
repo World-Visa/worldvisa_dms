@@ -1,22 +1,22 @@
-'use client';
+"use client";
 
-import { Button } from '@/components/ui/button';
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { SearchBox } from '@/components/ui/SearchBox';
-import { ChecklistDocument, ChecklistState } from '@/types/checklist';
-import { Company } from '@/types/documents';
-import { Table } from '@tanstack/react-table';
-import { ChevronDown } from 'lucide-react';
-import { memo } from 'react';
-import { ChecklistTabs } from './ChecklistTabs';
-import { CompanyInfoDisplay } from './CompanyInfoDisplay';
-import { PendingChangesBanner } from './PendingChangesBanner';
+} from "@/components/ui/dropdown-menu";
+import { SearchBox } from "@/components/ui/SearchBox";
+import { ChecklistDocument, ChecklistState } from "@/types/checklist";
+import { Company } from "@/types/documents";
+import { Table } from "@tanstack/react-table";
+import { ChevronDown } from "lucide-react";
+import { memo } from "react";
+import { ChecklistTabs } from "./ChecklistTabs";
+import { CompanyInfoDisplay } from "./CompanyInfoDisplay";
+import { PendingChangesBanner } from "./PendingChangesBanner";
 
 interface ChecklistTableHeaderProps {
   title: string;
@@ -24,8 +24,8 @@ interface ChecklistTableHeaderProps {
   onSearchChange: (query: string) => void;
   checklistState: ChecklistState;
   selectedCategory: string;
-  activeTab: 'current' | 'available';
-  onTabChange: (tab: 'current' | 'available') => void;
+  activeTab: "current" | "available";
+  onTabChange: (tab: "current" | "available") => void;
   currentCount: number;
   availableCount: number;
   pendingAdditions: ChecklistDocument[];
@@ -54,14 +54,14 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
   onClearPendingChanges,
   onSavePendingChanges,
   extractedCompanies,
-  table
+  table,
 }: ChecklistTableHeaderProps) {
   return (
     <div className="flex flex-col gap-4">
       {/* <h2 className="text-base font-semibold">{title}</h2> */}
 
       {/* Show tabs for editing mode when not on "All" category */}
-      {checklistState === 'editing' && selectedCategory !== 'all' && (
+      {checklistState === "editing" && selectedCategory !== "all" && (
         <ChecklistTabs
           activeTab={activeTab}
           onTabChange={onTabChange}
@@ -71,15 +71,18 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
       )}
 
       {/* Show pending changes for editing mode */}
-      {checklistState === 'editing' && (pendingAdditions.length > 0 || pendingDeletions.length > 0 || pendingUpdates.length > 0) && (
-        <PendingChangesBanner
-          pendingAdditions={pendingAdditions}
-          pendingDeletions={pendingDeletions}
-          pendingUpdates={pendingUpdates}
-          onClearPendingChanges={onClearPendingChanges}
-          onSavePendingChanges={onSavePendingChanges}
-        />
-      )}
+      {checklistState === "editing" &&
+        (pendingAdditions.length > 0 ||
+          pendingDeletions.length > 0 ||
+          pendingUpdates.length > 0) && (
+          <PendingChangesBanner
+            pendingAdditions={pendingAdditions}
+            pendingDeletions={pendingDeletions}
+            pendingUpdates={pendingUpdates}
+            onClearPendingChanges={onClearPendingChanges}
+            onSavePendingChanges={onSavePendingChanges}
+          />
+        )}
 
       <div className="w-full flex items-center justify-between gap-4">
         <SearchBox
@@ -95,7 +98,7 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
             selectedCategory={selectedCategory}
             extractedCompanies={extractedCompanies}
           />
-          
+
           {/* <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" className="ml-auto">

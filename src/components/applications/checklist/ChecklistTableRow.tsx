@@ -1,22 +1,37 @@
-'use client';
+"use client";
 
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { HighlightText } from '@/components/ui/HighlightText';
-import { TableCell, TableRow } from '@/components/ui/table';
-import { useChecklistMutations } from '@/hooks/useChecklist';
-import { cn } from '@/lib/utils';
-import { Document } from '@/types/applications';
-import type { ChecklistDocument, ChecklistState, DocumentRequirement } from '@/types/checklist';
-import { Check, Eye, FileText, MessageCircle, Plus, Upload, FileCheck } from 'lucide-react';
-import { memo, useState } from 'react';
-import { CommentIcon } from '../CommentIcon';
-import { RejectionMessageDisplay } from '../RejectionMessageDisplay';
-import { DescriptionModal } from './DescriptionModal';
-import { DescriptionDialog } from './DescriptionDialog';
-import { RequirementSelector } from './RequirementSelector';
-import { SampleDocumentModal } from '../SampleDocumentModal';
-import { useHasSampleDocument, useDownloadSampleDocument } from '@/hooks/useSampleDocuments';
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { HighlightText } from "@/components/ui/HighlightText";
+import { TableCell, TableRow } from "@/components/ui/table";
+import { useChecklistMutations } from "@/hooks/useChecklist";
+import { cn } from "@/lib/utils";
+import { Document } from "@/types/applications";
+import type {
+  ChecklistDocument,
+  ChecklistState,
+  DocumentRequirement,
+} from "@/types/checklist";
+import {
+  Check,
+  Eye,
+  FileText,
+  MessageCircle,
+  Plus,
+  Upload,
+  FileCheck,
+} from "lucide-react";
+import { memo, useState } from "react";
+import { CommentIcon } from "../CommentIcon";
+import { RejectionMessageDisplay } from "../RejectionMessageDisplay";
+import { DescriptionModal } from "./DescriptionModal";
+import { DescriptionDialog } from "./DescriptionDialog";
+import { RequirementSelector } from "./RequirementSelector";
+import { SampleDocumentModal } from "../SampleDocumentModal";
+import {
+  useHasSampleDocument,
+  useDownloadSampleDocument,
+} from "@/hooks/useSampleDocuments";
 
 interface ChecklistTableItem {
   category: string;
@@ -46,11 +61,15 @@ interface ChecklistTableRowProps {
   startIndex: number;
   searchQuery: string;
   checklistState: ChecklistState;
-  activeTab: 'current' | 'available';
+  activeTab: "current" | "available";
   selectedCategory: string;
   applicationId: string;
   isClientView?: boolean;
-  onUpdateDocumentRequirement?: (category: string, documentType: string, requirement: DocumentRequirement) => void;
+  onUpdateDocumentRequirement?: (
+    category: string,
+    documentType: string,
+    requirement: DocumentRequirement,
+  ) => void;
   onAddToPendingChanges?: (document: ChecklistDocument) => void;
   onAddToPendingDeletions?: (checklistId: string) => void;
   onRemoveFromPendingChanges?: (document: ChecklistDocument) => void;
@@ -60,8 +79,16 @@ interface ChecklistTableRowProps {
   pendingDeletions: string[];
   handleViewDocuments: (documentType: string, companyCategory?: string) => void;
   handleUploadClick: (documentType: string, category: string) => void;
-  handleReuploadClick: (documentId: string, documentType: string, category: string) => void;
-  handleViewRejectionDetails: (document: Document, documentType: string, category: string) => void;
+  handleReuploadClick: (
+    documentId: string,
+    documentType: string,
+    category: string,
+  ) => void;
+  handleViewRejectionDetails: (
+    document: Document,
+    documentType: string,
+    category: string,
+  ) => void;
   getCategoryBadgeStyle: (category: string) => string;
   // Loading states
   isAddingDocument?: boolean;
@@ -106,11 +133,10 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   applicationId,
   isClientView = false,
 }: ChecklistTableRowProps) {
-
   const { updateItemDescription } = useChecklistMutations(applicationId);
   const [showCommentModal, setShowCommentModal] = useState(false);
   const [currentChecklistId, setCurrentChecklistId] = useState("");
-  const [mode, setMode] = useState<"view" | "edit">("edit")
+  const [mode, setMode] = useState<"view" | "edit">("edit");
   const [showDescriptionDialog, setShowDescriptionDialog] = useState(false);
   const [showSampleModal, setShowSampleModal] = useState(false);
 
@@ -119,11 +145,11 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
       throw new Error("No checklist ID available");
     }
 
-    await updateItemDescription.mutateAsync({ 
-      checklist_id: currentChecklistId, 
-      description 
+    await updateItemDescription.mutateAsync({
+      checklist_id: currentChecklistId,
+      description,
     });
-  }
+  };
 
   const handleOpenModal = () => {
     setCurrentChecklistId(item.checklist_id!);
@@ -138,13 +164,13 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
 
   const getStatusBadgeStyle = (status: string): string => {
     switch (status) {
-      case 'pending':
+      case "pending":
         return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
-      case 'reviewed':
+      case "reviewed":
         return "bg-blue-100 text-blue-800 hover:bg-blue-200";
-      case 'approved':
+      case "approved":
         return "bg-green-600 text-white hover:bg-green-700";
-      case 'rejected':
+      case "rejected":
         return "bg-red-100 text-red-800 hover:bg-red-200";
       default:
         return "bg-gray-100 text-gray-800 hover:bg-gray-200";
@@ -159,18 +185,20 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   const { data: hasSampleDocument = false } = useHasSampleDocument({
     documentType: item.documentType,
     category: item.category,
-    enabled: true 
+    enabled: true,
   });
-  
+
   const { downloadSample } = useDownloadSampleDocument();
-  
+
   const handleViewSample = () => {
     setShowSampleModal(true);
   };
 
   return (
     <>
-      <TableRow key={`${item.category}-${item.documentType}-${item.checklist_id || 'new'}-${index}`}>
+      <TableRow
+        key={`${item.category}-${item.documentType}-${item.checklist_id || "new"}-${index}`}
+      >
         <TableCell className="font-medium w-16">
           {startIndex + index + 1}
         </TableCell>
@@ -179,7 +207,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
             variant="default"
             className={cn(
               "text-xs py-1 text-white ",
-              getCategoryBadgeStyle(item.category)
+              getCategoryBadgeStyle(item.category),
             )}
           >
             {item.category}
@@ -195,10 +223,9 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   query={searchQuery}
                   className="text-sm"
                 />
-              </div>  
+              </div>
             </div>
-            
-            
+
             {/* Description section */}
             {item.description && item.description.trim() && (
               <div className="ml-6">
@@ -213,7 +240,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   <div className="text-xs text-muted-foreground">
                     <p className="inline">
                       {truncateText(item.description, 50)}
-                      {item.description.trim().length > 50 && '...'}
+                      {item.description.trim().length > 50 && "..."}
                     </p>
                     {item.description.trim().length > 50 && (
                       <button
@@ -227,24 +254,25 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                 )}
               </div>
             )}
-            
-            {checklistState === "editing" && (!item.description || !item.description.trim()) && (
-              <div className="ml-6">
-                <Button
-                  onClick={handleOpenModal}
-                  className="flex items-center gap-1 px-2 py-1 h-6 text-xs bg-gray-100 hover:bg-gray-200 cursor-pointer text-black border-gray-500"
-                >
-                  Add Description
-                </Button>
-              </div>
-            )}
+
+            {checklistState === "editing" &&
+              (!item.description || !item.description.trim()) && (
+                <div className="ml-6">
+                  <Button
+                    onClick={handleOpenModal}
+                    className="flex items-center gap-1 px-2 py-1 h-6 text-xs bg-gray-100 hover:bg-gray-200 cursor-pointer text-black border-gray-500"
+                  >
+                    Add Description
+                  </Button>
+                </div>
+              )}
             {/* Show category on mobile */}
             <div className="sm:hidden">
               <Badge
                 variant="default"
                 className={cn(
                   "text-xs py-0.5 text-white",
-                  getCategoryBadgeStyle(item.category)
+                  getCategoryBadgeStyle(item.category),
                 )}
               >
                 {item.category}
@@ -257,12 +285,12 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   variant="default"
                   className={cn(
                     "text-xs px-1.5 py-0.5 w-fit",
-                    item.documentStatus === 'rejected'
+                    item.documentStatus === "rejected"
                       ? "bg-red-100 text-red-800 hover:bg-red-200"
-                      : "bg-green-100 text-green-800 hover:bg-green-200"
+                      : "bg-green-100 text-green-800 hover:bg-green-200",
                   )}
                 >
-                  {item.documentStatus === 'rejected' ? 'Rejected' : 'Uploaded'}
+                  {item.documentStatus === "rejected" ? "Rejected" : "Uploaded"}
                 </Badge>
               ) : (
                 <Badge
@@ -273,28 +301,37 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                 </Badge>
               )}
               {/* Show requirement status */}
-              {item.requirement && item.requirement !== 'not_required' && (
+              {item.requirement && item.requirement !== "not_required" && (
                 <Badge
                   variant="default"
                   className={cn(
                     "text-xs px-1.5 py-0.5 w-fit",
-                    item.requirement === 'mandatory'
+                    item.requirement === "mandatory"
                       ? "bg-red-100 text-red-800 hover:bg-red-200"
-                      : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                      : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
                   )}
                 >
-                  {item.requirement === 'mandatory' ? 'Mandatory' : 'Optional'}
+                  {item.requirement === "mandatory" ? "Mandatory" : "Optional"}
                 </Badge>
               )}
               {/* Show document status when count equals 1 */}
               {(() => {
-                const documentCount = documentCounts[`${item.documentType}_${item.category || 'default'}`] || 0;
-                const shouldShowStatus = documentCount === 1 && item.isUploaded && item.documentStatus;
-                
-                return shouldShowStatus && item.documentStatus && item.documentStatus !== 'rejected' ? (
+                const documentCount =
+                  documentCounts[
+                    `${item.documentType}_${item.category || "default"}`
+                  ] || 0;
+                const shouldShowStatus =
+                  documentCount === 1 && item.isUploaded && item.documentStatus;
+
+                return shouldShowStatus &&
+                  item.documentStatus &&
+                  item.documentStatus !== "rejected" ? (
                   <Badge
                     variant="default"
-                    className={cn("text-xs px-1.5 py-0.5 w-fit", getStatusBadgeStyle(item.documentStatus))}
+                    className={cn(
+                      "text-xs px-1.5 py-0.5 w-fit",
+                      getStatusBadgeStyle(item.documentStatus),
+                    )}
                   >
                     {capitalize(item.documentStatus)}
                   </Badge>
@@ -311,12 +348,12 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   variant="default"
                   className={cn(
                     "text-xs px-1.5 py-0.5 w-fit",
-                    item.documentStatus === 'rejected'
+                    item.documentStatus === "rejected"
                       ? "bg-red-100 text-red-800 hover:bg-red-200"
-                      : "bg-green-100 text-green-800 hover:bg-green-200"
+                      : "bg-green-100 text-green-800 hover:bg-green-200",
                   )}
                 >
-                  {item.documentStatus === 'rejected' ? 'Rejected' : 'Uploaded'}
+                  {item.documentStatus === "rejected" ? "Rejected" : "Uploaded"}
                 </Badge>
               ) : (
                 <Badge
@@ -327,28 +364,37 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                 </Badge>
               )}
               {/* Show requirement status */}
-              {item.requirement && item.requirement !== 'not_required' && (
+              {item.requirement && item.requirement !== "not_required" && (
                 <Badge
                   variant="default"
                   className={cn(
                     "text-xs px-1.5 py-0.5 w-fit",
-                    item.requirement === 'mandatory'
+                    item.requirement === "mandatory"
                       ? "bg-red-100 text-red-800 hover:bg-red-200"
-                      : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200"
+                      : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
                   )}
                 >
-                  {item.requirement === 'mandatory' ? 'Mandatory' : 'Optional'}
+                  {item.requirement === "mandatory" ? "Mandatory" : "Optional"}
                 </Badge>
               )}
               {/* Show document status when count equals 1 */}
               {(() => {
-                const documentCount = documentCounts[`${item.documentType}_${item.category || 'default'}`] || 0;
-                const shouldShowStatus = documentCount === 1 && item.isUploaded && item.documentStatus;
-                
-                return shouldShowStatus && item.documentStatus && item.documentStatus !== 'rejected' ? (
+                const documentCount =
+                  documentCounts[
+                    `${item.documentType}_${item.category || "default"}`
+                  ] || 0;
+                const shouldShowStatus =
+                  documentCount === 1 && item.isUploaded && item.documentStatus;
+
+                return shouldShowStatus &&
+                  item.documentStatus &&
+                  item.documentStatus !== "rejected" ? (
                   <Badge
                     variant="default"
-                    className={cn("text-xs px-1.5 py-0.5 w-fit", getStatusBadgeStyle(item.documentStatus))}
+                    className={cn(
+                      "text-xs px-1.5 py-0.5 w-fit",
+                      getStatusBadgeStyle(item.documentStatus),
+                    )}
                   >
                     {capitalize(item.documentStatus)}
                   </Badge>
@@ -356,7 +402,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
               })()}
             </div>
             {/* Show rejected remark on desktop */}
-            {item.documentStatus === 'rejected' && item.rejectedRemark && (
+            {item.documentStatus === "rejected" && item.rejectedRemark && (
               <div className="max-w-xs">
                 <RejectionMessageDisplay
                   message={item.rejectedRemark}
@@ -364,9 +410,19 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   onReadMore={() => {
                     const uploadedDoc = item.uploadedDocument as Document;
                     if (uploadedDoc) {
-                      const documentType = item.documentType || uploadedDoc.document_type || 'Document';
-                      const category = item.category || uploadedDoc.document_category || 'Other Documents';
-                      handleViewRejectionDetails(uploadedDoc, documentType, category);
+                      const documentType =
+                        item.documentType ||
+                        uploadedDoc.document_type ||
+                        "Document";
+                      const category =
+                        item.category ||
+                        uploadedDoc.document_category ||
+                        "Other Documents";
+                      handleViewRejectionDetails(
+                        uploadedDoc,
+                        documentType,
+                        category,
+                      );
                     }
                   }}
                   showReadMoreButton={item.rejectedRemark.length > 80}
@@ -379,7 +435,9 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
           {item.isUploaded && item.uploadedDocument ? (
             <CommentIcon
               documentId={(item.uploadedDocument as Document)._id}
-              commentCount={commentCounts[(item.uploadedDocument as Document)._id] || 0}
+              commentCount={
+                commentCounts[(item.uploadedDocument as Document)._id] || 0
+              }
               size="sm"
             />
           ) : (
@@ -410,19 +468,23 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
         <TableCell className="text-right w-24">
           <div className="flex items-center justify-end gap-1">
             {/* Show different actions based on checklist state */}
-            {checklistState === 'creating' ? (
+            {checklistState === "creating" ? (
               // Creating mode: Show requirement selector
               <div className="w-32">
                 <RequirementSelector
-                  value={item.requirement || 'not_required'}
+                  value={item.requirement || "not_required"}
                   onChange={(requirement) =>
-                    onUpdateDocumentRequirement?.(item.category, item.documentType, requirement)
+                    onUpdateDocumentRequirement?.(
+                      item.category,
+                      item.documentType,
+                      requirement,
+                    )
                   }
                 />
               </div>
-            ) : checklistState === 'editing' ? (
+            ) : checklistState === "editing" ? (
               // Editing mode: Show different actions based on tab
-              activeTab === 'current' ? (
+              activeTab === "current" ? (
                 // Current checklist tab: Show delete button
                 <Button
                   variant="outline"
@@ -436,9 +498,9 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   disabled={isBatchDeleting}
                   className={cn(
                     "flex items-center gap-1 px-2 py-1 h-7 text-xs disabled:opacity-50",
-                    pendingDeletions.includes(item.checklist_id || '')
+                    pendingDeletions.includes(item.checklist_id || "")
                       ? "bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
-                      : "text-red-600 hover:text-red-700"
+                      : "text-red-600 hover:text-red-700",
                   )}
                 >
                   {isBatchDeleting ? (
@@ -446,7 +508,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                       <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
                       <span className="hidden sm:inline">Deleting...</span>
                     </>
-                  ) : pendingDeletions.includes(item.checklist_id || '') ? (
+                  ) : pendingDeletions.includes(item.checklist_id || "") ? (
                     <>
                       <div className="animate-pulse rounded-full h-3 w-3 bg-red-600"></div>
                       <span className="hidden sm:inline">Pending</span>
@@ -460,9 +522,13 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                 <div className="flex items-center gap-2">
                   <div className="w-24">
                     <RequirementSelector
-                      value={item.requirement || 'not_required'}
+                      value={item.requirement || "not_required"}
                       onChange={(requirement) =>
-                        onUpdateDocumentRequirement?.(item.category, item.documentType, requirement)
+                        onUpdateDocumentRequirement?.(
+                          item.category,
+                          item.documentType,
+                          requirement,
+                        )
                       }
                     />
                   </div>
@@ -472,16 +538,29 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                     onClick={() => onAddToPendingChanges?.(item)}
                     className={cn(
                       "flex items-center gap-1 px-2 py-1 h-7 text-xs",
-                      isDocumentAdded && addedDocumentId === `${item.category}-${item.documentType}` && "bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+                      isDocumentAdded &&
+                        addedDocumentId ===
+                          `${item.category}-${item.documentType}` &&
+                        "bg-green-50 border-green-200 text-green-700 hover:bg-green-100",
                     )}
-                    disabled={item.requirement === 'not_required' || isAddingDocument || (isDocumentAdded && addedDocumentId === `${item.category}-${item.documentType}`)}
+                    disabled={
+                      item.requirement === "not_required" ||
+                      isAddingDocument ||
+                      (isDocumentAdded &&
+                        addedDocumentId ===
+                          `${item.category}-${item.documentType}`)
+                    }
                   >
-                    {isAddingDocument && addingDocumentId === `${item.category}-${item.documentType}` ? (
+                    {isAddingDocument &&
+                    addingDocumentId ===
+                      `${item.category}-${item.documentType}` ? (
                       <>
                         <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
                         <span className="hidden sm:inline">Adding...</span>
                       </>
-                    ) : isDocumentAdded && addedDocumentId === `${item.category}-${item.documentType}` ? (
+                    ) : isDocumentAdded &&
+                      addedDocumentId ===
+                        `${item.category}-${item.documentType}` ? (
                       <>
                         <Check className="h-3 w-3" />
                         <span className="hidden sm:inline">Added</span>
@@ -498,28 +577,41 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
             ) : (
               // Default mode: Show upload/view/reupload buttons
               <>
-                {item.isUploaded && item.documentStatus !== 'rejected' && (
+                {item.isUploaded && item.documentStatus !== "rejected" && (
                   <div className="flex items-center gap-1">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
                         const uploadedDoc = item.uploadedDocument as Document;
-                        const documentType = item.documentType || uploadedDoc?.document_type || 'Document';
-                        const category = item.category || uploadedDoc?.document_category || 'Other Documents';
+                        const documentType =
+                          item.documentType ||
+                          uploadedDoc?.document_type ||
+                          "Document";
+                        const category =
+                          item.category ||
+                          uploadedDoc?.document_category ||
+                          "Other Documents";
                         handleViewDocuments(documentType, category);
                       }}
                       className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
                     >
                       <Eye className="h-3 w-3" />
                       <span className="hidden sm:inline">
-                        View{documentCounts[`${item.documentType}_${item.category || 'default'}`] > 0 ? ` (${documentCounts[`${item.documentType}_${item.category || 'default'}`]})` : ''}
+                        View
+                        {documentCounts[
+                          `${item.documentType}_${item.category || "default"}`
+                        ] > 0
+                          ? ` (${documentCounts[`${item.documentType}_${item.category || "default"}`]})`
+                          : ""}
                       </span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => handleUploadClick(item.documentType, item.category)}
+                      onClick={() =>
+                        handleUploadClick(item.documentType, item.category)
+                      }
                       className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
                     >
                       <Upload className="h-3 w-3" />
@@ -527,22 +619,33 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                     </Button>
                   </div>
                 )}
-                {item.isUploaded && item.documentStatus === 'rejected' && (
+                {item.isUploaded && item.documentStatus === "rejected" && (
                   <div className="flex items-center gap-1">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => {
                         const uploadedDoc = item.uploadedDocument as Document;
-                        const documentType = item.documentType || uploadedDoc?.document_type || 'Document';
-                        const category = item.category || uploadedDoc?.document_category || 'Other Documents';
+                        const documentType =
+                          item.documentType ||
+                          uploadedDoc?.document_type ||
+                          "Document";
+                        const category =
+                          item.category ||
+                          uploadedDoc?.document_category ||
+                          "Other Documents";
                         handleViewDocuments(documentType, category);
                       }}
                       className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
                     >
                       <Eye className="h-3 w-3" />
                       <span className="hidden sm:inline">
-                        View{documentCounts[`${item.documentType}_${item.category || 'default'}`] > 0 ? ` (${documentCounts[`${item.documentType}_${item.category || 'default'}`]})` : ''}
+                        View
+                        {documentCounts[
+                          `${item.documentType}_${item.category || "default"}`
+                        ] > 0
+                          ? ` (${documentCounts[`${item.documentType}_${item.category || "default"}`]})`
+                          : ""}
                       </span>
                     </Button>
                     <Button
@@ -551,9 +654,19 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                       onClick={() => {
                         const uploadedDoc = item.uploadedDocument as Document;
                         if (uploadedDoc?._id) {
-                          const documentType = item.documentType || uploadedDoc.document_type || 'Document';
-                          const category = item.category || uploadedDoc.document_category || 'Other Documents';
-                          handleReuploadClick(uploadedDoc._id, documentType, category);
+                          const documentType =
+                            item.documentType ||
+                            uploadedDoc.document_type ||
+                            "Document";
+                          const category =
+                            item.category ||
+                            uploadedDoc.document_category ||
+                            "Other Documents";
+                          handleReuploadClick(
+                            uploadedDoc._id,
+                            documentType,
+                            category,
+                          );
                         }
                       }}
                       className="flex items-center gap-1 px-2 py-1 h-7 text-xs text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
@@ -567,7 +680,9 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => handleUploadClick(item.documentType, item.category)}
+                    onClick={() =>
+                      handleUploadClick(item.documentType, item.category)
+                    }
                     className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
                   >
                     <Upload className="h-3 w-3" />
@@ -580,16 +695,16 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
         </TableCell>
       </TableRow>
 
-      {
-        showCommentModal && item.checklist_id === currentChecklistId && (<DescriptionModal
+      {showCommentModal && item.checklist_id === currentChecklistId && (
+        <DescriptionModal
           open={showCommentModal}
           onOpenChange={setShowCommentModal}
           existingDescription={item.description || ""}
           onSave={handleUpdateDescription}
           mode={mode}
           isLoading={updateItemDescription.isPending}
-        />)
-      }
+        />
+      )}
 
       {/* Description Dialog */}
       <DescriptionDialog
@@ -606,11 +721,10 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
           onClose={() => setShowSampleModal(false)}
           documentType={item.documentType}
           category={item.category}
-          samplePath={''} // Will be resolved in the modal
+          samplePath={""} // Will be resolved in the modal
           companyName={item.company_name || item.company?.name}
         />
       )}
-
     </>
   );
 });

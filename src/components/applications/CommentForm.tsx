@@ -1,34 +1,37 @@
-import React, { useState, useCallback } from 'react';
-import { Button } from '../ui/button';
-import { Textarea } from '../ui/textarea';
-import { Send, Loader2 } from 'lucide-react';
-import { useAddComment, useCommentValidation } from '@/hooks/useCommentMutations';
-import { tokenStorage } from '@/lib/auth';
-import { toast } from 'sonner';
+import React, { useState, useCallback } from "react";
+import { Button } from "../ui/button";
+import { Textarea } from "../ui/textarea";
+import { Send, Loader2 } from "lucide-react";
+import {
+  useAddComment,
+  useCommentValidation,
+} from "@/hooks/useCommentMutations";
+import { tokenStorage } from "@/lib/auth";
+import { toast } from "sonner";
 
 interface CommentFormProps {
   documentId: string;
   onCommentAdded?: () => void;
   className?: string;
-  applicationId?:string;
+  applicationId?: string;
 }
 
-const CommentForm: React.FC<CommentFormProps> = ({ 
-  documentId, 
+const CommentForm: React.FC<CommentFormProps> = ({
+  documentId,
   onCommentAdded,
-  className = '' 
+  className = "",
 }) => {
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
+
   const addCommentMutation = useAddComment(documentId);
   const { validateComment } = useCommentValidation();
 
   // Get current user info from token or localStorage
   const getCurrentUser = useCallback(() => {
     // First try to get from localStorage (more reliable)
-    if (typeof window !== 'undefined') {
-      const userData = localStorage.getItem('user_data');
+    if (typeof window !== "undefined") {
+      const userData = localStorage.getItem("user_data");
       if (userData) {
         try {
           const user = JSON.parse(userData);
@@ -36,35 +39,37 @@ const CommentForm: React.FC<CommentFormProps> = ({
             return user.username;
           }
         } catch (error) {
-          console.warn('Failed to parse user data from localStorage:', error);
+          console.warn("Failed to parse user data from localStorage:", error);
         }
       }
     }
-    
+
     // Fallback to JWT token
     const token = tokenStorage.get();
-    if (!token) return 'Unknown User';
-    
+    if (!token) return "Unknown User";
+
     try {
-      const payload = JSON.parse(atob(token.split('.')[1]));
-      
+      const payload = JSON.parse(atob(token.split(".")[1]));
+
       // Try multiple possible fields for user identification
-      return payload.username || 
-             payload.email || 
-             payload.name || 
-             payload.user?.username ||
-             payload.user?.email ||
-             payload.user?.name ||
-             'Unknown User';
+      return (
+        payload.username ||
+        payload.email ||
+        payload.name ||
+        payload.user?.username ||
+        payload.user?.email ||
+        payload.user?.name ||
+        "Unknown User"
+      );
     } catch (error) {
-      console.warn('Failed to parse user from token:', error);
-      return 'Unknown User';
+      console.warn("Failed to parse user from token:", error);
+      return "Unknown User";
     }
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (isSubmitting) return;
 
     // Validate comment
@@ -79,31 +84,31 @@ const CommentForm: React.FC<CommentFormProps> = ({
     try {
       await addCommentMutation.mutateAsync({
         comment: comment.trim(),
-        added_by: getCurrentUser()
+        added_by: getCurrentUser(),
       });
 
       // Clear form
-      setComment('');
-      
+      setComment("");
+
       // Call callback if provided
       onCommentAdded?.();
-      
     } catch (error) {
       // Error handling is done in the mutation hook
-      console.error('Failed to add comment:', error);
+      console.error("Failed to add comment:", error);
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       handleSubmit(e);
     }
   };
 
-  const isDisabled = isSubmitting || !comment.trim() || addCommentMutation.isPending;
+  const isDisabled =
+    isSubmitting || !comment.trim() || addCommentMutation.isPending;
 
   return (
     <form onSubmit={handleSubmit} className={`space-y-3 ${className}`}>
@@ -118,12 +123,10 @@ const CommentForm: React.FC<CommentFormProps> = ({
           disabled={isSubmitting}
           maxLength={1000}
         />
-        
+
         {/* Character count */}
         <div className="flex justify-between items-center text-xs text-gray-500">
-          <span>
-            {comment.length}/1000 characters
-          </span>
+          <span>{comment.length}/1000 characters</span>
           {comment.length > 800 && (
             <span className="text-amber-600">
               {1000 - comment.length} characters remaining
@@ -131,9 +134,9 @@ const CommentForm: React.FC<CommentFormProps> = ({
           )}
         </div>
       </div>
-      
+
       <div className="flex justify-end">
-        <Button 
+        <Button
           type="submit"
           disabled={isDisabled}
           className="bg-blue-600 hover:bg-blue-700 text-white px-6 min-w-[100px]"
@@ -151,7 +154,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
           )}
         </Button>
       </div>
-      
+
       {/* Error display */}
       {addCommentMutation.error && (
         <div className="text-sm text-red-600 bg-red-50 p-2 rounded">

@@ -37,7 +37,7 @@ interface ChecklistRequestsTableProps {
   limit: number;
   isLoading?: boolean;
   refetch: (
-    options?: RefetchOptions
+    options?: RefetchOptions,
   ) => Promise<QueryObserverResult<ChecklistRequestsResponse, Error>>;
 }
 
@@ -56,7 +56,7 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
   const validRequests = requests
     ? requests.filter(
         (req) =>
-          req.id && req.id.trim() !== "" && req.Checklist_Requested === true
+          req.id && req.id.trim() !== "" && req.Checklist_Requested === true,
       )
     : [];
 
@@ -64,7 +64,7 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
     (index: number) => {
       return (currentPage - 1) * limit + index + 1;
     },
-    [currentPage, limit]
+    [currentPage, limit],
   );
 
   const getRecordTypeBadgeVariant = useCallback((recordType?: string) => {
@@ -94,19 +94,19 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
       // Route based on Record_Type
       if (recordType === "spouse_skill_assessment") {
         router.push(
-          `/admin/spouse-skill-assessment-applications/${applicationId}`
+          `/admin/spouse-skill-assessment-applications/${applicationId}`,
         );
       } else {
         router.push(`/admin/applications/${applicationId}`);
       }
     },
-    [router]
+    [router],
   );
 
   const handleRemoveFromReqChecklist = async (
     e: React.MouseEvent<HTMLButtonElement>,
     reqChecklistId: string,
-    recordType: string | undefined
+    recordType: string | undefined,
   ) => {
     e.stopPropagation();
     if (recordType) {
@@ -278,7 +278,7 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                                     handleRemoveFromReqChecklist(
                                       e,
                                       request.id,
-                                      request.Record_Type
+                                      request.Record_Type,
                                     )
                                   }
                                 >

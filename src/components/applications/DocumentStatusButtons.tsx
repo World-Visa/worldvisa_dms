@@ -41,7 +41,7 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
 
   const handleStatusUpdate = (
     status: "approved" | "rejected" | "reviewed",
-    rejectMessage?: string
+    rejectMessage?: string,
   ) => {
     if (!user?.username) {
       console.error("User not authenticated");
@@ -68,7 +68,7 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
 
   const isUpdating = statusUpdateMutation.isPending;
   const currentStatus = displayDocument.status;
-  const isAdmin = user?.role === "admin"; 
+  const isAdmin = user?.role === "admin";
 
   return (
     <>
@@ -88,8 +88,8 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
             {updatingStatus === "approved"
               ? "Updating..."
               : currentStatus === "approved"
-              ? "Approved"
-              : "Approve"}
+                ? "Approved"
+                : "Approve"}
           </Button>
         )}
         <Button
@@ -106,8 +106,8 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
           {updatingStatus === "rejected"
             ? "Updating..."
             : currentStatus === "rejected"
-            ? "Rejected"
-            : "Reject"}
+              ? "Rejected"
+              : "Reject"}
         </Button>
         <Button
           variant="outline"
@@ -123,8 +123,8 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
           {updatingStatus === "reviewed"
             ? "Updating..."
             : currentStatus === "reviewed"
-            ? "Reviewed"
-            : "Review"}
+              ? "Reviewed"
+              : "Review"}
         </Button>
       </div>
 

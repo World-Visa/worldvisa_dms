@@ -1,13 +1,13 @@
-'use client';
+"use client";
 
-import React from 'react';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Trash2, Upload } from 'lucide-react';
-import Image from 'next/image';
-import { cn } from '@/lib/utils';
-import { Document } from '@/types/applications';
-import { useDocumentData } from '@/hooks/useDocumentData';
+import React from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Trash2, Upload } from "lucide-react";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
+import { Document } from "@/types/applications";
+import { useDocumentData } from "@/hooks/useDocumentData";
 
 interface DocumentRowProps {
   document: Document;
@@ -18,7 +18,11 @@ interface DocumentRowProps {
   isDeleting: boolean;
   onPatchToPending?: (documentId: string) => void;
   isPatching?: boolean;
-  onOpenReuploadModal?: (documentId: string, documentType: string, category: string) => void;
+  onOpenReuploadModal?: (
+    documentId: string,
+    documentType: string,
+    category: string,
+  ) => void;
   onClientReviewedDeleteClick?: (document: Document) => void;
 }
 
@@ -40,7 +44,6 @@ export function DocumentRow({
   // Use the current document from cache, fallback to prop
   const displayDocument = currentDocument || document;
 
-
   return (
     <div
       key={displayDocument._id}
@@ -61,7 +64,8 @@ export function DocumentRow({
               : displayDocument.file_name}
           </p>
           <p className="text-xs text-muted-foreground">
-            Uploaded by {displayDocument.uploaded_by} • {new Date(displayDocument.uploaded_at).toLocaleDateString()}
+            Uploaded by {displayDocument.uploaded_by} •{" "}
+            {new Date(displayDocument.uploaded_at).toLocaleDateString()}
           </p>
         </div>
       </div>
@@ -70,25 +74,28 @@ export function DocumentRow({
           variant="outline"
           className={cn(
             "text-xs",
-            displayDocument.status === 'approved' && "bg-green-100 text-green-800",
-            displayDocument.status === 'rejected' && "bg-red-100 text-red-800",
-            displayDocument.status === 'reviewed' && "bg-blue-100 text-blue-800",
-            displayDocument.status === 'request_review' && "bg-yellow-100 text-yellow-800",
-            displayDocument.status === 'pending' && "bg-gray-100 text-gray-800"
+            displayDocument.status === "approved" &&
+              "bg-green-100 text-green-800",
+            displayDocument.status === "rejected" && "bg-red-100 text-red-800",
+            displayDocument.status === "reviewed" &&
+              "bg-blue-100 text-blue-800",
+            displayDocument.status === "request_review" &&
+              "bg-yellow-100 text-yellow-800",
+            displayDocument.status === "pending" && "bg-gray-100 text-gray-800",
           )}
         >
-          {displayDocument.status.replace('_', ' ')}
+          {displayDocument.status.replace("_", " ")}
         </Badge>
         <Button
           variant="link"
           size="sm"
           onClick={() => onView(displayDocument)}
-          className='cursor-pointer'
+          className="cursor-pointer"
         >
           view
         </Button>
         {/* Show reupload button for rejected documents */}
-        {displayDocument.status === 'rejected' && (
+        {displayDocument.status === "rejected" && (
           <Button
             variant="outline"
             size="sm"
@@ -104,17 +111,24 @@ export function DocumentRow({
           onClick={() => {
             if (
               isClientView &&
-              displayDocument.status === 'reviewed' &&
+              displayDocument.status === "reviewed" &&
               onClientReviewedDeleteClick
             ) {
               onClientReviewedDeleteClick(displayDocument);
               return;
             }
-            if (displayDocument.status === 'reviewed' && onOpenReuploadModal) {
-              const documentType = displayDocument.document_name || displayDocument.document_type || 'Document';
-              const category = displayDocument.document_category || 'Other Documents';
+            if (displayDocument.status === "reviewed" && onOpenReuploadModal) {
+              const documentType =
+                displayDocument.document_name ||
+                displayDocument.document_type ||
+                "Document";
+              const category =
+                displayDocument.document_category || "Other Documents";
               onOpenReuploadModal(displayDocument._id, documentType, category);
-            } else if (displayDocument.status === 'reviewed' && onPatchToPending) {
+            } else if (
+              displayDocument.status === "reviewed" &&
+              onPatchToPending
+            ) {
               onPatchToPending(displayDocument._id);
             } else {
               onDelete(displayDocument._id, displayDocument.file_name);
@@ -122,8 +136,10 @@ export function DocumentRow({
           }}
           disabled={
             isClientView
-              ? (isDeleting || isPatching || displayDocument.status === 'approved')
-              : (isDeleting || isPatching)
+              ? isDeleting ||
+                isPatching ||
+                displayDocument.status === "approved"
+              : isDeleting || isPatching
           }
           className="cursor-pointer"
         >

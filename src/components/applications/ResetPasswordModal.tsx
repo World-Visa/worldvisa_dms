@@ -1,12 +1,17 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Loader2, Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
-import { toast } from 'sonner';
+import React, { useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Lock, Eye, EyeOff, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 interface ResetPasswordModalProps {
   isOpen: boolean;
@@ -19,10 +24,10 @@ export function ResetPasswordModal({
   isOpen,
   onOpenChange,
   leadId,
-  onSuccess
+  onSuccess,
 }: ResetPasswordModalProps) {
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,8 +35,8 @@ export function ResetPasswordModal({
   // Reset form when modal opens/closes
   React.useEffect(() => {
     if (!isOpen) {
-      setNewPassword('');
-      setConfirmPassword('');
+      setNewPassword("");
+      setConfirmPassword("");
       setShowPassword(false);
       setShowConfirmPassword(false);
       setIsSubmitting(false);
@@ -40,36 +45,36 @@ export function ResetPasswordModal({
 
   const validatePassword = (password: string) => {
     if (password.length < 8) {
-      return 'Password must be at least 8 characters long';
+      return "Password must be at least 8 characters long";
     }
     if (!/(?=.*[a-z])/.test(password)) {
-      return 'Password must contain at least one lowercase letter';
+      return "Password must contain at least one lowercase letter";
     }
     if (!/(?=.*[A-Z])/.test(password)) {
-      return 'Password must contain at least one uppercase letter';
+      return "Password must contain at least one uppercase letter";
     }
     if (!/(?=.*\d)/.test(password)) {
-      return 'Password must contain at least one number';
+      return "Password must contain at least one number";
     }
     return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Validation
     if (!newPassword.trim()) {
-      toast.error('Please enter a new password');
+      toast.error("Please enter a new password");
       return;
     }
 
     if (!confirmPassword.trim()) {
-      toast.error('Please confirm the new password');
+      toast.error("Please confirm the new password");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      toast.error('Passwords do not match');
+      toast.error("Passwords do not match");
       return;
     }
 
@@ -82,37 +87,49 @@ export function ResetPasswordModal({
     setIsSubmitting(true);
 
     try {
-      const response = await fetch('/api/zoho_dms/users/clients/reset-password', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
+      const response = await fetch(
+        "/api/zoho_dms/users/clients/reset-password",
+        {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            leadId,
+            newPassword: newPassword.trim(),
+          }),
         },
-        body: JSON.stringify({
-          leadId,
-          newPassword: newPassword.trim()
-        }),
-      });
+      );
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        throw new Error(
+          errorData.message || `HTTP error! status: ${response.status}`,
+        );
       }
 
       const result = await response.json();
-      
-      toast.success('Password reset successfully!');
+
+      toast.success("Password reset successfully!");
       onSuccess?.();
       onOpenChange(false);
-      
     } catch (error) {
-      console.error('Password reset failed:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to reset password. Please try again.');
+      console.error("Password reset failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to reset password. Please try again.",
+      );
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isFormValid = newPassword.trim() && confirmPassword.trim() && newPassword === confirmPassword && !validatePassword(newPassword);
+  const isFormValid =
+    newPassword.trim() &&
+    confirmPassword.trim() &&
+    newPassword === confirmPassword &&
+    !validatePassword(newPassword);
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -123,7 +140,7 @@ export function ResetPasswordModal({
             Reset Client Password
           </DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="newPassword" className="text-sm font-medium">
@@ -132,7 +149,7 @@ export function ResetPasswordModal({
             <div className="relative">
               <Input
                 id="newPassword"
-                type={showPassword ? 'text' : 'password'}
+                type={showPassword ? "text" : "password"}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Enter new password"
@@ -170,7 +187,7 @@ export function ResetPasswordModal({
             <div className="relative">
               <Input
                 id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
+                type={showConfirmPassword ? "text" : "password"}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="Confirm new password"
@@ -200,7 +217,6 @@ export function ResetPasswordModal({
               </div>
             )}
           </div>
-
 
           <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4">
             <Button

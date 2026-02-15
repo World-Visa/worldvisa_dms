@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { notificationSocket } from '@/lib/notificationSocket';
-import { useAuth } from '@/hooks/useAuth';
-import { useNotificationStore } from '@/store/notificationStore';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useEffect, useState } from "react";
+import { notificationSocket } from "@/lib/notificationSocket";
+import { useAuth } from "@/hooks/useAuth";
+import { useNotificationStore } from "@/store/notificationStore";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export function NotificationDebugger() {
   const { isAuthenticated } = useAuth();
@@ -18,32 +18,40 @@ export function NotificationDebugger() {
 
   const addLog = (message: string) => {
     const timestamp = new Date().toLocaleTimeString();
-    setLogs(prev => [`[${timestamp}] ${message}`, ...prev.slice(0, 9)]);
+    setLogs((prev) => [`[${timestamp}] ${message}`, ...prev.slice(0, 9)]);
   };
 
   useEffect(() => {
     if (!isAuthenticated) return;
 
     // Monitor connection state
-    const unsubscribeConnection = notificationSocket.onConnectionStateChange((state) => {
-      setConnectionState(state);
-      addLog(`Connection state changed: ${JSON.stringify(state)}`);
-    });
+    const unsubscribeConnection = notificationSocket.onConnectionStateChange(
+      (state) => {
+        setConnectionState(state);
+        addLog(`Connection state changed: ${JSON.stringify(state)}`);
+      },
+    );
 
     // Monitor new notifications
-    const unsubscribeNew = notificationSocket.onNotificationNew((notification) => {
-      addLog(`New notification received: ${notification.message}`);
-    });
+    const unsubscribeNew = notificationSocket.onNotificationNew(
+      (notification) => {
+        addLog(`New notification received: ${notification.message}`);
+      },
+    );
 
     // Monitor updated notifications
-    const unsubscribeUpdated = notificationSocket.onNotificationUpdated((notification) => {
-      addLog(`Notification updated: ${notification._id}`);
-    });
+    const unsubscribeUpdated = notificationSocket.onNotificationUpdated(
+      (notification) => {
+        addLog(`Notification updated: ${notification._id}`);
+      },
+    );
 
     // Monitor deleted notifications
-    const unsubscribeDeleted = notificationSocket.onNotificationDeleted((notification) => {
-      addLog(`Notification deleted: ${notification._id}`);
-    });
+    const unsubscribeDeleted = notificationSocket.onNotificationDeleted(
+      (notification) => {
+        addLog(`Notification deleted: ${notification._id}`);
+      },
+    );
 
     // Update metrics periodically
     const metricsInterval = setInterval(() => {
@@ -61,60 +69,63 @@ export function NotificationDebugger() {
 
   const testSound = () => {
     try {
-      const audio = new Audio('/sound/notification.mp3');
+      const audio = new Audio("/sound/notification.mp3");
       audio.volume = 0.5;
-      audio.play().then(() => {
-        addLog('Sound test: SUCCESS');
-      }).catch((error) => {
-        addLog(`Sound test: FAILED - ${error.message}`);
-      });
+      audio
+        .play()
+        .then(() => {
+          addLog("Sound test: SUCCESS");
+        })
+        .catch((error) => {
+          addLog(`Sound test: FAILED - ${error.message}`);
+        });
     } catch (error) {
       addLog(`Sound test: ERROR - ${error}`);
     }
   };
 
   const testDesktopNotification = () => {
-    if ('Notification' in window) {
-      if (Notification.permission === 'granted') {
-        new Notification('Test Notification', {
-          icon: '/favicon.ico',
-          body: 'This is a test notification',
+    if ("Notification" in window) {
+      if (Notification.permission === "granted") {
+        new Notification("Test Notification", {
+          icon: "/favicon.ico",
+          body: "This is a test notification",
         });
-        addLog('Desktop notification test: SUCCESS');
+        addLog("Desktop notification test: SUCCESS");
       } else {
-        Notification.requestPermission().then(permission => {
+        Notification.requestPermission().then((permission) => {
           addLog(`Desktop notification permission: ${permission}`);
         });
       }
     } else {
-      addLog('Desktop notifications not supported');
+      addLog("Desktop notifications not supported");
     }
   };
 
   const forceReconnect = () => {
-    addLog('Forcing socket reconnection...');
+    addLog("Forcing socket reconnection...");
     notificationSocket.disconnect();
     setTimeout(() => {
       notificationSocket.connect();
-      addLog('Socket reconnection attempted');
+      addLog("Socket reconnection attempted");
     }, 1000);
   };
 
   const forceResubscribe = () => {
-    addLog('Forcing listener re-subscription...');
+    addLog("Forcing listener re-subscription...");
     notificationSocket.forceResubscribe();
-    addLog('Listener re-subscription attempted');
+    addLog("Listener re-subscription attempted");
   };
 
   const forceRefresh = () => {
-    addLog('Forcing page refresh...');
+    addLog("Forcing page refresh...");
     window.location.reload();
   };
 
   const triggerManualTest = () => {
-    addLog('Triggering manual test notification...');
+    addLog("Triggering manual test notification...");
     notificationSocket.triggerTestNotification();
-    addLog('Manual test notification triggered');
+    addLog("Manual test notification triggered");
   };
 
   if (!isVisible) {
@@ -148,23 +159,33 @@ export function NotificationDebugger() {
         {/* Connection Status */}
         <div className="space-y-1">
           <div className="font-semibold">Connection Status:</div>
-          <div className={`px-2 py-1 rounded text-xs ${
-            connectionState?.isConnected ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
-            {connectionState?.isConnected ? 'Connected' : 'Disconnected'}
+          <div
+            className={`px-2 py-1 rounded text-xs ${
+              connectionState?.isConnected
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {connectionState?.isConnected ? "Connected" : "Disconnected"}
           </div>
           {connectionState?.error && (
-            <div className="text-red-600 text-xs">Error: {connectionState.error}</div>
+            <div className="text-red-600 text-xs">
+              Error: {connectionState.error}
+            </div>
           )}
         </div>
 
         {/* Authentication Status */}
         <div className="space-y-1">
           <div className="font-semibold">Auth Status:</div>
-          <div className={`px-2 py-1 rounded text-xs ${
-            isAuthenticated ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-          }`}>
-            {isAuthenticated ? 'Authenticated' : 'Not Authenticated'}
+          <div
+            className={`px-2 py-1 rounded text-xs ${
+              isAuthenticated
+                ? "bg-green-100 text-green-800"
+                : "bg-red-100 text-red-800"
+            }`}
+          >
+            {isAuthenticated ? "Authenticated" : "Not Authenticated"}
           </div>
         </div>
 
@@ -172,8 +193,8 @@ export function NotificationDebugger() {
         <div className="space-y-1">
           <div className="font-semibold">Settings:</div>
           <div className="text-xs">
-            Sound: {soundEnabled ? '✅' : '❌'} | 
-            Desktop: {desktopNotificationsEnabled ? '✅' : '❌'}
+            Sound: {soundEnabled ? "✅" : "❌"} | Desktop:{" "}
+            {desktopNotificationsEnabled ? "✅" : "❌"}
           </div>
         </div>
 
@@ -190,30 +211,42 @@ export function NotificationDebugger() {
           </div>
         )}
 
-         {/* Test Buttons */}
-         <div className="space-y-1">
-           <div className="font-semibold">Tests:</div>
-           <div className="flex flex-wrap gap-1">
-             <Button onClick={testSound} size="sm" className="text-xs h-6">
-               Test Sound
-             </Button>
-             <Button onClick={testDesktopNotification} size="sm" className="text-xs h-6">
-               Test Desktop
-             </Button>
-             <Button onClick={forceReconnect} size="sm" className="text-xs h-6">
-               Reconnect
-             </Button>
-             <Button onClick={forceResubscribe} size="sm" className="text-xs h-6">
-               Resubscribe
-             </Button>
-             <Button onClick={forceRefresh} size="sm" className="text-xs h-6">
-               Refresh
-             </Button>
-             <Button onClick={triggerManualTest} size="sm" className="text-xs h-6">
-               Manual Test
-             </Button>
-           </div>
-         </div>
+        {/* Test Buttons */}
+        <div className="space-y-1">
+          <div className="font-semibold">Tests:</div>
+          <div className="flex flex-wrap gap-1">
+            <Button onClick={testSound} size="sm" className="text-xs h-6">
+              Test Sound
+            </Button>
+            <Button
+              onClick={testDesktopNotification}
+              size="sm"
+              className="text-xs h-6"
+            >
+              Test Desktop
+            </Button>
+            <Button onClick={forceReconnect} size="sm" className="text-xs h-6">
+              Reconnect
+            </Button>
+            <Button
+              onClick={forceResubscribe}
+              size="sm"
+              className="text-xs h-6"
+            >
+              Resubscribe
+            </Button>
+            <Button onClick={forceRefresh} size="sm" className="text-xs h-6">
+              Refresh
+            </Button>
+            <Button
+              onClick={triggerManualTest}
+              size="sm"
+              className="text-xs h-6"
+            >
+              Manual Test
+            </Button>
+          </div>
+        </div>
 
         {/* Logs */}
         <div className="space-y-1">
@@ -223,7 +256,9 @@ export function NotificationDebugger() {
               <div className="text-gray-500">No logs yet...</div>
             ) : (
               logs.map((log, index) => (
-                <div key={index} className="text-xs">{log}</div>
+                <div key={index} className="text-xs">
+                  {log}
+                </div>
               ))
             )}
           </div>

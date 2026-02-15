@@ -1,5 +1,5 @@
-import parse from 'query-string';
-import { FilterParams } from '@/types/common';
+import parse from "query-string";
+import { FilterParams } from "@/types/common";
 
 // Parse query string to object
 export function parseQueryString(queryString: string): FilterParams {
@@ -18,7 +18,10 @@ export function stringifyQueryString(params: FilterParams): string {
 }
 
 // Build URL with query parameters
-export function buildUrlWithQuery(baseUrl: string, params: FilterParams): string {
+export function buildUrlWithQuery(
+  baseUrl: string,
+  params: FilterParams,
+): string {
   const queryString = stringifyQueryString(params);
   return queryString ? `${baseUrl}?${queryString}` : baseUrl;
 }
@@ -26,7 +29,7 @@ export function buildUrlWithQuery(baseUrl: string, params: FilterParams): string
 // Update query parameters
 export function updateQueryParams(
   currentParams: FilterParams,
-  updates: Partial<FilterParams>
+  updates: Partial<FilterParams>,
 ): FilterParams {
   return { ...currentParams, ...updates };
 }
@@ -34,10 +37,10 @@ export function updateQueryParams(
 // Remove query parameters
 export function removeQueryParams(
   currentParams: FilterParams,
-  keysToRemove: string[]
+  keysToRemove: string[],
 ): FilterParams {
   const newParams = { ...currentParams };
-  keysToRemove.forEach(key => {
+  keysToRemove.forEach((key) => {
     delete newParams[key];
   });
   return newParams;

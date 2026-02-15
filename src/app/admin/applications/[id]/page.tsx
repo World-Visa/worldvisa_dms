@@ -1,10 +1,10 @@
-import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
-import UnifiedApplicationDetailsPage from '@/components/applications/UnifiedApplicationDetailsPage';
-import { getApplicationById } from '@/lib/api/getApplicationById';
-import { getApplicationDocuments } from '@/lib/api/getApplicationDocuments';
-import { getApplicationDocumentsPaginated } from '@/lib/api/getApplicationDocumentsPaginated';
-import { createServerQueryClient } from '@/lib/react-query/server';
+import UnifiedApplicationDetailsPage from "@/components/applications/UnifiedApplicationDetailsPage";
+import { getApplicationById } from "@/lib/api/getApplicationById";
+import { getApplicationDocuments } from "@/lib/api/getApplicationDocuments";
+import { getApplicationDocumentsPaginated } from "@/lib/api/getApplicationDocumentsPaginated";
+import { createServerQueryClient } from "@/lib/react-query/server";
 
 interface ApplicationDetailsPageProps {
   params: Promise<{
@@ -12,21 +12,23 @@ interface ApplicationDetailsPageProps {
   }>;
 }
 
-export default async function ApplicationDetailsPage({ params }: ApplicationDetailsPageProps) {
+export default async function ApplicationDetailsPage({
+  params,
+}: ApplicationDetailsPageProps) {
   const { id: applicationId } = await params;
   const queryClient = createServerQueryClient();
 
   const prefetchResults = await Promise.allSettled([
     queryClient.prefetchQuery({
-      queryKey: ['application', applicationId],
+      queryKey: ["application", applicationId],
       queryFn: () => getApplicationById(applicationId),
     }),
     queryClient.prefetchQuery({
-      queryKey: ['application-documents', applicationId],
+      queryKey: ["application-documents", applicationId],
       queryFn: () => getApplicationDocuments(applicationId),
     }),
     queryClient.prefetchQuery({
-      queryKey: ['application-documents-paginated', applicationId, 1, 10],
+      queryKey: ["application-documents-paginated", applicationId, 1, 10],
       queryFn: () =>
         getApplicationDocumentsPaginated({
           applicationId,
@@ -37,8 +39,8 @@ export default async function ApplicationDetailsPage({ params }: ApplicationDeta
   ]);
 
   prefetchResults.forEach((result) => {
-    if (result.status === 'rejected') {
-      console.error('Failed to prefetch application details', result.reason);
+    if (result.status === "rejected") {
+      console.error("Failed to prefetch application details", result.reason);
     }
   });
 
