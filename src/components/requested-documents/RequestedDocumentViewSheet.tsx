@@ -232,7 +232,7 @@ export function RequestedDocumentViewSheet({
                 <div className="flex items-center space-x-2">
                   <Clock className="h-4 w-4 text-gray-500" />
                   <span className="text-sm text-gray-600">
-                    Uploaded at{" "}
+                    Uploaded on{" "}
                     {displayDoc.uploaded_at
                       ? new Date(displayDoc.uploaded_at).toLocaleDateString(
                           "en-US",
