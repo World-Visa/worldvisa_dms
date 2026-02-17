@@ -15,13 +15,13 @@ export function StatusBadge({ status }: StatusBadgeProps) {
       variant: "secondary" as const,
       icon: Clock,
       className:
-        "bg-amber-100 text-amber-800 border border-amber-200 font-medium shadow-sm text-xs px-2 py-1",
+        "bg-slate-200 text-slate-900 border border-slate-200 font-medium shadow-xs text-xs px-2 py-1 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-600/50",
     },
     reviewed: {
       variant: "secondary" as const,
       icon: Eye,
       className:
-        "bg-emerald-100 text-emerald-800 border border-emerald-200 font-medium shadow-sm text-xs px-2 py-1",
+        "bg-emerald-50 text-emerald-800 border border-emerald-200/90 font-medium shadow-xs text-xs px-2 py-1 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800/50",
     },
   };
 

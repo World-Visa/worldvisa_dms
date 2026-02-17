@@ -134,18 +134,16 @@ export function useReuploadDocument() {
       queryClient.setQueryData<Document>(
         ["document", variables.documentId],
         (old) => {
-          if (!old) {
-            return old;
-          }
-
-          const updatedDocument: Document = {
-            ...old,
-            status: "pending" as Document["status"], // Reset to pending after reupload
-            reject_message: undefined, // Clear rejection message
-            file_name: variables.file.name, // Update filename
-            uploaded_at: new Date().toISOString(), // Update upload time
+          const base = old || ({} as Document);
+          return {
+            ...base,
+            _id: variables.documentId,
+            status: "pending" as Document["status"],
+            reject_message: undefined,
+            file_name: variables.file.name,
+            uploaded_at: new Date().toISOString(),
             history: [
-              ...old.history,
+              ...(base.history || []),
               {
                 _id: `temp-reupload-${Date.now()}`,
                 status: "pending" as Document["status"],
@@ -154,8 +152,6 @@ export function useReuploadDocument() {
               },
             ],
           };
-
-          return updatedDocument;
         },
       );
 

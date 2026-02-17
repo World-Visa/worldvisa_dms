@@ -8,6 +8,7 @@ import {
   ClientReuploadDocumentResponse,
 } from "@/lib/api/clientDocumentUpload";
 import { ClientDocument } from "@/types/client";
+import { Document } from "@/types/applications";
 import { toast } from "sonner";
 
 export function useClientUploadDocument() {
@@ -144,6 +145,31 @@ export function useClientReuploadDocument() {
           },
         };
       });
+
+      // Update individual document cache for real-time UI updates (ViewDocumentSheet)
+      queryClient.setQueryData<Document>(
+        ["document", variables.documentId],
+        (old) => {
+          const base = old || ({} as Document);
+          return {
+            ...base,
+            _id: variables.documentId,
+            status: "pending" as Document["status"],
+            reject_message: undefined,
+            file_name: variables.file.name,
+            uploaded_at: new Date().toISOString(),
+            history: [
+              ...(base.history || []),
+              {
+                _id: `temp-reupload-${Date.now()}`,
+                status: "pending" as Document["status"],
+                changed_by: variables.uploaded_by,
+                changed_at: new Date().toISOString(),
+              },
+            ],
+          };
+        },
+      );
 
       // Invalidate all relevant queries to ensure UI updates properly
       Promise.all([

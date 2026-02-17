@@ -8,6 +8,7 @@ import {
 } from "@/hooks/useCommentMutations";
 import { tokenStorage } from "@/lib/auth";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface CommentFormProps {
   documentId: string;
@@ -27,9 +28,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
   const addCommentMutation = useAddComment(documentId);
   const { validateComment } = useCommentValidation();
 
-  // Get current user info from token or localStorage
   const getCurrentUser = useCallback(() => {
-    // First try to get from localStorage (more reliable)
     if (typeof window !== "undefined") {
       const userData = localStorage.getItem("user_data");
       if (userData) {
@@ -44,14 +43,11 @@ const CommentForm: React.FC<CommentFormProps> = ({
       }
     }
 
-    // Fallback to JWT token
     const token = tokenStorage.get();
     if (!token) return "Unknown User";
 
     try {
       const payload = JSON.parse(atob(token.split(".")[1]));
-
-      // Try multiple possible fields for user identification
       return (
         payload.username ||
         payload.email ||
@@ -72,7 +68,6 @@ const CommentForm: React.FC<CommentFormProps> = ({
 
     if (isSubmitting) return;
 
-    // Validate comment
     const validation = validateComment(comment);
     if (!validation.isValid) {
       toast.error(validation.error);
@@ -87,13 +82,9 @@ const CommentForm: React.FC<CommentFormProps> = ({
         added_by: getCurrentUser(),
       });
 
-      // Clear form
       setComment("");
-
-      // Call callback if provided
       onCommentAdded?.();
     } catch (error) {
-      // Error handling is done in the mutation hook
       console.error("Failed to add comment:", error);
     } finally {
       setIsSubmitting(false);
@@ -111,55 +102,40 @@ const CommentForm: React.FC<CommentFormProps> = ({
     isSubmitting || !comment.trim() || addCommentMutation.isPending;
 
   return (
-    <form onSubmit={handleSubmit} className={`space-y-3 ${className}`}>
-      <div className="space-y-2">
+    <form onSubmit={handleSubmit} className={cn("p-3 border-t border-border/40 bg-background", className)}>
+      <div className="flex items-end gap-2">
         <Textarea
-          placeholder="Add a comment... (Ctrl+Enter to send)"
+          placeholder="Write a message..."
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           onKeyDown={handleKeyDown}
-          className="min-h-[80px] resize-none border-gray-300 focus:border-blue-500 focus:ring-blue-500"
-          rows={3}
+          className="min-h-[40px] max-h-[120px] resize-none rounded-xl border-border/60 bg-muted/50 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-ring/30"
+          rows={1}
           disabled={isSubmitting}
           maxLength={1000}
         />
-
-        {/* Character count */}
-        <div className="flex justify-between items-center text-xs text-gray-500">
-          <span>{comment.length}/1000 characters</span>
-          {comment.length > 800 && (
-            <span className="text-amber-600">
-              {1000 - comment.length} characters remaining
-            </span>
-          )}
-        </div>
-      </div>
-
-      <div className="flex justify-end">
         <Button
           type="submit"
           disabled={isDisabled}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-6 min-w-[100px]"
+          size="icon"
+          className="h-9 w-9 shrink-0 rounded-xl bg-foreground text-background hover:bg-foreground/90 cursor-pointer"
         >
           {isSubmitting || addCommentMutation.isPending ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Sending...
-            </>
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <>
-              <Send className="h-4 w-4 mr-2" />
-              Send
-            </>
+            <Send className="h-4 w-4" />
           )}
         </Button>
       </div>
-
-      {/* Error display */}
+      {comment.length > 800 && (
+        <p className="text-[11px] text-muted-foreground mt-1.5 px-1">
+          {1000 - comment.length} characters remaining
+        </p>
+      )}
       {addCommentMutation.error && (
-        <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+        <p className="text-xs text-destructive mt-1.5 px-1">
           {addCommentMutation.error.message}
-        </div>
+        </p>
       )}
     </form>
   );

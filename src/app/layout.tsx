@@ -58,9 +58,6 @@ export default function RootLayout({
       >
         <Providers>
           <NotificationProvider>{children}</NotificationProvider>
-          {/* <NotificationDebugger /> */}
-          {/* <NotificationTestButton /> */}
-          {/* <LocalNotificationTestButton /> */}
           <Toaster position="top-center" richColors />
         </Providers>
       </body>

@@ -5,7 +5,7 @@ import { useChecklistRequestsCount } from "@/hooks/useChecklistRequestsCount";
 import { useQualityCheckCount } from "@/hooks/useQualityCheckCount";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { LogOut, Menu, X, User } from "lucide-react";
+import { LogOut, Menu, X, User, FileCheck, Users } from "lucide-react";
 import { useRouter, usePathname } from "next/navigation";
 import { useCallback, useMemo, useState, useRef, useEffect } from "react";
 import { gsap } from "gsap";
@@ -18,21 +18,22 @@ import {
 } from "@/lib/config/navigation";
 import { NotificationBell } from "@/components/notifications/NotificationBell";
 import { NotificationPanel } from "@/components/notifications/NotificationPanel";
-import { ApplicationsDropdown } from "./ApplicationsDropdown";
 import { ApplicationsDropdownMobile } from "./ApplicationsDropdownMobile";
 import { useQueryClient } from "@tanstack/react-query";
+import { UserProfileDropdown } from "../users/UserProfileDropDown";
+import { UserProfile } from "@/types/user";
+import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
+import { cn } from "@/lib/utils";
 
-// Helper function to get portal title based on role
-const getPortalTitle = (role: string | undefined): string => {
-  const roleTitles: Record<string, string> = {
-    master_admin: "- Master Admin Portal",
-    team_leader: "- Team Leader Portal",
-    supervisor: "- Supervisor Portal",
-    admin: "- Admin Portal",
-  };
 
-  return roleTitles[role || "admin"] || "- Admin Portal";
-};
+const SCROLL_THRESHOLD_PX = 5;
 
 export function AdminHeader() {
   const { user, logout } = useAuth();
@@ -40,20 +41,27 @@ export function AdminHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const menuItemsRef = useRef<HTMLDivElement[]>([]);
 
-  // Get navigation tabs based on user role
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > SCROLL_THRESHOLD_PX);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   const navigationTabs = useMemo(() => {
     return getNavigationTabsForRole(user?.role as SupportedRole);
   }, [user?.role]);
 
-  // Get checklist requests count for real-time updates
   const { data: checklistRequestsCount = 0 } = useChecklistRequestsCount({
     enabled: !!user && user.role !== "supervisor",
   });
 
-  // Get quality check applications count for real-time updates
   const { data: qualityCheckCount = 0 } = useQualityCheckCount({
     enabled: !!user,
   });
@@ -160,63 +168,122 @@ export function AdminHeader() {
     };
   }, []);
 
+  const applicationsMenuItems = [
+    {
+      id: "visa-applications",
+      label: "Visa Applications",
+      href: "/admin/applications",
+      icon: FileCheck,
+    },
+    {
+      id: "spouse-skill-assessment",
+      label: "Spouse Skill Assessment",
+      href: "/admin/spouse-skill-assessment-applications",
+      icon: Users,
+    },
+  ] as const;
+
+  const desktopNav = (
+    <NavigationMenu
+      viewport={false}
+    >
+      <NavigationMenuList className="w-full">
+        {navigationTabs.map((tab) => {
+          if (tab.id === "applications") {
+            return (
+              <NavigationMenuItem key={tab.id} className="max-w-max">
+                <NavigationMenuTrigger
+                >
+                  {tab.label}
+                </NavigationMenuTrigger>
+                <NavigationMenuContent>
+                  <ul className="grid w-full gap-2 md:w-[300px] md:grid-cols-1">
+                    {applicationsMenuItems.map((item) => (
+                      <ListItem className="w-full flex items-start justify-center" key={item.id} href={item.href} title={item.label} />
+                    ))}
+                  </ul>
+                </NavigationMenuContent>
+              </NavigationMenuItem>
+            );
+          }
+
+          const isActive = activeTabId === tab.id;
+          const showCount =
+            (tab.id === "checklist-requests" && checklistRequestsCount > 0) ||
+            (tab.id === "quality-check" && qualityCheckCount > 0);
+          const countValue =
+            tab.id === "checklist-requests"
+              ? checklistRequestsCount
+              : tab.id === "quality-check"
+                ? qualityCheckCount
+                : 0;
+
+          return (
+            <NavigationMenuItem key={tab.id}>
+              <Link href={tab.href} legacyBehavior passHref>
+                <NavigationMenuLink
+                  className={cn(
+                    "relative flex h-9 flex-row justify-start items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 hover:text-gray-900 w-full",
+                    isActive
+                      ? "bg-gray-100"
+                      : "text-gray-700"
+                  )}
+                >
+                  <span>{tab.label}</span>
+                  {showCount && (
+                    <Badge
+                      variant="secondary"
+                      className="ml-0.5 bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded-full font-medium"
+                    >
+                      {countValue}
+                    </Badge>
+                  )}
+                </NavigationMenuLink>
+              </Link>
+            </NavigationMenuItem>
+          );
+        })}
+      </NavigationMenuList>
+    </NavigationMenu>
+  );
+
   return (
-    <header className="sticky top-0 z-50 bg-white/95  border-b border-gray-200/60 ">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Top Row - Logo and User Info */}
-        <div className="flex justify-between items-center h-[70px]">
-          {/* Logo and Title Section */}
-          <div className="flex items-center space-x-6">
-            <div className="hidden sm:block">
-              <div className="relative">
-                <Image
-                  src={Logo}
-                  alt="WorldVisa Logo"
-                  height={62}
-                  width={102}
-                  className="w-full h-full object-contain"
-                  priority
-                />
-              </div>
-              <p className="text-xs pl-2 pt-2 text-gray-500 font-medium uppercase tracking-wide">
-                {getPortalTitle(user?.role).replace("- ", "")}
-              </p>
+    <header
+      className={cn(
+        "sticky top-0 z-50 border-b border-gray-200/60 bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/80 transition-all duration-200 ease-out"
+      )}
+    >
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        {/* Top row: logo, (nav when scrolled), utilities */}
+        <div
+          className={cn(
+            "flex items-center justify-between transition-all duration-200 ease-out",
+            isScrolled ? "h-14" : "h-[70px]"
+          )}
+        >
+          <div className="flex min-w-0 flex-1 items-center gap-6">
+            <div className="hidden shrink-0 sm:block">
+              <Image
+                src={Logo}
+                alt="WorldVisa Logo"
+                height={isScrolled ? 46 : 62}
+                width={isScrolled ? 70 : 102}
+                className="h-full w-auto object-contain transition-all duration-200"
+                priority
+              />
             </div>
+            {/* Desktop nav: inline in first row only when scrolled */}
+            {isScrolled && (
+              <div className="hidden flex-1 md:block">{desktopNav}</div>
+            )}
           </div>
 
-          {/* Desktop User Info */}
-          <div className="hidden md:flex items-center space-x-3">
-            {/* Notification Bell */}
-            <div className="relative">
-              <NotificationBell />
-            </div>
-
-            {/* User Profile Section */}
-            <div className="flex items-center space-x-3 px-3 py-2 rounded-lg bg-gray-50/50 hover:bg-gray-100/50 transition-colors">
-              <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
-                <User className="h-4 w-4 text-gray-900" />
-              </div>
-              <div className="flex flex-col">
-                <span className="text-sm font-medium text-gray-900">
-                  {user?.username || "Admin"}
-                </span>
-              </div>
-            </div>
-
-            {/* Logout Button */}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleLogout}
-              className="flex items-center cursor-pointer space-x-2 px-3 py-2 text-gray-600 hover:text-red-600 hover:bg-red-50 transition-all duration-200 rounded-lg"
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="text-sm font-medium">Logout</span>
-            </Button>
+          <div className="hidden shrink-0 items-center gap-3 md:flex">
+            <NotificationBell />
+            <UserProfileDropdown user={user as UserProfile} onLogout={handleLogout} />
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="md:hidden flex items-center space-x-2">
+          <div className="flex shrink-0 items-center gap-2 md:hidden">
             <NotificationBell />
             <Button
               variant="ghost"
@@ -226,82 +293,35 @@ export function AdminHeader() {
             >
               <div className="relative w-6 h-6">
                 <Menu
-                  className={`h-5 w-5 absolute transition-all duration-300 ${
-                    isMobileMenuOpen
-                      ? "opacity-0 rotate-180"
-                      : "opacity-100 rotate-0"
-                  }`}
+                  className={cn(
+                    "h-5 w-5 absolute transition-all duration-300",
+                    isMobileMenuOpen ? "opacity-0 rotate-180" : "opacity-100 rotate-0"
+                  )}
                 />
                 <X
-                  className={`h-5 w-5 absolute transition-all duration-300 ${
-                    isMobileMenuOpen
-                      ? "opacity-100 rotate-0"
-                      : "opacity-0 -rotate-180"
-                  }`}
+                  className={cn(
+                    "h-5 w-5 absolute transition-all duration-300",
+                    isMobileMenuOpen ? "opacity-100 rotate-0" : "opacity-0 -rotate-180"
+                  )}
                 />
               </div>
             </Button>
           </div>
         </div>
 
-        {/* Desktop Navigation Tabs */}
-        <nav className="hidden md:block border-t border-gray-200/60 bg-gray-50/30">
-          <div className="flex space-x-1 px-2">
-            {navigationTabs.map((tab) => {
-              // Handle Applications dropdown separately
-              if (tab.id === "applications") {
-                return <ApplicationsDropdown key={tab.id} />;
-              }
-
-              const Icon = tab.icon;
-              const isActive = activeTabId === tab.id;
-              const showCount =
-                (tab.id === "checklist-requests" &&
-                  checklistRequestsCount > 0) ||
-                (tab.id === "quality-check" && qualityCheckCount > 0);
-              const countValue =
-                tab.id === "checklist-requests"
-                  ? checklistRequestsCount
-                  : tab.id === "quality-check"
-                    ? qualityCheckCount
-                    : 0;
-
-              return (
-                <Link
-                  key={tab.id}
-                  href={tab.href}
-                  className={`
-                                        relative flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200 group
-                                        ${
-                                          isActive
-                                            ? "bg-white text-blue-600 "
-                                            : "text-gray-600 hover:text-gray-900 "
-                                        }
-                                    `}
-                >
-                  {/* <Icon className={`h-4 w-4 mr-2 transition-colors ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} /> */}
-                  <span className="font-medium">{tab.label}</span>
-                  {showCount && (
-                    <Badge
-                      variant="secondary"
-                      className="ml-2 bg-blue-100 text-blue-700 text-xs px-2 py-0.5 rounded-full font-medium"
-                    >
-                      {countValue}
-                    </Badge>
-                  )}
-                  {isActive && (
-                    <div className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-500 rounded-full"></div>
-                  )}
-                </Link>
-              );
-            })}
+        {/* Second row: nav tabs when expanded (not scrolled); single desktopNav instance */}
+        {!isScrolled && (
+          <div
+            className="hidden border-t border-t-gray-200/60 bg-gray-50/30 md:block"
+          >
+            <div className="px-0 py-2">{desktopNav}</div>
           </div>
-        </nav>
+        )}
 
         {/* Mobile Menu */}
         <div
           ref={mobileMenuRef}
-          className="md:hidden border-t border-gray-200/60 bg-white/95 backdrop-blur-md overflow-hidden"
+          className="md:hidden border-t border-gray-200/60 bg-white/95 backdrop-blur-md"
           style={{ height: 0, opacity: 0 }}
         >
           <div className="px-4 py-4 space-y-2">
@@ -318,7 +338,6 @@ export function AdminHeader() {
                 );
               }
 
-              const Icon = tab.icon;
               const isActive = activeTabId === tab.id;
               const showCount =
                 (tab.id === "checklist-requests" &&
@@ -337,15 +356,13 @@ export function AdminHeader() {
                     href={tab.href}
                     onClick={() => setIsMobileMenuOpen(false)}
                     className={`
-                                            flex items-center px-4 py-3 text-base font-medium rounded-xl transition-all duration-200 group
-                                            ${
-                                              isActive
-                                                ? "bg-blue-50 text-blue-600 border border-blue-200/50 shadow-sm"
-                                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm"
-                                            }
-                                        `}
+                          flex items-center px-4 py-3 text-base font-medium rounded-xl transition-all duration-200 group
+                          ${isActive
+                        ? "bg-blue-50 text-blue-600 border border-blue-200/50 shadow-sm"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm"
+                      }
+                      `}
                   >
-                    {/* <Icon className={`h-5 w-5 mr-3 transition-colors ${isActive ? 'text-blue-600' : 'text-gray-400 group-hover:text-gray-600'}`} /> */}
                     <span className="font-medium">{tab.label}</span>
                     {showCount && (
                       <Badge
@@ -394,4 +411,26 @@ export function AdminHeader() {
       <NotificationPanel />
     </header>
   );
+}
+
+
+function ListItem({
+  className,
+  title,
+  children,
+  href,
+  ...props
+}: React.ComponentPropsWithoutRef<"li"> & { href: string, className?: string }) {
+  return (
+    <li {...props}>
+      <NavigationMenuLink asChild className={cn("w-full h-11", className)} >
+        <Link href={href} className={cn("w-full", className)}>
+          <div className={cn("flex flex-col gap-1 text-sm", className)}>
+            <div className="leading-none font-medium">{title}</div>
+            <div className="text-muted-foreground line-clamp-2">{children}</div>
+          </div>
+        </Link>
+      </NavigationMenuLink>
+    </li>
+  )
 }

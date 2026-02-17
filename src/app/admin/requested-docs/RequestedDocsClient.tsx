@@ -54,16 +54,14 @@ export default function RequestedDocsClient() {
   const apiFilters =
     filters.status !== "all"
       ? {
-          status: filters.status,
-          requested_by: filters.requestedBy || undefined,
-          requested_to: filters.requestedTo || undefined,
-        }
+        status: filters.status,
+        requested_by: filters.requestedBy || undefined,
+        requested_to: filters.requestedTo || undefined,
+      }
       : {
-          requested_by: filters.requestedBy || undefined,
-          requested_to: filters.requestedTo || undefined,
-        };
-
-  const finalApiFilters = activeTab === "all-requests" ? apiFilters : {};
+        requested_by: filters.requestedBy || undefined,
+        requested_to: filters.requestedTo || undefined,
+      };
 
   const {
     data: requestedToMeData,
@@ -72,7 +70,7 @@ export default function RequestedDocsClient() {
   } = useRequestedDocumentsToMePaginated(
     currentPage,
     limit,
-    {},
+    apiFilters,
     {
       enabled: activeTab === "requested-to-me",
     },
@@ -85,7 +83,7 @@ export default function RequestedDocsClient() {
   } = useMyRequestedDocumentsPaginated(
     currentPage,
     limit,
-    {},
+    apiFilters,
     {
       enabled: activeTab === "my-requests",
     },
@@ -95,7 +93,7 @@ export default function RequestedDocsClient() {
     data: allRequestsData,
     isLoading: isLoadingAllRequests,
     refetch: refetchAllRequests,
-  } = useAllRequestedDocumentsPaginated(currentPage, limit, finalApiFilters, {
+  } = useAllRequestedDocumentsPaginated(currentPage, limit, apiFilters, {
     enabled: activeTab === "all-requests" && isMasterAdmin,
   });
 
@@ -239,47 +237,23 @@ export default function RequestedDocsClient() {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div className="flex flex-col lg:flex-row lg:items-center gap-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
+            <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
               Requested Documents
-            </h2>
-            <p className="text-gray-600">
-              Manage and track document review requests.
-            </p>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isLoading}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
-              />
-              <span>Refresh</span>
-            </Button>
+            </h1>
           </div>
         </div>
       </div>
 
-      <RequestedDocsStats
+      {/* <RequestedDocsStats
         pendingRequests={stats.pendingRequests}
         reviewedRequests={stats.reviewedRequests}
         overdue={stats.overdue}
-      />
+      /> */}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Document Review Requests</CardTitle>
-          <CardDescription>
-            Manage documents requested for review
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
+      <div>
+        <div>
           <Tabs value={activeTab} onValueChange={handleTabChange}>
             <TabsList
               className={`grid w-full ${!isMasterAdmin ? "grid-cols-2" : "grid-cols-3"} h-12 mb-6`}
@@ -347,6 +321,15 @@ export default function RequestedDocsClient() {
 
             {activeTab === "requested-to-me" && (
               <TabsContent value="requested-to-me" className="space-y-4">
+                <RequestedDocumentsFilters
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
+                  onRefresh={handleRefresh}
+                  isRefreshing={isLoading}
+                  totalCount={pagination?.totalItems || 0}
+                  filteredCount={documents.length}
+                />
+
                 <RequestedDocumentsDataTable
                   documents={documents}
                   isLoading={isLoading}
@@ -368,6 +351,15 @@ export default function RequestedDocsClient() {
 
             {activeTab === "my-requests" && (
               <TabsContent value="my-requests" className="space-y-4">
+                <RequestedDocumentsFilters
+                  filters={filters}
+                  onFiltersChange={handleFiltersChange}
+                  onRefresh={handleRefresh}
+                  isRefreshing={isLoading}
+                  totalCount={pagination?.totalItems || 0}
+                  filteredCount={documents.length}
+                />
+
                 <RequestedDocumentsDataTable
                   documents={documents}
                   isLoading={isLoading}
@@ -387,8 +379,8 @@ export default function RequestedDocsClient() {
               </TabsContent>
             )}
           </Tabs>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       {selectedDocument && (
         <RequestedDocumentViewSheet

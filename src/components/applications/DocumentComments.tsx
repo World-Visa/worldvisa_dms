@@ -1,7 +1,6 @@
-import React from "react";
-import { Card } from "../ui/card";
+import React, { useRef, useEffect } from "react";
 import { ScrollArea } from "../ui/scroll-area";
-import { MessageCircle, Wifi, WifiOff, AlertCircle } from "lucide-react";
+import { MessageCircle, AlertCircle } from "lucide-react";
 import {
   useDocumentComments,
   useRealtimeConnection,
@@ -9,6 +8,7 @@ import {
 import { useDeleteComment } from "@/hooks/useCommentMutations";
 import CommentForm from "./CommentForm";
 import CommentItem from "./CommentItem";
+import { cn } from "@/lib/utils";
 
 interface DocumentCommentsProps {
   documentId: string;
@@ -25,9 +25,17 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
     useDocumentComments(documentId);
   const connectionState = useRealtimeConnection();
   const deleteCommentMutation = useDeleteComment(documentId);
+  const scrollEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new comments arrive
+  useEffect(() => {
+    if (scrollEndRef.current && comments.length > 0) {
+      scrollEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [comments.length]);
 
   const handleCommentAdded = () => {
-    // Comment added successfully
+    // Comment added successfully — scroll handled by useEffect
   };
 
   const handleDeleteComment = async (commentId: string) => {
@@ -39,112 +47,117 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
   };
 
   return (
-    <div
-      className={`w-96 border-l bg-linear-to-b from-gray-50 to-white flex flex-col h-full ${className}`}
-    >
+    <div className={cn("flex flex-col h-full", className)}>
       {/* Header */}
-      <div className="px-2 py-1 bg-white border-b">
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center space-x-2">
-            <MessageCircle className="h-5 w-5 text-blue-600" />
-            <h3 className="text-lg font-semibold text-gray-900">Comments</h3>
-          </div>
-
-          {/* Connection Status */}
-          <div className="flex items-center space-x-1">
-            {connectionState.isConnected ? (
-              <div className="flex items-center space-x-1 text-green-600">
-                <Wifi className="h-3 w-3" />
-                <span className="text-xs">Live</span>
-              </div>
-            ) : connectionState.isConnecting ? (
-              <div className="flex items-center space-x-1 text-yellow-600">
-                <WifiOff className="h-3 w-3 animate-pulse" />
-                <span className="text-xs">Connecting...</span>
-              </div>
-            ) : (
-              <div className="flex items-center space-x-1 text-red-600">
-                <WifiOff className="h-3 w-3" />
-                <span className="text-xs">Offline</span>
-              </div>
-            )}
-          </div>
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+        <div className="flex items-center gap-2">
+          <h3 className="text-sm font-medium text-foreground">Comments</h3>
+          {comments.length > 0 && (
+            <span className="text-xs text-muted-foreground tabular-nums">
+              ({comments.length})
+            </span>
+          )}
         </div>
-
-        {/* Error Display */}
-        {error && (
-          <div className="flex items-center space-x-2 text-red-600 text-sm bg-red-50 p-2 rounded">
-            <AlertCircle className="h-4 w-4" />
-            <span>Failed to load comments</span>
-            <button
-              onClick={() => refetch()}
-              className="text-blue-600 hover:underline"
-            >
-              Retry
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* Comment Input */}
-      <div className="p-4 border-b bg-white">
-        <CommentForm
-          documentId={documentId}
-          onCommentAdded={handleCommentAdded}
-        />
-      </div>
-
-      {/* Comments List */}
-      <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="p-4 space-y-4">
-            {isLoading ? (
-              <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                  <Card key={i} className="p-4 animate-pulse">
-                    <div className="flex items-start space-x-3">
-                      <div className="w-8 h-8 bg-gray-200 rounded-full"></div>
-                      <div className="flex-1 space-y-2">
-                        <div className="h-4 bg-gray-200 rounded w-1/4"></div>
-                        <div className="h-3 bg-gray-200 rounded w-1/6"></div>
-                        <div className="h-4 bg-gray-200 rounded w-full"></div>
-                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
-            ) : comments.length === 0 ? (
-              <div className="text-center py-8">
-                <MessageCircle className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                <p className="text-gray-500 text-sm">
-                  {isClientView && comments.length > 0
-                    ? "No visible comments"
-                    : "No comments yet"}
-                </p>
-                <p className="text-gray-400 text-xs">
-                  {isClientView && comments.length > 0
-                    ? "Comments from admin are not visible to clients"
-                    : "Be the first to add a comment"}
-                </p>
-              </div>
-            ) : (
-              [...comments]
-                .sort((a, b) =>
-                  (b.created_at ?? "").localeCompare(a.created_at ?? ""),
-                )
-                .map((comment) => (
-                  <CommentItem
-                    key={comment._id}
-                    comment={comment}
-                    onDelete={handleDeleteComment}
-                    isDeleting={deleteCommentMutation.isPending}
-                  />
-                ))
+        <div className="flex items-center gap-1.5">
+          <div
+            className={cn(
+              "h-1.5 w-1.5 rounded-full",
+              connectionState.isConnected
+                ? "bg-green-500"
+                : connectionState.isConnecting
+                  ? "bg-yellow-500 animate-pulse"
+                  : "bg-red-500",
             )}
-          </div>
-        </ScrollArea>
+          />
+          <span className="text-[11px] text-muted-foreground">
+            {connectionState.isConnected
+              ? "Live"
+              : connectionState.isConnecting
+                ? "Connecting"
+                : "Offline"}
+          </span>
+        </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="mx-4 mt-3 flex items-center gap-2 text-xs text-destructive bg-destructive/10 px-3 py-2 rounded-lg">
+          <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+          <span>Failed to load comments</span>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="underline ml-auto hover:no-underline"
+          >
+            Retry
+          </button>
+        </div>
+      )}
+
+      {/* Comments list */}
+      <ScrollArea className="flex-1">
+        <div className="p-4 space-y-3">
+          {isLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className={cn(
+                    "flex gap-2.5 animate-pulse",
+                    i === 2 ? "ml-auto flex-row-reverse max-w-[75%]" : "mr-auto max-w-[75%]",
+                  )}
+                >
+                  {i !== 2 && (
+                    <div className="h-7 w-7 rounded-full bg-muted shrink-0" />
+                  )}
+                  <div className="space-y-1.5 flex-1">
+                    {i !== 2 && (
+                      <div className="h-3 bg-muted rounded w-20" />
+                    )}
+                    <div
+                      className={cn(
+                        "rounded-2xl px-4 py-3",
+                        i === 2 ? "bg-muted/60 rounded-br-sm" : "bg-muted rounded-bl-sm",
+                      )}
+                    >
+                      <div className="h-3 bg-muted-foreground/10 rounded w-full mb-1.5" />
+                      <div className="h-3 bg-muted-foreground/10 rounded w-2/3" />
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : comments.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageCircle className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">No comments yet</p>
+              <p className="text-xs text-muted-foreground/60 mt-0.5">
+                Start the conversation
+              </p>
+            </div>
+          ) : (
+            [...comments]
+              .sort((a, b) =>
+                (a.created_at ?? "").localeCompare(b.created_at ?? ""),
+              )
+              .map((comment) => (
+                <CommentItem
+                  key={comment._id}
+                  comment={comment}
+                  onDelete={handleDeleteComment}
+                  isDeleting={deleteCommentMutation.isPending}
+                />
+              ))
+          )}
+          <div ref={scrollEndRef} />
+        </div>
+      </ScrollArea>
+
+      {/* Comment input at bottom */}
+      <CommentForm
+        documentId={documentId}
+        onCommentAdded={handleCommentAdded}
+      />
     </div>
   );
 };
