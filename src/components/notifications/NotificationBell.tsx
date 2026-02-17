@@ -1,102 +1,41 @@
-import { memo, useCallback } from "react";
-import { Bell, BellRing } from "lucide-react";
-import {
-  useNotifications,
-  useNotificationConnection,
-} from "@/hooks/useNotifications";
-import { useNotificationStore } from "@/store/notificationStore";
+"use client";
+
+import { memo, forwardRef } from "react";
+import { Bell } from "lucide-react";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 
 interface NotificationBellProps {
   className?: string;
 }
 
-export const NotificationBell = memo<NotificationBellProps>(({ className }) => {
-  const { unreadCount, hasNotifications } = useNotifications();
-  const { isConnected, isConnecting, error } = useNotificationConnection();
-  const { toggleNotificationPanel } = useNotificationStore();
+export const NotificationBell = memo(
+  forwardRef<HTMLButtonElement, NotificationBellProps & React.ComponentPropsWithoutRef<typeof Button>>(
+    ({ className, ...props }, ref) => {
+      const { unreadCount } = useNotifications();
 
-  const handleClick = useCallback(() => {
-    toggleNotificationPanel();
-  }, [toggleNotificationPanel]);
-
-  const getConnectionStatus = () => {
-    if (isConnecting) return "Connecting...";
-    if (error) return `Connection error: ${error}`;
-    if (isConnected) return "Connected";
-    return "Disconnected";
-  };
-
-  const getConnectionIcon = () => {
-    if (isConnecting)
       return (
-        <div className="h-2 w-2 animate-pulse rounded-full bg-yellow-500" />
+        <Button
+          ref={ref}
+          variant="ghost"
+          size="icon"
+          className={cn(
+            "relative h-9 w-9 cursor-pointer rounded-full text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors",
+            className,
+          )}
+          {...props}
+        >
+          <Bell className="h-[18px] w-[18px]" strokeWidth={1.8} />
+          {unreadCount > 0 && (
+            <span className="absolute top-1 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-gray-900 px-1 text-[10px] font-medium leading-none text-white tabular-nums">
+              {unreadCount > 99 ? "99+" : unreadCount}
+            </span>
+          )}
+        </Button>
       );
-    if (error) return <div className="h-2 w-2 rounded-full bg-red-500" />;
-    if (isConnected)
-      return <div className="h-2 w-2 rounded-full bg-green-500" />;
-    return <div className="h-2 w-2 rounded-full bg-gray-400" />;
-  };
-
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={handleClick}
-            className={`relative cursor-pointer ${className || ""}`}
-            disabled={isConnecting}
-          >
-            {unreadCount > 0 ? (
-              <BellRing className="h-5 w-5 animate-pulse" />
-            ) : (
-              <Bell className="h-5 w-5" />
-            )}
-
-            {/* Unread count badge */}
-            {unreadCount > 0 && (
-              <Badge
-                variant="default"
-                className="absolute -top-1 -right-2 h-5 w-5 rounded-full p-0 text-xs font-bold flex items-center justify-center"
-              >
-                <span>{unreadCount > 99 ? "99+" : unreadCount}</span>
-              </Badge>
-            )}
-            {/* Connection status indicator */}
-            <div className="absolute bottom-1 right-1">
-              {getConnectionIcon()}
-            </div>
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="bottom" align="end">
-          <div className="space-y-1">
-            <div className="font-medium">
-              {unreadCount > 0
-                ? `${unreadCount} unread notification${unreadCount > 1 ? "s" : ""}`
-                : "No unread notifications"}
-            </div>
-            <div className="text-xs text-white">
-              Status: {getConnectionStatus()}
-            </div>
-            {hasNotifications && (
-              <div className="text-xs text-white">
-                Click to view notifications
-              </div>
-            )}
-          </div>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  );
-});
+    },
+  ),
+);
 
 NotificationBell.displayName = "NotificationBell";
