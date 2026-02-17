@@ -23,6 +23,12 @@ import { useQueryClient } from "@tanstack/react-query";
 import { UserProfileDropdown } from "../users/UserProfileDropDown";
 import { UserProfile } from "@/types/user";
 import {
+  Sheet,
+  SheetTrigger,
+  SheetContent,
+} from "@/components/ui/sheet";
+import { useNotificationStore } from "@/store/notificationStore";
+import {
   NavigationMenu,
   NavigationMenuContent,
   NavigationMenuItem,
@@ -40,6 +46,8 @@ export function AdminHeader() {
   const queryClient = useQueryClient();
   const router = useRouter();
   const pathname = usePathname();
+  const { isNotificationPanelOpen, openNotificationPanel, closeNotificationPanel } =
+    useNotificationStore();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
@@ -220,8 +228,9 @@ export function AdminHeader() {
 
           return (
             <NavigationMenuItem key={tab.id}>
-              <Link href={tab.href} legacyBehavior passHref>
-                <NavigationMenuLink
+              <NavigationMenuLink asChild>
+                <Link
+                  href={tab.href}
                   className={cn(
                     "relative flex h-9 flex-row justify-start items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-colors hover:bg-gray-100 hover:text-gray-900 w-full",
                     isActive
@@ -238,8 +247,8 @@ export function AdminHeader() {
                       {countValue}
                     </Badge>
                   )}
-                </NavigationMenuLink>
-              </Link>
+                </Link>
+              </NavigationMenuLink>
             </NavigationMenuItem>
           );
         })}
@@ -279,12 +288,32 @@ export function AdminHeader() {
           </div>
 
           <div className="hidden shrink-0 items-center gap-3 md:flex">
-            <NotificationBell />
+            <Sheet
+              open={isNotificationPanelOpen}
+              onOpenChange={(open) => (open ? openNotificationPanel() : closeNotificationPanel())}
+            >
+              <SheetTrigger asChild>
+                <NotificationBell />
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md p-0 gap-0">
+                <NotificationPanel />
+              </SheetContent>
+            </Sheet>
             <UserProfileDropdown user={user as UserProfile} onLogout={handleLogout} />
           </div>
 
           <div className="flex shrink-0 items-center gap-2 md:hidden">
-            <NotificationBell />
+            <Sheet
+              open={isNotificationPanelOpen}
+              onOpenChange={(open) => (open ? openNotificationPanel() : closeNotificationPanel())}
+            >
+              <SheetTrigger asChild>
+                <NotificationBell />
+              </SheetTrigger>
+              <SheetContent side="right" className="w-full sm:max-w-md p-0 gap-0">
+                <NotificationPanel />
+              </SheetContent>
+            </Sheet>
             <Button
               variant="ghost"
               size="sm"
@@ -408,7 +437,6 @@ export function AdminHeader() {
           </div>
         </div>
       </div>
-      <NotificationPanel />
     </header>
   );
 }

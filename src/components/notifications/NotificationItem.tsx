@@ -1,20 +1,11 @@
-import {
-  ChevronRight,
-  Check,
-  X,
-  Loader2,
-  Bell,
-  FileText,
-  MessageSquare,
-  User,
-  CheckCircle,
-} from "lucide-react";
+import { ChevronRight, Check, Trash2, Loader2 } from "lucide-react";
 import { Button } from "../ui/button";
 import { formatDistanceToNow } from "date-fns";
 import { memo, useCallback } from "react";
 import { Notification } from "@/types/notifications";
 import { useRouter } from "next/navigation";
 import { useNotificationStore } from "@/store/notificationStore";
+import { cn } from "@/lib/utils";
 
 const NotificationItem = memo(
   ({
@@ -27,7 +18,8 @@ const NotificationItem = memo(
     onDelete: (id: string) => void;
   }) => {
     const router = useRouter();
-    const { isNavigating, setNavigating } = useNotificationStore();
+    const { isNavigating, setNavigating, closeNotificationPanel } =
+      useNotificationStore();
 
     const handleMarkAsRead = useCallback(() => {
       onMarkAsRead(notification._id as string);
@@ -41,141 +33,123 @@ const NotificationItem = memo(
       if (notification.leadId && !isNavigating) {
         setNavigating(true);
         try {
-          if (notification?.applicationType) {
-            if (notification.applicationType === "Spouse_Skill_Assessment") {
-              router.push(
-                `/admin/spouse-skill-assessment-applications/${notification.leadId}`,
-              );
-            } else {
-              router.push(`/admin/applications/${notification.leadId}`);
-            }
+          if (notification?.applicationType === "Spouse_Skill_Assessment") {
+            router.push(
+              `/admin/spouse-skill-assessment-applications/${notification.leadId}`,
+            );
           } else {
             router.push(`/admin/applications/${notification.leadId}`);
           }
+          closeNotificationPanel();
         } catch (error) {
           console.error("Navigation failed:", error);
         } finally {
-          // Reset loading state after a short delay to ensure navigation completes
           setTimeout(() => {
             setNavigating(false);
           }, 1000);
         }
       }
-    }, [notification.leadId, router, isNavigating, setNavigating]);
+    }, [
+      notification.leadId,
+      notification.applicationType,
+      router,
+      isNavigating,
+      setNavigating,
+      closeNotificationPanel,
+    ]);
 
-    const getCategoryIcon = (category: string) => {
-      const categoryIcons = {
-        general: { icon: Bell, color: "text-blue-500", bg: "bg-blue-100" },
-        document: {
-          icon: FileText,
-          color: "text-green-500",
-          bg: "bg-green-100",
-        },
-        "admin message": {
-          icon: MessageSquare,
-          color: "text-purple-500",
-          bg: "bg-purple-100",
-        },
-        "client message": {
-          icon: User,
-          color: "text-orange-500",
-          bg: "bg-orange-100",
-        },
-        "reviewed document": {
-          icon: CheckCircle,
-          color: "text-emerald-500",
-          bg: "bg-emerald-100",
-        },
-      };
-
-      // Handle case-insensitive matching and fallback to general
-      const normalizedCategory = category.toLowerCase();
-      return (
-        categoryIcons[normalizedCategory as keyof typeof categoryIcons] ||
-        categoryIcons.general
-      );
-    };
-
-    const categoryIcon = getCategoryIcon(notification.category);
-    const IconComponent = categoryIcon.icon;
+    const timeAgo = formatDistanceToNow(new Date(notification.createdAt), {
+      addSuffix: false,
+    });
 
     return (
       <div
-        className={`group relative p-4 pb-6 hover:bg-gray-50 transition-colors duration-150 min-h-[80px] ${
-          !notification.isRead
-            ? "bg-blue-50/30 border-l-2 border-l-blue-500"
-            : "bg-white"
-        }`}
+        className={cn(
+          "group relative flex items-start gap-3 px-5 py-3.5 transition-colors duration-100 cursor-default",
+          "hover:bg-gray-50/80",
+          notification.leadId && "cursor-pointer",
+        )}
+        onClick={notification.leadId ? handleLeadNavigation : undefined}
+        onKeyDown={
+          notification.leadId
+            ? (e) => {
+                if (e.key === "Enter" || e.key === " ") handleLeadNavigation();
+              }
+            : undefined
+        }
+        role={notification.leadId ? "button" : undefined}
+        tabIndex={notification.leadId ? 0 : undefined}
       >
-        <div className="flex items-start gap-3">
-          {/* Category icon */}
+        {/* Unread indicator dot */}
+        <div className="shrink-0 pt-1.5">
           <div
-            className={`flex-shrink-0 w-8 h-8 rounded-full ${categoryIcon.bg} flex items-center justify-center mt-1`}
+            className={cn(
+              "h-2 w-2 rounded-full transition-colors",
+              !notification.isRead ? "bg-blue-500" : "bg-transparent",
+            )}
+          />
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <p
+            className={cn(
+              "text-[13px] leading-snug",
+              !notification.isRead
+                ? "text-gray-900 font-medium"
+                : "text-gray-600",
+            )}
           >
-            <IconComponent className={`w-4 h-4 ${categoryIcon.color}`} />
+            {notification.message}
+          </p>
+
+          <div className="mt-1 flex items-center gap-1.5 text-xs text-gray-400">
+            <span className="capitalize">{notification.category}</span>
+            <span>&middot;</span>
+            <span>{timeAgo}</span>
           </div>
+        </div>
 
-          <div className="flex-1 min-w-0">
-            {/* Message */}
-            <p className="text-sm text-gray-900 leading-relaxed mb-1">
-              {notification.message}
-            </p>
-
-            {/* Category and timestamp */}
-            <div className="flex items-center gap-2 text-xs text-gray-500 mb-2">
-              <span className="capitalize font-medium">
-                {notification.category}
-              </span>
-              <span>•</span>
-              <span>
-                {formatDistanceToNow(new Date(notification.createdAt), {
-                  addSuffix: true,
-                })}
-              </span>
-            </div>
-
-            {/* Action buttons */}
-            <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              {!notification.isRead && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 px-2 text-xs text-gray-600 hover:text-green-600 hover:bg-green-50"
-                  onClick={handleMarkAsRead}
-                >
-                  <Check className="h-3 w-3 mr-1" />
-                  Mark Read
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs text-gray-600 hover:text-red-600 hover:bg-red-50"
-                onClick={handleDelete}
-              >
-                <X className="h-3 w-3 mr-1" />
-                Delete
-              </Button>
-            </div>
-          </div>
-
-          {/* Arrow button for lead navigation */}
-          {notification.leadId && (
+        {/* Actions — visible on hover */}
+        <div className="shrink-0 flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          {!notification.isRead && (
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex-shrink-0 disabled:opacity-50"
-              onClick={handleLeadNavigation}
-              disabled={isNavigating}
+              className="h-7 w-7 text-gray-400 hover:text-gray-900 hover:bg-gray-100"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleMarkAsRead();
+              }}
+              aria-label="Mark as read"
             >
-              {isNavigating ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ChevronRight className="h-4 w-4" />
-              )}
+              <Check className="h-3.5 w-3.5" />
             </Button>
           )}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-gray-400 hover:text-red-600 hover:bg-red-50"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleDelete();
+            }}
+            aria-label="Delete notification"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
         </div>
+
+        {/* Navigation arrow */}
+        {notification.leadId && (
+          <div className="shrink-0 flex items-center self-center">
+            {isNavigating ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-gray-400" />
+            ) : (
+              <ChevronRight className="h-3.5 w-3.5 text-gray-300 group-hover:text-gray-500 transition-colors" />
+            )}
+          </div>
+        )}
       </div>
     );
   },
