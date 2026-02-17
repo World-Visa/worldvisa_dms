@@ -112,7 +112,6 @@ export function RequestedDocumentsDataTable({
         ),
         cell: ({ row }) => (
           <div className="flex items-center gap-2 min-w-[120px]">
-            <User className="h-4 w-4 text-gray-400" />
             <span className="text-sm">
               {row.original.requested_review.requested_by}
             </span>
@@ -134,7 +133,6 @@ export function RequestedDocumentsDataTable({
         ),
         cell: ({ row }) => (
           <div className="flex items-center gap-2 min-w-[120px]">
-            <User className="h-4 w-4 text-gray-400" />
             <span className="text-sm">
               {row.original.requested_review.requested_to}
             </span>
@@ -202,19 +200,18 @@ export function RequestedDocumentsDataTable({
           <div className="flex items-center justify-end gap-2 min-w-[80px]">
             {row.original.requested_review.messages &&
               row.original.requested_review.messages.length > 0 && (
-                <div className="flex items-center gap-1 text-xs text-gray-500">
+                <div className="flex items-center gap-1 font-bold text-xs text-blue-500">
                   <MessageSquare className="h-3 w-3" />
                   <span>{row.original.requested_review.messages.length}</span>
                 </div>
               )}
             <Button
-              variant="ghost"
-              size="sm"
+              variant="link"
               onClick={() => onViewDocument?.(row.original)}
-              className="h-8 w-8 p-0"
+              className="p-0"
             >
-              <Eye className="h-4 w-4" />
-              <span className="sr-only">View document</span>
+              <Eye className="h-4 w-4 sm:hidden inline-block" />
+              <span className="hidden sm:inline text-gray-900 cursor-pointer hover:text-gray-800">View</span>
             </Button>
           </div>
         ),

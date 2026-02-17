@@ -2,7 +2,6 @@
 
 import React from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -10,8 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Search, X, RefreshCw } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { useAdminUsers } from "@/hooks/useAdminUsers";
 
 export interface RequestedDocumentsFilters {
   search: string;
@@ -38,6 +36,7 @@ export function RequestedDocumentsFilters({
   totalCount = 0,
   filteredCount = 0,
 }: RequestedDocumentsFiltersProps) {
+  const { data: adminUsers = [], isLoading: isLoadingUsers } = useAdminUsers();
   const hasActiveFilters = Object.values(filters).some((value) => value !== "");
 
   const handleFilterChange = (
@@ -67,7 +66,8 @@ export function RequestedDocumentsFilters({
   return (
     <div className="space-y-4">
       {/* Filters Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="flex justify-end">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Status Filter */}
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
@@ -93,17 +93,25 @@ export function RequestedDocumentsFilters({
           <label className="block text-sm font-medium text-gray-700">
             Requested By
           </label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Enter username..."
-              value={filters.requestedBy}
-              onChange={(e) =>
-                handleFilterChange("requestedBy", e.target.value)
-              }
-              className="h-11 pl-10 pr-4 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+          <Select
+            value={filters.requestedBy || "all"}
+            onValueChange={(v) =>
+              handleFilterChange("requestedBy", v === "all" ? "" : v)
+            }
+            disabled={isLoadingUsers}
+          >
+            <SelectTrigger className="h-11 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <SelectValue placeholder={isLoadingUsers ? "Loading..." : "All users"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All users</SelectItem>
+              {adminUsers.map((u) => (
+                <SelectItem key={u._id} value={u.username}>
+                  {u.username}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
 
         {/* Requested To Filter */}
@@ -111,23 +119,32 @@ export function RequestedDocumentsFilters({
           <label className="block text-sm font-medium text-gray-700">
             Requested To
           </label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Enter username..."
-              value={filters.requestedTo}
-              onChange={(e) =>
-                handleFilterChange("requestedTo", e.target.value)
-              }
-              className="h-11 pl-10 pr-4 border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+          <Select
+            value={filters.requestedTo || "all"}
+            onValueChange={(v) =>
+              handleFilterChange("requestedTo", v === "all" ? "" : v)
+            }
+            disabled={isLoadingUsers}
+          >
+            <SelectTrigger className="h-11 w-full border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+              <SelectValue placeholder={isLoadingUsers ? "Loading..." : "All users"} />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All users</SelectItem>
+              {adminUsers.map((u) => (
+                <SelectItem key={u._id} value={u.username}>
+                  {u.username}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         </div>
       </div>
 
       {/* Actions Row */}
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-600">
+      <div className="flex justify-end items-center">
+        {/* <div className="text-sm text-gray-600">
           {totalCount > 0 && (
             <span className="font-medium">
               {filteredCount > 0
@@ -136,29 +153,16 @@ export function RequestedDocumentsFilters({
               documents
             </span>
           )}
-        </div>
+        </div> */}
 
         <div className="flex gap-2">
-          <Button
-            variant="outline"
-            onClick={onRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-2"
-          >
-            <RefreshCw
-              className={cn("h-4 w-4", isRefreshing && "animate-spin")}
-            />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button>
-
           {hasActiveFilters && (
             <Button
-              variant="outline"
+              variant="link"
               onClick={clearFilters}
-              className="flex items-center gap-2"
+              className="p-0"
             >
-              <X className="h-4 w-4" />
-              <span className="hidden sm:inline">Clear Filters</span>
+              <span className="hidden sm:inline text-gray-600 cursor-pointer hover:text-gray-800">Clear Filters</span>
             </Button>
           )}
         </div>

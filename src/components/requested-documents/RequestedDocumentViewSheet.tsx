@@ -7,7 +7,6 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import {
   User,
@@ -75,11 +74,13 @@ export function RequestedDocumentViewSheet({
     regularApplicationQuery.isLoading || spouseApplicationQuery.isLoading;
   const application = (applicationResponse as ApplicationDetailsResponse)?.data;
 
+  // Always update cache when the document prop changes to ensure the correct
+  // requested_review data is used (same document can have multiple reviews)
   useEffect(() => {
-    if (displayDoc && !currentDoc && document) {
+    if (document) {
       queryClient.setQueryData(["requested-document", document._id], document);
     }
-  }, [displayDoc, currentDoc, document, queryClient]);
+  }, [document, queryClient]);
 
   const [reviewComment, setReviewComment] = useState("");
   const [isReviewing, setIsReviewing] = useState(false);
@@ -174,8 +175,14 @@ export function RequestedDocumentViewSheet({
   if (!displayDoc) return null;
 
   const isRequestedToMe = type === "requested-to-me";
+  const isAssignedToMe =
+    displayDoc.requested_review.requested_to === user?.username;
+  const canReviewAnyAsRole =
+    user?.role === "master_admin" || user?.role === "supervisor";
   const canReview =
-    isRequestedToMe && displayDoc.requested_review.status === "pending";
+    displayDoc.requested_review.status === "pending" &&
+    displayDoc.requested_review.requested_by !== user?.username &&
+    (isAssignedToMe || !!canReviewAnyAsRole);
   const canDelete = !isRequestedToMe;
   const canAccessMessages =
     user?.role &&
@@ -202,158 +209,164 @@ export function RequestedDocumentViewSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent className="w-[95vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[1140px] max-w-[1140px]! p-0 rounded-l-3xl">
-        <div className="flex flex-col h-full">
-          <SheetHeader className="p-4 border-b">
+      <SheetContent className="inset-3! sm:inset-5! lg:inset-7! h-auto! w-auto! max-w-[1140px]! translate-x-0! translate-y-0! mx-auto rounded-2xl border border-border/50 shadow-2xl p-0">
+        <div className="flex flex-col h-full overflow-hidden rounded-2xl">
+          <SheetHeader className="px-6 py-3 border-b border-border/40 shrink-0">
             <SheetTitle className="sr-only">Document Review</SheetTitle>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mx-2 sm:mx-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                <div className="flex items-center space-x-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">
-                    Requested by {displayDoc.requested_review.requested_by}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">
-                    {displayDoc.requested_review.requested_at
-                      ? new Date(
-                          displayDoc.requested_review.requested_at,
-                        ).toLocaleDateString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          timeZone: "UTC",
-                        })
-                      : "Unknown date"}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Clock className="h-4 w-4 text-gray-500" />
-                  <span className="text-sm text-gray-600">
-                    Uploaded on{" "}
-                    {displayDoc.uploaded_at
-                      ? new Date(displayDoc.uploaded_at).toLocaleDateString(
-                          "en-US",
-                          {
+            <div className="flex items-center justify-between gap-4 pr-8">
+              <div className="flex items-center gap-4 min-w-0">
+                <div className="min-w-0">
+                  <p className="text-lg font-bold text-foreground truncate">
+                    {displayDoc.document_name || displayDoc.file_name || "Document request"}
+                  </p>
+                  <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="font-bold">Requested by:</span>
+                      {displayDoc.requested_review.requested_by}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="font-bold">Requested on:</span>
+                      {displayDoc.requested_review.requested_at
+                        ? new Date(
+                            displayDoc.requested_review.requested_at,
+                          ).toLocaleDateString("en-US", {
                             year: "numeric",
                             month: "short",
                             day: "numeric",
                             timeZone: "UTC",
-                          },
-                        )
-                      : "Unknown date"}
-                  </span>
-                </div>
-                {displayDoc.isOverdue && (
-                  <div className="flex items-center gap-1">
-                    <AlertTriangle className="h-4 w-4 text-red-500" />
-                    <span className="text-sm text-red-600 font-medium">
-                      Overdue ({displayDoc.daysSinceRequest} days)
+                          })
+                        : "Unknown date"}
                     </span>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="font-bold">Uploaded on:</span>
+                      {displayDoc.uploaded_at
+                        ? new Date(displayDoc.uploaded_at).toLocaleDateString(
+                            "en-US",
+                            {
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              timeZone: "UTC",
+                            },
+                          )
+                        : "Unknown date"}
+                    </span>
+                    {displayDoc.isOverdue && (
+                      <span className="flex items-center gap-1 text-xs text-destructive font-medium">
+                        <AlertTriangle className="h-3 w-3" />
+                        Overdue ({displayDoc.daysSinceRequest} days)
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
+                {displayDoc?.record_id && (
+                  <Button
+                    onClick={handleViewApplication}
+                    variant="outline"
+                    size="sm"
+                    className="cursor-pointer shrink-0"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View Application
+                  </Button>
+                )}
                 <StatusBadge status={displayDoc.requested_review.status} />
               </div>
             </div>
           </SheetHeader>
 
-          <div
-            className={`flex-1 flex flex-col ${canAccessMessages ? "lg:flex-row" : ""} min-h-0`}
-          >
-            <div className="flex-1 h-full min-h-0 order-1 lg:order-1">
-              <ScrollArea className="h-full">
-                <div className="p-2 sm:p-4 space-y-4">
-                  {displayDoc?.record_id && (
-                    <ApplicationDetailsAccordion
-                      application={application}
-                      isLoading={isApplicationLoading}
-                      isOpen={isAccordionOpen}
-                      onToggle={() => setIsAccordionOpen(!isAccordionOpen)}
-                    />
+          <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+            <div className="flex-1 flex flex-col min-h-0 order-1">
+              <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                {displayDoc?.record_id && (
+                  <ApplicationDetailsAccordion
+                    application={application}
+                    isLoading={isApplicationLoading}
+                    isOpen={isAccordionOpen}
+                    onToggle={() => setIsAccordionOpen(!isAccordionOpen)}
+                  />
+                )}
+
+                <DocumentPreview document={documentForPreview} />
+              </div>
+
+              {isReviewing && (
+                <div className="border-t border-border/40 px-6 py-3 shrink-0 space-y-2">
+                  <textarea
+                    placeholder="Add your review comment..."
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    className="w-full min-h-[80px] p-3 border border-border rounded-md resize-none text-sm bg-background"
+                  />
+                  <Button
+                    onClick={handleMarkAsReviewed}
+                    disabled={
+                      updateStatusMutation.isPending || !reviewComment.trim()
+                    }
+                    className="w-full"
+                  >
+                    {updateStatusMutation.isPending
+                      ? "Marking..."
+                      : "Submit Review"}
+                  </Button>
+                </div>
+              )}
+
+              <div className="border-t border-border/40 px-6 py-3 shrink-0">
+                <div className="flex flex-row gap-2 flex-wrap">
+                  {canReview && !isReviewing && (
+                    <Button
+                      onClick={() => {
+                        setIsReviewing(true);
+                        setIsAccordionOpen(false);
+                      }}
+                      variant="default"
+                      size="sm"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Mark as Reviewed
+                    </Button>
                   )}
 
-                  <DocumentPreview document={documentForPreview} />
+                  {canReview && isReviewing && (
+                    <Button
+                      onClick={() => setIsReviewing(false)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      Cancel Review
+                    </Button>
+                  )}
 
-                  <div className="space-y-2">
-                    <div className="flex flex-row gap-2">
-                      <Button
-                        onClick={handleViewApplication}
-                        variant="outline"
-                        className="flex-1 cursor-pointer"
-                      >
-                        <ExternalLink className="h-4 w-4 mr-2" />
-                        View Application
-                      </Button>
-
-                      {canReview && (
-                        <Button
-                          onClick={() => {
-                            setIsReviewing(!isReviewing);
-                            if (!isReviewing) {
-                              setIsAccordionOpen(false);
-                            }
-                          }}
-                          variant={isReviewing ? "outline" : "default"}
-                          className="flex-1"
-                        >
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          {isReviewing ? "Cancel Review" : "Mark as Reviewed"}
-                        </Button>
-                      )}
-
-                      {canDelete && (
-                        <Button
-                          variant="destructive"
-                          onClick={handleDeleteRequest}
-                          disabled={deleteDocumentMutation.isPending}
-                          className="flex-1"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          {deleteDocumentMutation.isPending
-                            ? "Deleting..."
-                            : "Delete Request"}
-                        </Button>
-                      )}
-                    </div>
-
-                    {isReviewing && (
-                      <div className="space-y-2">
-                        <textarea
-                          placeholder="Add your review comment..."
-                          value={reviewComment}
-                          onChange={(e) => setReviewComment(e.target.value)}
-                          className="w-full min-h-[80px] p-3 border rounded-md resize-none"
-                        />
-                        <Button
-                          onClick={handleMarkAsReviewed}
-                          disabled={
-                            updateStatusMutation.isPending ||
-                            !reviewComment.trim()
-                          }
-                          className="w-full"
-                        >
-                          {updateStatusMutation.isPending
-                            ? "Marking..."
-                            : "Submit Review"}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
+                  {canDelete && (
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={handleDeleteRequest}
+                      disabled={deleteDocumentMutation.isPending}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      {deleteDocumentMutation.isPending
+                        ? "Deleting..."
+                        : "Delete Request"}
+                    </Button>
+                  )}
                 </div>
-              </ScrollArea>
+              </div>
             </div>
 
             {canAccessMessages && (
-              <div className="w-full lg:shrink-0 lg:w-80 xl:w-96 h-[50vh] lg:h-full min-h-0 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
-                <RequestedDocumentMessages
-                  documentId={displayDoc._id}
-                  reviewId={displayDoc.requested_review._id}
-                />
-              </div>
+              <>
+                <div className="hidden lg:block w-px bg-border/40 shrink-0" />
+                <div className="w-full lg:w-[380px] lg:shrink-0 flex flex-col min-h-0 border-t lg:border-t-0 lg:border-l order-2 bg-muted/20 h-[50vh] lg:h-full">
+                  <RequestedDocumentMessages
+                    documentId={displayDoc._id}
+                    reviewId={displayDoc.requested_review._id}
+                  />
+                </div>
+              </>
             )}
           </div>
         </div>

@@ -4,8 +4,7 @@ import React, { memo, useCallback, useState } from "react";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserManagement } from "@/hooks/useUserManagement";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 import { UserTable } from "./UserTable";

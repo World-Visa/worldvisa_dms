@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useMemo } from "react";
+import React, { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
@@ -30,6 +30,30 @@ import {
   isDocumentTypeWithSampleInModal,
 } from "@/lib/documents/metadata";
 import { SampleDocumentModal } from "./SampleDocumentModal";
+
+const ACCEPT_IMAGE = ".jpg,.jpeg,image/jpeg,image/jpg";
+const ACCEPT_DOCUMENTS =
+  ".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain";
+
+function getFileTypeIcon(fileName: string) {
+  const lower = fileName.toLowerCase();
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+    return <File className="h-5 w-5 text-emerald-600 shrink-0" />;
+  }
+  if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
+    return <FileText className="h-5 w-5 text-blue-600 shrink-0" />;
+  }
+  if (lower.endsWith(".txt")) {
+    return <File className="h-5 w-5 text-zinc-500 shrink-0" />;
+  }
+  return (
+    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-100">
+      <span className="text-[10px] font-semibold uppercase text-red-700">
+        PDF
+      </span>
+    </div>
+  );
+}
 
 interface ReuploadDocumentModalProps {
   isOpen: boolean;
@@ -80,6 +104,23 @@ export function ReuploadDocumentModal({
     [finalCategory, finalDocumentType],
   );
 
+  const isIdentityPhotograph = useMemo(() => {
+    const cat =
+      finalCategory === "Identity Documents" || finalCategory === "Identity";
+    const type = finalDocumentType.toLowerCase();
+    return (
+      cat &&
+      (type.includes("photograph") ||
+        type.includes("photo") ||
+        type.includes("picture"))
+    );
+  }, [finalCategory, finalDocumentType]);
+
+  const fileAcceptAttribute = isIdentityPhotograph ? ACCEPT_IMAGE : ACCEPT_DOCUMENTS;
+  const fileHintText = isIdentityPhotograph
+    ? "JPG and JPEG files only • Max 5MB"
+    : "PDF, Word (.doc, .docx), and text (.txt) • Max 5MB";
+
   // Reset state when modal opens/closes
   useEffect(() => {
     if (!isOpen) {
@@ -92,83 +133,76 @@ export function ReuploadDocumentModal({
     }
   }, [isOpen]);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
+  const handleFileSelect = useCallback(
+    (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
 
-    const file = files[0];
-    const fileName = file.name.toLowerCase();
+      const file = files[0];
+      const fileName = file.name.toLowerCase();
 
-    // Check if it's an identity photograph
-    const isIdentityPhotograph =
-      (finalCategory === "Identity Documents" ||
-        finalCategory === "Identity") &&
-      (finalDocumentType.toLowerCase().includes("photograph") ||
-        finalDocumentType.toLowerCase().includes("photo") ||
-        finalDocumentType.toLowerCase().includes("picture"));
+      let allowedExtensions: string[];
+      let allowedMimeTypes: string[];
+      let errorMessage: string;
 
-    let allowedExtensions: string[];
-    let allowedMimeTypes: string[];
-    let errorMessage: string;
+      if (isIdentityPhotograph) {
+        allowedExtensions = [".jpg", ".jpeg"];
+        allowedMimeTypes = ["image/jpeg", "image/jpg"];
+        errorMessage = `${file.name} is not a supported file type. Only JPG and JPEG files are allowed for photographs.`;
+      } else {
+        allowedExtensions = [".pdf", ".doc", ".docx", ".txt"];
+        allowedMimeTypes = [
+          "application/pdf",
+          "application/msword",
+          "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+          "text/plain",
+        ];
+        errorMessage = `${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`;
+      }
 
-    if (isIdentityPhotograph) {
-      // For identity photographs, only allow JPG/JPEG
-      allowedExtensions = [".jpg", ".jpeg"];
-      allowedMimeTypes = ["image/jpeg", "image/jpg"];
-      errorMessage = `${file.name} is not a supported file type. Only JPG and JPEG files are allowed for photographs.`;
-    } else {
-      // For all other documents, allow PDF, Word, and text files
-      allowedExtensions = [".pdf", ".doc", ".docx", ".txt"];
-      allowedMimeTypes = [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "text/plain",
-      ];
-      errorMessage = `${file.name} is not a supported file type. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`;
-    }
+      const hasValidExtension = allowedExtensions.some((ext) =>
+        fileName.endsWith(ext),
+      );
+      const hasValidMimeType = allowedMimeTypes.includes(file.type);
 
-    const hasValidExtension = allowedExtensions.some((ext) =>
-      fileName.endsWith(ext),
-    );
-    const hasValidMimeType = allowedMimeTypes.includes(file.type);
+      if (!hasValidExtension || !hasValidMimeType) {
+        toast.error(errorMessage);
+        return;
+      }
 
-    if (!hasValidExtension || !hasValidMimeType) {
-      toast.error(errorMessage);
-      return;
-    }
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Maximum file size is 5MB.`);
+        return;
+      }
 
-    // Check file size
-    if (file.size > 5 * 1024 * 1024) {
-      // 5MB
-      toast.error(`${file.name} is too large. Maximum file size is 5MB.`);
-      return;
-    }
+      if (file.size === 0) {
+        toast.error(`${file.name} is empty. Please select a valid file.`);
+        return;
+      }
 
-    // Check if file is empty
-    if (file.size === 0) {
-      toast.error(`${file.name} is empty. Please select a valid file.`);
-      return;
-    }
+      const newFile: UploadedFile = {
+        file,
+        progress: 0,
+        id: Math.random().toString(36).substr(2, 9),
+      };
 
-    // Add file to uploaded files list
-    const newFile: UploadedFile = {
-      file,
-      progress: 0,
-      id: Math.random().toString(36).substr(2, 9),
-    };
+      setUploadedFile(newFile);
 
-    setUploadedFile(newFile);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    },
+    [
+      isIdentityPhotograph,
+      finalCategory,
+      finalDocumentType,
+    ],
+  );
 
-    // Reset file input
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const removeFile = () => {
+  const removeFile = useCallback(() => {
     setUploadedFile(null);
-  };
+  }, []);
 
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
@@ -268,229 +302,180 @@ export function ReuploadDocumentModal({
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onClose}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-orange-500" />
-              Reupload Document
+        <DialogContent
+          className="flex h-auto max-h-[85vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-lg rounded-2xl"
+          showCloseButton={true}
+        >
+          {/* Fixed header — Airbnb-style */}
+          <DialogHeader className="shrink-0 border-b border-border/80 bg-muted/30 px-6 pr-12 py-4">
+            <DialogTitle className="flex items-center gap-2.5 font-semibold tracking-tight text-foreground">
+              Reupload document
             </DialogTitle>
           </DialogHeader>
 
-          {/* Instruction Note */}
-          {instruction && instruction.trim() && (
-            <div className="text-xs text-blue-600 bg-blue-50 px-3 py-2 rounded border border-blue-200">
-              <strong>Note:</strong> {instruction}
-            </div>
-          )}
-
-          <div className="space-y-4">
-            {/* Current Document Info */}
-            <div className="p-3 bg-gray-50 rounded-lg">
-              <div className="text-sm text-gray-600">
-                <strong>Replacing:</strong> {displayDocument.file_name}
+          {/* Scrollable content only */}
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-4">
+            {instruction?.trim() ? (
+              <div className="mb-4 rounded-lg border border-sky-200/80 bg-sky-50/80 px-3 py-2.5 text-xs text-sky-800 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200">
+                <strong>Note:</strong> {instruction}
               </div>
-              <div className="text-sm text-gray-600">
-                <strong>Document Type:</strong> {finalDocumentType}
-              </div>
-              <div className="text-sm text-gray-600">
-                <strong>Category:</strong> {finalCategory}
-              </div>
-              {displayDocument.reject_message && (
-                <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded text-xs text-red-700">
-                  <strong>Rejection Reason:</strong>{" "}
-                  {displayDocument.reject_message}
-                </div>
-              )}
-              {isDocumentTypeWithSampleInModal(
-                finalDocumentType,
-                finalCategory,
-              ) && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="mt-2 gap-1.5"
-                  onClick={() => setSampleModalOpen(true)}
-                >
-                  <FileCheck className="h-4 w-4" />
-                  View sample
-                </Button>
-              )}
-            </div>
+            ) : null}
 
-            {documentMeta?.importantNote && (
-              <Alert className="border-red-200 bg-red-50 text-red-600">
-                <AlertCircle className="h-5 w-5" />
-                <AlertDescription className="space-y-1">
-                  <p className="text-sm font-medium uppercase tracking-wide">
-                    Important
-                  </p>
-                  <p className="text-sm font-bold whitespace-pre-line">
-                    {documentMeta.importantNote}
-                  </p>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* File Upload Area */}
             <div className="space-y-4">
-              <div className="text-sm font-medium">
-                Select new file to replace the rejected document:
-              </div>
-
-              <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  isUploading
-                    ? "border-muted-foreground/25 bg-muted/25 cursor-not-allowed"
-                    : "border-primary bg-primary/5 hover:bg-primary/10 cursor-pointer"
-                }`}
-                onClick={() => !isUploading && fileInputRef.current?.click()}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-              >
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept={(() => {
-                    const isIdentityPhotograph =
-                      (finalCategory === "Identity Documents" ||
-                        finalCategory === "Identity") &&
-                      (finalDocumentType.toLowerCase().includes("photograph") ||
-                        finalDocumentType.toLowerCase().includes("photo") ||
-                        finalDocumentType.toLowerCase().includes("picture"));
-
-                    if (isIdentityPhotograph) {
-                      return ".jpg,.jpeg,image/jpeg,image/jpg";
-                    } else {
-                      return ".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain";
-                    }
-                  })()}
-                  onChange={handleFileSelect}
-                  className="hidden"
-                  disabled={isUploading}
-                />
-
-                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-sm text-gray-600 mb-2">
-                  {isUploading
-                    ? "Uploading file..."
-                    : "Drop your file here, or click to browse"}
+              {/* Current document card */}
+              <section className="rounded-xl border border-border/80 bg-muted/20 p-4 shadow-sm">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Replacing
                 </p>
-                <p className="text-xs text-gray-500">
-                  {(() => {
-                    const isIdentityPhotograph =
-                      (finalCategory === "Identity Documents" ||
-                        finalCategory === "Identity") &&
-                      (finalDocumentType.toLowerCase().includes("photograph") ||
-                        finalDocumentType.toLowerCase().includes("photo") ||
-                        finalDocumentType.toLowerCase().includes("picture"));
-
-                    if (isIdentityPhotograph) {
-                      return (
-                        <>
-                          <strong>JPG and JPEG files only</strong> • Max file
-                          size 5MB
-                        </>
-                      );
-                    } else {
-                      return (
-                        <>
-                          <strong>
-                            PDF, Word (.doc, .docx), and text (.txt) files
-                          </strong>{" "}
-                          • Max file size 5MB
-                        </>
-                      );
-                    }
-                  })()}
+                <p className="mt-1 truncate font-medium text-foreground">
+                  {displayDocument.file_name}
                 </p>
-              </div>
+                <dl className="mt-3 space-y-1 text-sm text-muted-foreground">
+                  <div>
+                    <span className="font-medium text-foreground">Type:</span>{" "}
+                    {finalDocumentType}
+                  </div>
+                  <div>
+                    <span className="font-medium text-foreground">Category:</span>{" "}
+                    {finalCategory}
+                  </div>
+                </dl>
+                {displayDocument.reject_message ? (
+                  <div className="mt-3 rounded-lg border border-red-200/80 bg-red-50/80 p-2.5 text-xs text-red-800 dark:border-red-900 dark:bg-red-950/40 dark:text-red-200">
+                    <strong>Rejection reason:</strong>{" "}
+                    {displayDocument.reject_message}
+                  </div>
+                ) : null}
+                {isDocumentTypeWithSampleInModal(
+                  finalDocumentType,
+                  finalCategory,
+                ) ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-3 gap-1.5"
+                    onClick={() => setSampleModalOpen(true)}
+                  >
+                    <FileCheck className="h-4 w-4" />
+                    View sample
+                  </Button>
+                ) : null}
+              </section>
 
-              {/* Uploaded File Display */}
-              {uploadedFile && (
-                <div className="space-y-3">
-                  <label className="text-sm font-medium">File to Upload</label>
+              {documentMeta?.importantNote ? (
+                <Alert className="border-amber-200/80 bg-amber-50/80 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-100">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide">
+                      Important
+                    </p>
+                    <p className="whitespace-pre-line text-sm font-medium">
+                      {documentMeta.importantNote}
+                    </p>
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+
+              {/* Upload zone */}
+              <section className="space-y-3">
+                <p className="text-sm font-medium text-foreground">
+                  Select new file to replace the rejected document
+                </p>
+                <div
+                  className={
+                    isUploading
+                      ? "cursor-not-allowed rounded-xl border-2 border-dashed border-muted-foreground/20 bg-muted/20 p-8 text-center transition-colors"
+                      : "cursor-pointer rounded-xl border-2 border-dashed border-amber-400/50 bg-amber-500/5 p-8 text-center transition-colors hover:border-amber-500/70 hover:bg-amber-500/10"
+                  }
+                  onClick={() =>
+                    !isUploading && fileInputRef.current?.click()
+                  }
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                >
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept={fileAcceptAttribute}
+                    onChange={handleFileSelect}
+                    className="hidden"
+                    disabled={isUploading}
+                    aria-label="Choose file to reupload"
+                  />
+                  <Upload className="mx-auto mb-3 h-10 w-10 text-amber-600/80" />
+                  <p className="text-sm font-medium text-foreground">
+                    {isUploading
+                      ? "Uploading…"
+                      : "Drop your file here or click to browse"}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {fileHintText}
+                  </p>
+                </div>
+
+                {uploadedFile ? (
                   <div className="space-y-2">
-                    <div className="flex items-center gap-3 p-3 border rounded-lg">
-                      {(() => {
-                        const fileName = uploadedFile.file.name.toLowerCase();
-
-                        if (
-                          fileName.endsWith(".jpg") ||
-                          fileName.endsWith(".jpeg")
-                        ) {
-                          return (
-                            <File className="h-5 w-5 text-green-600 shrink-0" />
-                          );
-                        } else if (
-                          fileName.endsWith(".doc") ||
-                          fileName.endsWith(".docx")
-                        ) {
-                          return (
-                            <FileText className="h-5 w-5 text-blue-600 shrink-0" />
-                          );
-                        } else if (fileName.endsWith(".txt")) {
-                          return (
-                            <File className="h-5 w-5 text-gray-600 shrink-0" />
-                          );
-                        } else {
-                          return (
-                            <div className="w-5 h-5 bg-red-100 rounded flex items-center justify-center">
-                              <span className="text-xs text-red-600 font-medium">
-                                PDF
-                              </span>
-                            </div>
-                          );
-                        }
-                      })()}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium truncate">
-                          {uploadedFile.file.name.length > 15
-                            ? `${uploadedFile.file.name.substring(0, 15)}...`
-                            : uploadedFile.file.name}
+                    <p className="text-sm font-medium text-foreground">
+                      File to upload
+                    </p>
+                    <div className="flex items-center gap-3 rounded-lg border border-border/80 bg-muted/10 p-3">
+                      {getFileTypeIcon(uploadedFile.file.name)}
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-sm font-medium">
+                          {uploadedFile.file.name}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB
+                          {(uploadedFile.file.size / 1024 / 1024).toFixed(2)}{" "}
+                          MB
                         </p>
-                        {isUploading && (
+                        {isUploading ? (
                           <div className="mt-2">
                             <Progress
                               value={uploadedFile.progress}
-                              className="h-2"
+                              className="h-1.5"
                             />
-                            <p className="text-xs text-muted-foreground mt-1">
+                            <p className="mt-0.5 text-xs text-muted-foreground">
                               {uploadedFile.progress}%
                             </p>
                           </div>
-                        )}
+                        ) : null}
                       </div>
-                      {!isUploading && (
+                      {!isUploading ? (
                         <Button
+                          type="button"
                           variant="ghost"
-                          size="sm"
+                          size="icon"
+                          className="h-8 w-8 shrink-0"
                           onClick={removeFile}
-                          className="h-8 w-8 p-0"
+                          aria-label="Remove file"
                         >
                           <X className="h-4 w-4" />
                         </Button>
-                      )}
+                      ) : null}
                     </div>
                   </div>
-                </div>
-              )}
+                ) : null}
+              </section>
             </div>
           </div>
 
-          <DialogFooter className="flex gap-2">
-            <Button variant="outline" onClick={onClose} disabled={isUploading}>
+          {/* Fixed footer — Airbnb-style */}
+          <DialogFooter className="shrink-0 flex-row gap-2 border-t border-border/80 bg-muted/20 px-6 py-4">
+            <Button
+              variant="outline"
+              onClick={onClose}
+              disabled={isUploading}
+              className="min-w-18"
+            >
               Cancel
             </Button>
             <Button
               onClick={handleReupload}
               disabled={!uploadedFile || isUploading}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
+              className="min-w-32 bg-amber-600 text-white hover:bg-amber-700 focus-visible:ring-amber-500/30"
             >
-              {isUploading ? "Reuploading..." : "Reupload Document"}
+              {isUploading ? "Reuploading…" : "Reupload document"}
             </Button>
           </DialogFooter>
         </DialogContent>

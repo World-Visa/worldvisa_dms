@@ -72,18 +72,18 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
 
   return (
     <>
-      <div className="absolute bottom-4 right-2 sm:bottom-1 sm:right-4 flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+      <div className="flex items-center gap-2">
         {!isAdmin && (
           <Button
             variant="default"
             size="sm"
             onClick={handleApprove}
             disabled={disabled || isUpdating || currentStatus === "approved"}
-            className={`${
+            className={`h-8 text-xs font-medium cursor-pointer ${
               currentStatus === "approved"
-                ? "bg-green-800 text-white cursor-default"
-                : "bg-green-700 text-white hover:bg-green-600 cursor-pointer"
-            } disabled:opacity-50 disabled:cursor-not-allowed`}
+                ? "bg-green-700 text-white"
+                : "bg-green-600 text-white hover:bg-green-700"
+            }`}
           >
             {updatingStatus === "approved"
               ? "Updating..."
@@ -97,11 +97,11 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
           size="sm"
           onClick={handleReject}
           disabled={disabled || isUpdating || currentStatus === "rejected"}
-          className={`${
+          className={`h-8 text-xs font-medium cursor-pointer ${
             currentStatus === "rejected"
-              ? "bg-red-800 text-white cursor-default"
-              : "cursor-pointer"
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
+              ? "bg-red-700 text-white"
+              : "bg-red-600 text-white hover:bg-red-700"
+          }`}
         >
           {updatingStatus === "rejected"
             ? "Updating..."
@@ -110,15 +110,15 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
               : "Reject"}
         </Button>
         <Button
-          variant="outline"
+          variant="default"
           size="sm"
           onClick={handleReviewed}
           disabled={disabled || isUpdating || currentStatus === "reviewed"}
-          className={`${
+          className={`h-8 text-xs font-medium cursor-pointer ${
             currentStatus === "reviewed"
-              ? "bg-blue-600 text-white border-blue-600 cursor-default"
-              : "bg-white border-blue-500 text-blue-600 hover:bg-blue-50 cursor-pointer"
-          } disabled:opacity-50 disabled:cursor-not-allowed`}
+              ? "bg-blue-700 text-white border-blue-700"
+              : "bg-blue-600 text-white hover:bg-blue-700"
+          }`}
         >
           {updatingStatus === "reviewed"
             ? "Updating..."

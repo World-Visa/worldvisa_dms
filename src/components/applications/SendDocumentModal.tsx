@@ -10,13 +10,26 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Loader2, FileText, Users, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import {
+  Send,
+  Loader2,
+  FileText,
+  Users,
+  AlertCircle,
+  MessageSquare,
+} from "lucide-react";
 import { Document } from "@/types/applications";
 import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { useReviewRequest } from "@/hooks/useReviewRequest";
+import { useMyRequestedDocuments } from "@/hooks/useRequestedDocuments";
+import { sendRequestedDocumentMessage } from "@/lib/api/requestedDocumentMessages";
+import { updateDocumentStatus } from "@/lib/api/requestedDocumentActions";
 import { useAuth } from "@/hooks/useAuth";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 interface SendDocumentModalProps {
   documents: Document[];
@@ -26,25 +39,53 @@ interface SendDocumentModalProps {
     notes: string,
     sendToUsers: string[],
   ) => void;
-  applicationId?: string; // Add applicationId for review requests
+  applicationId?: string;
 }
 
 export function SendDocumentModal({
-  documents,
   selectedDocument,
   onSend,
 }: SendDocumentModalProps) {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const {
     data: adminUsers,
     isLoading: isLoadingAdmins,
     error: adminError,
   } = useAdminUsers();
 
-  // Review request mutation
+  // Always fetch user's requested documents to detect existing reviews (any status)
+  const { data: myRequestedDocs } = useMyRequestedDocuments({});
+
+  // Find ALL existing reviews for this document (both pending and reviewed)
+  const existingReviews = useMemo(() => {
+    if (!myRequestedDocs?.data) return [];
+    return myRequestedDocs.data.filter(
+      (doc) => doc._id === selectedDocument._id,
+    );
+  }, [selectedDocument._id, myRequestedDocs?.data]);
+
+  // Build a map of existing reviews keyed by requested_to username
+  const existingReviewsByAdmin = useMemo(() => {
+    const map = new Map<string, (typeof existingReviews)[number]>();
+    for (const review of existingReviews) {
+      map.set(review.requested_review.requested_to, review);
+    }
+    return map;
+  }, [existingReviews]);
+
+  // "Update mode" = there's a PENDING existing review (simplified note-only UI)
+  const pendingReview = useMemo(
+    () =>
+      existingReviews.find(
+        (doc) => doc.requested_review.status === "pending",
+      ) ?? null,
+    [existingReviews],
+  );
+  const isUpdateMode = !!pendingReview;
+
   const reviewRequestMutation = useReviewRequest({
     onSuccess: (documentIds, requestedTo) => {
-      // Call the original onSend callback if provided
       onSend?.(documentIds, notes, requestedTo);
     },
     onError: (error) => {
@@ -54,16 +95,12 @@ export function SendDocumentModal({
 
   const [isOpen, setIsOpen] = useState(false);
   const [notes, setNotes] = useState("");
-  const [selectedDocuments, setSelectedDocuments] = useState<string[]>([
-    selectedDocument._id,
-  ]);
   const [selectedAdmins, setSelectedAdmins] = useState<string[]>([]);
+  const [isSendingUpdate, setIsSendingUpdate] = useState(false);
 
-  // Memoize admin options for performance - role-based filtering
   const adminOptions: MultiSelectOption[] = useMemo(() => {
     if (!adminUsers || !user?.role) return [];
 
-    // Define role-based permissions
     const getRolePermissions = (userRole: string) => {
       switch (userRole) {
         case "admin":
@@ -84,7 +121,8 @@ export function SendDocumentModal({
     return adminUsers
       .filter(
         (admin) =>
-          allowedRoles.includes(admin.role) && admin.username !== user.username, // Exclude current user
+          allowedRoles.includes(admin.role) &&
+          admin.username !== user.username,
       )
       .map((admin) => ({
         value: admin.username,
@@ -93,280 +131,323 @@ export function SendDocumentModal({
       }));
   }, [adminUsers, user?.role, user?.username]);
 
-  const handleDocumentToggle = (documentId: string) => {
-    setSelectedDocuments((prev) =>
-      prev.includes(documentId)
-        ? prev.filter((id) => id !== documentId)
-        : [...prev, documentId],
-    );
+  const invalidateReviewCaches = () => {
+    const keys = [
+      ["requested-documents-to-me"],
+      ["my-requested-documents"],
+      ["all-requested-documents"],
+      ["application-documents"],
+      ["application-documents-paginated"],
+      ["application-details"],
+    ];
+    for (const key of keys) {
+      queryClient.invalidateQueries({ queryKey: key });
+    }
   };
 
   const handleSend = async () => {
-    // Comprehensive input validation
     if (!user?.username) {
       toast.error("You must be logged in to send review requests.");
       return;
     }
 
-    if (selectedDocuments.length === 0) {
-      toast.error("Please select at least one document to send for review.");
+    if (isUpdateMode && pendingReview) {
+      // Update mode: send message to existing pending review
+      if (!notes.trim()) {
+        toast.error("Please add a note to update the review request.");
+        return;
+      }
+
+      if (notes.length > 500) {
+        toast.error("Note is too long. Please keep it under 500 characters.");
+        return;
+      }
+
+      setIsSendingUpdate(true);
+      try {
+        await sendRequestedDocumentMessage(
+          pendingReview._id,
+          pendingReview.requested_review._id,
+          { message: notes.trim() },
+        );
+
+        invalidateReviewCaches();
+        toast.success("Note added to existing review request.");
+        setIsOpen(false);
+        setNotes("");
+        onSend?.([selectedDocument._id], notes, []);
+      } catch (error) {
+        console.error("Failed to send update message:", error);
+        toast.error("Failed to add note. Please try again.");
+      } finally {
+        setIsSendingUpdate(false);
+      }
       return;
     }
 
+    // Normal send mode (with admin selection)
     if (selectedAdmins.length === 0) {
-      toast.error("Please select at least one admin to send the documents to.");
-      return;
-    }
-
-    // Validate document IDs
-    const invalidDocuments = selectedDocuments.filter(
-      (id) => !id || typeof id !== "string",
-    );
-    if (invalidDocuments.length > 0) {
       toast.error(
-        "Some selected documents have invalid IDs. Please refresh and try again.",
+        "Please select at least one admin to send the document to.",
       );
       return;
     }
 
-    // Validate admin usernames
-    const invalidAdmins = selectedAdmins.filter(
-      (admin) => !admin || typeof admin !== "string",
-    );
-    if (invalidAdmins.length > 0) {
-      toast.error(
-        "Some selected admins have invalid usernames. Please refresh and try again.",
-      );
-      return;
-    }
-
-    // Check for duplicate selections
-    const uniqueDocuments = [...new Set(selectedDocuments)];
     const uniqueAdmins = [...new Set(selectedAdmins)];
-
-    if (uniqueDocuments.length !== selectedDocuments.length) {
-      toast.error(
-        "Duplicate documents detected. Please refresh and try again.",
-      );
-      return;
-    }
-
-    if (uniqueAdmins.length !== selectedAdmins.length) {
-      toast.error("Duplicate admins detected. Please refresh and try again.");
-      return;
-    }
-
-    // Validate message length
     const message =
-      notes.trim() || "Please review these documents for verification.";
+      notes.trim() || "Please review this document for verification.";
+
     if (message.length > 500) {
       toast.error("Message is too long. Please keep it under 500 characters.");
       return;
     }
 
+    // Split admins into those with existing reviews vs new
+    const adminsToUpdate: Array<{
+      admin: string;
+      review: (typeof existingReviews)[number];
+    }> = [];
+    const adminsToCreate: string[] = [];
+
+    for (const admin of uniqueAdmins) {
+      const existingReview = existingReviewsByAdmin.get(admin);
+      if (existingReview) {
+        adminsToUpdate.push({ admin, review: existingReview });
+      } else {
+        adminsToCreate.push(admin);
+      }
+    }
+
+    setIsSendingUpdate(true);
     try {
-      // Use the review request mutation
-      await reviewRequestMutation.mutateAsync({
-        documentIds: uniqueDocuments,
-        requestedTo: uniqueAdmins,
-        message,
-        requestedBy: user.username,
+      // Update existing reviews: set status back to pending + send message
+      const updatePromises = adminsToUpdate.map(async ({ review }) => {
+        await updateDocumentStatus(selectedDocument._id, {
+          reviewId: review.requested_review._id,
+          requested_by: review.requested_review.requested_by,
+          requested_to: review.requested_review.requested_to,
+          message,
+          status: "pending",
+        });
+        await sendRequestedDocumentMessage(
+          review._id,
+          review.requested_review._id,
+          { message },
+        );
       });
 
-      // Reset form state
+      await Promise.all(updatePromises);
+
+      // Create new review requests for admins without existing reviews
+      if (adminsToCreate.length > 0) {
+        await reviewRequestMutation.mutateAsync({
+          documentIds: [selectedDocument._id],
+          requestedTo: adminsToCreate,
+          message,
+          requestedBy: user.username,
+        });
+      }
+
+      if (adminsToUpdate.length > 0) {
+        invalidateReviewCaches();
+        const updatedNames = adminsToUpdate.map((a) => a.admin).join(", ");
+        if (adminsToCreate.length > 0) {
+          toast.success(
+            `Review updated for ${updatedNames} and new request sent to ${adminsToCreate.join(", ")}.`,
+          );
+        } else {
+          toast.success(
+            `Review request re-sent to ${updatedNames} with status set back to pending.`,
+          );
+        }
+      }
+
       setIsOpen(false);
       setNotes("");
-      setSelectedDocuments([selectedDocument._id]);
       setSelectedAdmins([]);
+      onSend?.(
+        [selectedDocument._id],
+        notes,
+        uniqueAdmins,
+      );
     } catch (error) {
-      // Error handling is done in the mutation hook
       console.error("Failed to send review requests:", error);
+      toast.error("Failed to send review requests. Please try again.");
+    } finally {
+      setIsSendingUpdate(false);
     }
   };
 
-  const selectedCount = selectedDocuments.length;
-  const isSubmitting = reviewRequestMutation.isPending;
-
-  // Enhanced validation states
-  const hasValidSelection = selectedCount > 0 && selectedAdmins.length > 0;
-  const isFormValid = hasValidSelection && !!user?.username && !isSubmitting;
+  const isSubmitting = reviewRequestMutation.isPending || isSendingUpdate;
+  const isFormValid = isUpdateMode
+    ? !!notes.trim() && !!user?.username && !isSubmitting
+    : selectedAdmins.length > 0 && !!user?.username && !isSubmitting;
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-blue-600 cursor-pointer hover:bg-blue-700 w-full sm:w-auto">
-          <Send className="h-4 w-4 mr-2" />
-          Send for verification
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 cursor-pointer h-8 text-xs font-medium"
+        >
+          <Send className="h-3.5 w-3.5" />
+          <span className="hidden sm:inline">
+            {isUpdateMode ? "Update Note" : "Send for verification"}
+          </span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] mx-4 flex flex-col">
-        <DialogHeader className="pb-4 flex-shrink-0">
-          <DialogTitle className="text-lg font-semibold">
-            Send Documents for Verification
+      <DialogContent className="max-w-lg rounded-2xl border border-border/50 p-0 gap-0">
+        <DialogHeader className="px-6 pt-6 pb-4">
+          <DialogTitle className="text-sm font-medium text-foreground">
+            {isUpdateMode ? "Update Review Note" : "Send for Verification"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4 flex-1 overflow-y-auto pr-2">
-          {/* Document Selection */}
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium text-gray-900">
-              Select Documents ({selectedCount} selected)
-            </h3>
-            <div className="space-y-2 max-h-48 overflow-y-auto border rounded-lg p-2 sm:p-3">
-              {documents.map((document) => (
-                <div
-                  key={document._id}
-                  className={`flex items-center space-x-2 sm:space-x-3 p-2 sm:p-3 rounded-lg border cursor-pointer transition-colors ${
-                    selectedDocuments.includes(document._id)
-                      ? "bg-blue-50 border-blue-200"
-                      : "bg-white border-gray-200 hover:bg-gray-50"
-                  }`}
-                  onClick={() =>
-                    !isSubmitting && handleDocumentToggle(document._id)
-                  }
+        <div className="px-6 pb-6 space-y-4">
+          {/* Document info card */}
+          <div className="rounded-xl border border-border/40 px-4 py-3">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-muted">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-foreground truncate">
+                  {selectedDocument.file_name}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  Uploaded by {selectedDocument.uploaded_by}
+                </p>
+              </div>
+              {isUpdateMode && (
+                <Badge
+                  variant="outline"
+                  className="shrink-0 text-xs bg-yellow-50 text-yellow-700 border-yellow-200 gap-1"
                 >
-                  <input
-                    type="checkbox"
-                    checked={selectedDocuments.includes(document._id)}
-                    onChange={() => handleDocumentToggle(document._id)}
-                    disabled={isSubmitting}
-                    className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500 flex-shrink-0 disabled:opacity-50"
-                  />
-                  <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 flex-shrink-0" />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs sm:text-sm font-medium text-gray-900 truncate">
-                      {document.file_name?.slice(0, 15)}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      Uploaded by {document.uploaded_by} •{" "}
-                      {new Date(document.uploaded_at).toLocaleDateString()}
-                    </p>
-                  </div>
-                  {document._id === selectedDocument._id && (
-                    <span className="text-xs bg-blue-100 text-blue-800 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full flex-shrink-0">
-                      Current
-                    </span>
-                  )}
-                </div>
-              ))}
+                  <MessageSquare className="h-3 w-3" />
+                  In Review
+                </Badge>
+              )}
             </div>
           </div>
 
-          {/* Send To Section */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-gray-600" />
-              <h3 className="text-sm font-medium text-gray-900">
-                Send to Admins *
-              </h3>
+          {/* Update mode info */}
+          {isUpdateMode && (
+            <div className="flex items-start gap-2 text-xs text-muted-foreground bg-muted/50 rounded-xl px-4 py-3">
+              <AlertCircle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+              <span>
+                This document already has a pending review request. Add a note
+                to update the reviewer.
+              </span>
             </div>
+          )}
 
-            {!user?.username ? (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                <div className="text-sm text-red-700">
-                  You must be logged in to send review requests.
-                </div>
+          {/* Admin selection - only for new requests */}
+          {!isUpdateMode && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Users className="h-3.5 w-3.5 text-muted-foreground" />
+                <label className="text-xs font-medium text-foreground">
+                  Send to
+                </label>
               </div>
-            ) : adminError ? (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                <div className="text-sm text-red-700">
-                  Failed to load admin users. Please refresh and try again.
-                </div>
-              </div>
-            ) : adminOptions.length === 0 && !isLoadingAdmins ? (
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-yellow-500 flex-shrink-0" />
-                <div className="text-sm text-yellow-700">
-                  No admin users available. Please contact support.
-                </div>
-              </div>
-            ) : (
-              <MultiSelect
-                options={adminOptions}
-                value={selectedAdmins}
-                onChange={setSelectedAdmins}
-                placeholder="Select admins to send documents to..."
-                loading={isLoadingAdmins}
-                disabled={isLoadingAdmins || isSubmitting}
-                maxSelections={10}
-                className="w-full"
-              />
-            )}
 
-            {selectedAdmins.length > 0 && (
-              <div className="text-xs text-gray-500">
-                {selectedAdmins.length} admin
-                {selectedAdmins.length !== 1 ? "s" : ""} selected
-              </div>
-            )}
-          </div>
+              {!user?.username ? (
+                <div className="flex items-center gap-2 px-4 py-3 bg-destructive/5 border border-destructive/15 rounded-xl">
+                  <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                  <span className="text-xs text-destructive">
+                    You must be logged in to send review requests.
+                  </span>
+                </div>
+              ) : adminError ? (
+                <div className="flex items-center gap-2 px-4 py-3 bg-destructive/5 border border-destructive/15 rounded-xl">
+                  <AlertCircle className="h-3.5 w-3.5 text-destructive shrink-0" />
+                  <span className="text-xs text-destructive">
+                    Failed to load admin users. Please refresh.
+                  </span>
+                </div>
+              ) : adminOptions.length === 0 && !isLoadingAdmins ? (
+                <div className="flex items-center gap-2 px-4 py-3 bg-muted/50 rounded-xl">
+                  <AlertCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                  <span className="text-xs text-muted-foreground">
+                    No admin users available.
+                  </span>
+                </div>
+              ) : (
+                <MultiSelect
+                  options={adminOptions}
+                  value={selectedAdmins}
+                  onChange={setSelectedAdmins}
+                  placeholder="Select admins..."
+                  loading={isLoadingAdmins}
+                  disabled={isLoadingAdmins || isSubmitting}
+                  maxSelections={10}
+                  className="w-full"
+                />
+              )}
+            </div>
+          )}
 
-          {/* Notes Section */}
-          <div className="space-y-4">
-            <label
-              htmlFor="notes"
-              className="text-sm font-medium text-gray-900"
-            >
-              Notes (Optional)
+          {/* Notes */}
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-foreground">
+              {isUpdateMode ? "Note *" : "Note (optional)"}
             </label>
             <Textarea
-              id="notes"
-              placeholder="Add any notes or instructions for verification..."
+              placeholder={
+                isUpdateMode
+                  ? "Add a note for the reviewer..."
+                  : "Add instructions for verification..."
+              }
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               disabled={isSubmitting}
-              className="mt-1 min-h-[80px] sm:min-h-[100px] border border-gray-300 resize-none text-sm disabled:opacity-50"
+              className="min-h-[80px] max-h-[120px] resize-none rounded-xl border-border/60 bg-muted/30 text-sm placeholder:text-muted-foreground/60 focus-visible:ring-1 focus-visible:ring-ring/30"
               maxLength={500}
+              rows={3}
             />
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
-              <span className="text-xs text-gray-500">
-                {notes.length}/500 characters
-              </span>
-              <div className="flex flex-col sm:flex-row gap-2 text-xs text-gray-500">
-                <span>
-                  {selectedCount} document{selectedCount !== 1 ? "s" : ""}{" "}
-                  selected
-                </span>
-                <span>
-                  {selectedAdmins.length} admin
-                  {selectedAdmins.length !== 1 ? "s" : ""} selected
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Action Buttons - Fixed at bottom */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t bg-white flex-shrink-0">
-          <Button
-            variant="outline"
-            onClick={() => setIsOpen(false)}
-            disabled={isSubmitting}
-            className="w-full sm:w-auto"
-          >
-            Cancel
-          </Button>
-          <Button
-            onClick={handleSend}
-            disabled={!isFormValid}
-            className="cursor-pointer bg-blue-600 hover:bg-blue-700 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Sending Review Requests...
-              </>
-            ) : (
-              <>
-                <Send className="h-4 w-4 mr-2" />
-                Send {selectedCount} Document{selectedCount !== 1 ? "s" : ""} to{" "}
-                {selectedAdmins.length} Admin
-                {selectedAdmins.length !== 1 ? "s" : ""}
-              </>
+            {notes.length > 400 && (
+              <p className="text-[11px] text-muted-foreground">
+                {500 - notes.length} characters remaining
+              </p>
             )}
-          </Button>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center justify-end gap-2 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsOpen(false)}
+              disabled={isSubmitting}
+              className="h-8 text-xs cursor-pointer"
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSend}
+              disabled={!isFormValid}
+              size="sm"
+              className={cn(
+                "h-8 text-xs gap-2 cursor-pointer",
+                "bg-foreground text-background hover:bg-foreground/90",
+              )}
+            >
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Sending...
+                </>
+              ) : (
+                <>
+                  <Send className="h-3.5 w-3.5" />
+                  {isUpdateMode
+                    ? "Add Note"
+                    : `Send to ${selectedAdmins.length || 0} admin${selectedAdmins.length !== 1 ? "s" : ""}`}
+                </>
+              )}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

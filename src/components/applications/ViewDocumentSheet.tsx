@@ -54,7 +54,6 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   documentType,
   category,
 }) => {
-  // Ensure document type and category are not empty - use fallback if needed
   const finalDocumentType =
     documentType || document.document_type || "Document";
   const finalCategory =
@@ -66,11 +65,8 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     currentDocumentIndex >= 0 ? currentDocumentIndex : 0,
   );
 
-  // Use the custom hook to get real-time document data for the currently selected document
   const selectedDocument = documents[selectedIndex] || documents[0];
   const { document: currentDoc } = useDocumentData(selectedDocument?._id);
-
-  // Use the real-time data if available, otherwise fallback to the selected document
   const displayDoc = currentDoc || selectedDocument;
 
   const queryClient = useQueryClient();
@@ -99,9 +95,10 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     finalDocumentType,
   ]);
 
-  // Ensure the document is cached for real-time updates
   useEffect(() => {
-    if (selectedDocument && !currentDoc) {
+    if (!selectedDocument) return;
+
+    if (!currentDoc || currentDoc.status !== selectedDocument.status) {
       queryClient.setQueryData(
         ["document", selectedDocument._id],
         selectedDocument,
@@ -109,7 +106,6 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     }
   }, [selectedDocument, currentDoc, queryClient]);
 
-  // Update selectedIndex when documents array changes (e.g., when a document is deleted)
   useEffect(() => {
     const newIndex = documents.findIndex((doc) => doc._id === document._id);
     if (newIndex >= 0) {
@@ -117,7 +113,6 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     } else if (documents.length > 0) {
       setSelectedIndex(0);
     } else {
-      // If no documents left and this document was deleted, close the sheet
       if (onClose) {
         onClose();
       }
@@ -133,7 +128,6 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     if (canGoNext) setSelectedIndex((i) => i + 1);
   };
 
-  // Optional keyboard navigation when sheet is open
   useEffect(() => {
     if (!isOpen || documents.length <= 1) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -156,156 +150,139 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   }
 
   return (
-    <div className="w-full ">
+    <div className="w-full">
       <Sheet open={isOpen} onOpenChange={onClose}>
         <SheetTrigger asChild>
           <Button variant="link" size="sm" className="cursor-pointer">
             view
           </Button>
         </SheetTrigger>
-        <SheetContent className="w-[95vw] sm:w-[80vw] md:w-[70vw] lg:w-[60vw] xl:w-[1140px] max-w-[1100px]! p-0 rounded-l-3xl">
-          <div className="flex flex-col h-full">
-            {/* Header Bar */}
-            <SheetHeader className="p-4 border-b">
+        <SheetContent className="inset-3! sm:inset-5! lg:inset-7! h-auto! w-auto! max-w-[1140px]! translate-x-0! translate-y-0! mx-auto rounded-2xl border border-border/50 shadow-2xl p-0">
+          <div className="flex flex-col h-full overflow-hidden rounded-2xl">
+            {/* Header */}
+            <SheetHeader className="px-6 py-3 border-b border-border/40 shrink-0">
               <SheetTitle className="sr-only">Document Review</SheetTitle>
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mx-2 sm:mx-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
-                  <div className="flex items-center space-x-2">
-                    <User className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm text-gray-600">
-                      Uploaded by {displayDoc.uploaded_by}
-                    </span>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Clock className="h-4 w-4 text-gray-500" />
-                    <span className="sr-only">Uploaded at</span>
-                    <span className="text-sm text-gray-600">
-                      {new Date(displayDoc.uploaded_at).toLocaleDateString()}
-                    </span>
+              <div className="flex items-center justify-between gap-4 pr-8">
+                <div className="flex items-center gap-4 min-w-0">
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {displayDoc.document_name || displayDoc.file_name}
+                    </p>
+                    <div className="flex items-center gap-3 mt-0.5">
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <User className="h-3 w-3" />
+                        {displayDoc.uploaded_by}
+                      </span>
+                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Clock className="h-3 w-3" />
+                        {new Date(displayDoc.uploaded_at).toLocaleDateString()}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                {documents.length > 1 && (
-                  <div className="flex items-center gap-1 sm:gap-2">
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      disabled={!canGoPrev}
-                      onClick={goPrev}
-                      aria-label="Previous document"
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm text-gray-600 tabular-nums min-w-[3ch] text-center">
-                      {selectedIndex + 1} of {documents.length}
-                    </span>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      disabled={!canGoNext}
-                      onClick={goNext}
-                      aria-label="Next document"
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-                {!isClientView && (
-                  <SendDocumentModal
-                    documents={documents}
-                    selectedDocument={displayDoc}
-                    onSend={() => {
-                      // Handle document sending
-                    }}
-                  />
-                )}
+
+                <div className="flex items-center gap-2 shrink-0">
+                  {documents.length > 1 && (
+                    <div className="flex items-center gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 cursor-pointer"
+                        disabled={!canGoPrev}
+                        onClick={goPrev}
+                        aria-label="Previous document"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <span className="text-xs text-muted-foreground tabular-nums min-w-[3ch] text-center">
+                        {selectedIndex + 1}/{documents.length}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 cursor-pointer"
+                        disabled={!canGoNext}
+                        onClick={goNext}
+                        aria-label="Next document"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  )}
+                  {!isClientView && (
+                    <SendDocumentModal
+                      documents={documents}
+                      selectedDocument={displayDoc}
+                      onSend={() => {}}
+                    />
+                  )}
+                </div>
               </div>
             </SheetHeader>
 
-            {/* Document Selector Chips */}
-            {/* <div className="p-2 sm:p-4 border-b bg-white">
-              <div className="flex gap-1 sm:gap-2 overflow-x-auto scrollbar-hide pb-2">
-                {documents.map((doc, index) => (
-                  <button
-                    key={doc._id}
-                    onClick={() => setSelectedIndex(index)}
-                    className={`px-2 sm:px-3 py-1.5 sm:py-2 rounded-full text-xs font-medium transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                      selectedIndex === index
-                        ? "bg-[#222222] text-white"
-                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                    }`}
-                  >
-                    <div className="flex items-center space-x-1 sm:space-x-2">
-                      <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-                      <span className="max-w-[120px] sm:max-w-none truncate">
-                        {doc.file_name?.length > 15 
-                          ? doc.file_name.slice(0, 15) + "…" 
-                          : doc.file_name}
-                      </span>
+            {/* Two-panel body */}
+            <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
+              {/* Left: Document Review */}
+              <div className="flex-1 flex flex-col min-h-0 order-1">
+                <div className="flex-1 overflow-y-auto p-6 space-y-4">
+                  {checklistMeta?.importantNote && (
+                    <Alert className="bg-destructive/5 border-destructive/20 text-destructive rounded-xl">
+                      <AlertCircle className="h-4 w-4" />
+                      <AlertDescription className="space-y-1">
+                        <p className="text-xs font-semibold uppercase tracking-wide">
+                          Important
+                        </p>
+                        <p className="text-xs font-medium whitespace-pre-line">
+                          {checklistMeta.importantNote}
+                        </p>
+                      </AlertDescription>
+                    </Alert>
+                  )}
+
+                  <DocumentPreview document={displayDoc} />
+
+                  <DocumentStatusDisplay
+                    document={displayDoc}
+                    isClientView={isClientView}
+                  />
+
+                  {displayDoc.status === "rejected" && onReuploadDocument && (
+                    <div>
+                      <Button
+                        onClick={() =>
+                          onReuploadDocument(
+                            displayDoc._id,
+                            finalDocumentType,
+                            finalCategory,
+                          )
+                        }
+                        variant="outline"
+                        size="sm"
+                        className="gap-2 text-orange-600 border-orange-200 hover:bg-orange-50 cursor-pointer"
+                      >
+                        <Upload className="h-4 w-4" />
+                        Reupload Document
+                      </Button>
                     </div>
-                  </button>
-                ))}
-              </div>
-            </div> */}
+                  )}
+                </div>
 
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto">
-              {/* Document Section - Top on mobile, Left on desktop */}
-              <div className="flex-1 p-2 sm:p-4 relative order-1 lg:order-1">
-                {checklistMeta?.importantNote && (
-                  <Alert className="mb-4 border-red-200 bg-red-50 text-red-600">
-                    <AlertCircle className="h-5 w-5" />
-                    <AlertDescription className="space-y-1">
-                      <p className="text-xs font-medium uppercase tracking-wide">
-                        Important
-                      </p>
-                      <p className="text-xs font-bold whitespace-pre-line">
-                        {checklistMeta.importantNote}
-                      </p>
-                    </AlertDescription>
-                  </Alert>
-                )}
-
-                <DocumentPreview document={displayDoc} />
-
-                {/* Status Display */}
-                <DocumentStatusDisplay
-                  document={displayDoc}
-                  isClientView={isClientView}
-                />
-
-                {/* Reupload Button for Rejected Documents */}
-                {displayDoc.status === "rejected" && onReuploadDocument && (
-                  <div className="mt-4">
-                    <Button
-                      onClick={() =>
-                        onReuploadDocument(
-                          displayDoc._id,
-                          finalDocumentType,
-                          finalCategory,
-                        )
-                      }
-                      className="bg-orange-600 hover:bg-orange-700 text-white"
-                      size="sm"
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Reupload Document
-                    </Button>
+                {/* Fixed bottom action bar */}
+                {!isClientView && (
+                  <div className="border-t border-border/40 px-6 py-3 shrink-0">
+                    <DocumentStatusButtons
+                      document={displayDoc}
+                      applicationId={applicationId}
+                    />
                   </div>
                 )}
-
-                {/* Status Buttons - Bottom Right (Admin only) */}
-                {!isClientView && (
-                  <DocumentStatusButtons
-                    document={displayDoc}
-                    applicationId={applicationId}
-                  />
-                )}
               </div>
 
-              {/* Comments Section - Bottom on mobile, Right on desktop */}
-              <div className="w-full lg:shrink-0 lg:w-80 xl:w-96 order-2 lg:order-2 border-t lg:border-t-0 lg:border-l">
+              {/* Vertical divider */}
+              <div className="hidden lg:block w-px bg-border/40 shrink-0" />
+
+              {/* Right: Chat */}
+              <div className="w-full lg:w-[380px] lg:shrink-0 flex flex-col min-h-0 border-t lg:border-t-0 order-2 bg-muted/20">
                 <CommentErrorBoundary>
                   <DocumentComments
                     documentId={displayDoc._id}
