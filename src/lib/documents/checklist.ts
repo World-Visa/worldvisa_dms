@@ -220,14 +220,14 @@ export const COMPANY_DOCUMENTS = [
     importantNote: `*DO NOT GET IT ON THE STAMP PAPER UNTIL IT IS VERIFIED AND APPROVED BY THE CASE OFFICER.*
       Issue date of stamp paper and the notarisation should have same date.`,
   },
-  { category: "Company", documentType: "Payslips" },
-  { category: "Company", documentType: "Bank Statement" },
+  { category: "Company", documentType: "Payslips", allowedDocument: 2 },
+  { category: "Company", documentType: "Bank Statement", allowedDocument: 2 },
   {
     category: "Company",
     documentType: "Taxation (Form 16/26 AS)",
     allowedDocument: 2,
   },
-  { category: "Company", documentType: "Superannuation (EPFO Statement)" },
+  { category: "Company", documentType: "Superannuation (EPFO Statement)", allowedDocument: 2 },
   {
     category: "Company",
     documentType: "Salary Certifcate (only VET/ TRA/EA)",
