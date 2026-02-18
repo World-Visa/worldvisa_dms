@@ -1,5 +1,4 @@
 import React, { useRef, useEffect } from "react";
-import { ScrollArea } from "../ui/scroll-area";
 import { MessageCircle, AlertCircle } from "lucide-react";
 import {
   useDocumentComments,
@@ -94,8 +93,8 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
         </div>
       )}
 
-      {/* Comments list */}
-      <ScrollArea className="flex-1">
+      {/* Comments list - scrollable area */}
+      <div className="flex-1 min-h-0 overflow-y-auto">
         <div className="p-4 space-y-3">
           {isLoading ? (
             <div className="space-y-3">
@@ -151,7 +150,7 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
           )}
           <div ref={scrollEndRef} />
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Comment input at bottom */}
       <CommentForm

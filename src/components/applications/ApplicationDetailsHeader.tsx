@@ -117,7 +117,7 @@ export function ApplicationDetailsHeader({
       </Tooltip>
 
       {/* Refresh Button */}
-      <Button
+      {/* <Button
         variant="outline"
         size="sm"
         onClick={onRefresh}
@@ -128,7 +128,7 @@ export function ApplicationDetailsHeader({
           className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
         />
         <span className="hidden sm:inline">Refresh</span>
-      </Button>
+      </Button> */}
 
       {isAdmin && (
         <DropdownMenu>
