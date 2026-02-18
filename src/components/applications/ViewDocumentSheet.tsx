@@ -282,7 +282,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
               <div className="hidden lg:block w-px bg-border/40 shrink-0" />
 
               {/* Right: Chat */}
-              <div className="w-full lg:w-[380px] lg:shrink-0 flex flex-col min-h-0 border-t lg:border-t-0 order-2 bg-muted/20">
+              <div className="w-full lg:w-[380px] lg:shrink-0 flex flex-col min-h-0 border-t lg:border-t-0 lg:border-l order-2 bg-muted/20 h-[50vh] lg:h-full">
                 <CommentErrorBoundary>
                   <DocumentComments
                     documentId={displayDoc._id}

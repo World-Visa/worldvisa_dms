@@ -615,21 +615,7 @@ export default function UnifiedApplicationDetailsPage({
                     {application?.Package_Finalize || "Not provided"}
                   </Badge>
                 )}
-                {isSpouseApplication && (
-                  <Badge variant="outline" className="text-sm">
-                    Spouse Skill Assessment
-                  </Badge>
-                )}
               </h1>
-              <div className="text-muted-foreground">
-                {isApplicationLoading ? (
-                  <Skeleton className="h-4 w-32" />
-                ) : application ? (
-                  `Application ID: ${application.id}`
-                ) : (
-                  "Loading..."
-                )}
-              </div>
             </div>
           </div>
           <ApplicationDetailsHeader
