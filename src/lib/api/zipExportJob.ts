@@ -1,5 +1,5 @@
 import { ZOHO_BASE_URL } from "@/lib/config/api";
-import { tokenStorage } from "@/lib/auth";
+import { getStoredToken } from "@/lib/auth";
 import { fetcher } from "@/lib/fetcher";
 
 /** Response from POST create job (202) */
@@ -32,7 +32,7 @@ interface ErrorResponse {
 }
 
 function getAuthHeaders(): Record<string, string> {
-  const token = tokenStorage.get();
+  const token = getStoredToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };

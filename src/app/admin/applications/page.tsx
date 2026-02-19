@@ -5,7 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 
 export default function AllApplicationsPage() {
   return (
-    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <main className="w-full max-w-full sm:max-w-7xl mx-auto px-4 py-8">
       <Suspense
         fallback={
           <Card className="mb-6">

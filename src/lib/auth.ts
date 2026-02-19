@@ -62,7 +62,7 @@ export function getUserRole(
   }
 }
 
-// Token storage utilities
+// Token storage utilities (localStorage — persists across browser restarts)
 export const tokenStorage = {
   get: (): string | null => {
     if (typeof window === "undefined") return null;
@@ -84,11 +84,49 @@ export const tokenStorage = {
     if (!token) return false;
     return !isTokenExpired(token);
   },
+};
 
-  // Debug utility to check token status
-  debug: (): void => {
-    if (typeof window === "undefined") {
-      return;
-    }
+// Session token storage (sessionStorage — cleared when browser/tab closes)
+export const sessionTokenStorage = {
+  get: (): string | null => {
+    if (typeof window === "undefined") return null;
+    return sessionStorage.getItem("auth_token");
+  },
+
+  set: (token: string): void => {
+    if (typeof window === "undefined") return;
+    sessionStorage.setItem("auth_token", token);
+  },
+
+  remove: (): void => {
+    if (typeof window === "undefined") return;
+    sessionStorage.removeItem("auth_token");
+  },
+
+  isValid: (): boolean => {
+    const token = sessionTokenStorage.get();
+    if (!token) return false;
+    return !isTokenExpired(token);
   },
 };
+
+// Reads token from either storage — sessionStorage takes priority
+export function getStoredToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return sessionTokenStorage.get() ?? tokenStorage.get();
+}
+
+// Removes token from both storages
+export function removeStoredToken(): void {
+  if (typeof window === "undefined") return;
+  tokenStorage.remove();
+  sessionTokenStorage.remove();
+}
+
+// Returns which storage currently holds the token
+export function getTokenStorageType(): "local" | "session" | null {
+  if (typeof window === "undefined") return null;
+  if (sessionTokenStorage.get()) return "session";
+  if (tokenStorage.get()) return "local";
+  return null;
+}

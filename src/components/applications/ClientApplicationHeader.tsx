@@ -20,7 +20,7 @@ export function ClientApplicationHeader({
     <div className="flex items-center justify-between">
       <div className="flex items-center space-x-4">
         <div>
-          <h1 className="text-xl sm:text-2xl font-lexend font-bold">
+          <h1 className="text-xl sm:text-2xl font-bold">
             My Application
           </h1>
           <div className="text-muted-foreground">

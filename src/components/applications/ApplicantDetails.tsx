@@ -1,9 +1,9 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
 import { Application } from "@/types/applications";
 import { formatDate } from "@/utils/format";
-import { User } from "lucide-react";
+import { BadgeCheck, Check, Copy, User } from "lucide-react";
 import { useState } from "react";
 import { ApplicationDeadlineCard } from "./ApplicationDeadlineCard";
 import { DeadlineUpdateModal } from "./DeadlineUpdateModal";
@@ -15,6 +15,58 @@ interface ApplicantDetailsProps {
   user: { role?: string } | null;
 }
 
+interface InfoFieldProps {
+  label: string;
+  value: string;
+}
+
+function InfoField({ label, value }: InfoFieldProps) {
+  const [copied, setCopied] = useState(false);
+  const isProvided = value !== "Not provided";
+
+  const handleCopy = () => {
+    if (!isProvided) return;
+    navigator.clipboard.writeText(value);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div>
+      <p className="text-xs text-gray-400 mb-0.5">{label}</p>
+      <div className="group flex items-center gap-1.5 min-w-0">
+        <p
+          className={cn(
+            "text-sm font-medium text-slate-800 truncate min-w-0 flex-1",
+            isProvided && "cursor-pointer hover:text-slate-600 transition-colors",
+          )}
+          title={isProvided ? value : undefined}
+          onClick={isProvided ? handleCopy : undefined}
+        >
+          {value}
+        </p>
+        {isProvided && (
+          <button
+            type="button"
+            onClick={handleCopy}
+            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+            aria-label={`Copy ${label}`}
+          >
+            {copied ? (
+              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
+                <Check className="h-3 w-3" />
+                Copied!
+              </span>
+            ) : (
+              <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
+            )}
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export function ApplicantDetails({
   application,
   isLoading,
@@ -22,73 +74,56 @@ export function ApplicantDetails({
   user,
 }: ApplicantDetailsProps) {
   const [isDeadlineModalOpen, setIsDeadlineModalOpen] = useState(false);
+
   if (isLoading) {
     return (
-      <div className="flex flex-col lg:flex-row justify-between w-full gap-6 lg:gap-8 lg:items-end">
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 w-full">
-          {[1, 2, 3, 4].map((i) => (
-            <div key={i} className="w-full">
-              <Skeleton className="h-24 w-full rounded-xl" />
-            </div>
-          ))}
+      <div className="flex gap-6 items-stretch">
+        <div className="flex-7 min-w-0 bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <Skeleton className="h-5 w-48" />
+            <Skeleton className="h-6 w-24 rounded-full" />
+          </div>
+          <div className="p-6 grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="space-y-3">
+                <Skeleton className="h-3 w-20" />
+                <div className="space-y-2">
+                  {[1, 2, 3].map((j) => (
+                    <div key={j} className="space-y-1">
+                      <Skeleton className="h-3 w-14" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
-        <Card className="w-full lg:max-w-xs lg:w-full">
-          <CardHeader>
-            <CardTitle>Applicant Details</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:flex-wrap gap-4 lg:gap-6">
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-6 w-full" />
-              </div>
-              <div className="space-y-2">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-6 w-full" />
-              </div>
-              <div className="space-y-2 sm:col-span-2 lg:col-span-1">
-                <Skeleton className="h-4 w-20" />
-                <Skeleton className="h-6 w-full" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="flex-3 min-w-0">
+          <Skeleton className="h-48 w-full rounded-2xl" />
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Applicant Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-destructive">Failed to load applicant details</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {error.message}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex gap-6">
+        <div className="flex-7 min-w-0 bg-white border border-gray-200 rounded-2xl p-8 text-center">
+          <p className="text-destructive text-sm">Failed to load applicant details</p>
+          <p className="text-xs text-muted-foreground mt-1">{error.message}</p>
+        </div>
+      </div>
     );
   }
 
   if (!application) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="font-lexend">Applicant Details</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-muted-foreground font-lexend">
-              No application data available
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <div className="flex gap-6">
+        <div className="flex-7 min-w-0 bg-white border border-gray-200 rounded-2xl p-8 text-center">
+          <p className="text-muted-foreground text-sm">No application data available</p>
+        </div>
+      </div>
     );
   }
 
@@ -98,195 +133,145 @@ export function ApplicantDetails({
   };
 
   return (
-    <div className="space-y-6">
-      <ApplicationDeadlineCard
-        deadline={application.Deadline_For_Lodgment}
-        user={user}
-        onEditDeadline={() => setIsDeadlineModalOpen(true)}
-        applicationStage={application.Application_Stage}
-      />
-
-      {/* All Application Information in Single Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <User className="h-5 w-5 text-primary" />
-            <h3 className="font-bold">Application Information</h3>
+    <>
+      <div className="flex gap-6 items-stretch">
+        {/* Left — Application Information (70%) */}
+        <div className="flex-7 min-w-0 bg-white border border-gray-200 rounded-2xl overflow-hidden">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                <User className="h-4 w-4 text-primary" />
+              </div>
+              <h3 className="text-sm font-semibold text-slate-800">
+                Application Information
+              </h3>
+            </div>
+            <div className="flex items-center gap-2">
+              {application.Record_Type !== "spouse_skill_assessment" && (
+                <Badge
+                  variant="default"
+                  className="bg-primary-blue h-6 flex items-center gap-1.5 px-2 rounded-full text-xs font-medium"
+                >
+                  <BadgeCheck size={12} className="text-white" />
+                  {application?.Package_Finalize || "Not provided"}
+                </Badge>
+              )}
+              <Badge className="h-6 px-3 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-xs font-semibold hover:bg-emerald-50">
+                {application?.Application_Stage}
+              </Badge>
+            </div>
           </div>
-          <div className="flex items-center">
-            <span className="text-xs text-slate-500 dark:text-slate-400 mr-2 uppercase font-bold tracking-tighter">
-              Status:
-            </span>
-            <Badge className="px-3 py-1 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-full text-xs font-bold">
-              {application?.Application_Stage}
-            </Badge>
+
+          {/* Content */}
+          <div className="p-6">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
+              {/* Column 1 — Personal Information */}
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100">
+                  Personal Information
+                </h4>
+                <div className="space-y-3">
+                  <InfoField label="Full Name" value={formatValue(application.Name)} />
+                  <InfoField label="Email" value={formatValue(application.Email)} />
+                  <InfoField label="Phone" value={formatValue(application.Phone)} />
+                  {application.Record_Type === "spouse_skill_assessment" ? (
+                    <InfoField
+                      label="Main Applicant"
+                      value={formatValue(application.Main_Applicant || "")}
+                    />
+                  ) : (
+                    <InfoField
+                      label="Spouse Skill Assessment"
+                      value={`${formatValue(application.Spouse_Skill_Assessment ?? "")} — ${formatValue(application.Spouse_Name ?? "")}`}
+                    />
+                  )}
+                </div>
+              </div>
+
+              {/* Column 2 — Visa Details */}
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100">
+                  Visa Details
+                </h4>
+                <div className="space-y-3">
+                  <InfoField
+                    label="Target Country"
+                    value={formatValue(application.Qualified_Country || "")}
+                  />
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Service Type</p>
+                    <span className="inline-block px-2 py-0.5 bg-primary text-white text-[10px] font-bold rounded">
+                      {formatValue(
+                        application.Service_Finalized || "",
+                      ).toUpperCase()}
+                    </span>
+                  </div>
+                  <InfoField
+                    label="Suggested ANZSCO"
+                    value={formatValue(application.Suggested_Anzsco || "")}
+                  />
+                </div>
+              </div>
+
+              {/* Column 3 — Application Mgmt */}
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100">
+                  Application Mgmt
+                </h4>
+                <div className="space-y-3">
+                  <InfoField
+                    label="Handled By"
+                    value={formatValue(application.Application_Handled_By)}
+                  />
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Created Date</p>
+                    <p className="text-sm font-medium text-slate-800">
+                      {application.Created_Time
+                        ? formatDate(application.Created_Time, "time")
+                        : "Not available"}
+                    </p>
+                  </div>
+                  <InfoField
+                    label="Assessing Authority"
+                    value={formatValue(application.Assessing_Authority || "")}
+                  />
+                </div>
+              </div>
+
+              {/* Column 4 — Assets & Files */}
+              <div className="space-y-4">
+                <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100">
+                  Assets & Files
+                </h4>
+                <div className="space-y-3">
+                  <InfoField
+                    label="Record Type"
+                    value={formatValue(application.Record_Type || "")}
+                  />
+                  <div>
+                    <p className="text-xs text-gray-400 mb-1">Total Documents</p>
+                    <p className="text-sm font-medium text-slate-800">
+                      {application.AttachmentCount || 0} documents
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-y-8 gap-x-12">
-            {/* Column 1 - Personal Information */}
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                Personal Information
-              </h4>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Full Name
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {formatValue(application.Name)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Email
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {formatValue(application.Email)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Phone
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {formatValue(application.Phone)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Main Applicant
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {formatValue(application.Main_Applicant || "")}
-                  </p>
-                </div>
-                {application.Record_Type !== "spouse_skill_assessment" && (
-                  <>
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Spouse Skill Assessment
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.Spouse_Skill_Assessment ?? "")}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Spouse Name
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.Spouse_Name ?? "")}
-                      </p>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Column 2 - Visa Details */}
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                Visa Details
-              </h4>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Target Country
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {formatValue(application.Qualified_Country || "")}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Service Type
-                  </p>
-                  <span className="inline-block mt-1 px-2 py-0.5 bg-primary text-white text-[10px] font-bold rounded">
-                    {formatValue(
-                      application.Service_Finalized || "",
-                    ).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Suggested ANZSCO
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {formatValue(application.Suggested_Anzsco || "")}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Column 3 - Application Mgmt */}
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                Application Mgmt
-              </h4>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Handled By
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {formatValue(application.Application_Handled_By)}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Created Date
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {application.Created_Time
-                      ? formatDate(application.Created_Time, "time")
-                      : "Not available"}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Assessing Authority
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {formatValue(application.Assessing_Authority || "")}
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Column 4 - Assets & Files */}
-            <div className="space-y-4">
-              <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                Assets & Files
-              </h4>
-              <div className="space-y-3">
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Record Type
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {formatValue(application.Record_Type || "")}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                    Total Attachments
-                  </p>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                    {application.AttachmentCount || 0} Documents
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
+        {/* Right — Application Deadline (30%) */}
+        <div className="flex-3 min-w-0">
+          <ApplicationDeadlineCard
+            deadline={application.Deadline_For_Lodgment}
+            user={user}
+            onEditDeadline={() => setIsDeadlineModalOpen(true)}
+            applicationStage={application.Application_Stage}
+          />
         </div>
       </div>
 
-      {/* Deadline Update Modal */}
       <DeadlineUpdateModal
         isOpen={isDeadlineModalOpen}
         onClose={() => setIsDeadlineModalOpen(false)}
@@ -295,6 +280,6 @@ export function ApplicantDetails({
         applicationName={application.Name}
         recordType={application.Record_Type}
       />
-    </div>
+    </>
   );
 }

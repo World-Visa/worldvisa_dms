@@ -19,18 +19,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { useQueryString } from "@/hooks/useQueryString";
-import { ApplicationsFilters } from "@/components/applications/ApplicationsFilters";
+import { ApplicationsSearch, ApplicationsFilters } from "@/components/applications/ApplicationsFilters";
 import { LodgementDeadlineStatsCard } from "@/components/applications/LodgementDeadlineStatsCard";
 import { ApplicationsPagination } from "@/components/applications/ApplicationsPagination";
 import {
   ApplicationsTableSkeleton,
   SearchResultsSkeleton,
 } from "@/components/applications/ApplicationsTableSkeleton";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, RefreshCw, CalendarClock } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { CalendarClock, X, Calendar } from "lucide-react";
 import { DateRange } from "react-day-picker";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 // Lazy load heavy components for better performance
 const LazyApplicationsTable = lazy(() =>
@@ -39,6 +39,10 @@ const LazyApplicationsTable = lazy(() =>
   })),
 );
 
+type Country = "Australia" | "Canada";
+
+const COUNTRIES: Country[] = ["Australia", "Canada"];
+
 const SpouseSkillAssessmentApplications = memo(
   function SpouseSkillAssessmentApplications() {
     const { queryParams, updateQuery } = useQueryString();
@@ -46,6 +50,11 @@ const SpouseSkillAssessmentApplications = memo(
     const { user } = useAuth();
     const canView =
       user?.role === "master_admin" || user?.role === "team_leader";
+
+    const [selectedCountry, setSelectedCountry] = useState<Country>(() => {
+      const urlCountry = queryParams.country as string | undefined;
+      return urlCountry === "Canada" ? "Canada" : "Australia";
+    });
 
     const [page, setPage] = useState(1);
     const [limit, setLimit] = useState(20);
@@ -56,7 +65,7 @@ const SpouseSkillAssessmentApplications = memo(
     const [dateRange, setDateRange] = useState<DateRange | undefined>();
     const [isRefreshing, setIsRefreshing] = useState(false);
     const [deadlineCategory, setDeadlineCategory] = useState<
-      "approaching" | "overdue" | "noDeadline" | null
+      "approaching" | "overdue" | "noDeadline" | "future" | null
     >(null);
 
     // Initialize recentActivity from URL params, default to false
@@ -80,6 +89,23 @@ const SpouseSkillAssessmentApplications = memo(
 
     // Check if we're in search mode
     const isSearchMode = searchQuery.trim() !== "";
+
+    // Lightweight queries to get total counts per country for tab badges
+    const { data: australiaCountData } = useSpouseApplications({
+      page: 1,
+      limit: 1,
+      country: "Australia",
+    });
+    const { data: canadaCountData } = useSpouseApplications({
+      page: 1,
+      limit: 1,
+      country: "Canada",
+    });
+
+    const countryTotals: Record<Country, number | undefined> = {
+      Australia: australiaCountData?.pagination.totalRecords,
+      Canada: canadaCountData?.pagination.totalRecords,
+    };
 
     const filters = useMemo(() => {
       let startDate: string | undefined;
@@ -112,10 +138,11 @@ const SpouseSkillAssessmentApplications = memo(
         startDate,
         endDate,
         recentActivity: recentActivity || undefined,
+        country: selectedCountry,
       };
 
       return filterParams;
-    }, [page, limit, dateRange, recentActivity]);
+    }, [page, limit, dateRange, recentActivity, selectedCountry]);
 
     // Fetch regular spouse applications
     const {
@@ -132,6 +159,7 @@ const SpouseSkillAssessmentApplications = memo(
         deadlineCategory,
         page,
         limit,
+        selectedCountry,
       );
 
     // Determine which data to display
@@ -159,8 +187,9 @@ const SpouseSkillAssessmentApplications = memo(
 
       const params: Record<string, string> = {};
       params[searchType] = searchQuery.trim();
+      params.country = selectedCountry;
       return params;
-    }, [searchQuery, searchType]);
+    }, [searchQuery, searchType, selectedCountry]);
 
     const {
       data: searchData,
@@ -198,6 +227,21 @@ const SpouseSkillAssessmentApplications = memo(
       }
     }, [search, measureAsync]);
 
+    const handleCountryChange = useCallback(
+      (country: Country) => {
+        setSelectedCountry(country);
+        setPage(1);
+        setDeadlineCategory(null);
+        setSearch("");
+        setSearchQuery("");
+        updateQuery({
+          country: country === "Australia" ? undefined : country,
+          deadlineCategory: undefined,
+        });
+      },
+      [updateQuery],
+    );
+
     // Auto-search when debounced search changes
     useEffect(() => {
       if (debouncedSearch.trim() && debouncedSearch.length >= 2) {
@@ -223,17 +267,30 @@ const SpouseSkillAssessmentApplications = memo(
       const urlDeadlineCategory = queryParams.deadlineCategory;
       if (
         urlDeadlineCategory &&
-        ["approaching", "overdue", "noDeadline"].includes(
+        ["approaching", "overdue", "noDeadline", "future"].includes(
           urlDeadlineCategory as string,
         )
       ) {
         setDeadlineCategory(
-          urlDeadlineCategory as "approaching" | "overdue" | "noDeadline",
+          urlDeadlineCategory as
+            | "approaching"
+            | "overdue"
+            | "noDeadline"
+            | "future",
         );
       } else if (!urlDeadlineCategory && deadlineCategory) {
         setDeadlineCategory(null);
       }
     }, [queryParams.deadlineCategory, deadlineCategory]);
+
+    // Sync country from URL params
+    useEffect(() => {
+      const urlCountry = queryParams.country as string | undefined;
+      const resolved: Country = urlCountry === "Canada" ? "Canada" : "Australia";
+      if (resolved !== selectedCountry) {
+        setSelectedCountry(resolved);
+      }
+    }, [queryParams.country, selectedCountry]);
 
     const handleDateRangeChange = useCallback(
       (range: DateRange | undefined) => {
@@ -244,7 +301,14 @@ const SpouseSkillAssessmentApplications = memo(
     );
 
     const handleDeadlineCategoryClick = useCallback(
-      (category: "approaching" | "overdue" | "noDeadline" | null) => {
+      (
+        category:
+          | "approaching"
+          | "overdue"
+          | "noDeadline"
+          | "future"
+          | null,
+      ) => {
         setDeadlineCategory(category);
         setPage(1);
         updateQuery({ deadlineCategory: category || undefined });
@@ -259,10 +323,14 @@ const SpouseSkillAssessmentApplications = memo(
       setDateRange(undefined);
       setRecentActivity(false);
       setDeadlineCategory(null);
+      setSelectedCountry("Australia");
       setPage(1);
 
-      // Clear URL params when clearing filters
-      updateQuery({ recentActivity: undefined, deadlineCategory: undefined });
+      updateQuery({
+        recentActivity: undefined,
+        deadlineCategory: undefined,
+        country: undefined,
+      });
     }, [updateQuery]);
 
     const handleRecentActivityToggle = useCallback(() => {
@@ -312,7 +380,7 @@ const SpouseSkillAssessmentApplications = memo(
             }),
             searchQuery.trim() &&
               queryClient.refetchQueries({
-                queryKey: ["search-spouse-applications", searchParamsForAPI],
+                queryKey: ["spouse-applications-search", searchParamsForAPI],
               }),
             deadlineCategory &&
               queryClient.refetchQueries({
@@ -322,6 +390,7 @@ const SpouseSkillAssessmentApplications = memo(
                   deadlineCategory,
                   page,
                   limit,
+                  selectedCountry,
                 ],
               }),
           ].filter(Boolean),
@@ -339,6 +408,7 @@ const SpouseSkillAssessmentApplications = memo(
       deadlineCategory,
       page,
       limit,
+      selectedCountry,
     ]);
 
     const totalApplications = displayData?.pagination.totalRecords || 0;
@@ -352,80 +422,119 @@ const SpouseSkillAssessmentApplications = memo(
 
     return (
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Country Tab Navigation */}
+        <div className="mb-6">
+          <div className="flex border-b border-gray-200">
+            {COUNTRIES.map((country) => {
+              const isActive = selectedCountry === country;
+              const count = countryTotals[country];
+              return (
+                <button
+                  key={country}
+                  type="button"
+                  onClick={() => handleCountryChange(country)}
+                  className={cn(
+                    "relative flex items-center gap-2.5 px-5 pb-3 pt-2 text-sm font-medium tracking-wide",
+                    "focus:outline-none transition-colors duration-150",
+                    "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full",
+                    "after:transition-all after:duration-200",
+                    isActive
+                      ? "text-gray-900 after:bg-gray-900"
+                      : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
+                  )}
+                >
+                  {country}
+                  <span
+                    className={cn(
+                      "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150",
+                      isActive
+                        ? "bg-gray-900 text-white"
+                        : "bg-gray-100 text-gray-400",
+                    )}
+                  >
+                    {count !== undefined ? count.toLocaleString() : "—"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Title + Search row */}
+        <div className="mb-6 flex w-full items-center justify-between gap-4">
+          <h2 className="text-2xl font-bold text-gray-900">
+            {selectedCountry} spouse skill assessment applications
+          </h2>
+          <ApplicationsSearch
+            search={search}
+            searchType={searchType}
+            onSearchChange={handleSearchChange}
+            onSearchTypeChange={handleSearchTypeChange}
+            onSearchClick={handleSearchClick}
+            onKeyDown={handleKeyPress}
+          />
+        </div>
+
         <LodgementDeadlineStatsCard
           type="spouse"
           selectedCategory={deadlineCategory}
           onCategoryClick={handleDeadlineCategoryClick}
+          country={selectedCountry}
         />
-        {/* Header */}
-        <div className="flex flex-col w-full sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900 font-lexend mb-2 flex items-center gap-2">
-              Spouse Skill Assessment Applications
-            </h2>
-            <p className="text-gray-600">
-              Manage and review all spouse skill assessment applications
-              assigned to you.
-            </p>
+
+        {/* Tabs + Filters row */}
+        <div className="mb-4 flex items-end justify-between border-b border-gray-200">
+          <div className="flex gap-6 text-base font-medium">
+            {["All applications", "Recent activities"].map((label, idx) => {
+              const isActive = idx === 0 ? !recentActivity : recentActivity;
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  className={cn(
+                    "px-4 py-2 focus:outline-none transition-colors",
+                    isActive
+                      ? "-mb-px border-b-2 border-gray-900 font-semibold text-gray-900"
+                      : "cursor-pointer rounded-md text-gray-500 hover:bg-gray-100",
+                  )}
+                  onClick={handleRecentActivityToggle}
+                >
+                  {label}
+                </button>
+              );
+            })}
           </div>
-          <div className="w-full sm:w-auto sm:max-w-lg">
+          <div className="pb-2">
             <ApplicationsFilters
-              search={search}
-              searchType={searchType}
               dateRange={dateRange}
               limit={limit}
-              isSearchMode={isSearchMode}
-              onSearchChange={handleSearchChange}
-              onSearchTypeChange={handleSearchTypeChange}
-              onSearchClick={handleSearchClick}
               onDateRangeChange={handleDateRangeChange}
               onLimitChange={handleLimitChange}
               onClearFilters={handleClearFilters}
-              onKeyPress={handleKeyPress}
             />
-            <div className="mt-2">
-              <Badge variant="outline">
-                Total applications:&nbsp;
-                {displayLoading ? "..." : totalApplications.toLocaleString()}
-              </Badge>
-            </div>
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="mb-6">
-          <div className="flex justify-between gap-2">
-            <div className="flex gap-2">
-              <Button
-                variant={!recentActivity ? "default" : "outline"}
-                className="rounded-full py-3 px-6 cursor-pointer"
-                onClick={handleRecentActivityToggle}
+        {/* Active filter chips */}
+        {dateRange?.from && (
+          <div className="mb-4 flex flex-wrap gap-1.5">
+            <Badge variant="secondary" className="gap-1.5 py-1 pl-2.5 pr-1 text-xs font-medium">
+              <Calendar className="h-3 w-3" />
+              <span>
+                {dateRange.from.toLocaleDateString()}
+                {dateRange.to ? ` – ${dateRange.to.toLocaleDateString()}` : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleDateRangeChange(undefined)}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-muted transition-colors"
+                aria-label="Remove date filter"
               >
-                All applications
-              </Button>
-              <Button
-                variant={recentActivity ? "default" : "outline"}
-                className="rounded-full py-3 px-6 cursor-pointer"
-                onClick={handleRecentActivityToggle}
-              >
-                Recent activities
-              </Button>
-            </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              disabled={isRefreshing}
-              className="flex items-center gap-2 cursor-pointer"
-            >
-              <RefreshCw
-                className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-              />
-              <span className="hidden sm:inline">Refresh</span>
-            </Button>
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </Badge>
           </div>
-        </div>
+        )}
 
         {/* Deadline Filter Indicator */}
         {deadlineCategory && (
@@ -437,13 +546,15 @@ const SpouseSkillAssessmentApplications = memo(
                 ? "Approaching"
                 : deadlineCategory === "overdue"
                   ? "Overdue"
-                  : "No Deadline"}
+                  : deadlineCategory === "future"
+                    ? "Future"
+                    : "No Deadline"}
               <button
                 onClick={() => handleDeadlineCategoryClick(null)}
                 className="ml-1 hover:text-destructive transition-colors"
                 aria-label="Clear deadline filter"
               >
-                ×
+                <X className="h-3 w-3 text-gray-500 hover:text-destructive" />
               </button>
             </Badge>
           </div>

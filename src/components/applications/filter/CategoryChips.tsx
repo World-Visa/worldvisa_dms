@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useRef, useState, useEffect } from "react";
+import { memo, useRef, useState, useEffect } from "react";
 import Link from "next/link";
 import { DocumentCategoryInfo } from "@/types/documents";
 import { CategoryButton } from "./CategoryButton";
@@ -126,12 +126,12 @@ export const CategoryChips = memo(function CategoryChips({
   const hasChecklist = checklistState === "saved";
 
   return (
-    <div className="hidden md:block space-y-6">
-      {/* Action Buttons Row - Above chips */}
-      <div className="flex items-center justify-end gap-2">
+    <div className="hidden md:block">
+      {/* Action Buttons Row */}
+      <div className="flex items-center justify-end gap-2 mb-3">
         {useLinkMode && (
-          <Button variant="outline" size="sm" asChild>
-            <Link href={`/admin/applications/${applicationId}/checklist`}>
+          <Button variant="secondary" size="sm" asChild>
+            <Link href={`/v2/applications/${applicationId}/checklist`}>
               {hasChecklist ? "Edit checklist" : "Create checklist"}
             </Link>
           </Button>
@@ -157,11 +157,11 @@ export const CategoryChips = memo(function CategoryChips({
         />
       </div>
 
-      {/* Scrollable Chips Row with full-width baseline */}
-      <div className="relative border-b border-slate-200 dark:border-slate-700">
+      {/* Scrollable underline tabs row */}
+      <div className="relative border-b border-gray-200">
         <div
           ref={scrollContainerRef}
-          className="flex items-end gap-3 overflow-x-auto scrollbar-hide flex-nowrap pb-0"
+          className="flex items-end gap-0 overflow-x-auto scrollbar-hide flex-nowrap"
           onScroll={handleScroll}
         >
           {categories.map((category) => (
@@ -178,22 +178,28 @@ export const CategoryChips = memo(function CategoryChips({
             />
           ))}
         </div>
+
+        {/* Left scroll fade + button */}
         {showLeftArrow && (
           <button
+            type="button"
             onClick={handleScrollLeft}
-            className="absolute left-0 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-900 shadow-lg rounded-full p-2 border border-slate-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors z-10"
+            className="absolute left-0 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-md hover:bg-gray-50 transition-colors z-10"
             aria-label="Scroll left"
           >
-            <ChevronLeft className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+            <ChevronLeft className="h-4 w-4 text-gray-600" />
           </button>
         )}
+
+        {/* Right scroll fade + button */}
         {showRightArrow && (
           <button
+            type="button"
             onClick={handleScrollRight}
-            className="absolute right-0 top-1/2 -translate-y-1/2 bg-white dark:bg-slate-900 shadow-lg rounded-full p-2 border border-slate-200 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors z-10"
+            className="absolute right-0 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-full border border-gray-200 bg-white shadow-md hover:bg-gray-50 transition-colors z-10"
             aria-label="Scroll right"
           >
-            <ChevronRight className="h-5 w-5 text-slate-700 dark:text-slate-300" />
+            <ChevronRight className="h-4 w-4 text-gray-600" />
           </button>
         )}
       </div>

@@ -43,12 +43,13 @@ export async function searchApplications(
 }
 
 /**
- * Check if search parameters are valid (at least one non-empty parameter)
+ * Check if search parameters are valid (at least one non-empty search term)
  * @param searchParams - Search parameters to validate
  * @returns boolean
  */
 export function isValidSearchParams(searchParams: SearchParams): boolean {
-  return Object.values(searchParams).some(
+  const { country: _country, ...searchTerms } = searchParams;
+  return Object.values(searchTerms).some(
     (value) => value && value.trim() !== "",
   );
 }

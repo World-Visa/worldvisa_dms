@@ -46,6 +46,7 @@ export async function GET(request: NextRequest) {
     const name = searchParams.get("name");
     const phone = searchParams.get("phone");
     const email = searchParams.get("email");
+    const country = searchParams.get("country");
 
     // Validate that at least one search parameter is provided
     if (!name && !phone && !email) {
@@ -65,6 +66,7 @@ export async function GET(request: NextRequest) {
     if (name) queryParams.append("name", name);
     if (phone) queryParams.append("phone", phone);
     if (email) queryParams.append("email", email);
+    if (country) queryParams.append("country", country);
 
     // Use the search endpoint from Zoho API
     const zohoUrl = `${ZOHO_BASE_URL}/visa_applications/search?${queryParams.toString()}`;

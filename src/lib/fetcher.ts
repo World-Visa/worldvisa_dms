@@ -1,4 +1,4 @@
-import { tokenStorage } from "./auth";
+import { getStoredToken, removeStoredToken } from "./auth";
 
 // Extend RequestInit to include Next.js specific options
 // Note: cacheLife and cacheTag are now handled via "use cache" directive and cacheTag() function
@@ -14,7 +14,7 @@ export async function fetcher<T>(
   url: string,
   options: RequestInit & NextFetchOptions = {},
 ): Promise<T> {
-  const token = tokenStorage.get();
+  const token = getStoredToken();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -85,7 +85,7 @@ export async function fetcher<T>(
           // Let hook handle the error for client/checklist/comments/messages endpoints
         } else {
           // For other endpoints, redirect if authentication fails
-          tokenStorage.remove();
+          removeStoredToken();
           if (typeof window !== "undefined") {
             const userData = localStorage.getItem("user_data");
             let redirectPath = "/portal";

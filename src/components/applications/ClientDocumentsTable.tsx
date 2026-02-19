@@ -209,7 +209,7 @@ export function ClientDocumentsTable({
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell className="font-lexend">
+                        <TableCell>
                           <Badge
                             variant="outline"
                             className="text-xs text-muted-foreground"
@@ -217,7 +217,7 @@ export function ClientDocumentsTable({
                             Not specified
                           </Badge>
                         </TableCell>
-                        <TableCell className="font-lexend">
+                        <TableCell>
                           {(() => {
                             if (document.document_category) {
                               const {
@@ -270,7 +270,7 @@ export function ClientDocumentsTable({
                                 <span className={statusConfig.iconClassName}>
                                   {statusConfig.icon}
                                 </span>
-                                <span className="font-lexend">
+                                <span>
                                   {statusConfig.label}
                                 </span>
                               </div>

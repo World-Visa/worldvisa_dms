@@ -32,6 +32,7 @@ import { RequestedDocument } from "@/lib/api/requestedDocuments";
 import { StatusBadge } from "./StatusBadge";
 import { ClientNameCell } from "./ClientNameCell";
 import { RequestedDocumentType } from "@/types/common";
+import { HighlightText } from "@/components/ui/HighlightText";
 
 interface RequestedDocumentsDataTableProps {
   documents: RequestedDocument[];
@@ -39,6 +40,7 @@ interface RequestedDocumentsDataTableProps {
   type: RequestedDocumentType;
   totalItems?: number;
   onViewDocument?: (document: RequestedDocument) => void;
+  searchQuery?: string;
 }
 
 export function RequestedDocumentsDataTable({
@@ -47,6 +49,7 @@ export function RequestedDocumentsDataTable({
   type,
   totalItems = 0,
   onViewDocument,
+  searchQuery,
 }: RequestedDocumentsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "requested_review.requested_at", desc: true }, // Default: newest first
@@ -68,13 +71,34 @@ export function RequestedDocumentsDataTable({
         ),
         cell: ({ row }) => {
           const doc = row.original;
+          const docName = doc.document_name || doc.file_name || "";
+          const docCategory = doc.document_category ?? "";
+          const hasQuery = (searchQuery?.trim()?.length ?? 0) > 0;
           return (
             <div className="space-y-1 min-w-[200px]">
               <p className="font-semibold text-gray-900">
-                {doc.document_name || doc.file_name}
+                {hasQuery ? (
+                  <HighlightText
+                    text={docName}
+                    query={searchQuery!}
+                    className="font-semibold text-gray-900"
+                  />
+                ) : (
+                  docName
+                )}
               </p>
               {doc.document_category && (
-                <p className="text-xs text-gray-500">{doc.document_category}</p>
+                <p className="text-xs text-gray-500">
+                  {hasQuery ? (
+                    <HighlightText
+                      text={docCategory}
+                      query={searchQuery!}
+                      className="text-xs text-gray-500"
+                    />
+                  ) : (
+                    docCategory
+                  )}
+                </p>
               )}
               {doc.isOverdue && (
                 <div className="flex items-center gap-1 text-xs text-red-600">
@@ -218,7 +242,7 @@ export function RequestedDocumentsDataTable({
         enableSorting: false,
       },
     ],
-    [onViewDocument],
+    [onViewDocument, searchQuery],
   );
 
   const table = useReactTable({

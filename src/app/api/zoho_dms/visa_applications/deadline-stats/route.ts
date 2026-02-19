@@ -49,6 +49,9 @@ export async function GET(request: NextRequest) {
     const overdueLimit = searchParams.get("overdueLimit");
     const noDeadlinePage = searchParams.get("noDeadlinePage");
     const noDeadlineLimit = searchParams.get("noDeadlineLimit");
+    const futurePage = searchParams.get("futurePage");
+    const futureLimit = searchParams.get("futureLimit");
+    const country = searchParams.get("country");
 
     // Build query params for Zoho backend
     const queryParams = new URLSearchParams({ type });
@@ -60,6 +63,9 @@ export async function GET(request: NextRequest) {
     if (overdueLimit) queryParams.append("overdueLimit", overdueLimit);
     if (noDeadlinePage) queryParams.append("noDeadlinePage", noDeadlinePage);
     if (noDeadlineLimit) queryParams.append("noDeadlineLimit", noDeadlineLimit);
+    if (futurePage) queryParams.append("futurePage", futurePage);
+    if (futureLimit) queryParams.append("futureLimit", futureLimit);
+    if (country) queryParams.append("country", country);
 
     const zohoUrl = `${ZOHO_BASE_URL}/visa_applications/deadline-stats?${queryParams.toString()}`;
     const response = await authenticatedFetch<{ data: unknown }>(

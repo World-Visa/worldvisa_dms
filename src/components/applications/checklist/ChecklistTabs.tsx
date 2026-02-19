@@ -1,10 +1,3 @@
-/**
- * Checklist Tabs Component
- *
- * This component provides tab navigation for editing mode,
- * allowing users to switch between current checklist and available documents.
- */
-
 import React, { memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -34,14 +27,12 @@ export const ChecklistTabs = memo(function ChecklistTabs({
       label: "Current Checklist",
       icon: FileText,
       count: currentCount,
-      color: "bg-blue-500 hover:bg-blue-600",
     },
     {
       id: "available" as const,
       label: "Available Documents",
       icon: Plus,
       count: availableCount,
-      color: "bg-green-500 hover:bg-green-600",
     },
   ];
 
@@ -54,15 +45,15 @@ export const ChecklistTabs = memo(function ChecklistTabs({
         return (
           <Button
             key={tab.id}
-            variant={isActive ? "default" : "ghost"}
+            variant={isActive ? "secondary" : "ghost"}
             size="sm"
             onClick={() => onTabChange(tab.id)}
             className={cn(
               "flex-1 flex items-center gap-2 px-3 py-2 text-sm font-medium transition-all duration-200",
               "rounded-md",
               isActive
-                ? "bg-white text-gray-900 shadow-sm"
-                : "text-gray-600 hover:text-gray-900 hover:bg-white/50",
+                ? "bg-white text-gray-900 hover:bg-white/50"
+                : "text-gray-600 hover:text-gray-900 hover:bg-white/80",
             )}
           >
             <Icon className="h-4 w-4" />

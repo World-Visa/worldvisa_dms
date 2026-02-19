@@ -1,4 +1,4 @@
-import { tokenStorage } from "@/lib/auth";
+import { getStoredToken } from "@/lib/auth";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 /** Result when blob download was triggered in the client */
@@ -84,7 +84,7 @@ export async function downloadAllDocuments(
   const url = `${ZOHO_BASE_URL}/visa_applications/${leadId}/documents/download/all`;
 
   try {
-    const token = tokenStorage.get();
+    const token = getStoredToken();
 
     const headers: Record<string, string> = {};
     if (token) {

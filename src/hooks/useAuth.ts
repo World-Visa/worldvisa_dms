@@ -5,7 +5,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { AuthState, AdminLoginRequest, ClientLoginRequest } from "@/types/auth";
 import { adminLogin, clientLogin } from "@/lib/zoho";
-import { tokenStorage, parseToken, isTokenExpired } from "@/lib/auth";
+import { tokenStorage, sessionTokenStorage, getStoredToken, removeStoredToken, parseToken, isTokenExpired } from "@/lib/auth";
 import { clearAllCacheData } from "@/lib/cacheUtils";
 
 // Type for client login response structure
@@ -25,6 +25,7 @@ interface AuthStore extends AuthState {
   login: (
     credentials: AdminLoginRequest | ClientLoginRequest,
     type: "admin" | "client",
+    rememberMe?: boolean,
   ) => Promise<void>;
   logout: (queryClient?: QueryClient) => void;
   checkAuth: () => Promise<void>;
@@ -40,7 +41,7 @@ export const useAuth = create<AuthStore>()(
       isLoading: false,
       error: null,
 
-      login: async (credentials, type) => {
+      login: async (credentials, type, rememberMe = false) => {
         set({ isLoading: true, error: null });
 
         try {
@@ -59,7 +60,7 @@ export const useAuth = create<AuthStore>()(
               userData = response.data.user;
             } else {
               // Client login response structure - user data is directly in response
-              const clientResponse = response as ClientLoginResponse; // Type assertion for client response
+              const clientResponse = response as ClientLoginResponse;
               userData = {
                 _id: clientResponse._id || clientResponse.id,
                 username: clientResponse.username || clientResponse.name,
@@ -76,10 +77,19 @@ export const useAuth = create<AuthStore>()(
               lead_id: userData.lead_id,
               role: userData?.role || "client",
             };
-            // Store token, role, and user data
-            tokenStorage.set(token);
-            if (typeof window !== "undefined") {
-              localStorage.setItem("user_data", JSON.stringify(user));
+
+            // rememberMe=true → localStorage (survives browser restarts)
+            // rememberMe=false → sessionStorage (cleared on tab/browser close)
+            if (rememberMe) {
+              tokenStorage.set(token);
+              if (typeof window !== "undefined") {
+                localStorage.setItem("user_data", JSON.stringify(user));
+              }
+            } else {
+              sessionTokenStorage.set(token);
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("user_data", JSON.stringify(user));
+              }
             }
 
             set({
@@ -110,7 +120,12 @@ export const useAuth = create<AuthStore>()(
         // Clear all cache data including React Query cache, localStorage, and sockets
         clearAllCacheData(queryClient);
 
-        // Clear auth state
+        // Also clear sessionStorage auth data (not covered by clearAllCacheData)
+        if (typeof window !== "undefined") {
+          sessionStorage.removeItem("auth_token");
+          sessionStorage.removeItem("user_data");
+        }
+
         set({
           user: null,
           token: null,
@@ -121,7 +136,8 @@ export const useAuth = create<AuthStore>()(
       },
 
       checkAuth: async () => {
-        const token = tokenStorage.get();
+        // Prefer sessionStorage token (non-remembered), fall back to localStorage (remembered)
+        const token = getStoredToken();
 
         if (!token) {
           set({
@@ -139,23 +155,21 @@ export const useAuth = create<AuthStore>()(
         try {
           const payload = parseToken(token);
           if (payload && !isTokenExpired(token)) {
-            // Try to get stored user data from localStorage
+            // Read user_data from whichever storage has the token
             const storedUserData =
               typeof window !== "undefined"
-                ? localStorage.getItem("user_data")
+                ? (sessionStorage.getItem("user_data") ?? localStorage.getItem("user_data"))
                 : null;
 
             let user;
             if (storedUserData) {
-              // Use stored user data if available
               user = JSON.parse(storedUserData);
             } else {
-              const role = payload.role;
               user = {
                 _id: payload.id,
                 username: payload.username,
                 email: payload.email,
-                role: role,
+                role: payload.role,
                 lead_id: payload.lead_id,
               };
             }
@@ -168,10 +182,11 @@ export const useAuth = create<AuthStore>()(
               error: null,
             });
           } else {
-            // Token is invalid or expired, clear auth state
-            tokenStorage.remove();
+            // Token is invalid or expired — clear both storages
+            removeStoredToken();
             if (typeof window !== "undefined") {
               localStorage.removeItem("user_data");
+              sessionStorage.removeItem("user_data");
             }
             set({
               user: null,
@@ -182,9 +197,10 @@ export const useAuth = create<AuthStore>()(
             });
           }
         } catch {
-          tokenStorage.remove();
+          removeStoredToken();
           if (typeof window !== "undefined") {
             localStorage.removeItem("user_data");
+            sessionStorage.removeItem("user_data");
           }
           set({
             user: null,

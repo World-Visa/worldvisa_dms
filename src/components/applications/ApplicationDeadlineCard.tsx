@@ -1,8 +1,9 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { formatDate } from "@/utils/format";
-import { Calendar, Edit3, AlertTriangle } from "lucide-react";
+import { AlertTriangle, Calendar, Edit3 } from "lucide-react";
 
 const STAGES_WITH_DEADLINE = [
   "Stage 1 Documentation: Approved",
@@ -35,53 +36,12 @@ function isDeadlinePassed(deadline: string) {
   return deadlineDate < today;
 }
 
-function getDaysRemaining(deadline: string) {
-  if (!deadline) return null;
+function getDaysCount(deadline: string): number {
   const deadlineDate = new Date(deadline);
   const today = new Date();
   const diffTime = deadlineDate.getTime() - today.getTime();
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  return diffDays < 0 ? "Overdue" : diffDays;
-}
-
-function getDeadlineStyles(deadline: string) {
-  const passed = isDeadlinePassed(deadline);
-  const approaching = isDeadlineApproaching(deadline);
-
-  if (passed) {
-    return {
-      container:
-        "bg-red-50 dark:bg-red-900/10 border border-red-100 dark:border-red-900/30",
-      iconContainer: "bg-red-500/10 dark:bg-red-500/20",
-      icon: "text-red-600 dark:text-red-400",
-      label: "text-red-600/70 dark:text-red-400/70",
-      date: "text-slate-800 dark:text-white",
-      subtitle: "text-red-600/60 dark:text-red-400/60",
-      days: "text-red-600 dark:text-red-400",
-    };
-  }
-  if (approaching) {
-    return {
-      container:
-        "bg-orange-50 dark:bg-orange-900/10 border border-orange-100 dark:border-orange-900/30",
-      iconContainer: "bg-orange-500/10 dark:bg-orange-500/20",
-      icon: "text-orange-600 dark:text-orange-400",
-      label: "text-orange-600/70 dark:text-orange-400/70",
-      date: "text-slate-800 dark:text-white",
-      subtitle: "text-orange-600/60 dark:text-orange-400/60",
-      days: "text-orange-600 dark:text-orange-400",
-    };
-  }
-  return {
-    container:
-      "bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-900/30",
-    iconContainer: "bg-blue-500/10 dark:bg-blue-500/20",
-    icon: "text-blue-600 dark:text-blue-400",
-    label: "text-blue-600/70 dark:text-blue-400/70",
-    date: "text-slate-800 dark:text-white",
-    subtitle: "text-blue-600/60 dark:text-blue-400/60",
-    days: "text-blue-600 dark:text-blue-400",
-  };
+  return Math.abs(diffDays);
 }
 
 export function ApplicationDeadlineCard({
@@ -105,89 +65,170 @@ export function ApplicationDeadlineCard({
     user?.role === "master_admin";
 
   if (deadline) {
-    const styles = getDeadlineStyles(deadline);
-    const daysRemaining = getDaysRemaining(deadline);
     const passed = isDeadlinePassed(deadline);
     const approaching = isDeadlineApproaching(deadline);
+    const days = getDaysCount(deadline);
+
+    const accent = passed
+      ? "bg-red-400"
+      : approaching
+        ? "bg-amber-400"
+        : "bg-blue-400";
+
+    const container = passed
+      ? "bg-red-50 border-red-100"
+      : approaching
+        ? "bg-amber-50 border-amber-100"
+        : "bg-white border-gray-200";
+
+    const iconBg = passed
+      ? "bg-red-100"
+      : approaching
+        ? "bg-amber-100"
+        : "bg-gray-100";
+
+    const iconColor = passed
+      ? "text-red-500"
+      : approaching
+        ? "text-amber-500"
+        : "text-gray-500";
+
+    const labelColor = passed
+      ? "text-red-400"
+      : approaching
+        ? "text-amber-400"
+        : "text-gray-400";
+
+    const panelBg = passed
+      ? "bg-red-100/60"
+      : approaching
+        ? "bg-amber-100/60"
+        : "bg-gray-50";
+
+    const daysColor = passed
+      ? "text-red-600"
+      : approaching
+        ? "text-amber-600"
+        : "text-blue-600";
 
     return (
       <div
-        className={`${styles.container} rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6`}
+        className={cn(
+          "rounded-2xl border overflow-hidden flex flex-col h-full",
+          container,
+        )}
       >
-        <div className="flex items-center space-x-5">
-          <div
-            className={`w-12 h-12 ${styles.iconContainer} rounded-xl flex items-center justify-center relative`}
-          >
-            <Calendar className={`h-6 w-6 ${styles.icon}`} />
-          </div>
-          <div>
-            <p
-              className={`${styles.label} text-sm font-medium uppercase tracking-wider flex items-center gap-2`}
-            >
-              Application Deadline
-              {passed && <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />}
-              {approaching && !passed && (
-                <AlertTriangle className={`h-4 w-4 ${styles.icon}`} />
+        {/* Top accent strip */}
+        <div className={cn("h-1 w-full shrink-0", accent)} />
+
+        {/* Content */}
+        <div className="p-5 flex flex-col gap-4 flex-1">
+          {/* Header */}
+          <div className="flex items-center gap-2.5">
+            <div
+              className={cn(
+                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
+                iconBg,
               )}
+            >
+              <Calendar className={cn("h-4 w-4", iconColor)} />
+            </div>
+            <div className="flex items-center gap-1.5 min-w-0">
+              <p
+                className={cn(
+                  "text-[10px] font-semibold uppercase tracking-widest",
+                  labelColor,
+                )}
+              >
+                Application Deadline
+              </p>
+              {(passed || approaching) && (
+                <AlertTriangle className={cn("h-3 w-3 shrink-0", iconColor)} />
+              )}
+            </div>
+          </div>
+
+          {/* Date */}
+          <div>
+            <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-medium">
+              Target Date
             </p>
-            <h2 className={`${styles.date} text-2xl font-bold`}>
+            <p className="text-xl font-bold text-slate-800 leading-tight">
               {formatDate(deadline)}
-            </h2>
-            <p className={`${styles.subtitle} text-xs`}>
+            </p>
+          </div>
+
+          {/* Days — focal point */}
+          <div
+            className={cn(
+              "rounded-xl p-4 flex flex-col items-center justify-center flex-1 min-h-[90px]",
+              panelBg,
+            )}
+          >
+            <p
+              className={cn(
+                "text-5xl font-black tabular-nums leading-none",
+                daysColor,
+              )}
+            >
+              {days}
+            </p>
+            <p
+              className={cn(
+                "text-[10px] font-bold uppercase tracking-widest mt-2",
+                labelColor,
+              )}
+            >
+              {passed ? "Days Overdue" : "Days Remaining"}
+            </p>
+          </div>
+
+          {/* Footer */}
+          <div className="flex flex-row items-center md:justify-between justify-start gap-1.5 w-full">
+            <p className={cn("text-xs w-full", labelColor)}>
               {passed
                 ? "⚠️ Deadline has passed"
                 : approaching
-                  ? "⚠️ Deadline approaching"
+                  ? "⚠️ Deadline is approaching"
                   : "Final lodgement target date"}
             </p>
+            {canEdit && (
+              <Button
+                onClick={onEditDeadline}
+                variant="link"
+                className={cn(
+                  "p-0 h-auto text-sm text-foreground font-medium justify-end w-fit",
+                )}
+              >
+                <Edit3 className="h-3 w-3 " />
+                Edit Deadline
+              </Button>
+            )}
           </div>
-        </div>
-        <div className="flex items-center gap-8">
-          <div className="text-center">
-            <p className={`${styles.days} text-3xl font-black`}>
-              {daysRemaining}
-            </p>
-            <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 tracking-widest">
-              Days Remaining
-            </p>
-          </div>
-          {canEdit && (
-            <Button
-              onClick={onEditDeadline}
-              className="bg-white hover:bg-gray-50 px-4 py-2 rounded-lg text-sm text-gray-900 font-semibold shadow-sm border border-slate-200 cursor-pointer transition-colors flex items-center gap-2"
-            >
-              Edit Deadline
-            </Button>
-          )}
         </div>
       </div>
     );
   }
 
+  // No deadline state
   return (
-    <div className="bg-gray-50 dark:bg-gray-900/10 border border-gray-200 dark:border-gray-800/30 rounded-2xl p-6 flex flex-col md:flex-row items-center justify-between gap-6">
-      <div className="flex items-center space-x-5">
-        <div className="w-12 h-12 bg-gray-500/10 dark:bg-gray-500/20 rounded-xl flex items-center justify-center">
-          <Calendar className="h-6 w-6 text-gray-600 dark:text-gray-400" />
-        </div>
-        <div>
-          <p className="text-gray-600/70 dark:text-gray-400/70 text-sm font-medium uppercase tracking-wider">
-            Application Deadline
-          </p>
-          <h2 className="text-slate-800 dark:text-white text-2xl font-bold">
-            No deadline set
-          </h2>
-          <p className="text-gray-600/60 dark:text-gray-400/60 text-xs">
-            Application lodgement deadline not configured
-          </p>
-        </div>
+    <div className="rounded-2xl border border-dashed border-gray-200 bg-gray-50/50 flex flex-col items-center justify-center p-6 text-center gap-4 h-full">
+      <div className="w-12 h-12 bg-white border border-gray-200 rounded-xl flex items-center justify-center shadow-sm">
+        <Calendar className="h-5 w-5 text-gray-400" />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-gray-600">No Deadline Set</p>
+        <p className="text-xs text-gray-400 mt-0.5">
+          Lodgement deadline not configured
+        </p>
       </div>
       {canEdit && (
         <Button
           onClick={onEditDeadline}
-          className="bg-white dark:bg-slate-800 px-4 py-2 rounded-lg text-sm font-semibold shadow-sm border border-slate-200 dark:border-slate-700 hover:border-primary transition-colors flex items-center gap-2"
+          size="sm"
+          className="bg-white border border-gray-200 text-accent-foreground hover:border-primary shadow-sm text-xs h-8 px-3 font-medium"
         >
-          <Edit3 className="h-4 w-4" />
+          <Edit3 className="h-3.5 w-3.5 mr-1.5" />
           Set Deadline
         </Button>
       )}

@@ -719,27 +719,7 @@ const DocumentChecklistTableComponent = ({
         },
         enableHiding: true,
       },
-      {
-        id: "category",
-        header: "Category",
-        cell: ({ row }) => {
-          const item = row.original;
-          return (
-            <div className="hidden sm:table-cell">
-              <Badge
-                variant="default"
-                className={cn(
-                  "text-xs py-1 text-white",
-                  getCategoryBadgeStyle(item.category),
-                )}
-              >
-                {item.category}
-              </Badge>
-            </div>
-          );
-        },
-        enableHiding: true,
-      },
+      
       {
         id: "documentName",
         header: "Document Name",
@@ -773,8 +753,7 @@ const DocumentChecklistTableComponent = ({
           return (
             <div className="flex flex-col space-y-1">
               <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                <div className="" title={item.documentType}>
+                <div className="font-semibold text-gray-900" title={item.documentType}>
                   <HighlightText
                     text={item.documentType}
                     query={searchQuery}
@@ -903,6 +882,27 @@ const DocumentChecklistTableComponent = ({
         },
         enableHiding: false,
       },
+      // {
+      //   id: "category",
+      //   header: "Category",
+      //   cell: ({ row }) => {
+      //     const item = row.original;
+      //     return (
+      //       <div className="hidden sm:table-cell">
+      //         <Badge
+      //           variant="default"
+      //           className={cn(
+      //             "text-xs py-1 text-white",
+      //             getCategoryBadgeStyle(item.category),
+      //           )}
+      //         >
+      //           {item.category}
+      //         </Badge>
+      //       </div>
+      //     );
+      //   },
+      //   enableHiding: true,
+      // },
       {
         id: "status",
         header: "Status",

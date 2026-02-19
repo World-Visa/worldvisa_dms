@@ -75,25 +75,25 @@ export const ChecklistEditor = memo(function ChecklistEditor({
       />
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-base font-semibold">Document Checklist</h2>
+        <div className="flex items-center justify-between gap-4 w-full">
+          {isEdit && (
+            <ChecklistTabs
+              activeTab={activeTab}
+              onTabChange={onTabChange}
+              currentCount={tabCounts.currentCount}
+              availableCount={tabCounts.availableCount}
+            />
+          )}
 
-        {isEdit && (
-          <ChecklistTabs
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-            currentCount={tabCounts.currentCount}
-            availableCount={tabCounts.availableCount}
-          />
-        )}
-
-        <div className="flex items-center gap-4">
-          <SearchBox
-            value={searchQuery}
-            onChange={onSearchChange}
-            placeholder="Search documents..."
-            aria-label="Search document checklist"
-            className="w-full lg:w-64"
-          />
+          <div className="flex items-center gap-4">
+            <SearchBox
+              value={searchQuery}
+              onChange={onSearchChange}
+              placeholder="Search documents..."
+              aria-label="Search document checklist"
+              className="w-full "
+            />
+          </div>
         </div>
 
         {searchQuery && (

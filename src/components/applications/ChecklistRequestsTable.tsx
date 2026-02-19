@@ -163,17 +163,7 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <FileText className="h-5 w-5" />
-          Checklist Requests
-          <Badge variant="secondary" className="ml-2">
-            {validRequests.length} request
-            {validRequests.length !== 1 ? "s" : ""}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
+    <Card className="border shadow-none bg-white/80 ">
       <CardContent>
         <div ref={tableRef}>
           <Table>
@@ -237,22 +227,21 @@ export const ChecklistRequestsTable = memo(function ChecklistRequestsTable({
                     <TableCell className="text-center">
                       <div className="flex justify-center gap-[8px]">
                         <Button
-                          variant="outline"
+                          variant="link"
                           size="sm"
                           onClick={(e) => {
                             e.stopPropagation();
                             handleRowClick(request.id, request.Record_Type);
                           }}
-                          className="flex items-center gap-2 cursor-pointer"
+                          className="flex items-center gap-2 text-gray-900 cursor-pointer"
                         >
-                          <Eye className="h-4 w-4" />
                           View
                         </Button>
                         <div onClick={(e) => e.stopPropagation()}>
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button
-                                variant="outline"
+                                variant="ghost"
                                 className="cursor-pointer"
                                 onClick={(e) => e.stopPropagation()}
                               >

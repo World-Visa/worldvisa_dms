@@ -1,26 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Lexend } from "next/font/google";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "sonner";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  weight: ["400", "500", "600", "700"],
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const lexend = Lexend({
-  variable: "--font-lexend",
+const outfit = Outfit({
+  variable: "--font-outfit",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   display: "swap",
@@ -53,7 +39,7 @@ export default function RootLayout({
         <meta name="msapplication-TileImage" content="/favicon.ico?v=1" />
       </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${lexend.variable} antialiased`}
+        className={`${outfit.variable} antialiased`}
         suppressHydrationWarning={true}
       >
         <Providers>

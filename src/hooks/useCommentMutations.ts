@@ -7,7 +7,7 @@ import {
   DeleteCommentRequest,
   DeleteCommentResponse,
 } from "@/types/comments";
-import { tokenStorage } from "@/lib/auth";
+import { getStoredToken } from "@/lib/auth";
 import { commentMonitor } from "@/lib/commentMonitoring";
 import * as Sentry from "@sentry/nextjs";
 import { toast } from "sonner";
@@ -101,7 +101,7 @@ export function useAddComment(documentId: string) {
 
       // Fallback to JWT token
       if (currentUser === "Unknown User") {
-        const token = tokenStorage.get();
+        const token = getStoredToken();
         if (token) {
           try {
             const payload = JSON.parse(atob(token.split(".")[1]));
@@ -272,7 +272,7 @@ export function useDeleteComment(documentId: string) {
 
         // Fallback to JWT token
         if (currentUser === "Unknown User") {
-          const token = tokenStorage.get();
+          const token = getStoredToken();
           if (token) {
             try {
               const payload = JSON.parse(atob(token.split(".")[1]));

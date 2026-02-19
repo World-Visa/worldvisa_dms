@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // @ts-expect-error
 import { io, type Socket } from "socket.io-client";
-import { tokenStorage } from "./auth";
+import { getStoredToken } from "./auth";
 import {
   NOTIFICATION_API_BASE_URL,
   NOTIFICATION_ENDPOINTS,
@@ -76,7 +76,7 @@ export class NotificationSocketManager {
       return;
     }
 
-    const token = tokenStorage.get();
+    const token = getStoredToken();
     if (!token) {
       console.error(
         "🔔 No authentication token available for socket connection",

@@ -318,7 +318,7 @@ export function ClientApplicationDetails({
                   <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
                     Application ID
                   </p>
-                  <p className="text-sm font-semibold font-mono">
+                  <p className="text-sm font-semibold">
                     {formatValue(application.id)}
                   </p>
                 </div>

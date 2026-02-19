@@ -4,7 +4,7 @@ import {
   MessageEvent,
   RealtimeConnectionState,
 } from "@/types/comments";
-import { tokenStorage } from "./auth";
+import { getStoredToken } from "./auth";
 import * as Sentry from "@sentry/nextjs";
 
 export interface RequestedDocumentEvent {
@@ -107,7 +107,7 @@ export class RealtimeManager {
     this.isConnecting = true;
     this.updateConnectionState({ isConnecting: true, error: null });
 
-    const token = tokenStorage.get();
+    const token = getStoredToken();
     if (!token) {
       this.handleConnectionError("No authentication token available");
       return;

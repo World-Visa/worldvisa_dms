@@ -104,7 +104,7 @@ export function ApplicationDetailsModal({
                     <Calendar className="h-3 w-3" />
                     Application ID
                   </label>
-                  <p className="font-mono text-sm">
+                  <p className="text-sm">
                     {formatValue(application.id)}
                   </p>
                 </div>

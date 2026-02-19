@@ -38,6 +38,7 @@ export const useSearchSpouseApplications = (searchParams: {
   name?: string;
   phone?: string;
   email?: string;
+  country?: string;
 }) => {
   return useQuery<ApplicationsResponse>({
     queryKey: ["spouse-applications-search", searchParams],
