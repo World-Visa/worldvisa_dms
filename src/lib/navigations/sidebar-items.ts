@@ -90,12 +90,6 @@ export const sidebarItems: NavGroup[] = [
                 comingSoon: false,
             },
             {
-                title: "Notifications",
-                url: "/v2/notifications",
-                icon: Bell,
-                comingSoon: false,
-            },
-            {
                 title: "Users",
                 url: "/v2/users",
                 icon: Users,

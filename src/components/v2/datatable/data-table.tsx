@@ -15,7 +15,7 @@ import {
 } from "@dnd-kit/core";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import { arrayMove, SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
-import { type ColumnDef, flexRender, type Table as TanStackTable } from "@tanstack/react-table";
+import { type ColumnDef, flexRender, type Row, type Table as TanStackTable } from "@tanstack/react-table";
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
@@ -26,6 +26,7 @@ interface DataTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[];
   dndEnabled?: boolean;
   onReorder?: (newData: TData[]) => void;
+  onRowClick?: (row: Row<TData>) => void;
 }
 
 function renderTableBody<TData, TValue>({
@@ -33,11 +34,13 @@ function renderTableBody<TData, TValue>({
   columns,
   dndEnabled,
   dataIds,
+  onRowClick,
 }: {
   table: TanStackTable<TData>;
   columns: ColumnDef<TData, TValue>[];
   dndEnabled: boolean;
   dataIds: UniqueIdentifier[];
+  onRowClick?: (row: Row<TData>) => void;
 }) {
   if (!table.getRowModel().rows.length) {
     return (
@@ -58,7 +61,12 @@ function renderTableBody<TData, TValue>({
     );
   }
   return table.getRowModel().rows.map((row) => (
-    <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+    <TableRow
+      key={row.id}
+      data-state={row.getIsSelected() && "selected"}
+      onClick={onRowClick ? () => onRowClick(row) : undefined}
+      className={onRowClick ? "cursor-pointer hover:bg-muted/50 transition-colors" : undefined}
+    >
       {row.getVisibleCells().map((cell) => (
         <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>
       ))}
@@ -71,6 +79,7 @@ export function DataTable<TData, TValue>({
   columns,
   dndEnabled = false,
   onReorder,
+  onRowClick,
 }: DataTableProps<TData, TValue>) {
   const dataIds: UniqueIdentifier[] = table.getRowModel().rows.map((row) => Number(row.id) as UniqueIdentifier);
   const sortableId = React.useId();
@@ -104,7 +113,7 @@ export function DataTable<TData, TValue>({
         ))}
       </TableHeader>
       <TableBody className="**:data-[slot=table-cell]:first:w-8">
-        {renderTableBody({ table, columns, dndEnabled, dataIds })}
+        {renderTableBody({ table, columns, dndEnabled, dataIds, onRowClick })}
       </TableBody>
     </Table>
   );

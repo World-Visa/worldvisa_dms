@@ -1,14 +1,30 @@
 import type { ReactNode } from "react";
+import { Suspense } from "react";
 
 import { AppSidebar } from "@/components/v2/sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { Skeleton } from "@/components/ui/skeleton";
 import { users } from "@/lib/data/users";
 import { cn } from "@/lib/utils";
 
 import { SearchDialog } from "@/components/v2/sidebar/search-dialog";
 import { NotificationDropdown } from "@/components/v2/header/notification-dropdown";
 import { AccountSwitcher } from "@/components/v2/sidebar/account-switcher";
+
+function AdminContentFallback() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-64" />
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Skeleton key={i} className="h-24 w-full rounded-xl" />
+        ))}
+      </div>
+      <Skeleton className="h-96 w-full rounded-xl" />
+    </div>
+  );
+}
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   return (
@@ -43,7 +59,9 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             </div>
           </div>
         </header>
-        <div className="h-full p-4 md:p-6">{children}</div>
+        <div className="h-full p-4 md:p-6">
+          <Suspense fallback={<AdminContentFallback />}>{children}</Suspense>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );

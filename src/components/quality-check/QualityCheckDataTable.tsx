@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -9,6 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -23,6 +24,28 @@ import { ArrowUpDown, ChevronLeft, ChevronRight, FileText } from "lucide-react";
 import { QualityCheckApplication } from "@/lib/api/qualityCheck";
 import { useRouter } from "next/navigation";
 import { usePagination } from "@/hooks/usePagination";
+
+function getRecordTypeBadgeVariant(recordType?: string) {
+  switch (recordType) {
+    case "spouse_skill_assessment":
+      return "default";
+    case "visa_application":
+      return "secondary";
+    default:
+      return "outline";
+  }
+}
+
+function getRecordTypeDisplayName(recordType?: string) {
+  switch (recordType) {
+    case "spouse_skill_assessment":
+      return "Spouse Assessment";
+    case "visa_application":
+      return "Visa Application";
+    default:
+      return recordType || "Unknown";
+  }
+}
 
 interface QualityCheckDataTableProps {
   applications: QualityCheckApplication[];
@@ -59,6 +82,19 @@ export function QualityCheckDataTable({
     pageSize: limit,
   });
 
+  const handleRowClick = useCallback(
+    (applicationId: string, recordType?: string) => {
+      if (recordType === "spouse_skill_assessment") {
+        router.push(
+          `/v2/spouse-skill-assessment-applications/${applicationId}`,
+        );
+      } else {
+        router.push(`/v2/applications/${applicationId}`);
+      }
+    },
+    [router],
+  );
+
   const columns = useMemo<ColumnDef<QualityCheckApplication>[]>(
     () => [
       {
@@ -86,15 +122,15 @@ export function QualityCheckDataTable({
         enableSorting: true,
       },
       {
-        accessorKey: "Email",
-        header: "Contact",
+        accessorKey: "Record_Type",
+        header: "Application Type",
         cell: ({ row }) => (
-          <div className="space-y-1 min-w-[140px]">
-            <p className="text-sm text-neutral-600 truncate">
-              {row.original.Email}
-            </p>
-            <p className="text-xs text-neutral-500">{row.original.Phone}</p>
-          </div>
+          <Badge
+            variant={getRecordTypeBadgeVariant(row.original.Record_Type)}
+            className="text-xs"
+          >
+            {getRecordTypeDisplayName(row.original.Record_Type)}
+          </Badge>
         ),
         enableSorting: false,
       },
@@ -102,7 +138,7 @@ export function QualityCheckDataTable({
         accessorKey: "Application_Handled_By",
         header: "Handled By",
         cell: ({ row }) => (
-          <span className="text-sm text-neutral-700">
+          <span className="text-sm text-foreground">
             {row.original.Application_Handled_By}
           </span>
         ),
@@ -112,7 +148,7 @@ export function QualityCheckDataTable({
         accessorKey: "Quality_Check_From",
         header: "QC From",
         cell: ({ row }) => (
-          <span className="text-sm text-neutral-700">
+          <span className="text-sm text-foreground">
             {row.original.Quality_Check_From}
           </span>
         ),
@@ -133,7 +169,7 @@ export function QualityCheckDataTable({
         cell: ({ row }) => {
           const date = new Date(row.original.Created_Time);
           return (
-            <div className="text-sm text-neutral-700">
+            <div className="text-sm text-foreground">
               {date.toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
@@ -152,10 +188,10 @@ export function QualityCheckDataTable({
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 text-neutral-600 hover:text-neutral-900"
+            className="h-8 text-muted-foreground hover:text-foreground"
             onClick={(e) => {
               e.stopPropagation();
-              router.push(`/admin/applications/${row.original.id}`);
+              handleRowClick(row.original.id, row.original.Record_Type);
             }}
           >
             View
@@ -164,7 +200,7 @@ export function QualityCheckDataTable({
         enableSorting: false,
       },
     ],
-    [router],
+    [handleRowClick],
   );
 
   const table = useReactTable({
@@ -177,10 +213,6 @@ export function QualityCheckDataTable({
     manualPagination: true,
     pageCount: totalPages,
   });
-
-  const handleViewApplication = (id: string) => {
-    router.push(`/admin/applications/${id}`);
-  };
 
   if (isLoading) {
     return (
@@ -195,13 +227,13 @@ export function QualityCheckDataTable({
   if (!applications || applications.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="rounded-full bg-neutral-100 p-3 mb-4">
-          <FileText className="h-6 w-6 text-neutral-400" />
+        <div className="rounded-full bg-gray-100 p-3 mb-4">
+          <FileText className="h-6 w-6 text-gray-400" />
         </div>
-        <h3 className="text-sm font-medium text-neutral-900 mb-1">
+        <h3 className="text-sm font-medium text-gray-900 mb-1">
           No applications found
         </h3>
-        <p className="text-sm text-neutral-500">
+        <p className="text-sm text-muted-foreground">
           Quality check applications will appear here.
         </p>
       </div>
@@ -212,7 +244,7 @@ export function QualityCheckDataTable({
 
   return (
     <div className="space-y-4">
-      <div className="overflow-hidden rounded-lg border border-neutral-200 bg-white">
+      <div className="overflow-hidden rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -234,8 +266,10 @@ export function QualityCheckDataTable({
             {rows.map((row) => (
               <TableRow
                 key={row.id}
-                className="cursor-pointer hover:bg-neutral-50/80 transition-colors"
-                onClick={() => handleViewApplication(row.original.id)}
+                className="cursor-pointer hover:bg-gray-50/80 transition-colors"
+                onClick={() =>
+                  handleRowClick(row.original.id, row.original.Record_Type)
+                }
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
@@ -258,7 +292,7 @@ export function QualityCheckDataTable({
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1">
-          <p className="text-sm text-neutral-500">
+          <p className="text-sm text-muted-foreground">
             Showing {startIndex}–{endIndex} of {totalItems.toLocaleString()}
           </p>
           <div className="flex items-center gap-1">
@@ -277,7 +311,7 @@ export function QualityCheckDataTable({
                 page === "..." ? (
                   <span
                     key={`ellipsis-${index}`}
-                    className="px-2 py-1 text-sm text-neutral-500"
+                    className="px-2 py-1 text-sm text-muted-foreground"
                   >
                     …
                   </span>

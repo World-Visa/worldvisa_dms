@@ -25,6 +25,7 @@ import {
   SearchResultsSkeleton,
 } from "@/components/applications/ApplicationsTableSkeleton";
 import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { RefreshCw, CalendarClock, X, Calendar, Users, Layers, CircleDot } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
@@ -40,6 +41,13 @@ const LazyApplicationsTable = lazy(() =>
 type Country = "Australia" | "Canada";
 
 const COUNTRIES: Country[] = ["Australia", "Canada"];
+
+const COUNTRY_IMAGE_URLS: Record<Country, string> = {
+  Australia:
+    "https://images.pexels.com/photos/1766215/pexels-photo-1766215.jpeg",
+  Canada:
+    "https://images.pexels.com/photos/2448946/pexels-photo-2448946.jpeg",
+};
 
 interface ApplicationsClientProps {
   initialRecentActivity?: boolean;
@@ -457,6 +465,16 @@ export const ApplicationsClient = memo(function ApplicationsClient({
                     : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
                 )}
               >
+                <Avatar className="size-8 shrink-0" >
+                  <AvatarImage
+                    src={COUNTRY_IMAGE_URLS[country]}
+                    alt={country}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="text-xs">
+                    {country.slice(0, 1)}
+                  </AvatarFallback>
+                </Avatar>
                 {country}
                 <span
                   className={cn(

@@ -76,24 +76,24 @@ export function RequestedDocumentsDataTable({
           const hasQuery = (searchQuery?.trim()?.length ?? 0) > 0;
           return (
             <div className="space-y-1 min-w-[200px]">
-              <p className="font-semibold text-gray-900">
+              <p className="font-medium text-foreground">
                 {hasQuery ? (
                   <HighlightText
                     text={docName}
                     query={searchQuery!}
-                    className="font-semibold text-gray-900"
+                    className="font-medium text-foreground"
                   />
                 ) : (
                   docName
                 )}
               </p>
               {doc.document_category && (
-                <p className="text-xs text-gray-500">
+                <p className="text-xs text-muted-foreground">
                   {hasQuery ? (
                     <HighlightText
                       text={docCategory}
                       query={searchQuery!}
-                      className="text-xs text-gray-500"
+                      className="text-xs text-muted-foreground"
                     />
                   ) : (
                     docCategory
@@ -101,7 +101,7 @@ export function RequestedDocumentsDataTable({
                 </p>
               )}
               {doc.isOverdue && (
-                <div className="flex items-center gap-1 text-xs text-red-600">
+                <div className="flex items-center gap-1 text-xs text-destructive">
                   <AlertTriangle className="h-3 w-3" />
                   <span>Overdue ({doc.daysSinceRequest} days)</span>
                 </div>
@@ -136,7 +136,7 @@ export function RequestedDocumentsDataTable({
         ),
         cell: ({ row }) => (
           <div className="flex items-center gap-2 min-w-[120px]">
-            <span className="text-sm">
+            <span className="text-sm text-foreground">
               {row.original.requested_review.requested_by}
             </span>
           </div>
@@ -182,6 +182,7 @@ export function RequestedDocumentsDataTable({
         enableSorting: true,
       },
       {
+        id: "requested_review.requested_at",
         accessorKey: "requested_review.requested_at",
         header: ({ column }) => (
           <Button

@@ -19,6 +19,7 @@ interface CategoryButtonProps {
   documents?: Document[];
   count?: number;
   disabled?: boolean;
+  categoryType?: "checklist" | "application";
 }
 
 export const CategoryButton = memo(function CategoryButton({
@@ -29,6 +30,7 @@ export const CategoryButton = memo(function CategoryButton({
   onRemoveCompanyWithCheck,
   count: countProp,
   disabled = false,
+  categoryType = "application",
 }: CategoryButtonProps) {
   const count = countProp ?? category.count;
 
@@ -75,7 +77,7 @@ export const CategoryButton = memo(function CategoryButton({
         {category.label}
 
         {/* Document count badge */}
-        {count != null && (
+        {count != null && categoryType === "application" && (
           <span
             className={cn(
               "tabular-nums text-xs font-medium transition-colors",
