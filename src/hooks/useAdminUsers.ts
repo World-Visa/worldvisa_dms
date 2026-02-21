@@ -1,34 +1,52 @@
 import { useQuery } from "@tanstack/react-query";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
+import { fetcher } from "@/lib/fetcher";
 
 export interface AdminUser {
   _id: string;
   username: string;
-  role: "admin" | "team_leader" | "master_admin";
+  role: "admin" | "team_leader" | "master_admin" | "supervisor";
   __v: number;
-}
-
-interface AdminUsersResponse {
-  data: AdminUser[];
 }
 
 const fetchAdminUsers = async (): Promise<AdminUser[]> => {
   try {
-    const response = await fetch(`${ZOHO_BASE_URL}/users/all`);
+    const result = await fetcher<unknown>(
+      `${ZOHO_BASE_URL}/users/all`,
+    );
 
-    if (!response.ok) {
-      throw new Error(
-        `Failed to fetch admin users: ${response.status} ${response.statusText}`,
+    const list: AdminUser[] =
+      Array.isArray(result)
+        ? result
+        : Array.isArray((result as { data?: AdminUser[] }).data)
+          ? (result as { data: AdminUser[] }).data
+          : Array.isArray((result as { users?: AdminUser[] }).users)
+            ? (result as { users: AdminUser[] }).users
+            : Array.isArray(
+                (result as { data?: { users?: AdminUser[] } }).data?.users,
+              )
+              ? (result as { data: { users: AdminUser[] } }).data.users
+              : [];
+
+    if (list.length === 0 && result !== null && typeof result === "object" && !Array.isArray(result)) {
+      const hasData = "data" in result && (result as { data?: unknown }).data !== undefined;
+      const hasUsers = "users" in result && (result as { users?: unknown }).users !== undefined;
+      const hasDataUsers = Array.isArray(
+        (result as { data?: { users?: unknown } }).data?.users,
       );
+      if (!hasData && !hasUsers && !hasDataUsers) {
+        console.warn(
+          "Admin users API response:",
+          result,
+          "— Check that the request is authenticated and the backend returns an array (e.g. under `data`, `users`, or `data.users`).",
+        );
+        throw new Error(
+          "Invalid response format from admin users API. Check that the request is authenticated and the backend returns an array (e.g. under `data`, `users`, or `data.users`).",
+        );
+      }
     }
 
-    const result: AdminUsersResponse = await response.json();
-
-    if (!result.data || !Array.isArray(result.data)) {
-      throw new Error("Invalid response format from admin users API");
-    }
-
-    return result.data;
+    return list;
   } catch (error) {
     console.error("Error fetching admin users:", error);
     throw error;
@@ -59,8 +77,13 @@ export function useAdminUsers() {
         }))
         .sort((a, b) => {
           // Sort by role priority, then by username
-          const rolePriority = { master_admin: 0, admin: 1, team_leader: 2 };
-          const roleDiff = rolePriority[a.role] - rolePriority[b.role];
+          const rolePriority: Record<string, number> = {
+            master_admin: 0,
+            admin: 1,
+            team_leader: 2,
+            supervisor: 3,
+          };
+          const roleDiff = (rolePriority[a.role] ?? 4) - (rolePriority[b.role] ?? 4);
           return roleDiff !== 0
             ? roleDiff
             : a.username.localeCompare(b.username);

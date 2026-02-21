@@ -118,6 +118,7 @@ export function RequestedDocumentsDataTable({
           <ClientNameCell
             recordId={row.original.record_id}
             clientName={row.original.client_name}
+            searchQuery={searchQuery}
           />
         ),
         enableSorting: false,
@@ -134,13 +135,21 @@ export function RequestedDocumentsDataTable({
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2 min-w-[120px]">
-            <span className="text-sm text-foreground">
-              {row.original.requested_review.requested_by}
-            </span>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const hasQuery = (searchQuery?.trim()?.length ?? 0) > 0;
+          const val = row.original.requested_review.requested_by;
+          return (
+            <div className="flex items-center gap-2 min-w-[120px]">
+              <span className="text-sm text-foreground">
+                {hasQuery ? (
+                  <HighlightText text={val} query={searchQuery!} />
+                ) : (
+                  val
+                )}
+              </span>
+            </div>
+          );
+        },
         enableSorting: true,
       },
       {
@@ -155,13 +164,21 @@ export function RequestedDocumentsDataTable({
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2 min-w-[120px]">
-            <span className="text-sm">
-              {row.original.requested_review.requested_to}
-            </span>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const hasQuery = (searchQuery?.trim()?.length ?? 0) > 0;
+          const val = row.original.requested_review.requested_to;
+          return (
+            <div className="flex items-center gap-2 min-w-[120px]">
+              <span className="text-sm">
+                {hasQuery ? (
+                  <HighlightText text={val} query={searchQuery!} />
+                ) : (
+                  val
+                )}
+              </span>
+            </div>
+          );
+        },
         enableSorting: true,
       },
       {

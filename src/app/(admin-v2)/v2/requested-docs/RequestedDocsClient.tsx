@@ -95,13 +95,9 @@ export default function RequestedDocsClient() {
   });
 
   const { data: searchData, isLoading: isSearchLoading } =
-    useRequestedDocumentsSearch(
-      currentPage,
-      limit,
-      debouncedSearch,
-      undefined,
-      { enabled: isSearchMode },
-    );
+    useRequestedDocumentsSearch(currentPage, limit, debouncedSearch, {
+      enabled: isSearchMode,
+    });
 
   // Stats queries - fetch all data for stats calculation
   const {

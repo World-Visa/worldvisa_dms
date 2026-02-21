@@ -165,8 +165,8 @@ export function RequestedDocumentViewSheet({
 
     const route =
       application?.Record_Type === "spouse_skill_assessment"
-        ? `/admin/spouse-skill-assessment-applications/${displayDoc.record_id}`
-        : `/admin/applications/${displayDoc.record_id}`;
+        ? `/v2/spouse-skill-assessment-applications/${displayDoc.record_id}`
+        : `/v2/applications/${displayDoc.record_id}`;
 
     router.push(route);
     onClose();

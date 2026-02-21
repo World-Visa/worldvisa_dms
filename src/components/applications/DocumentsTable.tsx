@@ -57,6 +57,8 @@ import { DeleteDocumentDialog } from "./DeleteDocumentDialog";
 import { ReuploadDocumentModal } from "./ReuploadDocumentModal";
 import { UploadDocumentsModal } from "./UploadDocumentsModal";
 import ViewDocumentSheet from "./ViewDocumentSheet";
+import { DocumentEmptyState } from "./DocumentEmptyState";
+import { DocumentErrorState } from "./DocumentErrorState";
 
 interface DocumentsTableProps {
   applicationId: string;
@@ -543,35 +545,13 @@ export function DocumentsTable({
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Submitted Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-destructive">Failed to load documents</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {error.message}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <DocumentErrorState />
     );
   }
 
   if (!documents || documents.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No documents uploaded yet</p>
-          </div>
-        </CardContent>
-      </Card>
+      <DocumentEmptyState applicationId={applicationId} />
     );
   }
 

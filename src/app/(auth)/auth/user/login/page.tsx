@@ -5,12 +5,24 @@ import { Globe } from "lucide-react";
 
 import { LoginFormV2 } from "@/components/auth/LoginFormV2";
 import { GoogleButton } from "@/components/auth/GoogleButton";
+import Image from "next/image";
+import Logo from "../../../../../../public/logos/world-visa-logo.webp";
 
 export default function LoginV2() {
   return (
     <>
       <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[350px]">
-        <div className="space-y-2 text-center">
+      <div className="space-y-2 text-center items-center flex flex-col justify-center">
+          <div className="relative h-12 w-36">
+            <Image
+              src={Logo}
+              alt="WorldVisa Logo"
+              height={72}
+              width={120}
+              className="w-full h-full object-contain"
+              priority
+            />
+          </div>
           <h1 className="font-medium text-3xl">Login to your account</h1>
           <p className="text-muted-foreground text-sm">Please enter your details to login.</p>
         </div>

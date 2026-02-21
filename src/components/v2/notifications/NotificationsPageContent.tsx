@@ -25,8 +25,8 @@ function filterAndSort(
   let list = notifications.filter((n) => {
     if (statusFilter === "unread" && n.isRead) return false;
     if (statusFilter === "read" && !n.isRead) return false;
-    if (typeFilter !== "all" && n.category !== typeFilter) return false;
-    if (q && !n.message.toLowerCase().includes(q)) return false;
+    if (typeFilter !== "all" && n.source !== typeFilter) return false;
+    if (q && !n.message.toLowerCase().includes(q) && !(n.title ?? "").toLowerCase().includes(q)) return false;
     return true;
   });
   list = [...list].sort((a, b) => {

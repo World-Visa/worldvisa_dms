@@ -9,9 +9,9 @@ import * as Sentry from "@sentry/nextjs";
 
 export interface RequestedDocumentEvent {
   type:
-    | "requested_document_deleted"
-    | "requested_document_updated"
-    | "requested_document_created";
+  | "requested_document_deleted"
+  | "requested_document_updated"
+  | "requested_document_created";
   document_id: string;
   document?: any;
   requested_by?: string;
@@ -117,7 +117,7 @@ export class RealtimeManager {
       // Get user role from localStorage to include in the URL
       let roleParam = "";
       if (typeof window !== "undefined") {
-        const userData = localStorage.getItem("user_data");
+        const userData = sessionStorage.getItem("user_data") ?? localStorage.getItem("user_data");
         if (userData) {
           try {
             const user = JSON.parse(userData);
@@ -130,9 +130,9 @@ export class RealtimeManager {
         }
       }
 
-      // Create SSE connection to our API endpoint
+      // Create SSE connection to our API endpoint (same origin — Next.js API route)
       const baseUrl =
-        process.env.NEXT_PUBLIC_API_BASE_URLL || window.location.origin;
+        typeof window !== "undefined" ? window.location.origin : "";
       const eventSource = new EventSource(
         `${baseUrl}/api/realtime/comments?token=${encodeURIComponent(token)}${roleParam}`,
         {

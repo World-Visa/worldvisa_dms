@@ -25,7 +25,7 @@ export async function fetcher<T>(
     headers.Authorization = `Bearer ${token}`;
 
     if (typeof window !== "undefined") {
-      const userData = localStorage.getItem("user_data");
+      const userData = sessionStorage.getItem("user_data") ?? localStorage.getItem("user_data");
       if (userData) {
         try {
           const user = JSON.parse(userData);
@@ -33,7 +33,7 @@ export async function fetcher<T>(
             headers["X-User-Role"] = user.role;
           }
         } catch (error) {
-          console.warn("Failed to parse user data from localStorage:", error);
+          console.warn("Failed to parse user data:", error);
         }
       }
     }
@@ -87,20 +87,20 @@ export async function fetcher<T>(
           // For other endpoints, redirect if authentication fails
           removeStoredToken();
           if (typeof window !== "undefined") {
-            const userData = localStorage.getItem("user_data");
+            const userData = sessionStorage.getItem("user_data") ?? localStorage.getItem("user_data");
             let redirectPath = "/portal";
 
             if (userData) {
               try {
                 const user = JSON.parse(userData);
                 if (user.role === "client") {
-                  redirectPath = "/client-login";
+                  redirectPath = "/auth/user/login";
                 } else if (
                   user.role === "admin" ||
                   user.role === "team_leader" ||
                   user.role === "master_admin"
                 ) {
-                  redirectPath = "/admin-login";
+                  redirectPath = "/auth/admin/login";
                 }
               } catch (error) {
                 console.warn("Failed to parse user data for redirect:", error);
@@ -108,6 +108,7 @@ export async function fetcher<T>(
             }
 
             localStorage.removeItem("user_data");
+            sessionStorage.removeItem("user_data");
             window.location.href = redirectPath;
           }
         }

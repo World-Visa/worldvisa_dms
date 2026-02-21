@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 
-import { CircleHelp, ClipboardList, Command, Database, File, Search, Settings } from "lucide-react";
-import { useShallow } from "zustand/react/shallow";
+import { Command } from "lucide-react";
 
 import {
   Sidebar,
@@ -14,11 +13,14 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
-import { rootUser } from "@/lib/data/users";
-import { sidebarItems } from "@/lib/navigations/sidebar-items";
+import { useAuth } from "@/hooks/useAuth";
+import { getFilteredSidebarItems } from "@/lib/navigations/sidebar-items";
+import { formatRole, getAvatarUrl } from "@/lib/utils";
 
 import { NavMain } from "@/components/v2/sidebar/nav-main";
 import { NavUser } from "@/components/v2/sidebar/nav-user";
+import Image from "next/image";
+import Logo from "../../../../public/logos/world-visa-logo.webp";
 
 const APP_CONFIG = {
   name: "WorldVisa DMS",
@@ -29,7 +31,17 @@ const APP_CONFIG = {
 
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  
+  const { user } = useAuth();
+
+  const filteredItems = getFilteredSidebarItems(user?.role);
+
+  const navUser = {
+    name: user?.username ?? "",
+    email: user?.email ?? "",
+    avatar: user?._id ? getAvatarUrl(user._id) : "",
+    role: user?.role ? formatRole(user.role) : "",
+  };
+
   return (
     <Sidebar {...props} variant="floating" collapsible="icon">
       <SidebarHeader>
@@ -37,20 +49,35 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           <SidebarMenuItem>
             <SidebarMenuButton asChild>
               <Link prefetch={false} href="/v2">
-                <Command />
-                <span className="font-semibold text-base">{APP_CONFIG.name}</span>
+                <div className="relative h-12 w-36 group-data-[collapsible=icon]:hidden">
+                  <Image
+                    src={Logo}
+                    alt="WorldVisa Logo"
+                    height={72}
+                    width={120}
+                    className="w-full h-full object-contain"
+                    priority
+                  />
+                </div>
+                <div className="hidden h-8 w-8 shrink-0 items-center justify-center group-data-[collapsible=icon]:flex">
+                  <Image
+                    src="https://res.cloudinary.com/djvvz62dw/image/upload/v1724397846/worldvisa/Images/world-visa-logo_rqnb93.png"
+                    alt="WorldVisa Logo"
+                    width={32}
+                    height={32}
+                    className="object-contain"
+                  />
+                </div>
               </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={sidebarItems} />
-        {/* <NavDocuments items={data.documents} /> */}
-        {/* <NavSecondary items={data.navSecondary} className="mt-auto" /> */}
+        <NavMain items={filteredItems} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser user={rootUser} />
+        <NavUser user={navUser} />
       </SidebarFooter>
     </Sidebar>
   );

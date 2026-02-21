@@ -69,6 +69,7 @@ export interface ApiDocument {
 }
 
 export interface UploadDocumentsModalProps {
+  mode?: "upload";
   isOpen: boolean;
   onClose: () => void;
   applicationId: string;
@@ -80,6 +81,22 @@ export interface UploadDocumentsModalProps {
   instruction?: string;
   onSuccess?: () => void;
 }
+
+export interface ReuploadDocumentModalProps {
+  mode: "reupload";
+  isOpen: boolean;
+  onClose: () => void;
+  applicationId: string;
+  document: ApplicationDocument | null;
+  documentType: string;
+  category: string;
+  isClientView?: boolean;
+  instruction?: string;
+}
+
+export type DocumentUploadModalProps =
+  | UploadDocumentsModalProps
+  | ReuploadDocumentModalProps;
 
 export interface UploadedFile {
   file: File;

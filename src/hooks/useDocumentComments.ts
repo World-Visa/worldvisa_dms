@@ -69,29 +69,31 @@ export function useDocumentComments(documentId: string) {
         queryClient.setQueryData(
           ["document-comments", documentId],
           (oldData: Comment[] | undefined) => {
-            if (!oldData) return oldData;
-
-            const existingComments = oldData || [];
+            const existingComments = Array.isArray(oldData) ? oldData : [];
 
             switch (event.type) {
               case "comment_added":
-                // Check if comment already exists to avoid duplicates
+                // When initial fetch failed or returned empty, still apply so "Live" shows comments
+                if (existingComments.length === 0) {
+                  return sortCommentsByPriority([event.comment]);
+                }
                 const commentExists = existingComments.some(
                   (c) => c._id === event.comment._id,
                 );
                 if (!commentExists) {
-                  // Add new comment and sort by priority (Moshin's comments first, then by date)
                   const newComments = [...existingComments, event.comment];
                   return sortCommentsByPriority(newComments);
                 }
                 break;
 
               case "comment_updated":
+                if (existingComments.length === 0) return oldData ?? [];
                 return existingComments.map((comment) =>
                   comment._id === event.comment._id ? event.comment : comment,
                 );
 
               case "comment_deleted":
+                if (existingComments.length === 0) return oldData ?? [];
                 return existingComments.filter(
                   (comment) => comment._id !== event.comment._id,
                 );

@@ -18,6 +18,10 @@ interface ApplicationDeadlineCardProps {
   user: { role?: string } | null;
   onEditDeadline: () => void;
   applicationStage?: string;
+  /** When true, hide Edit/Set Deadline buttons (e.g. for client view). */
+  showEdit?: boolean;
+  /** When true, show the card whenever deadline is provided, regardless of applicationStage. */
+  alwaysShowWhenDeadline?: boolean;
 }
 
 function isDeadlineApproaching(deadline: string) {
@@ -49,8 +53,11 @@ export function ApplicationDeadlineCard({
   user,
   onEditDeadline,
   applicationStage,
+  showEdit = true,
+  alwaysShowWhenDeadline = false,
 }: ApplicationDeadlineCardProps) {
   if (
+    !alwaysShowWhenDeadline &&
     applicationStage !== undefined &&
     !STAGES_WITH_DEADLINE.includes(
       applicationStage as (typeof STAGES_WITH_DEADLINE)[number],
@@ -60,9 +67,10 @@ export function ApplicationDeadlineCard({
   }
 
   const canEdit =
-    user?.role === "admin" ||
-    user?.role === "team_leader" ||
-    user?.role === "master_admin";
+    showEdit &&
+    (user?.role === "admin" ||
+      user?.role === "team_leader" ||
+      user?.role === "master_admin");
 
   if (deadline) {
     const passed = isDeadlinePassed(deadline);

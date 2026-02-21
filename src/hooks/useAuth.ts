@@ -62,7 +62,10 @@ export const useAuth = create<AuthStore>()(
               // Client login response structure - user data is directly in response
               const clientResponse = response as ClientLoginResponse;
               userData = {
-                _id: clientResponse._id || clientResponse.id,
+                _id:
+                  clientResponse._id ||
+                  clientResponse.id ||
+                  clientResponse.lead_id,
                 username: clientResponse.username || clientResponse.name,
                 email: clientResponse.email,
                 lead_id: clientResponse.lead_id,
@@ -78,18 +81,10 @@ export const useAuth = create<AuthStore>()(
               role: userData?.role || "client",
             };
 
-            // rememberMe=true → localStorage (survives browser restarts)
-            // rememberMe=false → sessionStorage (cleared on tab/browser close)
-            if (rememberMe) {
-              tokenStorage.set(token);
-              if (typeof window !== "undefined") {
-                localStorage.setItem("user_data", JSON.stringify(user));
-              }
-            } else {
-              sessionTokenStorage.set(token);
-              if (typeof window !== "undefined") {
-                sessionStorage.setItem("user_data", JSON.stringify(user));
-              }
+            // Always store in localStorage so comments, fetcher, and realtime always have user/role
+            tokenStorage.set(token);
+            if (typeof window !== "undefined") {
+              localStorage.setItem("user_data", JSON.stringify(user));
             }
 
             set({

@@ -429,28 +429,19 @@ export function useAllRequestedDocuments(
 export function useRequestedDocumentsSearch(
   page: number,
   limit: number,
-  documentName: string,
-  documentCategory?: string,
+  q: string,
   options?: UseRequestedDocumentsOptions,
 ) {
   const { user } = useAuth();
-  const hasSearch =
-    Boolean(documentName?.trim()) || Boolean(documentCategory?.trim());
+  const hasSearch = Boolean(q?.trim());
 
   return useQuery({
-    queryKey: [
-      "requested-documents-search",
-      page,
-      limit,
-      documentName?.trim() ?? "",
-      documentCategory ?? "",
-    ],
+    queryKey: ["requested-documents-search", page, limit, q.trim()],
     queryFn: () =>
       getRequestedDocumentsSearch({
         page,
         limit,
-        document_name: documentName?.trim() || undefined,
-        document_category: documentCategory?.trim() || undefined,
+        q: q.trim(),
       }),
     enabled: hasSearch && (options?.enabled ?? true),
     placeholderData: keepPreviousData,

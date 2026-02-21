@@ -5,12 +5,12 @@ import { AppSidebar } from "@/components/v2/sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Skeleton } from "@/components/ui/skeleton";
-import { users } from "@/lib/data/users";
 import { cn } from "@/lib/utils";
 
 import { SearchDialog } from "@/components/v2/sidebar/search-dialog";
 import { NotificationDropdown } from "@/components/v2/header/notification-dropdown";
 import { AccountSwitcher } from "@/components/v2/sidebar/account-switcher";
+import { AuthGuardV2 } from "@/components/auth/AuthGuardV2";
 
 function AdminContentFallback() {
   return (
@@ -55,12 +55,14 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <ThemeSwitcher /> */}
               <NotificationDropdown />
               <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-              <AccountSwitcher users={users} />
+              <AccountSwitcher />
             </div>
           </div>
         </header>
         <div className="h-full p-4 md:p-6">
-          <Suspense fallback={<AdminContentFallback />}>{children}</Suspense>
+          <Suspense fallback={<AdminContentFallback />}>
+            <AuthGuardV2>{children}</AuthGuardV2>
+          </Suspense>
         </div>
       </SidebarInset>
     </SidebarProvider>

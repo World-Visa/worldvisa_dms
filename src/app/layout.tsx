@@ -44,7 +44,7 @@ export default function RootLayout({
       >
         <Providers>
           <NotificationProvider>{children}</NotificationProvider>
-          <Toaster position="top-center" richColors />
+          <Toaster position="top-right" richColors />
         </Providers>
       </body>
     </html>

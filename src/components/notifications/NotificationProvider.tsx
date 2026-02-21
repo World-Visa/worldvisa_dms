@@ -1,88 +1,101 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { notificationSocket } from "@/lib/notificationSocket";
 import { useNotificationStore } from "@/store/notificationStore";
-import { useNotifications } from "@/hooks/useNotifications";
+import { getNotificationAction } from "@/components/v2/notifications/NotificationRow";
+import type { NotificationNewEvent } from "@/types/notifications";
+
+// Cast socket event to Notification-compatible shape for getNotificationAction
+function getActionFromEvent(event: NotificationNewEvent) {
+  return getNotificationAction({
+    ...event,
+    user: "",
+    // getNotificationAction only reads source, leadId — safe cast
+  } as Parameters<typeof getNotificationAction>[0]);
+}
 
 export function NotificationProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const router = useRouter();
   const { isAuthenticated } = useAuth();
   const { desktopNotificationsEnabled, soundEnabled } = useNotificationStore();
 
-  // Initialize the notifications hook to set up event listeners
-  useEffect(() => {
-    console.log("🔔 NotificationProvider: About to call useNotifications hook");
-    // We don't need to call useNotifications here since it's already called in NotificationBell and NotificationPanel
-    // The issue was that calling it here was causing multiple registrations
-    console.log(
-      "🔔 NotificationProvider: Skipping useNotifications call to prevent multiple registrations",
-    );
-  }, []);
-
-  // Initialize notification system when user is authenticated
+  // Connect / disconnect socket on auth change
   useEffect(() => {
     if (isAuthenticated) {
       notificationSocket.connect();
 
-      // Request notification permission
       if (desktopNotificationsEnabled && "Notification" in window) {
-        Notification.requestPermission().then((permission) => {});
+        Notification.requestPermission();
       }
     } else {
       notificationSocket.disconnect();
     }
   }, [isAuthenticated, desktopNotificationsEnabled]);
 
-  // Set up desktop notifications
+  // Real-time Sonner toast on new notification
+  useEffect(() => {
+    const unsubscribe = notificationSocket.onNotificationNew((notification) => {
+      const action = getActionFromEvent(notification);
+      toast(notification.title ?? "New notification", {
+        description: notification.message,
+        duration: 6000,
+        action: action
+          ? {
+              label: action.label,
+              onClick: () => router.push(action.href),
+            }
+          : undefined,
+      });
+    });
+
+    return unsubscribe;
+  }, [router]);
+
+  // Desktop (browser) notifications
   useEffect(() => {
     if (!desktopNotificationsEnabled || !("Notification" in window)) return;
 
-    const unsubscribeNew = notificationSocket.onNotificationNew(
-      (notification) => {
-        if (Notification.permission === "granted") {
-          const notificationInstance = new Notification(notification.message, {
-            icon: "/favicon.ico",
-            badge: "/favicon.ico",
-            tag: notification._id,
-            data: notification,
-          });
-
-          notificationInstance.onclick = () => {
-            window.focus();
-            if (notification.link) {
-              window.open(notification.link, "_blank");
-            }
-          };
-        }
-      },
-    );
-
-    return unsubscribeNew;
-  }, [desktopNotificationsEnabled]);
-
-  // Set up sound notifications
-  useEffect(() => {
-    if (!soundEnabled) {
-      return;
-    }
-
-    const unsubscribeNew = notificationSocket.onNotificationNew(
-      (notification) => {
-        // Play notification sound
-        const audio = new Audio("/sound/notification.mp3");
-        audio.volume = 0.5; // Set volume to 50%
-        audio.play().catch((error) => {
-          console.warn("Failed to play notification sound:", error);
+    const unsubscribe = notificationSocket.onNotificationNew((notification) => {
+      if (Notification.permission === "granted") {
+        const instance = new Notification(notification.title ?? notification.message, {
+          body: notification.title ? notification.message : undefined,
+          icon: "/favicon.ico",
+          badge: "/favicon.ico",
+          tag: notification._id,
         });
-      },
-    );
 
-    return unsubscribeNew;
+        instance.onclick = () => {
+          window.focus();
+          const action = getActionFromEvent(notification);
+          if (action) router.push(action.href);
+        };
+      }
+    });
+
+    return unsubscribe;
+  }, [desktopNotificationsEnabled, router]);
+
+  // Sound notifications
+  useEffect(() => {
+    if (!soundEnabled) return;
+
+    const unsubscribe = notificationSocket.onNotificationNew(() => {
+      const audio = new Audio("/sound/notification.mp3");
+      audio.volume = 0.5;
+      audio.play().catch(() => {
+        // Browser may block autoplay — ignore silently
+      });
+    });
+
+    return unsubscribe;
   }, [soundEnabled]);
 
   return <>{children}</>;

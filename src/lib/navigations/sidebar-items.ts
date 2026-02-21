@@ -38,6 +38,8 @@ export interface NavMainItem {
     comingSoon?: boolean;
     newTab?: boolean;
     isNew?: boolean;
+    /** If defined, only these roles can see this item. Undefined = visible to all roles. */
+    allowedRoles?: string[];
 }
 
 export interface NavGroup {
@@ -55,6 +57,7 @@ export const sidebarItems: NavGroup[] = [
                 title: "Admin Dashboard",
                 url: "/v2",
                 icon: LayoutDashboard,
+                allowedRoles: ["master_admin"],
             },
         ],
     },
@@ -82,12 +85,14 @@ export const sidebarItems: NavGroup[] = [
                 url: "/v2/quality-check",
                 icon: Forklift,
                 comingSoon: false,
+                allowedRoles: ["master_admin", "team_leader", "supervisor"],
             },
             {
                 title: "Checklist Requests",
                 url: "/v2/checklist-requests",
                 icon: ClipboardList,
                 comingSoon: false,
+                allowedRoles: ["master_admin", "admin", "team_leader"],
             },
             {
                 title: "Users",
@@ -98,6 +103,7 @@ export const sidebarItems: NavGroup[] = [
                     { title: "Manage Clients", url: "/v2/clients", newTab: false },
                 ],
                 comingSoon: false,
+                allowedRoles: ["master_admin"],
             },
             {
                 title: "Email",
@@ -151,3 +157,21 @@ export const sidebarItems: NavGroup[] = [
     //   ],
     // },
 ];
+
+/**
+ * Returns sidebar groups filtered by the given user role.
+ * Items without `allowedRoles` are visible to all roles.
+ * Groups with no remaining items after filtering are removed.
+ */
+export function getFilteredSidebarItems(role?: string): NavGroup[] {
+    return sidebarItems
+        .map((group) => ({
+            ...group,
+            items: group.items.filter(
+                (item) =>
+                    !item.allowedRoles ||
+                    (role !== undefined && item.allowedRoles.includes(role)),
+            ),
+        }))
+        .filter((group) => group.items.length > 0);
+}

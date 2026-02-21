@@ -130,7 +130,7 @@ export const CategoryDropdown = memo(function CategoryDropdown({
           />
           {useLinkMode ? (
             <Button variant="outline" size="sm" asChild className="w-full">
-              <Link href={`/admin/applications/${applicationId}/checklist`}>
+              <Link href={`/v2/applications/${applicationId}/checklist`}>
                 {hasChecklist ? "Edit checklist" : "Create checklist"}
               </Link>
             </Button>

@@ -53,7 +53,7 @@ export function LoginFormV2({ type }: { type: "admin" | "client" }) {
         rememberMe: data.remember ?? false,
       });
       toast.success("Welcome back! 👋");
-      router.push("/admin/applications");
+      router.push("/v2/applications");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Login failed. Please try again.");
     }

@@ -13,7 +13,7 @@ export default function ClientApplicationsPage() {
     if (!isLoading && isAuthenticated && user?.lead_id) {
       router.push(`/client/applications/${user.lead_id}`);
     } else if (!isLoading && !isAuthenticated) {
-      router.push("/client-login");
+      router.push("/auth/user/login");
     }
   }, [user, isAuthenticated, isLoading, router]);
 

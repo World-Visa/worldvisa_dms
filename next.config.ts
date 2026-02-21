@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
     ];
   },
   images: {
-    domains: ["localhost", "images.pexels.com", "workdrive.zohopublic.in"],
+    domains: ["localhost", "images.pexels.com", "workdrive.zohopublic.in", "res.cloudinary.com"],
   },
   experimental: {
     turbopackFileSystemCacheForDev: true,
