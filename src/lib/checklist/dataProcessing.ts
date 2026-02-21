@@ -725,11 +725,12 @@ export function filterItemsByCategory(
   checklistItems: ChecklistTableItem[],
   selectedCategory: string,
 ): ChecklistTableItem[] {
-  // Handle company documents
+  // Handle company documents — match any company-specific category (e.g. "worldvisa Company Documents")
   if (selectedCategory === "company") {
     return checklistItems.filter(
       (item) =>
-        item.category === "Company Documents" || item.category === "Company",
+        item.category.includes("Company Documents") ||
+        item.category === "Company",
     );
   }
 

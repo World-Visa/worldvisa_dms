@@ -1,4 +1,4 @@
-import { tokenStorage } from "@/lib/auth";
+import { getStoredToken } from "@/lib/auth";
 import type {
   SampleDocumentsResponse,
   UploadSampleDocumentRequest,
@@ -28,7 +28,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export async function fetchSampleDocuments(
   applicationId: string,
 ): Promise<SampleDocumentsResponse> {
-  const token = tokenStorage.get();
+  const token = getStoredToken();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -64,7 +64,7 @@ export async function uploadSampleDocument(
   formData.append("document_name", request.document_name);
   formData.append("type", request.type ?? "skill-assessment");
 
-  const token = tokenStorage.get();
+  const token = getStoredToken();
 
   const headers: Record<string, string> = {};
   if (token) {
@@ -85,7 +85,7 @@ export async function uploadSampleDocument(
 export async function updateSampleDocument(
   request: UpdateSampleDocumentRequest,
 ): Promise<UploadSampleDocumentResponse> {
-  const token = tokenStorage.get();
+  const token = getStoredToken();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -110,7 +110,7 @@ export async function deleteSampleDocument(
   applicationId: string,
   documentId: string,
 ): Promise<DeleteSampleDocumentResponse> {
-  const token = tokenStorage.get();
+  const token = getStoredToken();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

@@ -45,7 +45,7 @@ export function QualityCheckTable({
   const [hoveredRow, setHoveredRow] = useState<string | null>(null);
 
   const handleViewApplication = (applicationId: string) => {
-    router.push(`/admin/applications/${applicationId}`);
+    router.push(`/v2/applications/${applicationId}`);
   };
 
   const getStatusIcon = (status: string | null | undefined) => {

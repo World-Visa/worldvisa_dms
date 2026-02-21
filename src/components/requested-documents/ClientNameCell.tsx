@@ -6,13 +6,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useApplicationDetails } from "@/hooks/useApplicationDetails";
 import { useSpouseApplicationDetails } from "@/hooks/useSpouseApplicationDetails";
 import { ApplicationDetailsResponse } from "@/types/applications";
+import { HighlightText } from "@/components/ui/HighlightText";
 
 interface ClientNameCellProps {
   recordId: string;
   clientName?: string;
+  searchQuery?: string;
 }
 
-export function ClientNameCell({ recordId, clientName }: ClientNameCellProps) {
+export function ClientNameCell({ recordId, clientName, searchQuery }: ClientNameCellProps) {
+  const hasQuery = Boolean(searchQuery?.trim());
+
   if (clientName != null && clientName.trim() !== "") {
     return (
       <div className="flex items-center gap-2">
@@ -20,7 +24,11 @@ export function ClientNameCell({ recordId, clientName }: ClientNameCellProps) {
           className="text-sm font-medium text-gray-900 truncate max-w-[180px]"
           title={clientName}
         >
-          {clientName}
+          {hasQuery ? (
+            <HighlightText text={clientName} query={searchQuery!} />
+          ) : (
+            clientName
+          )}
         </span>
       </div>
     );
@@ -60,7 +68,11 @@ export function ClientNameCell({ recordId, clientName }: ClientNameCellProps) {
         className="text-sm font-medium text-gray-900 truncate max-w-[180px]"
         title={application.Name}
       >
-        {application.Name}
+        {hasQuery ? (
+          <HighlightText text={application.Name} query={searchQuery!} />
+        ) : (
+          application.Name
+        )}
       </span>
     </div>
   );

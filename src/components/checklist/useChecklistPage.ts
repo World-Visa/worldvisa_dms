@@ -18,7 +18,6 @@ import {
   generateEditingCurrentItems,
   generateEditingAvailableItems,
   generateSavedItems,
-  matchesCategory,
 } from "@/lib/checklist/dataProcessing";
 import { generateCategories } from "@/components/applications/filter/CategoryGenerator";
 import { useSearchMemo } from "@/lib/utils/search";
@@ -77,7 +76,6 @@ export function useChecklistPage({
   const [pendingAdditions, setPendingAdditions] = useState<ChecklistDocument[]>(
     [],
   );
-  const [pendingDeletions, setPendingDeletions] = useState<string[]>([]);
   const [pendingUpdates, setPendingUpdates] = useState<
     Array<{
       checklistId: string;
@@ -93,13 +91,11 @@ export function useChecklistPage({
   const {
     batchSave,
     batchUpdate,
-    batchDelete,
     isBatchSaving,
     isBatchUpdating,
-    isBatchDeleting,
   } = useChecklistMutations(applicationId);
 
-  const isSaving = isBatchSaving || isBatchUpdating || isBatchDeleting;
+  const isSaving = isBatchSaving || isBatchUpdating;
 
   const checklistItems = useMemo(() => {
     const data = checklistData?.data;
@@ -278,22 +274,6 @@ export function useChecklistPage({
     { keys: ["documentType"], threshold: 0.3 },
   );
 
-  const tabCounts = useMemo(() => {
-    if (mode !== "edit") return { currentCount: 0, availableCount: 0 };
-    const currentCount = currentChecklistDocuments.filter((item) =>
-      matchesCategory(item.category, selectedCategory),
-    ).length;
-    const availableCount = availableDocumentsForEditing.filter((item) =>
-      matchesCategory(item.category, selectedCategory),
-    ).length;
-    return { currentCount, availableCount };
-  }, [
-    mode,
-    currentChecklistDocuments,
-    availableDocumentsForEditing,
-    selectedCategory,
-  ]);
-
   const startCreating = useCallback(() => {
     setMode("create");
     // Will be set to first available category via useEffect
@@ -325,7 +305,6 @@ export function useChecklistPage({
     // Will be set to first available category via useEffect
     setActiveTab("current");
     setPendingAdditions([]);
-    setPendingDeletions([]);
     setPendingUpdates([]);
   }, []);
 
@@ -334,7 +313,6 @@ export function useChecklistPage({
     setMode(hasChecklist ? "edit" : "create");
     // Will be set to first available category via useEffect
     setPendingAdditions([]);
-    setPendingDeletions([]);
     setPendingUpdates([]);
     setSelectedDocuments([]);
     setRequirementMap({});
@@ -486,19 +464,8 @@ export function useChecklistPage({
     [],
   );
 
-  const addToPendingDeletions = useCallback((checklistId: string) => {
-    setPendingDeletions((prev) =>
-      prev.includes(checklistId) ? prev : [...prev, checklistId],
-    );
-  }, []);
-
-  const removeFromPendingDeletions = useCallback((checklistId: string) => {
-    setPendingDeletions((prev) => prev.filter((id) => id !== checklistId));
-  }, []);
-
   const clearPendingChanges = useCallback(() => {
     setPendingAdditions([]);
-    setPendingDeletions([]);
     setPendingUpdates([]);
   }, []);
 
@@ -547,8 +514,6 @@ export function useChecklistPage({
 
     if (toAdd.length) await batchSave.mutateAsync(toAdd);
     if (toUpdate.length) await batchUpdate.mutateAsync(toUpdate);
-    if (pendingDeletions.length)
-      await batchDelete.mutateAsync(pendingDeletions);
 
     try {
       await updateChecklistRequested(applicationId, false, recordType);
@@ -562,10 +527,8 @@ export function useChecklistPage({
     mode,
     pendingAdditions,
     pendingUpdates,
-    pendingDeletions,
     batchSave,
     batchUpdate,
-    batchDelete,
     applicationId,
     recordType,
     clearPendingChanges,
@@ -597,9 +560,7 @@ export function useChecklistPage({
     selectedDocuments,
     requirementMap,
     pendingAdditions,
-    pendingDeletions,
     pendingUpdates,
-    tabCounts,
     startCreating,
     startEditing,
     cancel,
@@ -608,8 +569,6 @@ export function useChecklistPage({
     updateDocumentRequirement,
     addToPendingChanges,
     removeFromPendingChanges,
-    addToPendingDeletions,
-    removeFromPendingDeletions,
     clearPendingChanges,
     handleSave,
     companies,

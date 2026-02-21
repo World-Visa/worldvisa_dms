@@ -1,4 +1,4 @@
-import { tokenStorage } from "../auth";
+import { getStoredToken } from "../auth";
 import type {
   Stage2Document,
   Stage2DocumentType,
@@ -14,7 +14,7 @@ export async function fetchStage2Documents(
   applicationId: string,
   type?: Stage2DocumentType,
 ): Promise<Stage2DocumentsResponse> {
-  const token = tokenStorage.get();
+  const token = getStoredToken();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -151,7 +151,7 @@ export async function uploadStage2Document(
     formData.append("skill_assessing_body", request.skill_assessing_body);
   }
 
-  const token = tokenStorage.get();
+  const token = getStoredToken();
 
   const headers: Record<string, string> = {};
   if (token) {
@@ -185,7 +185,7 @@ export async function uploadStage2Document(
 export async function updateStage2Document(
   request: UpdateStage2DocumentRequest,
 ): Promise<UploadStage2DocumentResponse> {
-  const token = tokenStorage.get();
+  const token = getStoredToken();
 
   // Build metadata object with only fields that have values
   const metadata: Record<string, string | number> = {};
@@ -334,7 +334,7 @@ export async function reuploadStage2Document(
   if (request.skill_assessing_body)
     formData.append("skill_assessing_body", request.skill_assessing_body);
 
-  const token = tokenStorage.get();
+  const token = getStoredToken();
   const headers: Record<string, string> = {};
   if (token) {
     headers["Authorization"] = `Bearer ${token}`;
@@ -364,7 +364,7 @@ export async function deleteStage2Document(
   applicationId: string,
   documentId: string,
 ): Promise<DeleteStage2DocumentResponse> {
-  const token = tokenStorage.get();
+  const token = getStoredToken();
 
   const headers: Record<string, string> = {};
   if (token) {

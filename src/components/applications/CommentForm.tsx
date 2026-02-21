@@ -6,7 +6,7 @@ import {
   useAddComment,
   useCommentValidation,
 } from "@/hooks/useCommentMutations";
-import { tokenStorage } from "@/lib/auth";
+import { getStoredToken } from "@/lib/auth";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -43,7 +43,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
       }
     }
 
-    const token = tokenStorage.get();
+    const token = getStoredToken();
     if (!token) return "Unknown User";
 
     try {

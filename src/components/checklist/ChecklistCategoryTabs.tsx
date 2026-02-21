@@ -1,25 +1,22 @@
 "use client";
 
-import React, { memo, useRef, useState, useEffect } from "react";
+import { memo, useRef, useState, useEffect } from "react";
 import { DocumentCategoryInfo } from "@/types/documents";
 import { CategoryButton } from "@/components/applications/filter/CategoryButton";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import type { Document } from "@/types/applications";
 
 interface ChecklistCategoryTabsProps {
   categories: DocumentCategoryInfo[];
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
-  categoryCounts?: Record<string, number>;
-  documents?: Document[];
+  type?: "checklist" | "application";
 }
 
 export const ChecklistCategoryTabs = memo(function ChecklistCategoryTabs({
   categories,
   selectedCategory,
   onCategoryChange,
-  categoryCounts,
-  documents,
+  type = "application",
 }: ChecklistCategoryTabsProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -62,8 +59,8 @@ export const ChecklistCategoryTabs = memo(function ChecklistCategoryTabs({
             category={cat}
             selectedCategory={selectedCategory}
             onCategoryChange={onCategoryChange}
-            count={categoryCounts?.[cat.id] ?? cat.count}
             disabled={false}
+            categoryType={type}
           />
         ))}
       </div>

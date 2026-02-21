@@ -8,6 +8,7 @@ import React, {
   Suspense,
 } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { ApplicationDetailsSkeleton } from "@/components/applications/ApplicationDetailsSkeleton";
 import { ClientApplicationDetails } from "@/components/applications/ClientApplicationDetails";
 import {
   LayoutChips,
@@ -31,7 +32,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
 import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
 import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
@@ -121,7 +121,7 @@ export default function ClientApplicationDetailsPageContent() {
 
   useEffect(() => {
     if (!isAuthLoading && (!isAuthenticated || user?.role !== "client")) {
-      router.push("/client-login");
+      router.push("/auth/user/login");
     }
   }, [isAuthenticated, isAuthLoading, user?.role, router]);
 
@@ -537,41 +537,43 @@ export default function ClientApplicationDetailsPageContent() {
     (allDocumentsError && !allDocumentsData)
   ) {
     return (
-      <div className="container mx-auto p-6 space-y-6">
+      <main className="max-w-6xl mx-auto">
         <div className="flex items-center space-x-4">
-          <Link href="/client/applications">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-            </Button>
-          </Link>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => router.push("/client/applications")}
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+          </Button>
         </div>
-
         <Alert variant="destructive">
           <AlertDescription>
             Failed to load application details. Please try again later.
           </AlertDescription>
         </Alert>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
-      <div className="flex items-center justify-between">
+    <main className="max-w-7xl mx-auto">
+      {/* Header — match admin structure */}
+      <div className="flex items-center justify-between pt-10">
         <div className="flex items-center space-x-4">
+          {/* <Button
+            variant="secondary"
+            className="rounded-full w-9 h-9 cursor-pointer"
+            size="sm"
+            onClick={() => router.push("/client/applications")}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button> */}
           <div>
-            <h1 className="text-xl sm:text-2xl font-lexend font-bold">
-              My Application
+            <h1 className="text-xl flex md:flex-row capitalize flex-col items-start md:items-center gap-4 sm:text-2xl font-medium">
+              {applicationData?.data?.Name ?? "My Application"}{" "}
+              Application Details
             </h1>
-            <div className="text-muted-foreground ">
-              {isApplicationLoading ? (
-                <Skeleton className="h-4 w-32" />
-              ) : applicationData?.data ? (
-                `Application ID: ${applicationData.data.id}`
-              ) : (
-                "Loading..."
-              )}
-            </div>
           </div>
         </div>
         <Button
@@ -579,7 +581,7 @@ export default function ClientApplicationDetailsPageContent() {
           size="sm"
           onClick={handleRefresh}
           disabled={isRefreshing}
-          className="flex items-center gap-2"
+          className="flex items-center gap-2 cursor-pointer"
         >
           <RefreshCw
             className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
@@ -593,29 +595,9 @@ export default function ClientApplicationDetailsPageContent() {
       isDocumentsLoading ||
       isAllDocumentsLoading ||
       isChecklistLoading ? (
-        <div className="space-y-6">
-          <div className="flex justify-between w-full gap-8 items-end">
-            <div className="space-y-4 w-full">
-              <div className="flex items-center justify-start">
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-5 w-24" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="max-w-xs w-full">
-                    <Skeleton className="h-24 w-full rounded-xl" />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="max-w-xs w-full">
-              <Skeleton className="h-64 w-full rounded-xl" />
-            </div>
-          </div>
-          <Skeleton className="h-96 w-full rounded-xl" />
-        </div>
+        <ApplicationDetailsSkeleton variant="admin" showHeader={false} />
       ) : !isAuthLoading && isAuthenticated && user?.role === "client" ? (
-        <div className="space-y-6">
+        <div className="space-y-6 mt-6">
           {/* Application Details */}
           <ClientApplicationDetails
             data={applicationData}
@@ -624,6 +606,7 @@ export default function ClientApplicationDetailsPageContent() {
             documentsError={allDocumentsError}
             isLoading={isApplicationLoading}
             error={applicationError}
+            user={user}
           />
           <LayoutChips
             selectedLayout={selectedLayout}
@@ -732,6 +715,6 @@ export default function ClientApplicationDetailsPageContent() {
         category={selectedReuploadDocumentCategory}
         isClientView={true}
       />
-    </div>
+    </main>
   );
 }

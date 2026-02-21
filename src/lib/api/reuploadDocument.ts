@@ -1,4 +1,4 @@
-import { tokenStorage } from "../auth";
+import { getStoredToken } from "../auth";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 export interface ReuploadDocumentRequest {
@@ -94,7 +94,7 @@ export async function reuploadDocument(
   formData.append("uploaded_by", data.uploaded_by);
 
   // Get token from storage
-  const token = data.token || tokenStorage.get();
+  const token = data.token || getStoredToken();
 
   const headers: Record<string, string> = {};
   if (token) {

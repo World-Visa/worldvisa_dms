@@ -1,22 +1,17 @@
 "use client";
 
-import React, { memo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
+import { type ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { DataTable } from "@/components/v2/datatable/data-table";
+import { DataTablePagination } from "@/components/v2/datatable/data-table-pagination";
+import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import { RequirementSelector } from "@/components/applications/checklist/RequirementSelector";
 import { DescriptionModal } from "@/components/applications/checklist/DescriptionModal";
 import { getCategoryBadgeStyle } from "@/lib/checklist/dataProcessing";
 import { useChecklistMutations } from "@/hooks/useChecklist";
-import { FileText } from "lucide-react";
-import { Check } from "lucide-react";
+import { Check, FileText, Loader2 } from "lucide-react";
 import type { DocumentRequirement } from "@/types/checklist";
 
 interface ChecklistTableItem {
@@ -32,286 +27,240 @@ interface ChecklistEditorTableProps {
   items: ChecklistTableItem[];
   mode: "create" | "edit";
   activeTab: "current" | "available";
-  searchQuery: string;
-  pendingDeletions: string[];
-  isAddingDocument?: boolean;
-  addingDocumentId?: string;
-  isDocumentAdded?: boolean;
-  addedDocumentId?: string;
+  applicationId: string;
   onUpdateRequirement: (
     category: string,
     documentType: string,
     requirement: DocumentRequirement,
   ) => void;
   onAddToPending: (item: ChecklistTableItem) => void;
-  onAddToPendingDeletions: (checklistId: string) => void;
-  onRemoveFromPendingDeletions: (checklistId: string) => void;
-  isBatchDeleting?: boolean;
-  applicationId: string;
 }
 
-const truncateText = (text: string, maxLength: number): string => {
+function getDisplayCategory(category: string): string {
+  if (category.includes("Company Documents")) return "Company Documents";
+  return category;
+}
+
+function truncateText(text: string, maxLength: number): string {
   if (text.length <= maxLength) return text;
-  return text.slice(0, maxLength);
-};
+  return `${text.slice(0, maxLength)}...`;
+}
 
 export const ChecklistEditorTable = memo(function ChecklistEditorTable({
   items,
   mode,
   activeTab,
-  searchQuery,
-  pendingDeletions,
-  isAddingDocument,
-  addingDocumentId,
-  isDocumentAdded,
-  addedDocumentId,
-  onUpdateRequirement,
-  onAddToPending,
-  onAddToPendingDeletions,
-  onRemoveFromPendingDeletions,
-  isBatchDeleting = false,
   applicationId,
+  onUpdateRequirement,
 }: ChecklistEditorTableProps) {
-  const [descriptionModals, setDescriptionModals] = useState<
-    Record<string, { open: boolean; mode: "view" | "edit" }>
-  >({});
-  const { updateItemDescription } = useChecklistMutations(applicationId);
+  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [activeDescModal, setActiveDescModal] = useState<{
+    item: ChecklistTableItem;
+  } | null>(null);
+
+  const { deleteItem, updateItemDescription } =
+    useChecklistMutations(applicationId);
+
+  const handleDelete = useCallback(
+    async (checklistId: string) => {
+      setDeletingIds((prev) => new Set([...prev, checklistId]));
+      try {
+        await deleteItem.mutateAsync({ checklist_id: checklistId });
+      } finally {
+        setDeletingIds((prev) => {
+          const next = new Set(prev);
+          next.delete(checklistId);
+          return next;
+        });
+      }
+    },
+    [deleteItem],
+  );
+
+  const columns = useMemo<ColumnDef<ChecklistTableItem>[]>(
+    () => [
+      {
+        id: "sno",
+        header: "S.No",
+        cell: ({ row }) => (
+          <span className="font-medium text-sm">{row.index + 1}</span>
+        ),
+        size: 60,
+      },
+      {
+        accessorKey: "category",
+        header: "Category",
+        cell: ({ row }) => {
+          const display = getDisplayCategory(row.original.category);
+          return (
+            <Badge
+              variant="default"
+              className={`text-xs py-1 text-white ${getCategoryBadgeStyle(row.original.category)}`}
+            >
+              {display}
+            </Badge>
+          );
+        },
+      },
+      {
+        accessorKey: "documentType",
+        header: "Document Name",
+        cell: ({ row }) => {
+          const item = row.original;
+          return (
+            <div>
+              <div className="flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="text-sm">{item.documentType}</span>
+              </div>
+              {item.checklist_id && (
+                <div className="ml-6 mt-1">
+                  {item.description?.trim() ? (
+                    <>
+                      <p className="text-xs text-muted-foreground">
+                        {truncateText(item.description, 50)}
+                      </p>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setActiveDescModal({ item })}
+                        className="mt-1 h-6 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-black"
+                      >
+                        Edit Description
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setActiveDescModal({ item })}
+                      className="h-6 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-black"
+                    >
+                      Add Description
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        },
+      },
+      {
+        accessorKey: "requirement",
+        header: "Requirement",
+        cell: ({ row }) => {
+          const req = row.original.requirement;
+          if (!req || req === "not_required") return null;
+          return (
+            <Badge
+              variant="default"
+              className={
+                req === "mandatory"
+                  ? "bg-red-100 text-red-800 hover:bg-red-200 text-xs"
+                  : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 text-xs"
+              }
+            >
+              {req === "mandatory" ? "Mandatory" : "Optional"}
+            </Badge>
+          );
+        },
+      },
+      {
+        id: "action",
+        header: () => <div className="text-right">Action</div>,
+        cell: ({ row }) => {
+          const item = row.original;
+          const isCurrentTab = mode === "edit" && activeTab === "current";
+
+          if (isCurrentTab) {
+            const isDeleting = deletingIds.has(item.checklist_id ?? "");
+            return (
+              <div className="flex justify-end">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    item.checklist_id && handleDelete(item.checklist_id)
+                  }
+                  disabled={isDeleting}
+                  className="text-red-600 hover:text-red-700 text-xs"
+                >
+                  {isDeleting ? (
+                    <>
+                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
+                      Deleting...
+                    </>
+                  ) : (
+                    "Delete"
+                  )}
+                </Button>
+              </div>
+            );
+          }
+
+          const req = item.requirement;
+          const hasRequirement =
+            req === "mandatory" || req === "optional";
+          return (
+            <div className="flex items-center justify-end gap-2">
+              {hasRequirement && (
+                <Check className="h-4 w-4 text-green-600 shrink-0" />
+              )}
+              <div className="w-32">
+                <RequirementSelector
+                  value={req ?? "not_required"}
+                  onChange={(r) =>
+                    onUpdateRequirement(item.category, item.documentType, r)
+                  }
+                />
+              </div>
+            </div>
+          );
+        },
+      },
+    ],
+    [mode, activeTab, deletingIds, handleDelete, onUpdateRequirement],
+  );
+
+  const table = useDataTableInstance({
+    data: items,
+    columns,
+    enableRowSelection: false,
+    defaultPageSize: 20,
+    getRowId: (row) =>
+      row.checklist_id ?? `${row.category}-${row.documentType}`,
+  });
 
   return (
-    <div className="overflow-hidden rounded-md border">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-16">S.No</TableHead>
-            <TableHead className="hidden sm:table-cell">Category</TableHead>
-            <TableHead>Document Name</TableHead>
-            <TableHead className="hidden md:table-cell">Requirement</TableHead>
-            <TableHead className="text-right">Action</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={5} className="h-24 text-center">
-                <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">
-                  {mode === "create"
-                    ? "Select document types and set requirements below"
-                    : activeTab === "current"
-                      ? "No items in current checklist"
-                      : "No available documents to add"}
-                </p>
-              </TableCell>
-            </TableRow>
-          ) : (
-            items.map((item, index) => (
-              <TableRow
-                key={`${item.category}-${item.documentType}-${item.checklist_id ?? "new"}-${index}`}
-              >
-                <TableCell className="font-medium w-16">{index + 1}</TableCell>
-                <TableCell className="hidden sm:table-cell">
-                  <Badge
-                    variant="default"
-                    className={`text-xs py-1 text-white ${getCategoryBadgeStyle(item.category)}`}
-                  >
-                    {item.category}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <div className="flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="text-sm">{item.documentType}</span>
-                  </div>
-                  <div className="sm:hidden mt-1">
-                    <Badge
-                      variant="default"
-                      className={`text-xs py-0.5 text-white ${getCategoryBadgeStyle(item.category)}`}
-                    >
-                      {item.category}
-                    </Badge>
-                  </div>
-                  {/* Description section - only for items with checklist_id */}
-                  {item.checklist_id && (
-                    <>
-                      {item.description && item.description.trim() ? (
-                        <div className="ml-6 mt-1">
-                          <div className="text-xs text-muted-foreground">
-                            <p className="inline">
-                              {truncateText(item.description, 50)}
-                              {item.description.trim().length > 50 && "..."}
-                            </p>
-                          </div>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const itemKey = `${item.category}-${item.documentType}-${item.checklist_id ?? "new"}-${index}`;
-                              setDescriptionModals((prev) => ({
-                                ...prev,
-                                [itemKey]: { open: true, mode: "edit" },
-                              }));
-                            }}
-                            className="flex items-center gap-1 px-2 py-1 h-6 text-xs bg-gray-100 hover:bg-gray-200 cursor-pointer text-black border-gray-500 mt-1"
-                          >
-                            Edit Description
-                          </Button>
-                        </div>
-                      ) : (
-                        <div className="ml-6 mt-1">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              const itemKey = `${item.category}-${item.documentType}-${item.checklist_id ?? "new"}-${index}`;
-                              setDescriptionModals((prev) => ({
-                                ...prev,
-                                [itemKey]: { open: true, mode: "edit" },
-                              }));
-                            }}
-                            className="flex items-center gap-1 px-2 py-1 h-6 text-xs bg-gray-100 hover:bg-gray-200 cursor-pointer text-black border-gray-500"
-                          >
-                            Add Description
-                          </Button>
-                        </div>
-                      )}
-                    </>
-                  )}
-                </TableCell>
-                <TableCell className="hidden md:table-cell">
-                  <div className="flex flex-wrap gap-1">
-                    {item.requirement &&
-                      item.requirement !== "not_required" && (
-                        <Badge
-                          variant="default"
-                          className={
-                            item.requirement === "mandatory"
-                              ? "bg-red-100 text-red-800 hover:bg-red-200 text-xs"
-                              : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 text-xs"
-                          }
-                        >
-                          {item.requirement === "mandatory"
-                            ? "Mandatory"
-                            : "Optional"}
-                        </Badge>
-                      )}
-                  </div>
-                </TableCell>
-                <TableCell className="text-right">
-                  {mode === "create" ? (
-                    <div className="flex items-center justify-end gap-2">
-                      {item.requirement &&
-                        (item.requirement === "mandatory" ||
-                          item.requirement === "optional") && (
-                          <Check className="h-4 w-4 text-green-600" />
-                        )}
-                      <div className="w-32">
-                        <RequirementSelector
-                          value={item.requirement ?? "not_required"}
-                          onChange={(r) =>
-                            onUpdateRequirement(
-                              item.category,
-                              item.documentType,
-                              r,
-                            )
-                          }
-                        />
-                      </div>
-                    </div>
-                  ) : activeTab === "current" ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        item.checklist_id &&
-                        onAddToPendingDeletions(item.checklist_id)
-                      }
-                      disabled={isBatchDeleting}
-                      className={
-                        pendingDeletions.includes(item.checklist_id ?? "")
-                          ? "bg-red-50 border-red-300 text-red-700 hover:bg-red-100 text-xs"
-                          : "text-red-600 hover:text-red-700 text-xs"
-                      }
-                    >
-                      {isBatchDeleting ? (
-                        <>
-                          <span className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600 inline-block mr-1" />
-                          Deleting...
-                        </>
-                      ) : pendingDeletions.includes(item.checklist_id ?? "") ? (
-                        <>Pending</>
-                      ) : (
-                        "Delete"
-                      )}
-                    </Button>
-                  ) : (
-                    <div className="flex items-center justify-end gap-2">
-                      {item.requirement &&
-                        (item.requirement === "mandatory" ||
-                          item.requirement === "optional") && (
-                          <Check className="h-4 w-4 text-green-600" />
-                        )}
-                      <div className="w-24">
-                        <RequirementSelector
-                          value={item.requirement ?? "not_required"}
-                          onChange={(r) =>
-                            onUpdateRequirement(
-                              item.category,
-                              item.documentType,
-                              r,
-                            )
-                          }
-                        />
-                      </div>
-                    </div>
-                  )}
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+    <>
+      <div className="overflow-hidden rounded-md border [&_td]:py-2">
+        <DataTable table={table} columns={columns} />
+      </div>
+      {table.getPageCount() > 1 && (
+        <div className="border rounded-md py-2">
+          <DataTablePagination table={table} />
+        </div>
+      )}
 
-      {/* Description Modals */}
-      {Object.entries(descriptionModals).map(([key, modal]) => {
-        if (!modal.open) return null;
-        const parts = key.split("-");
-        const checklistId = parts.slice(2, -1).join("-");
-        const item = items.find(
-          (i, idx) =>
-            `${i.category}-${i.documentType}-${i.checklist_id ?? "new"}-${idx}` ===
-            key,
-        );
-        if (!item || !item.checklist_id) return null;
-
-        return (
-          <DescriptionModal
-            key={key}
-            open={modal.open}
-            onOpenChange={(open) =>
-              setDescriptionModals((prev) => ({
-                ...prev,
-                [key]: { ...prev[key]!, open },
-              }))
-            }
-            existingDescription={item.description || ""}
-            onSave={async (description: string) => {
-              if (!item.checklist_id) {
-                throw new Error("No checklist ID available");
-              }
-              await updateItemDescription.mutateAsync({
-                checklist_id: item.checklist_id,
-                description: description,
-              });
-              setDescriptionModals((prev) => ({
-                ...prev,
-                [key]: { ...prev[key]!, open: false },
-              }));
-            }}
-            mode={modal.mode}
-            isLoading={updateItemDescription.isPending}
-          />
-        );
-      })}
-    </div>
+      {activeDescModal?.item.checklist_id && (
+        <DescriptionModal
+          open
+          onOpenChange={(open) => {
+            if (!open) setActiveDescModal(null);
+          }}
+          existingDescription={activeDescModal.item.description ?? ""}
+          onSave={async (description: string) => {
+            if (!activeDescModal.item.checklist_id) return;
+            await updateItemDescription.mutateAsync({
+              checklist_id: activeDescModal.item.checklist_id,
+              description,
+            });
+            setActiveDescModal(null);
+          }}
+          mode="edit"
+          isLoading={updateItemDescription.isPending}
+        />
+      )}
+    </>
   );
 });

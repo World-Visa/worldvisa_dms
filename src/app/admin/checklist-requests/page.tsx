@@ -8,6 +8,7 @@ import { ApplicationsPagination } from "@/components/applications/ApplicationsPa
 import { Card, CardContent } from "@/components/ui/card";
 import { FileText, CheckCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
   const [page, setPage] = useState(1);
@@ -76,51 +77,18 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
   return (
     <main className="min-h-screen bg-gray-50/50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="mb-8">
+        <div className="mt-8 mb-4">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 font-lexend mb-2 flex items-center gap-2">
-                <FileText className="h-6 w-6" />
+              <h2 className="text-2xl font-bold text-gray-900 mb-2 flex items-center gap-2">
                 Checklist Requests
               </h2>
-              <p className="text-gray-600">
-                Applications that have requested document checklists for
-                processing.
-              </p>
             </div>
 
-            <div className="flex flex-col pt-0 md:pt-10 sm:flex-row items-start sm:items-center gap-4">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleRefresh}
-                disabled={isDataLoading}
-                className="flex items-center gap-2 self-start sm:self-center"
-              >
-                <RefreshCw
-                  className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-                />
-                <span>Refresh</span>
-              </Button>
-
-              <Card className="w-full sm:w-64 border-0 shadow-sm bg-linear-to-r from-blue-50 to-indigo-50">
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-600 mb-1">
-                        Total Requests
-                      </p>
-                      <p className="text-2xl font-bold text-gray-900">
-                        {isDataLoading ? "..." : totalRequests.toLocaleString()}
-                      </p>
-                    </div>
-                    <div className="p-3 bg-blue-100 rounded-full">
-                      <CheckCircle className="h-6 w-6 text-blue-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <Badge variant="secondary">
+              {totalRequests} request
+              {totalRequests > 1 ? "s" : ""}
+            </Badge>
           </div>
         </div>
 

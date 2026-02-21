@@ -11,8 +11,9 @@ export function useAdminLogin() {
   const { login, clearError } = useAuth();
 
   return useMutation({
-    mutationFn: async (credentials: AdminLoginRequest) => {
-      return await login(credentials, "admin");
+    mutationFn: async (credentials: AdminLoginRequest & { rememberMe?: boolean }) => {
+      const { rememberMe, ...creds } = credentials;
+      return await login(creds, "admin", rememberMe);
     },
     onError: (error) => {
       console.error("Admin login error:", error);
@@ -27,9 +28,10 @@ export function useClientLogin() {
   const { login, clearError } = useAuth();
 
   return useMutation({
-    mutationFn: async (credentials: ClientLoginRequest) => {
+    mutationFn: async (credentials: ClientLoginRequest & { rememberMe?: boolean }) => {
       clearError();
-      return await login(credentials, "client");
+      const { rememberMe, ...creds } = credentials;
+      return await login(creds, "client", rememberMe);
     },
     onError: (error) => {
       console.error("Client login error:", error);

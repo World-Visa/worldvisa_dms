@@ -9,64 +9,6 @@ import { ChecklistLayout } from "./ChecklistLayout";
 import { ChecklistEditor } from "./ChecklistEditor";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { Document } from "@/types/applications";
-
-function computeCategoryCounts(
-  categories: Array<{ id: string; label: string; count?: number }>,
-  documents: Document[] | undefined,
-): Record<string, number> {
-  const map: Record<string, number> = {};
-  if (!documents?.length) return map;
-  for (const cat of categories) {
-    if (cat.id === "submitted" || cat.id === "all" || cat.id === "checklist") {
-      map[cat.id] = documents.length;
-    } else if (cat.id === "identity" || cat.label === "Identity Documents") {
-      map[cat.id] = documents.filter(
-        (d) =>
-          d.document_category === "Identity Documents" ||
-          d.document_category === "Identity",
-      ).length;
-    } else if (cat.id === "education" || cat.label === "Education Documents") {
-      map[cat.id] = documents.filter(
-        (d) =>
-          d.document_category === "Education Documents" ||
-          d.document_category === "Education",
-      ).length;
-    } else if (cat.id === "other" || cat.label === "Other Documents") {
-      map[cat.id] = documents.filter(
-        (d) =>
-          d.document_category === "Other Documents" ||
-          d.document_category === "Other",
-      ).length;
-    } else if (
-      cat.id === "self_employment" ||
-      cat.label === "Self Employment/Freelance"
-    ) {
-      map[cat.id] = documents.filter(
-        (d) => d.document_category === "Self Employment/Freelance",
-      ).length;
-    } else if (cat.id === "company") {
-      map[cat.id] = documents.filter(
-        (d) =>
-          d.document_category?.includes("Company Documents") ||
-          d.document_category === "Company",
-      ).length;
-    } else if (
-      cat.label?.includes("Company Documents") &&
-      cat.label !== "Company Documents"
-    ) {
-      map[cat.id] = documents.filter(
-        (d) => d.document_category === cat.label,
-      ).length;
-    } else {
-      map[cat.id] = documents.filter(
-        (d) => d.document_category === cat.label,
-      ).length;
-    }
-  }
-  return map;
-}
-
 interface ChecklistPageProps {
   applicationId: string;
   isSpouseApplication: boolean;
@@ -95,11 +37,6 @@ export function ChecklistPage({ applicationId }: ChecklistPageProps) {
     companies,
     recordType,
   });
-
-  const categoryCounts = useMemo(
-    () => computeCategoryCounts(page.categories, documents),
-    [page.categories, documents],
-  );
 
   if (isDocsLoading || page.isChecklistLoading) {
     return (
@@ -142,8 +79,6 @@ export function ChecklistPage({ applicationId }: ChecklistPageProps) {
         searchQuery={page.searchQuery}
         filteredItems={page.filteredItems}
         categoryFilteredItems={page.categoryFilteredItems}
-        tabCounts={page.tabCounts}
-        pendingDeletions={page.pendingDeletions}
         onCategoryChange={page.handleCategoryChange}
         onTabChange={page.handleTabChange}
         onSearchChange={page.setSearchQuery}
@@ -157,10 +92,6 @@ export function ChecklistPage({ applicationId }: ChecklistPageProps) {
             company_name: (item as { company_name?: string }).company_name,
           })
         }
-        onAddToPendingDeletions={page.addToPendingDeletions}
-        onRemoveFromPendingDeletions={page.removeFromPendingDeletions}
-        isBatchDeleting={page.isSaving}
-        categoryCounts={categoryCounts}
         applicationId={applicationId}
       />
     </ChecklistLayout>

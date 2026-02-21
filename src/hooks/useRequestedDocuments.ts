@@ -8,6 +8,7 @@ import {
   getRequestedDocumentsToMe,
   getMyRequestedDocuments,
   getAllRequestedDocuments,
+  getRequestedDocumentsSearch,
   updateRequestedDocumentStatus,
   RequestedDocumentsParams,
   RequestedDocument,
@@ -398,6 +399,52 @@ export function useAllRequestedDocuments(
       options?.enabled !== undefined
         ? options.enabled
         : !!user && user.role === "master_admin",
+    select: (data) => {
+      if (!data?.data) return data;
+
+      const enhancedData = data.data.map((doc) => ({
+        ...doc,
+        isOverdue: isDocumentOverdue(doc, user?.role),
+        daysSinceRequest: getDaysSinceRequest(doc),
+        priority: getDocumentPriority(doc, user?.role),
+        formattedUploadDate: new Date(doc.uploaded_at).toLocaleDateString(),
+        formattedRequestDate: new Date(
+          doc.requested_review.requested_at,
+        ).toLocaleDateString(),
+      }));
+
+      return {
+        ...data,
+        data: sortByRequestedAtDesc(enhancedData),
+      };
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    retry: 2,
+    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useRequestedDocumentsSearch(
+  page: number,
+  limit: number,
+  q: string,
+  options?: UseRequestedDocumentsOptions,
+) {
+  const { user } = useAuth();
+  const hasSearch = Boolean(q?.trim());
+
+  return useQuery({
+    queryKey: ["requested-documents-search", page, limit, q.trim()],
+    queryFn: () =>
+      getRequestedDocumentsSearch({
+        page,
+        limit,
+        q: q.trim(),
+      }),
+    enabled: hasSearch && (options?.enabled ?? true),
+    placeholderData: keepPreviousData,
     select: (data) => {
       if (!data?.data) return data;
 

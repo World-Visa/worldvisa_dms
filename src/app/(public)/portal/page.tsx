@@ -114,7 +114,7 @@ export default function PortalPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Link href="/admin-login">
+                  <Link href="/auth/admin/login">
                     <Button
                       className="w-full group-hover:bg-blue-600 transition-colors"
                       size="lg"
@@ -144,7 +144,7 @@ export default function PortalPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <Link href="/client-login">
+                  <Link href="/auth/user/login">
                     <Button
                       variant="outline"
                       className="w-full border-green-200 text-green-700 hover:bg-green-50 group-hover:border-green-300 transition-colors"

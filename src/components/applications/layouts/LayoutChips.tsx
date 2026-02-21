@@ -1,6 +1,5 @@
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 export type ApplicationLayout =
   | "skill-assessment"
@@ -32,43 +31,62 @@ export function LayoutChips({
   showSampleDocuments,
   onToggleSampleDocuments,
 }: LayoutChipsProps) {
-  // Filter chips based on availableLayouts if provided, otherwise show all (backward compatible)
   const chipsToShow = availableLayouts
     ? layoutChips.filter((chip) => availableLayouts.includes(chip.id))
     : layoutChips;
 
-  // Wrapper to convert string from Tabs to ApplicationLayout type
-  const handleValueChange = (value: string) => {
-    onLayoutChange(value as ApplicationLayout);
-  };
-
   return (
-    <div className="flex items-center justify-between">
-      <Tabs value={selectedLayout} onValueChange={handleValueChange}>
-        <TabsList className="h-11 **:data-[slot=badge]:bg-gray-50 **:data-[slot=badge]:size-6 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 ">
-          {chipsToShow.map((chip) => (
-            <TabsTrigger
+    <div className="flex items-end justify-between border-b border-gray-200">
+      {/* Underline tabs */}
+      <div className="flex" role="tablist">
+        {chipsToShow.map((chip) => {
+          const isActive = selectedLayout === chip.id;
+          const badge = badges?.[chip.id];
+          return (
+            <button
               key={chip.id}
-              value={chip.id}
-              className="px-4 text-sm cursor-pointer data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              onClick={() => onLayoutChange(chip.id)}
+              className={cn(
+                "relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-150 focus:outline-none whitespace-nowrap",
+                "-mb-px border-b-2",
+                isActive
+                  ? "border-gray-900 text-gray-900 font-semibold"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
+              )}
             >
               {chip.label}
-              {badges?.[chip.id] !== undefined && (
-                <Badge variant="secondary">{badges[chip.id]}</Badge>
+              {badge !== undefined && (
+                <span
+                  className={cn(
+                    "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums transition-all duration-150",
+                    isActive
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-500",
+                  )}
+                >
+                  {badge}
+                </span>
               )}
-            </TabsTrigger>
-          ))}
-        </TabsList>
-      </Tabs>
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Sample documents toggle */}
       {selectedLayout === "skill-assessment" && onToggleSampleDocuments && (
-        <Button
-          variant={showSampleDocuments ? "secondary" : "outline"}
-          size="sm"
-          onClick={onToggleSampleDocuments}
-          className="cursor-pointer active:scale-95 transition-transform"
-        >
-          {showSampleDocuments ? "Back to checklist" : "Sample documents"}
-        </Button>
+        <div className="pb-2 pl-4">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={onToggleSampleDocuments}
+            className="cursor-pointer"
+          >
+            {showSampleDocuments ? "Back to checklist" : "Sample documents"}
+          </Button>
+        </div>
       )}
     </div>
   );

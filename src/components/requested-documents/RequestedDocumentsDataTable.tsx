@@ -32,6 +32,7 @@ import { RequestedDocument } from "@/lib/api/requestedDocuments";
 import { StatusBadge } from "./StatusBadge";
 import { ClientNameCell } from "./ClientNameCell";
 import { RequestedDocumentType } from "@/types/common";
+import { HighlightText } from "@/components/ui/HighlightText";
 
 interface RequestedDocumentsDataTableProps {
   documents: RequestedDocument[];
@@ -39,6 +40,7 @@ interface RequestedDocumentsDataTableProps {
   type: RequestedDocumentType;
   totalItems?: number;
   onViewDocument?: (document: RequestedDocument) => void;
+  searchQuery?: string;
 }
 
 export function RequestedDocumentsDataTable({
@@ -47,6 +49,7 @@ export function RequestedDocumentsDataTable({
   type,
   totalItems = 0,
   onViewDocument,
+  searchQuery,
 }: RequestedDocumentsDataTableProps) {
   const [sorting, setSorting] = useState<SortingState>([
     { id: "requested_review.requested_at", desc: true }, // Default: newest first
@@ -68,16 +71,37 @@ export function RequestedDocumentsDataTable({
         ),
         cell: ({ row }) => {
           const doc = row.original;
+          const docName = doc.document_name || doc.file_name || "";
+          const docCategory = doc.document_category ?? "";
+          const hasQuery = (searchQuery?.trim()?.length ?? 0) > 0;
           return (
             <div className="space-y-1 min-w-[200px]">
-              <p className="font-semibold text-gray-900">
-                {doc.document_name || doc.file_name}
+              <p className="font-medium text-foreground">
+                {hasQuery ? (
+                  <HighlightText
+                    text={docName}
+                    query={searchQuery!}
+                    className="font-medium text-foreground"
+                  />
+                ) : (
+                  docName
+                )}
               </p>
               {doc.document_category && (
-                <p className="text-xs text-gray-500">{doc.document_category}</p>
+                <p className="text-xs text-muted-foreground">
+                  {hasQuery ? (
+                    <HighlightText
+                      text={docCategory}
+                      query={searchQuery!}
+                      className="text-xs text-muted-foreground"
+                    />
+                  ) : (
+                    docCategory
+                  )}
+                </p>
               )}
               {doc.isOverdue && (
-                <div className="flex items-center gap-1 text-xs text-red-600">
+                <div className="flex items-center gap-1 text-xs text-destructive">
                   <AlertTriangle className="h-3 w-3" />
                   <span>Overdue ({doc.daysSinceRequest} days)</span>
                 </div>
@@ -94,6 +118,7 @@ export function RequestedDocumentsDataTable({
           <ClientNameCell
             recordId={row.original.record_id}
             clientName={row.original.client_name}
+            searchQuery={searchQuery}
           />
         ),
         enableSorting: false,
@@ -110,13 +135,21 @@ export function RequestedDocumentsDataTable({
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2 min-w-[120px]">
-            <span className="text-sm">
-              {row.original.requested_review.requested_by}
-            </span>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const hasQuery = (searchQuery?.trim()?.length ?? 0) > 0;
+          const val = row.original.requested_review.requested_by;
+          return (
+            <div className="flex items-center gap-2 min-w-[120px]">
+              <span className="text-sm text-foreground">
+                {hasQuery ? (
+                  <HighlightText text={val} query={searchQuery!} />
+                ) : (
+                  val
+                )}
+              </span>
+            </div>
+          );
+        },
         enableSorting: true,
       },
       {
@@ -131,13 +164,21 @@ export function RequestedDocumentsDataTable({
             <ArrowUpDown className="ml-2 h-4 w-4" />
           </Button>
         ),
-        cell: ({ row }) => (
-          <div className="flex items-center gap-2 min-w-[120px]">
-            <span className="text-sm">
-              {row.original.requested_review.requested_to}
-            </span>
-          </div>
-        ),
+        cell: ({ row }) => {
+          const hasQuery = (searchQuery?.trim()?.length ?? 0) > 0;
+          const val = row.original.requested_review.requested_to;
+          return (
+            <div className="flex items-center gap-2 min-w-[120px]">
+              <span className="text-sm">
+                {hasQuery ? (
+                  <HighlightText text={val} query={searchQuery!} />
+                ) : (
+                  val
+                )}
+              </span>
+            </div>
+          );
+        },
         enableSorting: true,
       },
       {
@@ -158,6 +199,7 @@ export function RequestedDocumentsDataTable({
         enableSorting: true,
       },
       {
+        id: "requested_review.requested_at",
         accessorKey: "requested_review.requested_at",
         header: ({ column }) => (
           <Button
@@ -218,7 +260,7 @@ export function RequestedDocumentsDataTable({
         enableSorting: false,
       },
     ],
-    [onViewDocument],
+    [onViewDocument, searchQuery],
   );
 
   const table = useReactTable({

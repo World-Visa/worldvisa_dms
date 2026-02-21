@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo } from "react";
+import { memo } from "react";
 import { ChecklistCategoryTabs } from "./ChecklistCategoryTabs";
 import { ChecklistEditorTable } from "./ChecklistEditorTable";
 import { ChecklistTabs } from "@/components/applications/checklist/ChecklistTabs";
@@ -24,8 +24,6 @@ interface ChecklistEditorProps {
   searchQuery: string;
   filteredItems: ChecklistTableItem[];
   categoryFilteredItems: ChecklistTableItem[];
-  tabCounts: { currentCount: number; availableCount: number };
-  pendingDeletions: string[];
   onCategoryChange: (category: string) => void;
   onTabChange: (tab: "current" | "available") => void;
   onSearchChange: (query: string) => void;
@@ -35,10 +33,6 @@ interface ChecklistEditorProps {
     requirement: "mandatory" | "optional" | "not_required",
   ) => void;
   onAddToPending: (item: ChecklistTableItem) => void;
-  onAddToPendingDeletions: (checklistId: string) => void;
-  onRemoveFromPendingDeletions: (checklistId: string) => void;
-  isBatchDeleting?: boolean;
-  categoryCounts?: Record<string, number>;
   applicationId: string;
 }
 
@@ -50,17 +44,11 @@ export const ChecklistEditor = memo(function ChecklistEditor({
   searchQuery,
   filteredItems,
   categoryFilteredItems,
-  tabCounts,
-  pendingDeletions,
   onCategoryChange,
   onTabChange,
   onSearchChange,
   onUpdateRequirement,
   onAddToPending,
-  onAddToPendingDeletions,
-  onRemoveFromPendingDeletions,
-  isBatchDeleting = false,
-  categoryCounts,
   applicationId,
 }: ChecklistEditorProps) {
   const isEdit = mode === "edit";
@@ -71,29 +59,27 @@ export const ChecklistEditor = memo(function ChecklistEditor({
         categories={categories}
         selectedCategory={selectedCategory}
         onCategoryChange={onCategoryChange}
-        categoryCounts={categoryCounts}
+        type="checklist"
       />
 
       <div className="flex flex-col gap-4">
-        <h2 className="text-base font-semibold">Document Checklist</h2>
+        <div className="flex items-center justify-between gap-4 w-full">
+          {isEdit && (
+            <ChecklistTabs
+              activeTab={activeTab}
+              onTabChange={onTabChange}
+            />
+          )}
 
-        {isEdit && (
-          <ChecklistTabs
-            activeTab={activeTab}
-            onTabChange={onTabChange}
-            currentCount={tabCounts.currentCount}
-            availableCount={tabCounts.availableCount}
-          />
-        )}
-
-        <div className="flex items-center gap-4">
-          <SearchBox
-            value={searchQuery}
-            onChange={onSearchChange}
-            placeholder="Search documents..."
-            aria-label="Search document checklist"
-            className="w-full lg:w-64"
-          />
+          <div className="flex items-center gap-4">
+            <SearchBox
+              value={searchQuery}
+              onChange={onSearchChange}
+              placeholder="Search documents..."
+              aria-label="Search document checklist"
+              className="w-full"
+            />
+          </div>
         </div>
 
         {searchQuery && (
@@ -108,14 +94,9 @@ export const ChecklistEditor = memo(function ChecklistEditor({
           items={filteredItems}
           mode={mode as "create" | "edit"}
           activeTab={activeTab}
-          searchQuery={searchQuery}
-          pendingDeletions={pendingDeletions}
+          applicationId={applicationId}
           onUpdateRequirement={onUpdateRequirement}
           onAddToPending={onAddToPending}
-          onAddToPendingDeletions={onAddToPendingDeletions}
-          onRemoveFromPendingDeletions={onRemoveFromPendingDeletions}
-          isBatchDeleting={isBatchDeleting}
-          applicationId={applicationId}
         />
       </div>
     </div>

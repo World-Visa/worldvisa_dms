@@ -17,7 +17,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { useQueryString } from "@/hooks/useQueryString";
-import { ApplicationsFilters } from "@/components/applications/ApplicationsFilters";
+import { ApplicationsSearch, ApplicationsFilters } from "@/components/applications/ApplicationsFilters";
 import { LodgementDeadlineStatsCard } from "@/components/applications/LodgementDeadlineStatsCard";
 import { ApplicationsPagination } from "@/components/applications/ApplicationsPagination";
 import {
@@ -25,16 +25,29 @@ import {
   SearchResultsSkeleton,
 } from "@/components/applications/ApplicationsTableSkeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { RefreshCw, CalendarClock } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { RefreshCw, CalendarClock, X, Calendar, Users, Layers, CircleDot } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const LazyApplicationsTable = lazy(() =>
   import("@/components/applications/ApplicationsTable").then((module) => ({
     default: module.ApplicationsTable,
   })),
 );
+
+type Country = "Australia" | "Canada";
+
+const COUNTRIES: Country[] = ["Australia", "Canada"];
+
+const COUNTRY_IMAGE_URLS: Record<Country, string> = {
+  Australia:
+    "https://images.pexels.com/photos/1766215/pexels-photo-1766215.jpeg",
+  Canada:
+    "https://images.pexels.com/photos/2448946/pexels-photo-2448946.jpeg",
+};
 
 interface ApplicationsClientProps {
   initialRecentActivity?: boolean;
@@ -47,6 +60,11 @@ export const ApplicationsClient = memo(function ApplicationsClient({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const canView = user?.role === "master_admin" || user?.role === "team_leader";
+
+  const [selectedCountry, setSelectedCountry] = useState<Country>(() => {
+    const urlCountry = queryParams.country as string | undefined;
+    return urlCountry === "Canada" ? "Canada" : "Australia";
+  });
 
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(20);
@@ -62,7 +80,7 @@ export const ApplicationsClient = memo(function ApplicationsClient({
   >(undefined);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [deadlineCategory, setDeadlineCategory] = useState<
-    "approaching" | "overdue" | "noDeadline" | null
+    "approaching" | "overdue" | "noDeadline" | "future" | null
   >(null);
 
   const [recentActivity, setRecentActivity] = useState(() => {
@@ -80,6 +98,23 @@ export const ApplicationsClient = memo(function ApplicationsClient({
   const { measureAsync } = usePerformanceMonitor("ApplicationsClient");
 
   const isSearchMode = searchQuery.trim() !== "";
+
+  // Lightweight queries to get total counts per country for tab badges
+  const { data: australiaCountData } = useApplications({
+    page: 1,
+    limit: 1,
+    country: "Australia",
+  });
+  const { data: canadaCountData } = useApplications({
+    page: 1,
+    limit: 1,
+    country: "Canada",
+  });
+
+  const countryTotals: Record<Country, number | undefined> = {
+    Australia: australiaCountData?.pagination.totalRecords,
+    Canada: canadaCountData?.pagination.totalRecords,
+  };
 
   const filters = useMemo(() => {
     let startDate: string | undefined;
@@ -116,6 +151,7 @@ export const ApplicationsClient = memo(function ApplicationsClient({
       applicationStage:
         applicationStage.length > 0 ? applicationStage : undefined,
       applicationState: applicationState ?? undefined,
+      country: selectedCountry,
     };
 
     return filterParams;
@@ -127,6 +163,7 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     handledBy,
     applicationStage,
     applicationState,
+    selectedCountry,
   ]);
 
   // Fetch regular applications
@@ -139,6 +176,7 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     deadlineCategory,
     page,
     limit,
+    selectedCountry,
   );
 
   // Determine which data to display
@@ -165,8 +203,9 @@ export const ApplicationsClient = memo(function ApplicationsClient({
 
     const params: Record<string, string> = {};
     params[searchType] = searchQuery.trim();
+    params.country = selectedCountry;
     return params;
-  }, [searchQuery, searchType]);
+  }, [searchQuery, searchType, selectedCountry]);
 
   const {
     data: searchData,
@@ -204,6 +243,21 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     }
   }, [search, measureAsync]);
 
+  const handleCountryChange = useCallback(
+    (country: Country) => {
+      setSelectedCountry(country);
+      setPage(1);
+      setDeadlineCategory(null);
+      setSearch("");
+      setSearchQuery("");
+      updateQuery({
+        country: country === "Australia" ? undefined : country,
+        deadlineCategory: undefined,
+      });
+    },
+    [updateQuery],
+  );
+
   useEffect(() => {
     if (debouncedSearch.trim() && debouncedSearch.length >= 2) {
       setSearchQuery(debouncedSearch.trim());
@@ -226,17 +280,29 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     const urlDeadlineCategory = queryParams.deadlineCategory;
     if (
       urlDeadlineCategory &&
-      ["approaching", "overdue", "noDeadline"].includes(
+      ["approaching", "overdue", "noDeadline", "future"].includes(
         urlDeadlineCategory as string,
       )
     ) {
       setDeadlineCategory(
-        urlDeadlineCategory as "approaching" | "overdue" | "noDeadline",
+        urlDeadlineCategory as
+        | "approaching"
+        | "overdue"
+        | "noDeadline"
+        | "future",
       );
     } else if (!urlDeadlineCategory && deadlineCategory) {
       setDeadlineCategory(null);
     }
   }, [queryParams.deadlineCategory, deadlineCategory]);
+
+  useEffect(() => {
+    const urlCountry = queryParams.country as string | undefined;
+    const resolved: Country = urlCountry === "Canada" ? "Canada" : "Australia";
+    if (resolved !== selectedCountry) {
+      setSelectedCountry(resolved);
+    }
+  }, [queryParams.country, selectedCountry]);
 
   const handleDateRangeChange = useCallback((range: DateRange | undefined) => {
     setDateRange(range);
@@ -262,7 +328,14 @@ export const ApplicationsClient = memo(function ApplicationsClient({
   );
 
   const handleDeadlineCategoryClick = useCallback(
-    (category: "approaching" | "overdue" | "noDeadline" | null) => {
+    (
+      category:
+        | "approaching"
+        | "overdue"
+        | "noDeadline"
+        | "future"
+        | null,
+    ) => {
       setDeadlineCategory(category);
       setPage(1);
       updateQuery({ deadlineCategory: category || undefined });
@@ -280,9 +353,14 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     setApplicationState(undefined);
     setRecentActivity(false);
     setDeadlineCategory(null);
+    setSelectedCountry("Australia");
     setPage(1);
 
-    updateQuery({ recentActivity: undefined, deadlineCategory: undefined });
+    updateQuery({
+      recentActivity: undefined,
+      deadlineCategory: undefined,
+      country: undefined,
+    });
   }, [updateQuery]);
 
   const handleRecentActivityToggle = useCallback(() => {
@@ -324,19 +402,20 @@ export const ApplicationsClient = memo(function ApplicationsClient({
             queryKey: ["applications", filters],
           }),
           searchQuery.trim() &&
-            queryClient.refetchQueries({
-              queryKey: ["search-applications", searchParamsForAPI],
-            }),
+          queryClient.refetchQueries({
+            queryKey: ["search-applications", searchParamsForAPI],
+          }),
           deadlineCategory &&
-            queryClient.refetchQueries({
-              queryKey: [
-                "deadline-stats",
-                "visa",
-                deadlineCategory,
-                page,
-                limit,
-              ],
-            }),
+          queryClient.refetchQueries({
+            queryKey: [
+              "deadline-stats",
+              "visa",
+              deadlineCategory,
+              page,
+              limit,
+              selectedCountry,
+            ],
+          }),
         ].filter(Boolean),
       );
     } catch (error) {
@@ -352,9 +431,9 @@ export const ApplicationsClient = memo(function ApplicationsClient({
     deadlineCategory,
     page,
     limit,
+    selectedCountry,
   ]);
 
-  const totalApplications = displayData?.pagination.totalRecords || 0;
 
   const displayError = isSearchMode ? searchQueryError : error;
   const displayLoading = isSearchMode
@@ -365,85 +444,187 @@ export const ApplicationsClient = memo(function ApplicationsClient({
 
   return (
     <>
-      {/* Filters Section */}
-      <div className="flex flex-col w-full sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900  mb-2 flex items-center gap-2">
-            Visa Applications
-          </h2>
-          <p className="text-muted-foreground">
-            Manage and review all visa applications assigned to you.
-          </p>
+      {/* Country Tab Navigation */}
+      <div className="mb-6">
+        <div className="flex border-b border-gray-200">
+          {COUNTRIES.map((country) => {
+            const isActive = selectedCountry === country;
+            const count = countryTotals[country];
+            return (
+              <button
+                key={country}
+                type="button"
+                onClick={() => handleCountryChange(country)}
+                className={cn(
+                  "relative flex items-center gap-2.5 px-5 pb-3 pt-2 text-sm font-medium tracking-wide",
+                  "focus:outline-none transition-colors duration-150",
+                  "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full",
+                  "after:transition-all after:duration-200",
+                  isActive
+                    ? "text-gray-900 after:bg-gray-900"
+                    : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
+                )}
+              >
+                <Avatar className="size-8 shrink-0" >
+                  <AvatarImage
+                    src={COUNTRY_IMAGE_URLS[country]}
+                    alt={country}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="text-xs">
+                    {country.slice(0, 1)}
+                  </AvatarFallback>
+                </Avatar>
+                {country}
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150",
+                    isActive
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-400",
+                  )}
+                >
+                  {count !== undefined ? count.toLocaleString() : "—"}
+                </span>
+              </button>
+            );
+          })}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 cursor-pointer"
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-          />
-          <span className="hidden sm:inline">Refresh</span>
-        </Button>
+      </div>
+
+      {/* Title + Search row */}
+      <div className="mb-6 flex w-full items-center justify-between gap-4">
+        <h2 className="text-2xl font-medium text-foreground">
+          {selectedCountry} visa applications
+        </h2>
+        <ApplicationsSearch
+          search={search}
+          searchType={searchType}
+          onSearchChange={handleSearchChange}
+          onSearchTypeChange={handleSearchTypeChange}
+          onSearchClick={handleSearchClick}
+          onKeyDown={handleKeyPress}
+        />
       </div>
 
       <LodgementDeadlineStatsCard
         type="visa"
         selectedCategory={deadlineCategory}
         onCategoryClick={handleDeadlineCategoryClick}
+        country={selectedCountry}
       />
 
-      {/* Filters Toggle Section */}
-      <div className="mb-6 w-full flex justify-between gap-4 items-start">
-        <div className="flex gap-2 shrink-0">
-          <Button
-            variant={!recentActivity ? "default" : "outline"}
-            className="rounded-full py-3 px-6 cursor-pointer"
-            onClick={handleRecentActivityToggle}
-          >
-            All applications
-          </Button>
-          <Button
-            variant={recentActivity ? "default" : "outline"}
-            className="rounded-full py-3 px-6 cursor-pointer"
-            onClick={handleRecentActivityToggle}
-          >
-            Recent activities
-          </Button>
+      {/* Tabs + Filters row */}
+      <div className="mb-4 flex items-end justify-between border-b border-gray-200">
+        <div className="flex gap-6 text-base font-medium">
+          {["All applications", "Recent activities"].map((label, idx) => {
+            const isActive = idx === 0 ? !recentActivity : recentActivity;
+            return (
+              <button
+                key={label}
+                type="button"
+                className={cn(
+                  "px-4 py-2 focus:outline-none transition-colors",
+                  isActive
+                    ? "-mb-px border-b-2 border-gray-900 font-semibold text-gray-900"
+                    : "cursor-pointer rounded-md text-gray-500 hover:bg-gray-100",
+                )}
+                onClick={handleRecentActivityToggle}
+              >
+                {label}
+              </button>
+            );
+          })}
         </div>
-
-        <div className="flex-1 min-w-0 flex justify-end">
+        <div className="pb-2">
           <ApplicationsFilters
-            search={search}
-            searchType={searchType}
             dateRange={dateRange}
             limit={limit}
             handledBy={handledBy}
             applicationStage={applicationStage}
             applicationState={applicationState}
-            isSearchMode={isSearchMode}
-            onSearchChange={handleSearchChange}
-            onSearchTypeChange={handleSearchTypeChange}
-            onSearchClick={handleSearchClick}
             onDateRangeChange={handleDateRangeChange}
             onLimitChange={handleLimitChange}
             onHandledByChange={handleHandledByChange}
             onApplicationStageChange={handleApplicationStageChange}
             onApplicationStateChange={handleApplicationStateChange}
             onClearFilters={handleClearFilters}
-            onKeyPress={handleKeyPress}
           />
         </div>
       </div>
 
-      <div className="mb-4 flex justify-end">
-        <Badge variant="secondary">
-          Total applications:&nbsp;
-          {displayLoading ? "..." : totalApplications.toLocaleString()}
-        </Badge>
-      </div>
+      {/* Active filter chips */}
+      {(dateRange?.from || handledBy.length > 0 || applicationStage.length > 0 || applicationState) && (
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {dateRange?.from && (
+            <Badge variant="secondary" className="gap-1.5 py-1 pl-2.5 pr-1 text-xs font-medium">
+              <Calendar className="h-3 w-3" />
+              <span>
+                {dateRange.from.toLocaleDateString()}
+                {dateRange.to ? ` – ${dateRange.to.toLocaleDateString()}` : ""}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleDateRangeChange(undefined)}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-muted transition-colors"
+                aria-label="Remove date filter"
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </Badge>
+          )}
+          {handledBy.length > 0 && (
+            <Badge variant="secondary" className="gap-1.5 py-1 pl-2.5 pr-1 text-xs font-medium">
+              <Users className="h-3 w-3" />
+              <span>
+                {handledBy.length === 1
+                  ? `Handled by: ${handledBy[0]}`
+                  : `Handled by: ${handledBy.length} admins`}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleHandledByChange([])}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-muted transition-colors"
+                aria-label="Remove handled by filter"
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </Badge>
+          )}
+          {applicationStage.length > 0 && (
+            <Badge variant="secondary" className="gap-1.5 py-1 pl-2.5 pr-1 text-xs font-medium">
+              <Layers className="h-3 w-3" />
+              <span>
+                {applicationStage.length === 1
+                  ? applicationStage[0]
+                  : `${applicationStage.length} stages`}
+              </span>
+              <button
+                type="button"
+                onClick={() => handleApplicationStageChange([])}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-muted transition-colors"
+                aria-label="Remove stage filter"
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </Badge>
+          )}
+          {applicationState && (
+            <Badge variant="secondary" className="gap-1.5 py-1 pl-2.5 pr-1 text-xs font-medium">
+              <CircleDot className="h-3 w-3" />
+              <span>State: {applicationState}</span>
+              <button
+                type="button"
+                onClick={() => handleApplicationStateChange(undefined)}
+                className="ml-0.5 rounded-full p-0.5 hover:bg-muted transition-colors"
+                aria-label="Remove state filter"
+              >
+                <X className="h-2.5 w-2.5" />
+              </button>
+            </Badge>
+          )}
+        </div>
+      )}
 
       {/* Deadline Filter Indicator */}
       {deadlineCategory && (
@@ -455,13 +636,15 @@ export const ApplicationsClient = memo(function ApplicationsClient({
               ? "Approaching"
               : deadlineCategory === "overdue"
                 ? "Overdue"
-                : "No Deadline"}
+                : deadlineCategory === "future"
+                  ? "Future"
+                  : "No Deadline"}
             <button
               onClick={() => handleDeadlineCategoryClick(null)}
               className="ml-1 hover:text-destructive transition-colors"
               aria-label="Clear deadline filter"
             >
-              ×
+              <X className="h-3 w-3 text-gray-500 hover:text-destructive" />
             </button>
           </Badge>
         </div>
@@ -496,7 +679,7 @@ export const ApplicationsClient = memo(function ApplicationsClient({
       {/* Search Results Header */}
       {isSearchMode && (
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
+          <h3 className="text-lg font-medium text-foreground">
             Search Results ({searchData?.data?.length || 0} results)
           </h3>
           <p className="text-sm text-gray-600">

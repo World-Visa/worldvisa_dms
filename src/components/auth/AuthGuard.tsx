@@ -49,13 +49,13 @@ export function AuthGuard({
         } else {
           // Redirect to appropriate dashboard based on user role
           if (user?.role === "admin" || user?.role === "team_leader") {
-            router.push("/admin/applications");
+            router.push("/v2/applications");
           } else if (user?.role === "client") {
-            router.push("/client/dashboard");
+            router.push("/client/applications");
           } else if (user?.role === "master_admin") {
-            router.push("/admin/dashboard");
+            router.push("/v2");
           } else if (user?.role === "supervisor") {
-            router.push("/admin/applications");
+            router.push("/v2/applications");
           } else {
             router.push(redirectTo);
           }

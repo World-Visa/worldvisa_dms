@@ -56,6 +56,7 @@ export function ApplicationDetailsHeader({
             <Button
               variant={areAllDocumentsApproved ? "default" : "outline"}
               size="sm"
+              premium3D={true}
               onClick={onPushForQualityCheck}
               disabled={!areAllDocumentsApproved}
               className={`flex items-center gap-2 cursor-pointer ${
@@ -64,19 +65,18 @@ export function ApplicationDetailsHeader({
                   : "opacity-50 cursor-not-allowed"
               }`}
             >
-              <CheckCircle className="h-4 w-4" />
-              <span className="hidden sm:inline">Push for Quality Check</span>
+              <span className="hidden sm:inline">Push to QC</span>
             </Button>
           </div>
         </TooltipTrigger>
-        <TooltipContent className="max-w-sm">
+        <TooltipContent className="bg-white border border-gray-200 rounded-sm text-foreground">
           {areAllDocumentsApproved ? (
             "All mandatory documents are reviewed or approved. Ready for quality check."
           ) : (
-            <div className="space-y-2">
-              <p className="font-semibold">Cannot push for quality check:</p>
+            <div className="space-y-2 w-full">
+              <p className="font-semibold text-foreground">Cannot push for quality check:</p>
               {validationDetails.length === 0 ? (
-                <p className="text-sm">
+                <p className="text-sm text-foreground">
                   All mandatory documents must be submitted and reviewed or
                   approved.
                 </p>

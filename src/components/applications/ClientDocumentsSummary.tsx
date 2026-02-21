@@ -1,13 +1,51 @@
 import React from "react";
 import { ClientDocument } from "@/types/client";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface ClientDocumentsSummaryProps {
   documents: ClientDocument[] | undefined;
   isLoading: boolean;
   error: Error | null;
 }
+
+interface StatusConfig {
+  title: string;
+  status: ClientDocument["status"];
+  dot: string;
+  activeClasses: string;
+  inactiveClasses: string;
+}
+
+const STATUS_CONFIG: StatusConfig[] = [
+  {
+    title: "Pending",
+    status: "pending",
+    dot: "bg-amber-400",
+    activeClasses:
+      "border-amber-300 bg-amber-50 text-amber-800 ring-1 ring-amber-200",
+    inactiveClasses:
+      "border-gray-200 bg-white text-gray-600 hover:border-amber-200 hover:bg-amber-50/50",
+  },
+  {
+    title: "Approved",
+    status: "approved",
+    dot: "bg-green-500",
+    activeClasses:
+      "border-green-300 bg-green-50 text-green-800 ring-1 ring-green-200",
+    inactiveClasses:
+      "border-gray-200 bg-white text-gray-600 hover:border-green-200 hover:bg-green-50/50",
+  },
+  {
+    title: "Rejected",
+    status: "rejected",
+    dot: "bg-red-500",
+    activeClasses:
+      "border-red-300 bg-red-50 text-red-800 ring-1 ring-red-200",
+    inactiveClasses:
+      "border-gray-200 bg-white text-gray-600 hover:border-red-200 hover:bg-red-50/50",
+  },
+];
 
 export function ClientDocumentsSummary({
   documents,
@@ -16,115 +54,45 @@ export function ClientDocumentsSummary({
 }: ClientDocumentsSummaryProps) {
   if (isLoading) {
     return (
-      <section className="w-full space-y-2">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
-          <Skeleton className="h-4 w-32" />
-          <Skeleton className="h-5 w-20" />
-        </div>
-        <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 w-full">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="flex flex-col items-center bg-white border rounded-md px-2 py-3 text-center"
-            >
-              <Skeleton className="h-8 w-8 rounded-full mb-1" />
-              <Skeleton className="h-3 w-12 mb-1" />
-              <Skeleton className="h-5 w-8" />
-            </div>
-          ))}
-        </div>
-      </section>
+      <div className="flex flex-wrap gap-2">
+        {[80, 96, 80].map((w, i) => (
+          // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton list
+          <Skeleton key={i} className="h-8 rounded-md" style={{ width: w }} />
+        ))}
+      </div>
     );
   }
 
-  if (error) {
-    return (
-      <section className="w-full space-y-2">
-        <div className="text-center py-8">
-          <p className="text-destructive">Failed to load documents summary</p>
-          <p className="text-sm text-muted-foreground mt-1">{error.message}</p>
-        </div>
-      </section>
-    );
+  if (error || !documents) {
+    return null;
   }
 
-  if (!documents) {
-    return (
-      <section className="w-full space-y-2">
-        <div className="text-center py-8">
-          <p className="text-muted-foreground">No documents data available</p>
-        </div>
-      </section>
-    );
-  }
-
-  // Calculate counts by status
-  const pendingCount = documents?.filter(
-    (doc) => doc.status === "pending",
-  ).length;
-  const approvedCount = documents?.filter(
-    (doc) => doc.status === "approved",
-  ).length;
-  const rejectedCount = documents?.filter(
-    (doc) => doc.status === "rejected",
-  ).length;
-  const totalCount = documents?.length;
-
-  const summaryCards = [
-    {
-      title: "Pending",
-      count: pendingCount,
-      icon: Clock,
-      color: "text-yellow-600",
-      bgColor: "bg-yellow-50",
-    },
-    {
-      title: "Approved",
-      count: approvedCount,
-      icon: CheckCircle,
-      color: "text-green-600",
-      bgColor: "bg-green-50",
-    },
-    {
-      title: "Rejected",
-      count: rejectedCount,
-      icon: AlertCircle,
-      color: "text-red-600",
-      bgColor: "bg-red-50",
-    },
-  ];
+  const counts: Record<string, number> = {
+    pending: documents.filter((d) => d.status === "pending").length,
+    approved: documents.filter((d) => d.status === "approved").length,
+    rejected: documents.filter((d) => d.status === "rejected").length,
+  };
 
   return (
-    <section className="w-full space-y-2">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-2">
-        <h3 className="font-medium text-base text-gray-900">
-          Documents Summary
-        </h3>
-        <span className="text-xs text-gray-500 border rounded px-2 py-0.5">
-          {totalCount} total
-        </span>
-      </div>
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 w-full">
-        {summaryCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={card.title}
-              className="flex flex-col items-center bg-white border rounded-md px-2 py-3 text-center"
-            >
-              <div
-                className={`flex items-center justify-center h-8 w-8 rounded-full ${card.bgColor} mb-1`}
-              >
-                <Icon className={`h-4 w-4 ${card.color}`} />
-              </div>
-              <span className="text-xs text-gray-500">{card.title}</span>
-              <span className="text-lg font-semibold text-gray-900">
-                {card.count}
-              </span>
-            </div>
-          );
-        })}
-      </div>
-    </section>
+    <div className="flex flex-wrap gap-2" role="group" aria-label="Document status summary">
+      {STATUS_CONFIG.map(({ title, status, dot, inactiveClasses }) => {
+        const count = counts[status] ?? 0;
+        return (
+          <div
+            key={status}
+            className={cn(
+              "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium cursor-default",
+              inactiveClasses,
+            )}
+          >
+            <span className={cn("h-2 w-2 shrink-0 rounded-full", dot)} />
+            <span>{title}</span>
+            <span className="tabular-nums text-xs font-semibold text-gray-500">
+              {count}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 }

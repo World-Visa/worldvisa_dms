@@ -26,23 +26,23 @@ export const ChecklistLayout = memo(function ChecklistLayout({
 }: ChecklistLayoutProps) {
   const router = useRouter();
   return (
-    <div className="space-y-6 max-w-7xl mx-auto pt-10">
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+    <div className="space-y-6">
+      <div className="flex flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onClick={() => router.back()}
-            className="cursor-pointer"
+            className="cursor-pointer rounded-full"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to Application
           </Button>
+          <h1 className="text-2xl font-medium text-foreground">Manage Checklist</h1>
         </div>
 
         <div className="flex items-center justify-end gap-2">
           <Button
-            variant="ghost"
+            variant="secondary"
             size="sm"
             onClick={onCancel}
             disabled={isSaving}
@@ -53,7 +53,8 @@ export const ChecklistLayout = memo(function ChecklistLayout({
             size="sm"
             onClick={onSave}
             disabled={isSaving}
-            className="gap-2"
+            className="gap-2 bg-primary-blue"
+            premium3D={true}
           >
             {isSaving ? (
               <>

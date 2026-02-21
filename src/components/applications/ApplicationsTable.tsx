@@ -144,8 +144,8 @@ export const ApplicationsTable = memo(function ApplicationsTable({
   const handleRowClick = useCallback(
     (applicationId: string) => {
       const path = isSpouseApplication
-        ? `/admin/spouse-skill-assessment-applications/${applicationId}`
-        : `/admin/applications/${applicationId}`;
+        ? `/v2/spouse-skill-assessment-applications/${applicationId}`
+        : `/v2/applications/${applicationId}`;
       router.push(path);
     },
     [router, isSpouseApplication],

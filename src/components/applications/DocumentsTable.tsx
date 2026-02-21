@@ -57,6 +57,8 @@ import { DeleteDocumentDialog } from "./DeleteDocumentDialog";
 import { ReuploadDocumentModal } from "./ReuploadDocumentModal";
 import { UploadDocumentsModal } from "./UploadDocumentsModal";
 import ViewDocumentSheet from "./ViewDocumentSheet";
+import { DocumentEmptyState } from "./DocumentEmptyState";
+import { DocumentErrorState } from "./DocumentErrorState";
 
 interface DocumentsTableProps {
   applicationId: string;
@@ -258,9 +260,8 @@ export function DocumentsTable({
           return (
             <div className="flex flex-col space-y-1">
               <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
                 <span
-                  className="truncate max-w-[150px]"
+                  className="truncate max-w-[150px] font-semibold text-gray-900 underline"
                   title={document.file_name}
                 >
                   {document.file_name.length > 20
@@ -297,7 +298,7 @@ export function DocumentsTable({
             return (
               <Badge
                 variant="secondary"
-                className="text-xs max-w-[120px] font-medium truncate font-lexend"
+                className="text-xs max-w-[120px] font-medium truncate"
                 title={formattedType}
               >
                 {formattedType.length > 15
@@ -378,7 +379,7 @@ export function DocumentsTable({
                     | null
                     | undefined
                 }
-                className={`text-xs max-w-[140px] font-medium truncate font-lexend ${badgeClassName}`}
+                className={`text-xs max-w-[140px] font-medium truncate ${badgeClassName}`}
                 title={documentCategory}
               >
                 {displayText}
@@ -409,7 +410,7 @@ export function DocumentsTable({
               <span className={statusConfig.iconClassName}>
                 {statusConfig.icon}
               </span>
-              <span className="font-lexend">{statusConfig.label}</span>
+              <span>{statusConfig.label}</span>
             </div>
           );
         },
@@ -544,35 +545,13 @@ export function DocumentsTable({
 
   if (error) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Submitted Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <p className="text-destructive">Failed to load documents</p>
-            <p className="text-sm text-muted-foreground mt-1">
-              {error.message}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+      <DocumentErrorState />
     );
   }
 
   if (!documents || documents.length === 0) {
     return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-            <p className="text-muted-foreground">No documents uploaded yet</p>
-          </div>
-        </CardContent>
-      </Card>
+      <DocumentEmptyState applicationId={applicationId} />
     );
   }
 

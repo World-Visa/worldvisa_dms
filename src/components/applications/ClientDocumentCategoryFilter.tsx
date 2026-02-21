@@ -2,7 +2,6 @@
 
 import React from "react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import { DocumentCategoryInfo } from "@/types/documents";
 import { ChecklistCategory } from "@/types/checklist";
 
@@ -21,10 +20,8 @@ export function ClientDocumentCategoryFilter({
   hasChecklist = false,
   submittedDocumentsCount = 0,
 }: ClientDocumentCategoryFilterProps) {
-  // Get categories based on checklist state
   const getCategoriesForState = (): DocumentCategoryInfo[] => {
     if (!hasChecklist || checklistCategories.length === 0) {
-      // No checklist: Only show submitted documents
       return [
         {
           id: "submitted",
@@ -34,7 +31,6 @@ export function ClientDocumentCategoryFilter({
       ];
     }
 
-    // Has checklist: Show submitted + dynamic checklist categories
     return [
       {
         id: "submitted",
@@ -52,35 +48,38 @@ export function ClientDocumentCategoryFilter({
   const categories = getCategoriesForState();
 
   return (
-    <div className="flex flex-wrap items-center gap-2 mb-6">
-      {categories.map((category) => (
-        <Button
-          key={category.id}
-          variant={selectedCategory === category.id ? "default" : "outline"}
-          size="sm"
-          onClick={() => onCategoryChange(category.id)}
-          className={cn(
-            "h-8 px-3 text-xs font-medium transition-colors",
-            selectedCategory === category.id
-              ? "bg-blue-600 hover:bg-blue-700 text-white"
-              : "bg-white hover:bg-gray-50 text-gray-700 border-gray-300",
-          )}
-        >
-          {category.label}
-          {category.count > 0 && (
-            <span
+    <div className="relative border-b border-gray-200">
+      <div className="flex items-end gap-0 overflow-x-auto scrollbar-hide flex-nowrap">
+        {categories.map((category) => {
+          const selected = selectedCategory === category.id;
+          return (
+            <button
+              key={category.id}
+              type="button"
+              onClick={() => onCategoryChange(category.id)}
               className={cn(
-                "ml-2 px-1.5 py-0.5 rounded-full text-xs font-medium",
-                selectedCategory === category.id
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-gray-700",
+                "relative inline-flex items-center gap-2 px-3 py-2.5 text-sm transition-all duration-150 focus:outline-none whitespace-nowrap shrink-0",
+                "-mb-px border-b-2",
+                selected
+                  ? "border-gray-900 text-gray-900 font-semibold"
+                  : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium",
               )}
             >
-              {category.count}
-            </span>
-          )}
-        </Button>
-      ))}
+              {category.label}
+              {category.count != null && (
+                <span
+                  className={cn(
+                    "tabular-nums text-xs font-medium transition-colors",
+                    selected ? "text-gray-700" : "text-gray-400",
+                  )}
+                >
+                  {category.count}
+                </span>
+              )}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

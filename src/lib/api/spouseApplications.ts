@@ -29,6 +29,9 @@ export async function getSpouseApplications(
   if (filters.deadlineCategory)
     searchParams.append("deadlineCategory", filters.deadlineCategory);
 
+  // Add country filter
+  if (filters.country) searchParams.append("country", filters.country);
+
   const url = `${ZOHO_BASE_URL}/visa_applications/spouse/applications?${searchParams.toString()}`;
 
   return fetcher<ApplicationsResponse>(url);
@@ -41,12 +44,14 @@ export async function searchSpouseApplications(searchParams: {
   name?: string;
   phone?: string;
   email?: string;
+  country?: string;
 }): Promise<ApplicationsResponse> {
   const urlParams = new URLSearchParams();
 
   if (searchParams.name) urlParams.append("name", searchParams.name);
   if (searchParams.phone) urlParams.append("phone", searchParams.phone);
   if (searchParams.email) urlParams.append("email", searchParams.email);
+  if (searchParams.country) urlParams.append("country", searchParams.country);
 
   const url = `${ZOHO_BASE_URL}/visa_applications/spouse/applications/search?${urlParams.toString()}`;
 

@@ -1,16 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Button } from "@/components/ui/button";
-import { FileText, Eye, Globe, RefreshCw } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Search } from "lucide-react";
 import {
   useRequestedDocumentsToMePaginated,
   useMyRequestedDocumentsPaginated,
@@ -18,13 +10,14 @@ import {
   useRequestedDocumentsToMe,
   useMyRequestedDocuments,
   useAllRequestedDocuments,
+  useRequestedDocumentsSearch,
 } from "@/hooks/useRequestedDocuments";
+import { useDebounce } from "@/hooks/useDebounce";
 import { RequestedDocumentsDataTable } from "@/components/requested-documents/RequestedDocumentsDataTable";
 import {
   RequestedDocumentsFilters,
   RequestedDocumentsFilters as FiltersType,
 } from "@/components/requested-documents/RequestedDocumentsFilters";
-import { RequestedDocsStats } from "@/components/requested-documents/RequestedDocsStats";
 import { ApplicationsPagination } from "@/components/applications/ApplicationsPagination";
 import { RequestedDocumentViewSheet } from "@/components/requested-documents/RequestedDocumentViewSheet";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,6 +43,10 @@ export default function RequestedDocsClient() {
   });
   const [selectedDocument, setSelectedDocument] =
     useState<RequestedDocument | null>(null);
+  const [searchInput, setSearchInput] = useState("");
+
+  const debouncedSearch = useDebounce(searchInput.trim(), 350);
+  const isSearchMode = debouncedSearch.length > 0;
 
   const apiFilters =
     filters.status !== "all"
@@ -96,6 +93,15 @@ export default function RequestedDocsClient() {
   } = useAllRequestedDocumentsPaginated(currentPage, limit, apiFilters, {
     enabled: activeTab === "all-requests" && isMasterAdmin,
   });
+
+  const { data: searchData, isLoading: isSearchLoading } =
+    useRequestedDocumentsSearch(
+      currentPage,
+      limit,
+      debouncedSearch,
+      undefined,
+      { enabled: isSearchMode },
+    );
 
   // Stats queries - fetch all data for stats calculation
   const {
@@ -156,6 +162,12 @@ export default function RequestedDocsClient() {
   const { documents, pagination, isLoading, statsData, isLoadingStats } =
     getCurrentTabData();
 
+  const displayDocuments = isSearchMode
+    ? searchData?.data ?? []
+    : documents;
+  const displayPagination = isSearchMode ? searchData?.pagination : pagination;
+  const displayLoading = isSearchMode ? isSearchLoading : isLoading;
+
   // Calculate stats from current tab's full dataset
   const calculateStats = (docs: RequestedDocument[]) => {
     return docs.reduce(
@@ -201,6 +213,13 @@ export default function RequestedDocsClient() {
     setCurrentPage(1);
   };
 
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      setSearchInput((prev) => prev.trim());
+      setCurrentPage(1);
+    }
+  };
+
   const handleTabChange = (value: string) => {
     setActiveTab(value as ActiveTab);
     setCurrentPage(1);
@@ -237,11 +256,25 @@ export default function RequestedDocsClient() {
   return (
     <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <div className="mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center gap-6">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-neutral-900">
               Requested Documents
             </h1>
+          </div>
+          <div className="flex w-full max-w-[320px] items-center overflow-hidden rounded-full border-0 bg-[rgb(240,240,243)] shadow-none">
+            <span className="flex shrink-0 pl-4 pr-1 text-[#8E8E93]" aria-hidden>
+              <Search className="h-4 w-4" />
+            </span>
+            <input
+              type="search"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              onKeyDown={handleSearchKeyDown}
+              placeholder="Search"
+              className="h-10 min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-neutral-900 placeholder:text-[#8E8E93] focus:outline-none focus:ring-0"
+              aria-label="Search requested documents"
+            />
           </div>
         </div>
       </div>
@@ -252,134 +285,151 @@ export default function RequestedDocsClient() {
         overdue={stats.overdue}
       /> */}
 
-      <div>
-        <div>
-          <Tabs value={activeTab} onValueChange={handleTabChange}>
-            <TabsList
-              className={`grid w-full ${!isMasterAdmin ? "grid-cols-2" : "grid-cols-3"} h-12 mb-6`}
-            >
-              {isMasterAdmin && (
-                <TabsTrigger
-                  value="all-requests"
-                  className="flex h-10 items-center gap-2"
-                >
-                  <Globe className="h-4 w-4" />
-                  All Requests ({getTabCount(
-                    "all-requests",
-                  )})
-                </TabsTrigger>
+      {/* Tabs + Filters row (same alignment) */}
+      <div className="mb-4 flex items-end justify-between border-b border-gray-200">
+        <div
+          className="flex"
+          role="tablist"
+          aria-label="Requested documents tabs"
+        >
+          {isMasterAdmin && (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeTab === "all-requests"}
+              onClick={() => handleTabChange("all-requests")}
+              className={cn(
+                "relative flex items-center gap-2.5 px-5 pb-3 pt-2 text-sm font-medium tracking-wide",
+                "focus:outline-none transition-colors duration-150",
+                "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full",
+                "after:transition-all after:duration-200",
+                activeTab === "all-requests"
+                  ? "text-gray-900 after:bg-gray-900"
+                  : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
               )}
-              <TabsTrigger
-                value="requested-to-me"
-                className="flex h-10 items-center gap-2"
+            >
+              All Requests
+              <span
+                className={cn(
+                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150",
+                  activeTab === "all-requests"
+                    ? "bg-gray-900 text-white"
+                    : "bg-gray-100 text-gray-400",
+                )}
               >
-                <Eye className="h-4 w-4" />
-                Requested to Me ({getTabCount(
-                  "requested-to-me",
-                )})
-              </TabsTrigger>
-              <TabsTrigger
-                value="my-requests"
-                className="flex h-10 items-center gap-2"
-              >
-                <FileText className="h-4 w-4" />
-                My Requests ({getTabCount(
-                  "my-requests",
-                )})
-              </TabsTrigger>
-            </TabsList>
-
-            {isMasterAdmin && activeTab === "all-requests" && (
-              <TabsContent value="all-requests" className="space-y-4">
-                <RequestedDocumentsFilters
-                  filters={filters}
-                  onFiltersChange={handleFiltersChange}
-                  onRefresh={handleRefresh}
-                  isRefreshing={isLoading}
-                  totalCount={pagination?.totalItems || 0}
-                  filteredCount={documents.length}
-                />
-
-                <RequestedDocumentsDataTable
-                  documents={documents}
-                  isLoading={isLoading}
-                  type="all-requests"
-                  totalItems={pagination?.totalItems || 0}
-                  onViewDocument={handleViewDocument}
-                />
-
-                {pagination && (
-                  <ApplicationsPagination
-                    currentPage={pagination.currentPage}
-                    totalRecords={pagination.totalItems}
-                    limit={limit}
-                    onPageChange={handlePageChange}
-                  />
-                )}
-              </TabsContent>
+                {getTabCount("all-requests")}
+              </span>
+            </button>
+          )}
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "requested-to-me"}
+            onClick={() => handleTabChange("requested-to-me")}
+            className={cn(
+              "relative flex items-center gap-2.5 px-5 pb-3 pt-2 text-sm font-medium tracking-wide",
+              "focus:outline-none transition-colors duration-150",
+              "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full",
+              "after:transition-all after:duration-200",
+              activeTab === "requested-to-me"
+                ? "text-gray-900 after:bg-gray-900"
+                : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
             )}
-
-            {activeTab === "requested-to-me" && (
-              <TabsContent value="requested-to-me" className="space-y-4">
-                <RequestedDocumentsFilters
-                  filters={filters}
-                  onFiltersChange={handleFiltersChange}
-                  onRefresh={handleRefresh}
-                  isRefreshing={isLoading}
-                  totalCount={pagination?.totalItems || 0}
-                  filteredCount={documents.length}
-                />
-
-                <RequestedDocumentsDataTable
-                  documents={documents}
-                  isLoading={isLoading}
-                  type="requested-to-me"
-                  totalItems={pagination?.totalItems || 0}
-                  onViewDocument={handleViewDocument}
-                />
-
-                {pagination && (
-                  <ApplicationsPagination
-                    currentPage={pagination.currentPage}
-                    totalRecords={pagination.totalItems}
-                    limit={limit}
-                    onPageChange={handlePageChange}
-                  />
-                )}
-              </TabsContent>
+          >
+            Requested to Me
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150",
+                activeTab === "requested-to-me"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-400",
+              )}
+            >
+              {getTabCount("requested-to-me")}
+            </span>
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "my-requests"}
+            onClick={() => handleTabChange("my-requests")}
+            className={cn(
+              "relative flex items-center gap-2.5 px-5 pb-3 pt-2 text-sm font-medium tracking-wide",
+              "focus:outline-none transition-colors duration-150",
+              "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full",
+              "after:transition-all after:duration-200",
+              activeTab === "my-requests"
+                ? "text-gray-900 after:bg-gray-900"
+                : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
             )}
-
-            {activeTab === "my-requests" && (
-              <TabsContent value="my-requests" className="space-y-4">
-                <RequestedDocumentsFilters
-                  filters={filters}
-                  onFiltersChange={handleFiltersChange}
-                  onRefresh={handleRefresh}
-                  isRefreshing={isLoading}
-                  totalCount={pagination?.totalItems || 0}
-                  filteredCount={documents.length}
-                />
-
-                <RequestedDocumentsDataTable
-                  documents={documents}
-                  isLoading={isLoading}
-                  type="my-requests"
-                  totalItems={pagination?.totalItems || 0}
-                  onViewDocument={handleViewDocument}
-                />
-
-                {pagination && (
-                  <ApplicationsPagination
-                    currentPage={pagination.currentPage}
-                    totalRecords={pagination.totalItems}
-                    limit={limit}
-                    onPageChange={handlePageChange}
-                  />
-                )}
-              </TabsContent>
-            )}
-          </Tabs>
+          >
+            My Requests
+            <span
+              className={cn(
+                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150",
+                activeTab === "my-requests"
+                  ? "bg-gray-900 text-white"
+                  : "bg-gray-100 text-gray-400",
+              )}
+            >
+              {getTabCount("my-requests")}
+            </span>
+          </button>
         </div>
+        <div className="pb-2">
+          <RequestedDocumentsFilters
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            onRefresh={handleRefresh}
+            isRefreshing={displayLoading}
+            totalCount={displayPagination?.totalItems ?? 0}
+            filteredCount={displayDocuments.length}
+          />
+        </div>
+      </div>
+
+      {isSearchMode && (
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-sm text-neutral-600">
+            Search results for &quot;{debouncedSearch}&quot;
+            {displayPagination != null && (
+              <span className="ml-1 font-medium">
+                ({displayPagination.totalItems} result
+                {displayPagination.totalItems !== 1 ? "s" : ""})
+              </span>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() => {
+              setSearchInput("");
+              setCurrentPage(1);
+            }}
+            className="text-sm font-medium text-neutral-600 underline-offset-2 hover:underline"
+          >
+            Clear search
+          </button>
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <RequestedDocumentsDataTable
+          documents={displayDocuments}
+          isLoading={displayLoading}
+          type={activeTab}
+          totalItems={displayPagination?.totalItems ?? 0}
+          onViewDocument={handleViewDocument}
+          searchQuery={isSearchMode ? debouncedSearch : ""}
+        />
+
+        {displayPagination && (
+          <ApplicationsPagination
+            currentPage={displayPagination.currentPage}
+            totalRecords={displayPagination.totalItems}
+            limit={limit}
+            onPageChange={handlePageChange}
+          />
+        )}
       </div>
 
       {selectedDocument && (

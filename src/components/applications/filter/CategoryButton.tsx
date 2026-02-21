@@ -4,7 +4,6 @@ import React, { memo } from "react";
 import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 import { DocumentCategoryInfo } from "@/types/documents";
-import { formatDateRange, formatDate } from "@/utils/dateFormat";
 import { Badge } from "@/components/ui/badge";
 import type { Document } from "@/types/applications";
 
@@ -20,6 +19,7 @@ interface CategoryButtonProps {
   documents?: Document[];
   count?: number;
   disabled?: boolean;
+  categoryType?: "checklist" | "application";
 }
 
 export const CategoryButton = memo(function CategoryButton({
@@ -28,29 +28,25 @@ export const CategoryButton = memo(function CategoryButton({
   onCategoryChange,
   onRemoveCompany,
   onRemoveCompanyWithCheck,
-  documents,
   count: countProp,
   disabled = false,
+  categoryType = "application",
 }: CategoryButtonProps) {
   const count = countProp ?? category.count;
-  // Check if this is a company-specific chip (contains "Company Documents" but not the generic one)
+
   const isCompanyChip =
     category.label.includes("Company Documents") &&
     category.label !== "Company Documents" &&
     (onRemoveCompany || onRemoveCompanyWithCheck);
 
-  // Extract company name from the category label (this will be lowercase for matching)
   const companyName = isCompanyChip
     ? category.label.replace(" Company Documents", "")
     : null;
-  // The company category is the full label (e.g., "Oracle Company Documents")
   const companyCategory = isCompanyChip ? category.label : null;
 
   const handleDeleteClick = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent category selection
+    e.stopPropagation();
     if (!companyName || !companyCategory) return;
-
-    // Use the new handler with document check if available, otherwise fall back to old handler
     if (onRemoveCompanyWithCheck) {
       onRemoveCompanyWithCheck(companyName, companyCategory);
     } else if (onRemoveCompany) {
@@ -59,69 +55,64 @@ export const CategoryButton = memo(function CategoryButton({
   };
 
   const selected = selectedCategory === category.id;
-  const labelWithCount =
-    count != null ? `${category.label} (${count})` : category.label;
 
   return (
-    <div className="relative group">
+    <div className="group relative shrink-0">
       <button
-        key={category.id}
+        type="button"
         disabled={disabled}
-        className={cn(
-          "relative inline-flex flex-col items-center gap-0.5 px-2 py-1.5 min-w-0 transition-all duration-200 ease-in-out",
-          "focus:outline-none focus:ring-0",
-          disabled && "cursor-not-allowed opacity-50",
-          !disabled && "cursor-pointer hover:opacity-80",
-          selected
-            ? "font-bold text-black dark:text-white"
-            : "font-medium text-gray-400 dark:text-gray-500",
-        )}
         onClick={() => !disabled && onCategoryChange(category.id)}
+        className={cn(
+          // Base layout
+          "relative inline-flex items-center gap-2 px-3 py-2.5 text-sm transition-all duration-150 focus:outline-none whitespace-nowrap",
+          // Underline tab: -mb-px makes the border sit on top of the container's border-b
+          "-mb-px border-b-2",
+          disabled && "cursor-not-allowed opacity-50",
+          !disabled && "cursor-pointer",
+          selected
+            ? "border-gray-900 text-gray-900 font-semibold"
+            : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 font-medium",
+        )}
       >
-        <span
-          className={cn(
-            "inline-flex items-center gap-2 whitespace-nowrap",
-            selected && "border-b-2 border-black dark:border-white pb-0.5",
-          )}
-        >
-          {labelWithCount}
-          {category.isCurrentEmployment && (
-            <Badge
-              variant="secondary"
-              className="bg-green-500 hover:bg-green-600 text-white text-xs px-1.5 py-0.5"
-            >
-              Current
-            </Badge>
-          )}
-        </span>
-        {/* {category.fromDate && (
-          <div
+        {category.label}
+
+        {/* Document count badge */}
+        {count != null && categoryType === "application" && (
+          <span
             className={cn(
-              'text-[10px] font-normal',
-              selected ? 'text-black/70 dark:text-white/70' : 'text-gray-400 dark:text-gray-500'
+              "tabular-nums text-xs font-medium transition-colors",
+              selected ? "text-gray-700" : "text-gray-400",
             )}
           >
-            {category.isCurrentEmployment
-              ? `Since ${formatDate(category.fromDate)} - Present`
-              : category.toDate
-                ? formatDateRange(category.fromDate, category.toDate)
-                : `From ${formatDate(category.fromDate)}`}
-          </div>
-        )} */}
+            {count}
+          </span>
+        )}
+
+        {/* Current employment badge */}
+        {category.isCurrentEmployment && (
+          <Badge
+            variant="secondary"
+            className="bg-green-500 text-white hover:bg-green-500 text-[10px] px-1.5 py-0.5 leading-none"
+          >
+            Current
+          </Badge>
+        )}
       </button>
 
-      {/* Delete button for company chips */}
+      {/* Remove company ×  — appears on hover */}
       {isCompanyChip && (
         <button
+          type="button"
           onClick={handleDeleteClick}
           className={cn(
-            "absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-200",
-            "bg-red-500 text-white hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1",
-            "opacity-0 group-hover:opacity-100 transform scale-75 group-hover:scale-100",
+            "absolute -right-1 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full transition-all duration-150",
+            "bg-gray-200 text-gray-500 hover:bg-red-500 hover:text-white focus:outline-none",
+            "opacity-0 scale-75 group-hover:opacity-100 group-hover:scale-100",
           )}
           title={`Remove ${companyName}`}
+          aria-label={`Remove ${companyName}`}
         >
-          <X className="w-3 h-3" />
+          <X className="h-2.5 w-2.5" />
         </button>
       )}
     </div>

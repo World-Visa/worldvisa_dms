@@ -2,6 +2,7 @@
 
 import { ActivateAccountSheet } from "@/components/applications/ActivateAccountSheet";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
+import { ApplicationDetailsSkeleton } from "@/components/applications/ApplicationDetailsSkeleton";
 import { ApplicantDetails } from "@/components/applications/ApplicantDetails";
 import { ApplicationDetailsHeader } from "@/components/applications/ApplicationDetailsHeader";
 import { DownloadAllDocumentsModal } from "@/components/applications/DownloadAllDocumentsModal";
@@ -548,8 +549,8 @@ export default function UnifiedApplicationDetailsPage({
   const backPath = useMemo(
     () =>
       isSpouseApplication
-        ? "/admin/spouse-skill-assessment-applications"
-        : "/admin/applications",
+        ? "/v2/spouse-skill-assessment-applications"
+        : "/v2/applications",
     [isSpouseApplication],
   );
 
@@ -590,31 +591,23 @@ export default function UnifiedApplicationDetailsPage({
   }
 
   return (
-    <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 space-y-4 sm:space-y-6">
+    <main className="max-w-6xl mx-auto">
       {/* Header */}
       <TooltipProvider>
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <Button
-              variant="outline"
-              className="rounded-full w-8 h-8 cursor-pointer"
+              variant="secondary"
+              className="rounded-full w-9 h-9 cursor-pointer"
               size="sm"
               onClick={() => router.push(backPath)}
             >
-              <ArrowLeft className="h-4 w-4" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
             <div>
-              <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-lexend font-bold">
-                {pageTitle}
-                {!isSpouseApplication && (
-                  <Badge
-                    variant="default"
-                    className="bg-linear-to-r from-blue-500/10 to-blue-500/20 text-white border border-blue-200 shadow-sm hover:shadow-md transition-all duration-200 md:mb-0 mb-2 md:h-8 flex items-center gap-2 px-3 py-1 rounded-full font-medium"
-                  >
-                    <BadgeCheck size={16} className="text-white" />
-                    {application?.Package_Finalize || "Not provided"}
-                  </Badge>
-                )}
+              <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-medium">
+                {application?.Name} {pageTitle} 
+                
               </h1>
             </div>
           </div>
@@ -633,29 +626,9 @@ export default function UnifiedApplicationDetailsPage({
       </TooltipProvider>
 
       {isAuthLoading || isApplicationLoading || isDocumentsLoading ? (
-        <div className="space-y-6">
-          <div className="flex justify-between w-full gap-8 items-end">
-            <div className="space-y-4 w-full">
-              <div className="flex items-center justify-between">
-                <Skeleton className="h-6 w-40" />
-                <Skeleton className="h-5 w-24" />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 w-full">
-                {[1, 2, 3, 4].map((i) => (
-                  <div key={i} className="max-w-xs w-full">
-                    <Skeleton className="h-24 w-full rounded-xl" />
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="max-w-xs w-full">
-              <Skeleton className="h-64 w-full rounded-xl" />
-            </div>
-          </div>
-          <Skeleton className="h-96 w-full rounded-xl" />
-        </div>
+        <ApplicationDetailsSkeleton variant="admin" showHeader={false} />
       ) : isAuthorized ? (
-        <div className="space-y-6">
+        <div className="space-y-6 mt-6">
           <ApplicantDetails
             application={application}
             isLoading={isApplicationLoading}
@@ -792,6 +765,6 @@ export default function UnifiedApplicationDetailsPage({
           />
         </>
       )}
-    </div>
+    </main>
   );
 }

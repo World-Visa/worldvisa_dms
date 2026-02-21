@@ -5,6 +5,7 @@ export interface DeadlineStatsSummary {
   approaching: number;
   overdue: number;
   noDeadline: number;
+  future: number;
 }
 
 export interface DeadlinePagination {
@@ -23,6 +24,7 @@ export interface DeadlineStatsDetails {
   approaching: DeadlineCategoryData;
   overdue: DeadlineCategoryData;
   noDeadline: DeadlineCategoryData;
+  future: DeadlineCategoryData;
 }
 
 /** API returns { data: DeadlineStatsData }. Use only data. */
@@ -39,4 +41,6 @@ export interface DeadlineStatsParams {
   overdueLimit?: number;
   noDeadlinePage?: number;
   noDeadlineLimit?: number;
+  futurePage?: number;
+  futureLimit?: number;
 }

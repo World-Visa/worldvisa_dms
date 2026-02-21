@@ -248,10 +248,10 @@ export async function getAllRequestedDocuments(
   limit: number = 10,
   filters: Omit<RequestedDocumentsParams, "page" | "limit"> = {},
 ): Promise<RequestedDocumentsResponse> {
-  const defaultFilters = {
+  const defaultFilters: RequestedDocumentsParams = {
     ...filters,
     sort: "requested_at",
-    order: "desc" as const,
+    order: "desc",
   };
 
   const searchParams = new URLSearchParams({
@@ -277,4 +277,56 @@ export async function getAllRequestedDocuments(
       ...defaultFilters,
     }),
   );
+}
+
+export interface RequestedDocumentsSearchParams {
+  page?: number;
+  limit?: number;
+  q?: string;
+  document_name?: string;
+  document_category?: string;
+  client_name?: string;
+  requested_by?: string;
+  requested_to?: string;
+}
+
+export async function getRequestedDocumentsSearch(
+  params: RequestedDocumentsSearchParams = {},
+): Promise<RequestedDocumentsResponse> {
+  const cleanParams: Record<string, string | number | undefined> = {};
+  if (params.page != null) cleanParams.page = params.page;
+  if (params.limit != null) cleanParams.limit = params.limit;
+
+  const q = params.q?.trim();
+  if (q) {
+    // When q is provided, the API ignores other filters
+    cleanParams.q = q;
+  } else {
+    if (params.document_name?.trim())
+      cleanParams.document_name = params.document_name.trim();
+    if (params.document_category?.trim())
+      cleanParams.document_category = params.document_category.trim();
+    if (params.client_name?.trim())
+      cleanParams.client_name = params.client_name.trim();
+    if (params.requested_by?.trim())
+      cleanParams.requested_by = params.requested_by.trim();
+    if (params.requested_to?.trim())
+      cleanParams.requested_to = params.requested_to.trim();
+  }
+
+  const url = getFullUrl(
+    API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.SEARCH,
+    cleanParams,
+  );
+
+  const response = (await fetcher(url, {
+    method: "GET",
+    headers: { "Content-Type": "application/json" },
+  })) as RequestedDocumentsResponse;
+
+  if (response.status !== "success") {
+    throw new Error("Failed to fetch requested documents search results");
+  }
+
+  return response;
 }

@@ -165,8 +165,8 @@ export function RequestedDocumentViewSheet({
 
     const route =
       application?.Record_Type === "spouse_skill_assessment"
-        ? `/admin/spouse-skill-assessment-applications/${displayDoc.record_id}`
-        : `/admin/applications/${displayDoc.record_id}`;
+        ? `/v2/spouse-skill-assessment-applications/${displayDoc.record_id}`
+        : `/v2/applications/${displayDoc.record_id}`;
 
     router.push(route);
     onClose();
@@ -216,16 +216,16 @@ export function RequestedDocumentViewSheet({
             <div className="flex items-center justify-between gap-4 pr-8">
               <div className="flex items-center gap-4 min-w-0">
                 <div className="min-w-0">
-                  <p className="text-lg font-bold text-foreground truncate">
+                  <p className="text-lg font-medium text-foreground truncate">
                     {displayDoc.document_name || displayDoc.file_name || "Document request"}
                   </p>
                   <div className="flex items-center gap-3 mt-0.5 flex-wrap">
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <span className="font-bold">Requested by:</span>
+                      <span className="font-medium">Requested by:</span>
                       {displayDoc.requested_review.requested_by}
                     </span>
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <span className="font-bold">Requested on:</span>
+                      <span className="font-medium">Requested on:</span>
                       {displayDoc.requested_review.requested_at
                         ? new Date(
                             displayDoc.requested_review.requested_at,
@@ -238,7 +238,7 @@ export function RequestedDocumentViewSheet({
                         : "Unknown date"}
                     </span>
                     <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <span className="font-bold">Uploaded on:</span>
+                      <span className="font-medium">Uploaded on:</span>
                       {displayDoc.uploaded_at
                         ? new Date(displayDoc.uploaded_at).toLocaleDateString(
                             "en-US",
