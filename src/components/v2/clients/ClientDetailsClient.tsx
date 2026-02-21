@@ -321,7 +321,7 @@ function ApplicationDataCard({ appData }: { appData: NonNullable<ClientRecord["a
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
-function PageSkeleton() {
+export function ClientDetailsPageSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
       <Card className="overflow-hidden">
@@ -359,7 +359,7 @@ export function ClientDetailsClient({ id }: { id: string }) {
     return (
       <div className="flex flex-col gap-6 p-6">
         <Skeleton className="h-8 w-32" />
-        <PageSkeleton />
+        <ClientDetailsPageSkeleton />
       </div>
     );
   }

@@ -21,6 +21,7 @@ import { NavMain } from "@/components/v2/sidebar/nav-main";
 import { NavUser } from "@/components/v2/sidebar/nav-user";
 import Image from "next/image";
 import Logo from "../../../../public/logos/world-visa-logo.webp";
+import { Suspense } from "react";
 
 const APP_CONFIG = {
   name: "WorldVisa DMS",
@@ -74,7 +75,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={filteredItems} />
+        <Suspense fallback={null}>
+          <NavMain items={filteredItems} />
+        </Suspense>
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={navUser} />
