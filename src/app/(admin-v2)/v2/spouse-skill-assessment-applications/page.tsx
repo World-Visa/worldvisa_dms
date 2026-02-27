@@ -31,6 +31,7 @@ import { CalendarClock, X, Calendar } from "lucide-react";
 import { DateRange } from "react-day-picker";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 // Lazy load heavy components for better performance
 const LazyApplicationsTable = lazy(() =>
@@ -39,9 +40,17 @@ const LazyApplicationsTable = lazy(() =>
     })),
 );
 
+
 type Country = "Australia" | "Canada";
 
 const COUNTRIES: Country[] = ["Australia", "Canada"];
+
+const COUNTRY_IMAGE_URLS: Record<Country, string> = {
+  Australia:
+    "https://images.pexels.com/photos/1766215/pexels-photo-1766215.jpeg",
+  Canada:
+    "https://images.pexels.com/photos/2448946/pexels-photo-2448946.jpeg",
+};
 
 const SpouseSkillAssessmentApplications = memo(
     function SpouseSkillAssessmentApplications() {
@@ -424,41 +433,51 @@ const SpouseSkillAssessmentApplications = memo(
             <main className="">
                 {/* Country Tab Navigation */}
                 <div className="mb-6">
-                    <div className="flex border-b border-gray-200">
-                        {COUNTRIES.map((country) => {
-                            const isActive = selectedCountry === country;
-                            const count = countryTotals[country];
-                            return (
-                                <button
-                                    key={country}
-                                    type="button"
-                                    onClick={() => handleCountryChange(country)}
-                                    className={cn(
-                                        "relative flex items-center gap-2.5 px-5 pb-3 pt-2 text-sm font-medium tracking-wide",
-                                        "focus:outline-none transition-colors duration-150",
-                                        "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full",
-                                        "after:transition-all after:duration-200",
-                                        isActive
-                                            ? "text-gray-900 after:bg-gray-900"
-                                            : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
-                                    )}
-                                >
-                                    {country}
-                                    <span
-                                        className={cn(
-                                            "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150",
-                                            isActive
-                                                ? "bg-gray-900 text-white"
-                                                : "bg-gray-100 text-gray-400",
-                                        )}
-                                    >
-                                        {count !== undefined ? count.toLocaleString() : "—"}
-                                    </span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
+        <div className="flex border-b border-gray-200">
+          {COUNTRIES.map((country) => {
+            const isActive = selectedCountry === country;
+            const count = countryTotals[country];
+            return (
+              <button
+                key={country}
+                type="button"
+                onClick={() => handleCountryChange(country)}
+                className={cn(
+                  "relative flex items-center gap-2.5 px-5 pb-3 pt-2 text-sm font-medium tracking-wide",
+                  "focus:outline-none transition-colors duration-150",
+                  "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full",
+                  "after:transition-all after:duration-200",
+                  isActive
+                    ? "text-gray-900 after:bg-gray-900"
+                    : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
+                )}
+              >
+                <Avatar className="size-8 shrink-0" >
+                  <AvatarImage
+                    src={COUNTRY_IMAGE_URLS[country]}
+                    alt={country}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="text-xs">
+                    {country.slice(0, 1)}
+                  </AvatarFallback>
+                </Avatar>
+                {country}
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150",
+                    isActive
+                      ? "bg-gray-900 text-white"
+                      : "bg-gray-100 text-gray-400",
+                  )}
+                >
+                  {count !== undefined ? count.toLocaleString() : "—"}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
                 {/* Title + Search row */}
                 <div className="mb-6 flex w-full items-center justify-between gap-4">

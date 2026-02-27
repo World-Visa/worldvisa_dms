@@ -18,15 +18,14 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { users } from "@/lib/data/users";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useAdminUsersV2 } from "@/hooks/useAdminUsersV2";
 
 export type TeamMemberRole = "admin" | "master_admin" | "team_leader" | "supervisor";
 
 export interface TeamMember {
   id: string;
   name: string;
-  email: string;
-  avatar: string;
   role: TeamMemberRole;
 }
 
@@ -37,12 +36,10 @@ const ROLE_OPTIONS: { value: TeamMemberRole; label: string; description: string 
   { value: "team_leader", label: "Team Leader", description: "Can lead a team and review quality checks." },
 ];
 
-function normalizeRole(role: string): TeamMemberRole {
-  if (role === "administrator") return "master_admin";
-  if (role === "admin" || role === "master_admin" || role === "team_leader" || role === "supervisor") {
-    return role as TeamMemberRole;
-  }
-  return "admin";
+const AVATAR_INDICES = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12];
+
+function getAvatarSrc(index: number): string {
+  return `/avatars/${AVATAR_INDICES[index % AVATAR_INDICES.length]}.png`;
 }
 
 function getInitials(name: string): string {
@@ -137,28 +134,27 @@ function RoleDropdown({ memberId, value, onRoleChange }: RoleDropdownProps) {
   );
 }
 
-function mapUsersToMembers(): TeamMember[] {
-  return users.map((u) => ({
-    id: u.id,
-    name: u.name,
-    email: u.email,
-    avatar: u.avatar ?? "",
-    role: normalizeRole(u.role),
-  }));
-}
+export function TeamMembers() {
+  const { data, isLoading } = useAdminUsersV2({ page: 1, limit: 6 });
 
-interface TeamMembersProps {
-  members?: TeamMember[];
-}
+  const initialMembers = React.useMemo<TeamMember[]>(() => {
+    if (!data?.data.users) return [];
+    return data.data.users.map((u) => ({
+      id: u._id,
+      name: u.username,
+      role: u.role,
+    }));
+  }, [data]);
 
-export function TeamMembers({ members: membersProp }: TeamMembersProps) {
-  const initialMembers = React.useMemo(
-    () => membersProp ?? mapUsersToMembers(),
-    [membersProp],
-  );
-  const [roleByMemberId, setRoleByMemberId] = React.useState<Record<string, TeamMemberRole>>(() =>
-    Object.fromEntries(initialMembers.map((m) => [m.id, m.role])),
-  );
+  const [roleByMemberId, setRoleByMemberId] = React.useState<Record<string, TeamMemberRole>>({});
+
+  React.useEffect(() => {
+    if (initialMembers.length > 0) {
+      setRoleByMemberId(
+        Object.fromEntries(initialMembers.map((m) => [m.id, m.role])),
+      );
+    }
+  }, [initialMembers]);
 
   const handleRoleChange = React.useCallback((memberId: string, role: TeamMemberRole) => {
     setRoleByMemberId((prev) => ({ ...prev, [memberId]: role }));
@@ -178,36 +174,48 @@ export function TeamMembers({ members: membersProp }: TeamMembersProps) {
       <CardHeader className="pb-4">
         <CardTitle className="tracking-tight">Team Members</CardTitle>
         <CardDescription className="text-sm">
-          Invite your team members to collaborate.
+          Active admins and their current roles.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 pt-0">
-        {members.map((member) => (
-          <div
-            key={member.id}
-            className="flex items-center gap-3 rounded-lg py-1"
-          >
-            <Avatar className="size-10 shrink-0">
-              {member.avatar ? (
-                <AvatarImage src={member.avatar} alt={member.name} />
-              ) : null}
-              <AvatarFallback className="text-xs">
-                {getInitials(member.name)}
-              </AvatarFallback>
-            </Avatar>
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-semibold text-foreground">{member.name}</p>
-              <p className="truncate text-sm text-muted-foreground">{member.email}</p>
-            </div>
-            <div className="shrink-0">
-              <RoleDropdown
-                memberId={member.id}
-                value={member.role}
-                onRoleChange={handleRoleChange}
-              />
-            </div>
-          </div>
-        ))}
+        {isLoading
+          ? Array.from({ length: 5 }).map((_, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no stable id
+              <div key={i} className="flex items-center gap-3 rounded-lg py-1">
+                <Skeleton className="size-10 shrink-0 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+                <Skeleton className="h-9 w-28 shrink-0 rounded-md" />
+              </div>
+            ))
+          : members.map((member, index) => (
+              <div
+                key={member.id}
+                className="flex items-center gap-3 rounded-lg py-1"
+              >
+                <Avatar className="size-10 shrink-0">
+                  <AvatarImage src={getAvatarSrc(index)} alt={member.name} />
+                  <AvatarFallback className="text-xs">
+                    {getInitials(member.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-semibold text-foreground">{member.name}</p>
+                  <p className="truncate text-sm text-muted-foreground capitalize">
+                    {member.role.replace("_", " ")}
+                  </p>
+                </div>
+                <div className="shrink-0">
+                  <RoleDropdown
+                    memberId={member.id}
+                    value={member.role}
+                    onRoleChange={handleRoleChange}
+                  />
+                </div>
+              </div>
+            ))}
       </CardContent>
     </Card>
   );
