@@ -149,6 +149,7 @@ export interface ClientReuploadDocumentRequest {
   document_name: string;
   document_category: string;
   uploaded_by: string;
+  description?: string;
   token?: string;
 }
 
@@ -233,6 +234,10 @@ export async function clientReuploadDocument(
   formData.append("document_name", data.document_name);
   formData.append("document_category", data.document_category);
   formData.append("uploaded_by", data.uploaded_by);
+
+  if (data.description) {
+    formData.append("description", data.description);
+  }
 
   // Get token from storage
   const token = data.token || getStoredToken();

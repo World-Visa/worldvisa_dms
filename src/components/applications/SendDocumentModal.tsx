@@ -23,7 +23,10 @@ import { Document } from "@/types/applications";
 import { MultiSelect, MultiSelectOption } from "@/components/ui/multi-select";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { useReviewRequest } from "@/hooks/useReviewRequest";
-import { useMyRequestedDocuments } from "@/hooks/useRequestedDocuments";
+import {
+  useMyRequestedDocuments,
+  useRequestedDocumentsToMe,
+} from "@/hooks/useRequestedDocuments";
 import { sendRequestedDocumentMessage } from "@/lib/api/requestedDocumentMessages";
 import { updateDocumentStatus } from "@/lib/api/requestedDocumentActions";
 import { useAuth } from "@/hooks/useAuth";
@@ -56,6 +59,8 @@ export function SendDocumentModal({
 
   // Always fetch user's requested documents to detect existing reviews (any status)
   const { data: myRequestedDocs } = useMyRequestedDocuments({});
+  // Also fetch reviews sent TO the current user — needed to detect forwarded docs
+  const { data: requestedToMeDocs } = useRequestedDocumentsToMe({});
 
   // Find ALL existing reviews for this document (both pending and reviewed)
   const existingReviews = useMemo(() => {
@@ -73,6 +78,15 @@ export function SendDocumentModal({
     }
     return map;
   }, [existingReviews]);
+
+  // Find a review sent TO the current user for this document (if any)
+  const receivedReview = useMemo(() => {
+    if (!requestedToMeDocs?.data) return null;
+    return (
+      requestedToMeDocs.data.find((doc) => doc._id === selectedDocument._id) ??
+      null
+    );
+  }, [selectedDocument._id, requestedToMeDocs?.data]);
 
   // "Update mode" = there's a PENDING existing review (simplified note-only UI)
   const pendingReview = useMemo(
@@ -209,23 +223,46 @@ export function SendDocumentModal({
     }> = [];
     const adminsToCreate: string[] = [];
 
+    // Build a deduplicated pool of all known reviews for this document
+    // (reviews I created + any review sent to me)
+    const allExistingForDoc = [
+      ...existingReviews,
+      ...(receivedReview &&
+      !existingReviews.some(
+        (r) => r.requested_review._id === receivedReview.requested_review._id,
+      )
+        ? [receivedReview]
+        : []),
+    ];
+    const usedReviewIds = new Set<string>();
+
     for (const admin of uniqueAdmins) {
-      const existingReview = existingReviewsByAdmin.get(admin);
-      if (existingReview) {
-        adminsToUpdate.push({ admin, review: existingReview });
+      const exactMatch = existingReviewsByAdmin.get(admin);
+      if (exactMatch) {
+        adminsToUpdate.push({ admin, review: exactMatch });
+        usedReviewIds.add(exactMatch.requested_review._id);
       } else {
-        adminsToCreate.push(admin);
+        // Reuse any existing review for this document instead of creating new
+        const anyExisting = allExistingForDoc.find(
+          (r) => !usedReviewIds.has(r.requested_review._id),
+        );
+        if (anyExisting) {
+          adminsToUpdate.push({ admin, review: anyExisting });
+          usedReviewIds.add(anyExisting.requested_review._id);
+        } else {
+          adminsToCreate.push(admin);
+        }
       }
     }
 
     setIsSendingUpdate(true);
     try {
       // Update existing reviews: set status back to pending + send message
-      const updatePromises = adminsToUpdate.map(async ({ review }) => {
+      const updatePromises = adminsToUpdate.map(async ({ admin, review }) => {
         await updateDocumentStatus(selectedDocument._id, {
           reviewId: review.requested_review._id,
-          requested_by: review.requested_review.requested_by,
-          requested_to: review.requested_review.requested_to,
+          requested_by: user.username!,
+          requested_to: admin,
           message,
           status: "pending",
         });

@@ -31,6 +31,7 @@ interface ApplicationDetailsHeaderProps {
   onDownloadAll: () => void;
   onResetPassword: () => void;
   onActivateAccount?: () => void;
+  onAddNote?: () => void;
   userRole?: string;
 }
 
@@ -43,6 +44,7 @@ export function ApplicationDetailsHeader({
   onDownloadAll,
   onResetPassword,
   onActivateAccount,
+  onAddNote,
   userRole,
 }: ApplicationDetailsHeaderProps) {
   const isAdmin = userRole !== "client";
@@ -170,6 +172,17 @@ export function ApplicationDetailsHeader({
                 className="cursor-pointer hover:bg-gray-100"
               >
                 Download Documents
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
+
+            <DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>Notes</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={onAddNote}
+                className="cursor-pointer hover:bg-gray-100"
+              >
+                Add Note
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>

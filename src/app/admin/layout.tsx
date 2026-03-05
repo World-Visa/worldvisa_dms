@@ -13,7 +13,7 @@ export default function AdminLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AuthGuard requiredRole="admin" redirectTo="/admin-login">
+    <AuthGuard requiredRole="admin" redirectTo="/auth/admin/login">
       <div className="min-h-screen bg-gray-50">
         <AdminHeader />
         {children}

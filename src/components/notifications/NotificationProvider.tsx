@@ -9,12 +9,12 @@ import { useNotificationStore } from "@/store/notificationStore";
 import { getNotificationAction } from "@/components/v2/notifications/NotificationRow";
 import type { NotificationNewEvent } from "@/types/notifications";
 
-// Cast socket event to Notification-compatible shape for getNotificationAction
+// Cast socket event to Notification-compatible shape for getNotificationAction.
+// Spread passes all event fields including documentId and applicationType.
 function getActionFromEvent(event: NotificationNewEvent) {
   return getNotificationAction({
     ...event,
     user: "",
-    // getNotificationAction only reads source, leadId — safe cast
   } as Parameters<typeof getNotificationAction>[0]);
 }
 

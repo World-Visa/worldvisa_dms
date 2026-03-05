@@ -3,7 +3,13 @@
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Trash2, MessageSquare, Loader2 } from "lucide-react";
+import { Send, Trash2, MessageSquare, Loader2, MoreVertical, Share2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   useRequestedDocumentMessages,
   useSendRequestedDocumentMessage,
@@ -18,11 +24,13 @@ import { formatDistanceToNow } from "date-fns";
 interface RequestedDocumentMessagesProps {
   documentId: string;
   reviewId: string;
+  onPublishToClient?: (message: string) => void;
 }
 
 export function RequestedDocumentMessages({
   documentId,
   reviewId,
+  onPublishToClient,
 }: RequestedDocumentMessagesProps) {
   const { user } = useAuth();
   const [newMessage, setNewMessage] = useState("");
@@ -248,22 +256,45 @@ export function RequestedDocumentMessages({
                         )}
                       </div>
 
-                      {/* Delete on hover */}
-                      {canDelete && (
+                      {/* Actions on hover */}
+                      {(onPublishToClient || canDelete) && (
                         <div
                           className={cn(
                             "shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150",
                             isCurrentUser ? "order-first" : "",
                           )}
                         >
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteMessage(message._id)}
-                            disabled={deleteMessageMutation.isPending}
-                            className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-destructive transition-colors disabled:opacity-50"
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button
+                                type="button"
+                                className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                <MoreVertical className="h-3 w-3" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align={isCurrentUser ? "start" : "end"}>
+                              {onPublishToClient && (
+                                <DropdownMenuItem
+                                  className="cursor-pointer"
+                                  onSelect={() => onPublishToClient(message.message)}
+                                >
+                                  <Share2 className="h-3 w-3 mr-2" />
+                                  Publish to client
+                                </DropdownMenuItem>
+                              )}
+                              {canDelete && (
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive cursor-pointer"
+                                  disabled={deleteMessageMutation.isPending}
+                                  onSelect={() => handleDeleteMessage(message._id)}
+                                >
+                                  <Trash2 className="h-3 w-3 mr-2" />
+                                  Delete
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       )}
                     </div>

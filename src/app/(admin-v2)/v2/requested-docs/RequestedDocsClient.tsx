@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { Search } from "lucide-react";
 import {
@@ -28,6 +29,11 @@ type ActiveTab = "requested-to-me" | "my-requests" | "all-requests";
 export default function RequestedDocsClient() {
   const { user } = useAuth();
   const isMasterAdmin = user?.role === "master_admin";
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawDocId = searchParams.get("documentId");
+  const [targetDocId, setTargetDocId] = useState<string | null>(null);
+  const deepLinkActive = !!rawDocId || !!targetDocId;
 
   const [activeTab, setActiveTab] = useState<ActiveTab>(
     isMasterAdmin ? "all-requests" : "requested-to-me",
@@ -100,22 +106,43 @@ export default function RequestedDocsClient() {
     });
 
   // Stats queries - fetch all data for stats calculation
+  // Also enabled during deep-link navigation so we can find the document across all tabs
   const {
     data: allRequestedToMeStats,
     isLoading: isLoadingRequestedToMeCount,
   } = useRequestedDocumentsToMe({
-    enabled: activeTab === "requested-to-me",
+    enabled: activeTab === "requested-to-me" || deepLinkActive,
   });
 
   const { data: allMyRequestsStats, isLoading: isLoadingMyRequestsCount } =
     useMyRequestedDocuments({
-      enabled: activeTab === "my-requests",
+      enabled: activeTab === "my-requests" || deepLinkActive,
     });
 
   const { data: allRequestsStatsData, isLoading: isLoadingAllRequestsCount } =
     useAllRequestedDocuments({
-      enabled: activeTab === "all-requests" && isMasterAdmin,
+      enabled: (activeTab === "all-requests" && isMasterAdmin) || (deepLinkActive && isMasterAdmin),
     });
+
+  // Deep-link Phase 1: capture URL param into state and clear URL immediately.
+  // Decoupled from data fetching so URL oscillation doesn't cancel the sheet open.
+  useEffect(() => {
+    if (!rawDocId) return;
+    setTargetDocId(rawDocId);
+    router.replace("/v2/requested-docs", { scroll: false });
+  }, [rawDocId, router]);
+
+  // Deep-link Phase 2: once we have a target ID and data, find and open the sheet.
+  useEffect(() => {
+    if (!targetDocId) return;
+    const found =
+      allRequestedToMeStats?.data?.find((d) => d._id === targetDocId) ??
+      allMyRequestsStats?.data?.find((d) => d._id === targetDocId) ??
+      allRequestsStatsData?.data?.find((d) => d._id === targetDocId);
+    if (!found) return;
+    setSelectedDocument(found);
+    setTargetDocId(null);
+  }, [targetDocId, allRequestedToMeStats?.data, allMyRequestsStats?.data, allRequestsStatsData?.data]);
 
   // Get current tab data and pagination
   const getCurrentTabData = () => {
