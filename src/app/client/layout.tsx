@@ -13,7 +13,7 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AuthGuard requiredRole="client" redirectTo="/client-login">
+    <AuthGuard requiredRole="client" redirectTo="/auth/user/login">
       <ClientHeader />
       {children}
     </AuthGuard>

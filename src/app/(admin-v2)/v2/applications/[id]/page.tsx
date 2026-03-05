@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import type { Metadata } from "next";
 
@@ -46,10 +47,12 @@ export default async function ApplicationDetailsPage({
 
   return (
     <HydrationBoundary state={dehydratedState}>
-      <UnifiedApplicationDetailsPage
-        applicationId={applicationId}
-        isSpouseApplication={false}
-      />
+      <Suspense>
+        <UnifiedApplicationDetailsPage
+          applicationId={applicationId}
+          isSpouseApplication={false}
+        />
+      </Suspense>
     </HydrationBoundary>
   );
 }

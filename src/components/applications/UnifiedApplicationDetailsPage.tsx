@@ -1,6 +1,9 @@
 "use client";
 
 import { ActivateAccountSheet } from "@/components/applications/ActivateAccountSheet";
+import ViewDocumentSheet from "@/components/applications/ViewDocumentSheet";
+import { AddNoteModal } from "@/components/applications/AddNoteModal";
+import { NotesBanner } from "@/components/applications/NotesBanner";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
 import { ApplicationDetailsSkeleton } from "@/components/applications/ApplicationDetailsSkeleton";
 import { ApplicantDetails } from "@/components/applications/ApplicantDetails";
@@ -29,7 +32,7 @@ import { useChecklistURLState } from "@/lib/urlState";
 import { ApplicationDetailsResponse, Document } from "@/types/applications";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, BadgeCheck } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   useEffect,
   useMemo,
@@ -47,6 +50,8 @@ import {
   type MandatoryDocumentValidationDetail,
 } from "@/utils/checklistValidation";
 import { useDeleteDocument } from "@/hooks/useMutationsDocuments";
+import { useApplicationNotes, useDeleteNote } from "@/hooks/useApplicationNotes";
+import type { ApplicationNote } from "@/lib/api/applicationNotes";
 import {
   getCompanyDocuments,
   filterDocumentsWithValidIds,
@@ -218,6 +223,39 @@ export default function UnifiedApplicationDetailsPage({
   });
   const [isDeletingDocuments, setIsDeletingDocuments] = useState(false);
   const deleteDocumentMutation = useDeleteDocument();
+
+  // Notes state
+  const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
+  const [editingNote, setEditingNote] = useState<ApplicationNote | null>(null);
+  const { data: notesData } = useApplicationNotes(applicationId, isSpouseApplication);
+  const notes = Array.isArray(notesData) ? notesData : [];
+  const deleteNoteMutation = useDeleteNote(applicationId, isSpouseApplication);
+
+  // Deep-link: auto-open a document sheet when navigating from a notification
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+  const rawDocId = searchParams.get("documentId");
+  const [targetDocId, setTargetDocId] = useState<string | null>(null);
+  const [deepLinkDoc, setDeepLinkDoc] = useState<Document | null>(null);
+
+  // Phase 1: capture the URL param into state and immediately clean the URL.
+  // This prevents URL oscillation from canceling the sheet open on same-page navigation.
+  useEffect(() => {
+    if (!rawDocId) return;
+    setTargetDocId(rawDocId);
+    router.replace(pathname, { scroll: false });
+  }, [rawDocId, pathname, router]);
+
+  // Phase 2: once we have a captured ID and documents are loaded, find and open the sheet.
+  useEffect(() => {
+    if (!targetDocId) return;
+    const allDocs = allDocuments ?? documents;
+    if (!allDocs?.length) return;
+    const found = allDocs.find((d) => d._id === targetDocId);
+    if (!found) return;
+    setDeepLinkDoc(found);
+    setTargetDocId(null);
+  }, [targetDocId, allDocuments, documents]);
 
   useEffect(() => {
     setDocumentsPage(1);
@@ -606,8 +644,8 @@ export default function UnifiedApplicationDetailsPage({
             </Button>
             <div>
               <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-medium">
-                {application?.Name} {pageTitle} 
-                
+                {application?.Name} {pageTitle}
+
               </h1>
             </div>
           </div>
@@ -620,10 +658,35 @@ export default function UnifiedApplicationDetailsPage({
             onDownloadAll={modals.openDownloadAllModal}
             onResetPassword={modals.openResetPasswordModal}
             onActivateAccount={modals.openActivateAccountSheet}
+            onAddNote={() => {
+              setEditingNote(null);
+              setIsNoteModalOpen(true);
+            }}
             userRole={user?.role}
           />
         </div>
       </TooltipProvider>
+      {notes && notes.length > 0 &&  (
+        <NotesBanner
+          notes={notes as ApplicationNote[]}
+          isAdmin={user?.role !== "client"}
+          onEdit={(note) => {
+            setEditingNote(note);
+            setIsNoteModalOpen(true);
+          }}
+          onDelete={(noteId) => deleteNoteMutation.mutate(noteId)}
+        />
+      )}
+      <AddNoteModal
+        isOpen={isNoteModalOpen}
+        onClose={() => {
+          setIsNoteModalOpen(false);
+          setEditingNote(null);
+        }}
+        applicationId={applicationId}
+        isSpouseApplication={isSpouseApplication}
+        editNote={editingNote}
+      />
 
       {isAuthLoading || isApplicationLoading || isDocumentsLoading ? (
         <ApplicationDetailsSkeleton variant="admin" showHeader={false} />
@@ -764,6 +827,16 @@ export default function UnifiedApplicationDetailsPage({
             application={application}
           />
         </>
+      )}
+
+      {deepLinkDoc && (
+        <ViewDocumentSheet
+          document={deepLinkDoc}
+          documents={allDocuments ?? documents ?? []}
+          applicationId={applicationId}
+          isOpen
+          onClose={() => setDeepLinkDoc(null)}
+        />
       )}
     </main>
   );

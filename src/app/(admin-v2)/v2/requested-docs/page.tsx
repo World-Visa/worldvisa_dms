@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 import { createServerQueryClient } from "@/lib/react-query/server";
 import { cookies } from "next/headers";
@@ -33,7 +34,9 @@ export default async function RequestedDocsPage() {
 
   return (
     <HydrationBoundary state={dehydratedState}>
-      <RequestedDocsClient />
+      <Suspense>
+        <RequestedDocsClient />
+      </Suspense>
     </HydrationBoundary>
   );
 }

@@ -16,8 +16,19 @@ import {
   AlertTriangle,
   ExternalLink,
   Clock,
+  Send,
+  Loader2,
 } from "lucide-react";
 import { RequestedDocument } from "@/lib/api/requestedDocuments";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
+import { useAddComment } from "@/hooks/useCommentMutations";
 import { StatusBadge } from "./StatusBadge";
 import {
   useUpdateDocumentStatus,
@@ -85,6 +96,12 @@ export function RequestedDocumentViewSheet({
   const [reviewComment, setReviewComment] = useState("");
   const [isReviewing, setIsReviewing] = useState(false);
   const [isAccordionOpen, setIsAccordionOpen] = useState(false);
+  const [publishState, setPublishState] = useState<{
+    isOpen: boolean;
+    text: string;
+  }>({ isOpen: false, text: "" });
+
+  const addCommentMutation = useAddComment(displayDoc?._id || "");
 
   useEffect(() => {
     if (!isOpen) {
@@ -157,6 +174,23 @@ export function RequestedDocumentViewSheet({
     } catch {}
   }, [displayDoc, deleteDocumentMutation, onClose]);
 
+  const handlePublishToClient = useCallback((messageText: string) => {
+    setPublishState({ isOpen: true, text: messageText });
+  }, []);
+
+  const handleSendToClient = useCallback(async () => {
+    if (!publishState.text.trim() || !user?.username || !displayDoc?._id) return;
+    try {
+      await addCommentMutation.mutateAsync({
+        comment: publishState.text.trim(),
+        added_by: user.username,
+      });
+      setPublishState({ isOpen: false, text: "" });
+    } catch {
+      // mutation handles error toast
+    }
+  }, [publishState.text, user?.username, displayDoc?._id, addCommentMutation]);
+
   const handleViewApplication = useCallback(() => {
     if (!displayDoc?.record_id) {
       toast.error("Application record ID not found");
@@ -208,6 +242,7 @@ export function RequestedDocumentViewSheet({
   };
 
   return (
+    <>
     <Sheet open={isOpen} onOpenChange={onClose}>
       <SheetContent className="inset-3! sm:inset-5! lg:inset-7! h-auto! w-auto! max-w-[1140px]! translate-x-0! translate-y-0! mx-auto rounded-2xl border border-border/50 shadow-2xl p-0">
         <div className="flex flex-col h-full overflow-hidden rounded-2xl">
@@ -364,6 +399,7 @@ export function RequestedDocumentViewSheet({
                   <RequestedDocumentMessages
                     documentId={displayDoc._id}
                     reviewId={displayDoc.requested_review._id}
+                    onPublishToClient={handlePublishToClient}
                   />
                 </div>
               </>
@@ -372,5 +408,58 @@ export function RequestedDocumentViewSheet({
         </div>
       </SheetContent>
     </Sheet>
+
+    <Dialog
+      open={publishState.isOpen}
+      onOpenChange={(open) => {
+        if (!addCommentMutation.isPending) {
+          setPublishState((s) => ({ ...s, isOpen: open }));
+        }
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Publish to client</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-1.5">
+          <Textarea
+            value={publishState.text}
+            onChange={(e) =>
+              setPublishState((s) => ({ ...s, text: e.target.value }))
+            }
+            placeholder="Edit the comment before sending..."
+            className="min-h-[120px] resize-none"
+            disabled={addCommentMutation.isPending}
+            maxLength={1000}
+          />
+          <p className="text-xs text-muted-foreground text-right">
+            {publishState.text.length}/1000
+          </p>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setPublishState({ isOpen: false, text: "" })}
+            disabled={addCommentMutation.isPending}
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSendToClient}
+            disabled={
+              !publishState.text.trim() || addCommentMutation.isPending
+            }
+          >
+            {addCommentMutation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : (
+              <Send className="h-4 w-4 mr-2" />
+            )}
+            Send to client
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

@@ -17,13 +17,24 @@ export interface NotificationAction {
 
 export function getNotificationAction(n: Notification): NotificationAction | null {
   switch (n.source) {
-    case "document_review":
+    case "document_review": {
+      if (!n.leadId) return { label: "View Document", href: "/v2/requested-docs" };
+      const basePath =
+        n.applicationType === "Spouse_Skill_Assessment"
+          ? `/v2/spouse-skill-assessment-applications/${n.leadId}`
+          : `/v2/applications/${n.leadId}`;
       return {
         label: "View Document",
-        href: n.leadId ? `/v2/applications/${n.leadId}` : "/v2/requested-docs",
+        href: n.documentId ? `${basePath}?documentId=${n.documentId}` : basePath,
       };
+    }
     case "requested_reviews":
-      return { label: "View Review", href: "/v2/requested-docs" };
+      return {
+        label: "View Review",
+        href: n.documentId
+          ? `/v2/requested-docs?documentId=${n.documentId}`
+          : "/v2/requested-docs",
+      };
     case "quality_check":
       return { label: "View QC", href: "/v2/quality-check" };
     case "requested_checklist":

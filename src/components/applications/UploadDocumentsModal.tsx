@@ -731,6 +731,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             document_name: effectiveDocumentType,
             document_category: effectiveCategory,
             uploaded_by: user.username,
+            description: displayDocument.description,
           });
         } else {
           await reuploadMutation.mutateAsync({
@@ -740,6 +741,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             document_name: effectiveDocumentType,
             document_category: effectiveCategory,
             uploaded_by: user.username,
+            description: displayDocument.description,
           });
         }
 
