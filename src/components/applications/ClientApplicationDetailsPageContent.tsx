@@ -30,7 +30,9 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, MessageCircle } from "lucide-react";
+import { ClientChatSheet } from "@/components/chat/ClientChatSheet";
+import { useTotalUnreadCount } from "@/hooks/useChat";
 import { Button } from "@/components/ui/button";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
 import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
@@ -43,6 +45,7 @@ import {
   filterDocumentsWithValidIds,
 } from "@/utils/companyDocuments";
 import { toast } from "sonner";
+import { Badge } from "../ui/badge";
 
 export default function ClientApplicationDetailsPageContent() {
   const params = useParams();
@@ -70,6 +73,8 @@ export default function ClientApplicationDetailsPageContent() {
     setSelectedReuploadDocumentCategory,
   ] = useState<string>("");
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const chatUnreadCount = useTotalUnreadCount();
 
   const [removeCompanyDialog, setRemoveCompanyDialog] = useState<{
     isOpen: boolean;
@@ -576,25 +581,44 @@ export default function ClientApplicationDetailsPageContent() {
             </h1>
           </div>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isRefreshing}
-          className="flex items-center gap-2 cursor-pointer"
-        >
-          <RefreshCw
-            className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-          />
-          <span className="hidden sm:inline">Refresh</span>
-        </Button>
+        <div className="flex items-center gap-2">
+          {applicationData?.data?.Application_Handled_By && (
+            <div className="relative">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setIsChatOpen(true)}
+                className="flex items-center gap-2 cursor-pointer"
+              >
+                <span className="hidden sm:inline">Chat</span>
+                {chatUnreadCount > 0 && (
+                  <Badge variant="default" className="text-xs min-w-5 h-5 px-1.5">
+                    {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
+                  </Badge>
+                )}
+              </Button>
+            </div>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="flex items-center gap-2 cursor-pointer"
+          >
+            <RefreshCw
+              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+            <span className="hidden sm:inline">Refresh</span>
+          </Button>
+        </div>
       </div>
       {/* Loading State */}
       {isAuthLoading ||
-      isApplicationLoading ||
-      isDocumentsLoading ||
-      isAllDocumentsLoading ||
-      isChecklistLoading ? (
+        isApplicationLoading ||
+        isDocumentsLoading ||
+        isAllDocumentsLoading ||
+        isChecklistLoading ? (
         <ApplicationDetailsSkeleton variant="admin" showHeader={false} />
       ) : !isAuthLoading && isAuthenticated && user?.role === "client" ? (
         <div className="space-y-6 mt-6">
@@ -715,6 +739,16 @@ export default function ClientApplicationDetailsPageContent() {
         category={selectedReuploadDocumentCategory}
         isClientView={true}
       />
+
+      {/* Client Chat Sheet */}
+      {applicationData?.data?.Application_Handled_By && (
+        <ClientChatSheet
+          open={isChatOpen}
+          onOpenChange={setIsChatOpen}
+          applicationHandledBy={applicationData.data.Application_Handled_By}
+          leadId={applicationId}
+        />
+      )}
     </main>
   );
 }
