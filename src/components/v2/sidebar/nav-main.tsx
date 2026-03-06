@@ -37,7 +37,7 @@ const IsComingSoon = () => (
 );
 
 const IsNew = () => (
-  <span className="rounded-md bg-primary px-2 py-0.5 text-xs text-primary-foreground font-medium">New</span>
+  <span className="rounded-md bg-primary-blue px-2 py-0.5 text-xs text-white font-medium">New</span>
 );
 
 const UnreadBadge = ({ count }: { count: number }) => (

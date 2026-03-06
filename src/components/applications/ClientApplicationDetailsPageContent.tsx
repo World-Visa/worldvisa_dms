@@ -596,6 +596,13 @@ export default function ClientApplicationDetailsPageContent() {
                     {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
                   </Badge>
                 )}
+                {
+                  chatUnreadCount === 0 && (
+                    <Badge variant="default" className="text-xs bg-primary-blue text-white px-1.5">
+                      New
+                    </Badge>
+                  )
+                }
               </Button>
             </div>
           )}
