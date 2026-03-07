@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
+import { GroupAvatar } from "@/components/chat/GroupAvatar";
 import {
   useConversations,
   useArchiveConversation,
@@ -60,13 +61,13 @@ export function ConversationRow({
     ? (conversation.otherDisplayName ?? "Chat")
     : (conversation.name ?? "Group Chat");
 
-  // For avatar: use imageUrl (group), or derive from the other participant's id (DM)
+  // For avatar: DM = other participant; group = imageUrl or combined member avatars
   const otherParticipant = isDm
     ? conversation.participants?.find((p) => p.id !== currentUserId)
     : null;
-  const avatarSrc =
-    conversation.imageUrl ??
-    getDefaultAvatarSrc(otherParticipant?.id ?? conversation._id);
+  const avatarSrc = isDm
+    ? getDefaultAvatarSrc(otherParticipant?.id ?? conversation._id)
+    : conversation.imageUrl;
 
   const lastMsg = conversation.lastMessage;
   const lastText = lastMsg?.content
@@ -99,20 +100,24 @@ export function ConversationRow({
       )}
     >
       {/* Avatar */}
-      <div className="relative h-10 w-10 rounded-full overflow-hidden shrink-0">
-        <Image
-          src={avatarSrc}
+      {isDm || avatarSrc ? (
+        <div className="relative h-10 w-10 rounded-full overflow-hidden shrink-0">
+          <Image
+            src={avatarSrc!}
+            alt={displayName}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
+      ) : (
+        <GroupAvatar
+          memberIds={conversation.participants?.map((p) => p.id) ?? []}
+          fallbackId={conversation._id}
+          className="h-10 w-10"
           alt={displayName}
-          fill
-          className="object-cover"
-          unoptimized
         />
-        {!isDm && (
-          <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-            <MessageSquare className="h-4 w-4 text-primary" />
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Text content */}
       <div className="flex-1 min-w-0">
@@ -303,7 +308,7 @@ export function ConversationList({
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteConfirm}
-                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                className="bg-destructive text-white hover:bg-destructive/90"
               >
                 Delete
               </AlertDialogAction>

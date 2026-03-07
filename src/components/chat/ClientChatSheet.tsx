@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   MessageSquare,
   RefreshCw,
@@ -9,6 +9,7 @@ import {
   Archive,
   Inbox,
   Trash2,
+  Loader2,
 } from "lucide-react";
 import {
   Sheet,
@@ -43,6 +44,7 @@ import {
   useStaffUsers,
   useArchiveConversation,
   useDeleteConversation,
+  useLeaveConversation,
 } from "@/hooks/useChat";
 import { ChatThread } from "@/components/chat/ChatThread";
 import { ConversationRow } from "@/components/chat/ConversationList";
@@ -71,16 +73,17 @@ export function ClientChatSheet({
   const [deleteConfirmConvId, setDeleteConfirmConvId] = useState<
     string | null
   >(null);
+  const [leaveGroupConvId, setLeaveGroupConvId] = useState<string | null>(null);
   const { data: staffData, isLoading: staffLoading } = useStaffUsers();
   const { data: conversationsData, isLoading: conversationsLoading } =
     useConversations({
       limit: 50,
-      type: "dm",
       archived: showArchived ? true : undefined,
     });
   const createConversation = useCreateConversation();
   const archiveConversationMutation = useArchiveConversation();
   const deleteConversationMutation = useDeleteConversation();
+  const leaveConversationMutation = useLeaveConversation();
 
   const conversations = conversationsData?.data ?? [];
 
@@ -266,14 +269,35 @@ export function ClientChatSheet({
               />
             </>
           ) : selectedConversationId && user ? (
-            <ChatThread
-              key={selectedConversationId}
-              conversationId={selectedConversationId}
-              currentUserId={user._id}
-              currentUserType="client"
-              onBack={() => setSelectedConversationId(null)}
-              alwaysShowBack
-            />
+            <>
+              <ChatThread
+                key={selectedConversationId}
+                conversationId={selectedConversationId}
+                currentUserId={user._id}
+                currentUserType="client"
+                onBack={() => setSelectedConversationId(null)}
+                alwaysShowBack
+                onLeaveGroup={() => setLeaveGroupConvId(selectedConversationId)}
+              />
+              <LeaveGroupDialog
+                conversationId={leaveGroupConvId}
+                isLeaving={
+                  leaveConversationMutation.isPending &&
+                  leaveConversationMutation.variables === leaveGroupConvId
+                }
+                onConfirm={() => {
+                  if (!leaveGroupConvId) return;
+                  leaveConversationMutation.mutate(leaveGroupConvId, {
+                    onSuccess: () => {
+                      setSelectedConversationId(null);
+                      setLeaveGroupConvId(null);
+                    },
+                    onSettled: () => setLeaveGroupConvId(null),
+                  });
+                }}
+                onCancel={() => setLeaveGroupConvId(null)}
+              />
+            </>
           ) : (
             <LoadingState />
           )}
@@ -342,6 +366,47 @@ function ClientConversationRow({
         </DropdownMenuContent>
       </DropdownMenu>
     </div>
+  );
+}
+
+function LeaveGroupDialog({
+  conversationId,
+  isLeaving,
+  onConfirm,
+  onCancel,
+}: {
+  conversationId: string | null;
+  isLeaving: boolean;
+  onConfirm: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <AlertDialog open={!!conversationId} onOpenChange={(open) => !open && onCancel()}>
+      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Leave group?</AlertDialogTitle>
+          <AlertDialogDescription>
+            You will no longer receive messages in this group. You can be added
+            again by a team member.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel onClick={onCancel} disabled={isLeaving}>
+            Cancel
+          </AlertDialogCancel>
+          <AlertDialogAction
+            onClick={onConfirm}
+            disabled={isLeaving}
+            className="inline-flex items-center bg-destructive text-white hover:bg-destructive/90"
+          >
+            {isLeaving && (
+              <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+            )}
+            Leave group
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
   );
 }
 

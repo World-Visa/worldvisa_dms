@@ -1,11 +1,31 @@
 "use client";
 
-import { useRef, useState } from "react";
-import { Paperclip, Send, X, Loader2 } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
+import dynamic from "next/dynamic";
+import { Paperclip, Send, X, Loader2, Smile } from "lucide-react";
+import { useTheme } from "next-themes";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { Theme } from "emoji-picker-react";
+
+const EmojiPicker = dynamic(
+  () => import("emoji-picker-react").then((mod) => mod.default),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="h-[352px] w-[350px] flex items-center justify-center rounded-lg bg-muted/30 text-muted-foreground text-sm">
+        Loading…
+      </div>
+    ),
+  },
+);
 
 const MAX_FILES = 10;
 const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
@@ -14,12 +34,23 @@ interface ChatInputProps {
   onSend: (content: string, files: File[]) => Promise<void>;
   isSending: boolean;
   disabled?: boolean;
+  /** When set (e.g. inside a sheet), emoji picker portals here so scroll works. */
+  emojiPopoverContainerRef?: React.RefObject<HTMLElement | null>;
 }
 
-export function ChatInput({ onSend, isSending, disabled }: ChatInputProps) {
+export function ChatInput({
+  onSend,
+  isSending,
+  disabled,
+  emojiPopoverContainerRef,
+}: ChatInputProps) {
   const [content, setContent] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pendingCursorRef = useRef<number | null>(null);
+  const { resolvedTheme } = useTheme();
 
   const canSend = (content.trim() || files.length > 0) && !isSending && !disabled;
 
@@ -66,6 +97,31 @@ export function ChatInput({ onSend, isSending, disabled }: ChatInputProps) {
     setFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const handleEmojiClick = (emojiData: { emoji: string }) => {
+    const textarea = textareaRef.current;
+    const start = textarea?.selectionStart ?? content.length;
+    const end = textarea?.selectionEnd ?? content.length;
+    const before = content.slice(0, start);
+    const after = content.slice(end);
+    const nextContent = before + emojiData.emoji + after;
+    pendingCursorRef.current = start + emojiData.emoji.length;
+    setContent(nextContent);
+    setEmojiPickerOpen(false);
+  };
+
+  useEffect(() => {
+    const nextCursor = pendingCursorRef.current;
+    if (nextCursor === null) return;
+    pendingCursorRef.current = null;
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.focus();
+    ta.setSelectionRange(nextCursor, nextCursor);
+  }, [content]);
+
+  const pickerTheme =
+    resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT;
+
   return (
     <div className="p-3 border-t border-border/40 bg-background shrink-0">
       {/* File chips */}
@@ -111,8 +167,39 @@ export function ChatInput({ onSend, isSending, disabled }: ChatInputProps) {
           onChange={handleFileChange}
         />
 
+        {/* Emoji picker */}
+        <Popover open={emojiPickerOpen} onOpenChange={setEmojiPickerOpen}>
+          <PopoverTrigger asChild>
+            <button
+              type="button"
+              disabled={disabled}
+              className={cn(
+                "h-9 w-9 shrink-0 flex items-center justify-center rounded-xl border border-border/60 text-muted-foreground transition-colors",
+                "hover:bg-muted hover:text-foreground",
+                "disabled:opacity-40 disabled:cursor-not-allowed",
+              )}
+            >
+              <Smile className="h-4 w-4" />
+            </button>
+          </PopoverTrigger>
+          <PopoverContent
+            side="top"
+            align="start"
+            className="w-auto p-0 overflow-hidden border-border/60 rounded-xl shadow-lg"
+            container={emojiPopoverContainerRef?.current ?? undefined}
+          >
+            <EmojiPicker
+              theme={pickerTheme}
+              onEmojiClick={handleEmojiClick}
+              width={320}
+              height={360}
+            />
+          </PopoverContent>
+        </Popover>
+
         {/* Textarea */}
         <Textarea
+          ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}

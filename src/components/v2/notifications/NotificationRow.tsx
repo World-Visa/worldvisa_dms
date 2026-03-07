@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
-import { Bell, ClipboardList, FileUp, ShieldCheck } from "lucide-react";
+import { Bell, ClipboardList, FileUp, MessageCircle, ShieldCheck } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Notification, NotificationSource } from "@/types/notifications";
 
@@ -39,6 +39,8 @@ export function getNotificationAction(n: Notification): NotificationAction | nul
       return { label: "View QC", href: "/v2/quality-check" };
     case "requested_checklist":
       return { label: "View Checklist", href: "/v2/checklist-requests" };
+    case "chat":
+      return { label: "Open Chat", href: "/v2/messages" };
     default:
       return null;
   }
@@ -49,6 +51,7 @@ const SOURCE_BADGE: Record<NotificationSource, string> = {
   requested_reviews: "Review",
   quality_check: "Quality Check",
   requested_checklist: "Checklist",
+  chat: "Chat",
   general: "General",
 };
 
@@ -77,6 +80,7 @@ function SourceIcon({ source, isAdminMessage }: SourceIconProps) {
     requested_reviews: { Icon: FileUp, cls: "bg-violet-50 text-violet-600 ring-1 ring-violet-200" },
     quality_check: { Icon: ShieldCheck, cls: "bg-sky-50 text-sky-600 ring-1 ring-sky-200" },
     requested_checklist: { Icon: ClipboardList, cls: "bg-emerald-50 text-emerald-600 ring-1 ring-emerald-200" },
+    chat: { Icon: MessageCircle, cls: "bg-indigo-50 text-indigo-600 ring-1 ring-indigo-200" },
     general: { Icon: Bell, cls: "bg-slate-50 text-slate-500 ring-1 ring-slate-200" },
   };
 

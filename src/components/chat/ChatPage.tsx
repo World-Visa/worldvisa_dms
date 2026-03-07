@@ -66,7 +66,7 @@ export default function ChatPage() {
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-border/40 shrink-0">
-          <h1 className="text-xl font-semibold text-foreground">Messages</h1>
+          <h1 className="text-xl font-medium text-foreground">Messages</h1>
           <Button
             size="icon-sm"
             variant="secondary"

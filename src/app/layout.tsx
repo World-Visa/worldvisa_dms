@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
-import { Toaster } from "sonner";
+import { Toaster } from "@/components/ui/sonner";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 
 const outfit = Outfit({
@@ -44,7 +44,7 @@ export default function RootLayout({
       >
         <Providers>
           <NotificationProvider>{children}</NotificationProvider>
-          <Toaster position="top-right" richColors />
+          <Toaster />
         </Providers>
       </body>
     </html>

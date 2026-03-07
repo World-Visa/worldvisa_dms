@@ -30,6 +30,8 @@ interface GroupSettingsSheetProps {
   onOpenChange: (open: boolean) => void;
   conversationId: string;
   currentUserId: string;
+  /** When "client", shows simplified view with only members and "Exit group". */
+  currentUserType?: "staff" | "client";
   onLeft?: () => void;
 }
 
@@ -38,8 +40,10 @@ export function GroupSettingsSheet({
   onOpenChange,
   conversationId,
   currentUserId,
+  currentUserType = "staff",
   onLeft,
 }: GroupSettingsSheetProps) {
+  const isClient = currentUserType === "client";
   const { data: convData, isLoading } = useConversation(conversationId);
   const { data: staffData } = useStaffUsers();
 
@@ -114,43 +118,47 @@ export function GroupSettingsSheet({
         {isLoading ? (
           <GroupSettingsSkeleton />
         ) : (
-          <div className="mt-4 space-y-6">
-            {/* Group info */}
-            <section className="space-y-3">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Group Info
-              </h3>
-              <Input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Group name"
-                className="bg-muted/50 border-border/60 rounded-xl"
-              />
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Description (optional)"
-                className="bg-muted/50 border-border/60 rounded-xl"
-              />
-              <Button
-                size="sm"
-                className="w-full"
-                onClick={handleSaveInfo}
-                disabled={
-                  !name.trim() ||
-                  updateGroup.isPending ||
-                  (name === conversation?.name &&
-                    description === (conversation?.description ?? ""))
-                }
-              >
-                {updateGroup.isPending ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
-                ) : null}
-                Save Changes
-              </Button>
-            </section>
+          <div className="mt-4 space-y-6 p-4">
+            {!isClient && (
+              <>
+                {/* Group info */}
+                <section className="space-y-3">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Group Info
+                  </h3>
+                  <Input
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Group name"
+                    className="bg-muted/50 border-border/60 rounded-xl"
+                  />
+                  <Input
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Description (optional)"
+                    className="bg-muted/50 border-border/60 rounded-xl"
+                  />
+                  <Button
+                    size="sm"
+                    className="w-full"
+                    onClick={handleSaveInfo}
+                    disabled={
+                      !name.trim() ||
+                      updateGroup.isPending ||
+                      (name === conversation?.name &&
+                        description === (conversation?.description ?? ""))
+                    }
+                  >
+                    {updateGroup.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+                    ) : null}
+                    Save Changes
+                  </Button>
+                </section>
 
-            <Separator />
+                <Separator />
+              </>
+            )}
 
             {/* Members */}
             <section className="space-y-2">
@@ -187,7 +195,7 @@ export function GroupSettingsSheet({
                           {member.type}
                         </p>
                       </div>
-                      {!isCurrentUser && (
+                      {!isCurrentUser && !isClient && (
                         <button
                           type="button"
                           onClick={() =>
@@ -205,75 +213,81 @@ export function GroupSettingsSheet({
               </div>
             </section>
 
-            <Separator />
+            {!isClient && (
+              <>
+                <Separator />
 
-            {/* Add members */}
-            <section className="space-y-2">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                Add Members
-              </h3>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
-                <Input
-                  value={addSearch}
-                  onChange={(e) => setAddSearch(e.target.value)}
-                  placeholder="Search people…"
-                  className="pl-8 bg-muted/50 border-border/60 rounded-xl"
-                />
-              </div>
-              {addSearch && (
-                <div className="space-y-0.5 max-h-40 overflow-y-auto rounded-xl border border-border/40 p-1">
-                  {availableToAdd.length === 0 ? (
-                    <p className="text-xs text-muted-foreground text-center py-3">
-                      No people found
-                    </p>
-                  ) : (
-                    availableToAdd.slice(0, 10).map((u: StaffUser) => (
-                      <button
-                        key={u._id}
-                        type="button"
-                        onClick={() => handleAddMember(u)}
-                        disabled={updateParticipants.isPending}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-muted/60 text-left transition-colors"
-                      >
-                        <div className="relative h-6 w-6 rounded-full overflow-hidden shrink-0">
-                          <Image
-                            src={getDefaultAvatarSrc(u._id)}
-                            alt={u.username}
-                            fill
-                            className="object-cover"
-                            unoptimized
-                          />
-                        </div>
-                        <p className="text-sm">{u.username}</p>
-                      </button>
-                    ))
+                {/* Add members */}
+                <section className="space-y-2">
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Add Members
+                  </h3>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
+                    <Input
+                      value={addSearch}
+                      onChange={(e) => setAddSearch(e.target.value)}
+                      placeholder="Search people…"
+                      className="pl-8 bg-muted/50 border-border/60 rounded-xl"
+                    />
+                  </div>
+                  {addSearch && (
+                    <div className="space-y-0.5 max-h-40 overflow-y-auto rounded-xl border border-border/40 p-1">
+                      {availableToAdd.length === 0 ? (
+                        <p className="text-xs text-muted-foreground text-center py-3">
+                          No people found
+                        </p>
+                      ) : (
+                        availableToAdd.slice(0, 10).map((u: StaffUser) => (
+                          <button
+                            key={u._id}
+                            type="button"
+                            onClick={() => handleAddMember(u)}
+                            disabled={updateParticipants.isPending}
+                            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl hover:bg-muted/60 text-left transition-colors"
+                          >
+                            <div className="relative h-6 w-6 rounded-full overflow-hidden shrink-0">
+                              <Image
+                                src={getDefaultAvatarSrc(u._id)}
+                                alt={u.username}
+                                fill
+                                className="object-cover"
+                                unoptimized
+                              />
+                            </div>
+                            <p className="text-sm">{u.username}</p>
+                          </button>
+                        ))
+                      )}
+                    </div>
                   )}
-                </div>
-              )}
-            </section>
+                </section>
 
-            <Separator />
+                <Separator />
+              </>
+            )}
 
-            {/* Danger zone */}
+            {/* Actions: Exit group / Leave group + Clear (staff only) */}
             <section className="space-y-2">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
                 Actions
               </h3>
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full text-muted-foreground"
-                onClick={handleClear}
-                disabled={clearConversation.isPending}
-              >
-                {clearConversation.isPending ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5 mr-2" />
+              {!isClient && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full text-muted-foreground"
+                  onClick={handleClear}
+                  disabled={clearConversation.isPending}
+                >
+                  {clearConversation.isPending ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-2" />
+                  ) : (
+                    <Trash2 className="h-3.5 w-3.5 mr-2" />
+                  )}
+                  Clear Conversation
+                </Button>
                 )}
-                Clear Conversation
-              </Button>
               <Button
                 variant="outline"
                 size="sm"
@@ -286,7 +300,7 @@ export function GroupSettingsSheet({
                 ) : (
                   <LogOut className="h-3.5 w-3.5 mr-2" />
                 )}
-                Leave Group
+                {isClient ? "Exit group" : "Leave Group"}
               </Button>
             </section>
           </div>

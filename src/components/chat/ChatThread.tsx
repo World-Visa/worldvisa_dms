@@ -2,12 +2,13 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 import Image from "next/image";
-import { Settings, Users, ArrowLeft, MessageSquare } from "lucide-react";
+import { Settings, Users, ArrowLeft, MessageSquare, LogOut, Search, XIcon } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
+import { GroupAvatar } from "@/components/chat/GroupAvatar";
 import {
   useMessages,
   useConversation,
@@ -19,7 +20,9 @@ import {
 } from "@/hooks/useChat";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
-import type { ChatMessage } from "@/types/chat";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
+import type { ChatMessage, Conversation, ParticipantType } from "@/types/chat";
 
 interface ChatThreadProps {
   conversationId: string;
@@ -29,8 +32,13 @@ interface ChatThreadProps {
   onBack?: () => void;
   /** When true, back button is visible on all screen sizes (e.g. in a sheet with a list behind). Default: only on mobile. */
   alwaysShowBack?: boolean;
+  /** Opens full group settings (e.g. for staff). */
   onOpenGroupSettings?: () => void;
+  /** When set, shows only a "Leave group" header action instead of settings (e.g. for client). */
+  onLeaveGroup?: () => void;
   onForwardMessage?: (message: ChatMessage, targetId: string) => void;
+  /** When set (e.g. inside a sheet), emoji picker portals here so scroll works. */
+  emojiPopoverContainerRef?: React.RefObject<HTMLElement | null>;
 }
 
 interface ForwardDialogState {
@@ -46,6 +54,8 @@ export function ChatThread({
   onBack,
   alwaysShowBack,
   onOpenGroupSettings,
+  onLeaveGroup,
+  emojiPopoverContainerRef,
 }: ChatThreadProps) {
   const { data: conversationData } = useConversation(conversationId);
   const {
@@ -147,7 +157,7 @@ export function ChatThread({
   const dmOwnId =
     sameTypeParticipants.length === 1 ? sameTypeParticipants[0].id : null;
 
-  // Avatar for header (WhatsApp-style): DM = other participant; group = imageUrl or default
+  // Avatar for header: DM = other participant; group = imageUrl or combined member avatars
   const otherParticipant =
     conversation?.type === "dm" && conversation.participants
       ? conversation.participants.find(
@@ -155,9 +165,15 @@ export function ChatThread({
         )
       : null;
   const headerAvatarSrc =
+    conversation?.type === "dm"
+      ? getDefaultAvatarSrc(otherParticipant?.id ?? conversation?._id ?? "")
+      : conversation?.imageUrl;
+  const groupMemberIds =
     conversation?.type === "group"
-      ? conversation.imageUrl ?? getDefaultAvatarSrc(conversation?._id ?? "")
-      : getDefaultAvatarSrc(otherParticipant?.id ?? conversation?._id ?? "");
+      ? conversation.members?.map((m) => m.id) ??
+        conversation.participants?.map((p) => p.id) ??
+        []
+      : [];
 
   // DM name: prefer otherDisplayName, then resolve from members by other participant's id/type
   const otherMember =
@@ -190,20 +206,27 @@ export function ChatThread({
           </Button>
         )}
 
-        <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0 bg-muted">
-          <Image
-            src={headerAvatarSrc}
+        {conversation?.type === "group" && !headerAvatarSrc ? (
+          <GroupAvatar
+            memberIds={groupMemberIds}
+            fallbackId={conversation?._id}
+            className="h-9 w-9"
             alt={conversationName}
-            fill
-            className="object-cover"
-            unoptimized
           />
-          {conversation?.type === "group" && (
-            <div className="absolute inset-0 bg-primary/20 flex items-center justify-center">
-              <Users className="h-4 w-4 text-primary" />
-            </div>
-          )}
-        </div>
+        ) : (
+          <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0 bg-muted">
+            <Image
+              src={
+                headerAvatarSrc ??
+                getDefaultAvatarSrc(conversation?._id ?? conversationId)
+              }
+              alt={conversationName}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          </div>
+        )}
 
         <div className="flex-1 min-w-0">
           <h2 className="text-sm font-semibold capitalize text-foreground truncate">
@@ -237,11 +260,23 @@ export function ChatThread({
           )}
         </div>
 
-        {/* Group settings button */}
-        {conversation?.type === "group" && onOpenGroupSettings && (
+        {/* Group: leave-only (e.g. client) or full settings (e.g. staff) */}
+        {conversation?.type === "group" && onLeaveGroup && (
+          <Button
+            variant="ghost"
+            size="sm"
+            title="Leave group"
+            onClick={onLeaveGroup}
+            className="shrink-0 gap-1.5 text-muted-foreground hover:text-destructive"
+          >
+            <LogOut className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {conversation?.type === "group" && !onLeaveGroup && onOpenGroupSettings && (
           <Button
             variant="ghost"
             size="icon-sm"
+            title="Group settings"
             onClick={onOpenGroupSettings}
             className="shrink-0"
           >
@@ -274,7 +309,21 @@ export function ChatThread({
                   (m.id === currentUserId ||
                     (alternativeUserId != null && m.id === alternativeUserId)),
               );
-              const currentMemberId = currentUserMember?.id ?? null;
+              let currentMemberId = currentUserMember?.id ?? null;
+              // In groups, backend may store client with a different id (e.g. lead_id) than auth user._id.
+              // If there's exactly one member of currentUserType, treat that member as "me" for isOwn.
+              if (
+                currentMemberId == null &&
+                conversation?.type === "group" &&
+                conversation.members
+              ) {
+                const sameType = conversation.members.filter(
+                  (m) => m.type === currentUserType,
+                );
+                if (sameType.length === 1) {
+                  currentMemberId = sameType[0].id;
+                }
+              }
 
               const isOwn =
                 message.sender.type === currentUserType &&
@@ -326,13 +375,16 @@ export function ChatThread({
       <ChatInput
         onSend={handleSend}
         isSending={sendMessage.isPending}
+        emojiPopoverContainerRef={emojiPopoverContainerRef}
       />
 
-      {/* Forward dialog — simple implementation */}
+      {/* Forward dialog — Recent + Contacts with avatars */}
       {forwardState.open && forwardState.message && (
         <ForwardMessageOverlay
           message={forwardState.message}
           currentConversationId={conversationId}
+          currentUserId={currentUserId}
+          currentUserType={currentUserType}
           onForward={(targetId) => {
             forwardMessage.mutate({
               targetConversationId: targetId,
@@ -391,81 +443,409 @@ function MessageSkeleton() {
   );
 }
 
-// Minimal forward overlay — shows a list of conversations to pick
+// Forward overlay — Recent (chats with avatars) + Contacts (staff/clients, create DM if needed)
 function ForwardMessageOverlay({
   message,
   currentConversationId,
+  currentUserId,
+  currentUserType,
   onForward,
   onClose,
 }: {
   message: ChatMessage;
   currentConversationId: string;
+  currentUserId: string;
+  currentUserType: "staff" | "client";
   onForward: (conversationId: string) => void;
   onClose: () => void;
 }) {
-  const { data } = useMessages(currentConversationId);
-  void data; // unused here
-
-  // Import conversations to pick from
-  // We use a simple lazy import via dynamic to avoid circular
   return (
     <ForwardPicker
-      message={message}
+      forwardedFromMessageId={message._id}
       currentConversationId={currentConversationId}
+      currentUserId={currentUserId}
+      currentUserType={currentUserType}
       onForward={onForward}
       onClose={onClose}
     />
   );
 }
 
+interface ContactOption {
+  id: string;
+  type: ParticipantType;
+  displayName: string;
+  role?: string;
+}
+
 function ForwardPicker({
+  forwardedFromMessageId,
   currentConversationId,
+  currentUserId,
+  currentUserType,
   onForward,
   onClose,
 }: {
-  message: ChatMessage;
+  forwardedFromMessageId: string;
   currentConversationId: string;
-  onForward: (id: string) => void;
+  currentUserId: string;
+  currentUserType: "staff" | "client";
+  onForward: (conversationId: string) => void;
   onClose: () => void;
 }) {
-  // Lazy import of hook to avoid circular dependency
-  const { useConversations } = require("@/hooks/useChat");
-  const { data } = useConversations();
-  const conversations = (data?.data ?? []).filter(
-    (c: { _id: string }) => c._id !== currentConversationId,
+  const { useConversations, useStaffUsers, useChatClients, useCreateConversation } =
+    require("@/hooks/useChat") as typeof import("@/hooks/useChat");
+  const { useAuth } = require("@/hooks/useAuth") as { useAuth: () => { user?: { role?: string; username?: string } } };
+
+  const { user } = useAuth();
+  const { data: conversationsData } = useConversations();
+  const { data: staffData, isLoading: staffLoading } = useStaffUsers();
+  const createConversation = useCreateConversation();
+
+  const permissionMode =
+    user?.role === "admin" ? ("restricted" as const) : ("unrestricted" as const);
+  const currentUsername = user?.username ?? "";
+  const {
+    data: clientData,
+    isLoading: clientLoading,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = useChatClients({
+    permissionMode,
+    currentUsername,
+  });
+
+  const conversations = (conversationsData?.data ?? []) as Conversation[];
+  const recentConversations = conversations
+    .filter((c) => c._id !== currentConversationId)
+    .sort((a, b) => {
+      const aAt = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
+      const bAt = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
+      return bAt - aAt;
+    });
+
+  // Map (type, id) -> conversationId for existing DMs
+  const dmByParticipant = new Map<string, string>();
+  for (const c of conversations) {
+    if (c.type === "dm" && c.participants?.length) {
+      const other = c.participants.find((p) => p.id !== currentUserId);
+      if (other) dmByParticipant.set(`${other.type}:${other.id}`, c._id);
+    }
+  }
+
+  const staffOptions: ContactOption[] = (staffData?.data ?? []).map(
+    (u: { _id: string; username: string; role?: string }) => ({
+      id: u._id,
+      type: "staff" as const,
+      displayName: u.username,
+      role: u.role,
+    }),
+  ).filter((u) => currentUserType !== "staff" || u.id !== currentUserId);
+
+  const clientOptions: ContactOption[] =
+    currentUserType === "staff"
+      ? (clientData?.data ?? []).map((c: { _id: string; name: string }) => ({
+          id: c._id,
+          type: "client" as const,
+          displayName: c.name,
+        }))
+      : [];
+
+  const [activeTab, setActiveTab] = useState<"recent" | "contacts">("recent");
+  const [contactSearch, setContactSearch] = useState("");
+
+  const searchLower = contactSearch.trim().toLowerCase();
+  const filteredStaffOptions = searchLower
+    ? staffOptions.filter((u) =>
+        u.displayName.toLowerCase().includes(searchLower),
+      )
+    : staffOptions;
+  const filteredClientOptions = searchLower
+    ? clientOptions.filter((c) =>
+        c.displayName.toLowerCase().includes(searchLower),
+      )
+    : clientOptions;
+
+  const isLoadingContacts =
+    currentUserType === "staff" ? staffLoading || clientLoading : staffLoading;
+  const hasContacts =
+    staffOptions.length > 0 || clientOptions.length > 0;
+  const hasFilteredContacts =
+    filteredStaffOptions.length > 0 || filteredClientOptions.length > 0;
+
+  const handleContactSelect = async (contact: ContactOption) => {
+    const key = `${contact.type}:${contact.id}`;
+    const existingId = dmByParticipant.get(key);
+    if (existingId) {
+      onForward(existingId);
+      return;
+    }
+    try {
+      const res = await createConversation.mutateAsync({
+        type: "dm",
+        participant: { type: contact.type, id: contact.id },
+      });
+      if (res?.data?._id) onForward(res.data._id);
+    } catch {
+      // toast already in useCreateConversation
+    }
+  };
+
+  const recentList = (
+    <div className="overflow-y-auto flex-1 min-h-0 px-2 space-y-0.5">
+      {recentConversations.length === 0 ? (
+        <p className="text-sm text-muted-foreground text-center py-6">
+          No other conversations
+        </p>
+      ) : (
+        recentConversations.map((c) => (
+          <RecentConversationRow
+            key={c._id}
+            conversation={c}
+            currentUserId={currentUserId}
+            onSelect={() => onForward(c._id)}
+          />
+        ))
+      )}
+    </div>
+  );
+
+  const contactsList = (
+    <div className="flex flex-col flex-1 min-h-0">
+      <div className="px-2 pb-2 shrink-0">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            type="search"
+            placeholder="Search contacts…"
+            value={contactSearch}
+            onChange={(e) => setContactSearch(e.target.value)}
+            className="pl-8 h-9"
+          />
+        </div>
+      </div>
+      <div className="overflow-y-auto flex-1 min-h-0 px-2 space-y-1">
+        {isLoadingContacts ? (
+          <ForwardContactsSkeleton />
+        ) : !hasContacts ? (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            No contacts
+          </p>
+        ) : !hasFilteredContacts ? (
+          <p className="text-sm text-muted-foreground text-center py-6">
+            No matches for &quot;{contactSearch.trim()}&quot;
+          </p>
+        ) : (
+          <>
+            {filteredStaffOptions.length > 0 && (
+              <>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">
+                  Staff ({filteredStaffOptions.length})
+                </p>
+                {filteredStaffOptions.map((u) => (
+                  <ContactRow
+                    key={`staff-${u.id}`}
+                    contact={u}
+                    onSelect={() => handleContactSelect(u)}
+                    disabled={createConversation.isPending}
+                  />
+                ))}
+              </>
+            )}
+            {currentUserType === "staff" && filteredClientOptions.length > 0 && (
+              <>
+                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1 mt-2">
+                  Clients ({filteredClientOptions.length})
+                </p>
+                {filteredClientOptions.map((u) => (
+                  <ContactRow
+                    key={`client-${u.id}`}
+                    contact={u}
+                    onSelect={() => handleContactSelect(u)}
+                    disabled={createConversation.isPending}
+                  />
+                ))}
+                {hasNextPage && (
+                  <ClientListSentinel
+                    hasNextPage={hasNextPage}
+                    isFetchingNextPage={isFetchingNextPage}
+                    fetchNextPage={fetchNextPage}
+                  />
+                )}
+              </>
+            )}
+          </>
+        )}
+      </div>
+    </div>
   );
 
   return (
     <div className="absolute inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-background border border-border rounded-2xl shadow-xl w-full max-w-sm p-4 space-y-3">
-        <div className="flex items-center justify-between">
+      <div className="bg-background border border-border rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[65vh] min-h-0">
+        <div className="flex items-center justify-between p-4 shrink-0">
           <h3 className="text-sm font-semibold">Forward to…</h3>
           <button
             type="button"
             onClick={onClose}
-            className="text-muted-foreground hover:text-foreground"
+            className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted"
+            aria-label="Close"
           >
-            ✕
+            <XIcon className="size-4" />
           </button>
         </div>
-        <div className="space-y-1 max-h-64 overflow-y-auto">
-          {conversations.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-4">
-              No other conversations
-            </p>
-          )}
-          {conversations.map((c: { _id: string; otherDisplayName?: string; name?: string }) => (
-            <button
-              key={c._id}
-              type="button"
-              onClick={() => onForward(c._id)}
-              className="w-full text-left px-3 py-2 rounded-lg hover:bg-muted text-sm transition-colors"
-            >
-              {c.otherDisplayName ?? c.name ?? "Chat"}
-            </button>
-          ))}
-        </div>
+        {currentUserType === "client" ? (
+          <div className="flex flex-col flex-1 min-h-0 mt-0">
+            {recentList}
+          </div>
+        ) : (
+          <Tabs
+            value={activeTab}
+            onValueChange={(v) => setActiveTab(v as "recent" | "contacts")}
+            className="flex flex-col flex-1 min-h-0 max-w-[420px]"
+          >
+            <TabsList className="w-full grid grid-cols-2 mx-4 shrink-0">
+              <TabsTrigger value="recent">Recent</TabsTrigger>
+              <TabsTrigger value="contacts">Contacts</TabsTrigger>
+            </TabsList>
+            <div className="flex flex-col flex-1 min-h-0 mt-2">
+              {activeTab === "recent" ? recentList : contactsList}
+            </div>
+          </Tabs>
+        )}
       </div>
+    </div>
+  );
+}
+
+function RecentConversationRow({
+  conversation,
+  currentUserId,
+  onSelect,
+}: {
+  conversation: Conversation;
+  currentUserId: string;
+  onSelect: () => void;
+}) {
+  const isDm = conversation.type === "dm";
+  const displayName = isDm
+    ? (conversation.otherDisplayName ?? "Chat")
+    : (conversation.name ?? "Group Chat");
+  const otherParticipant = isDm
+    ? conversation.participants?.find((p) => p.id !== currentUserId)
+    : null;
+  const avatarSrc = isDm
+    ? getDefaultAvatarSrc(otherParticipant?.id ?? conversation._id)
+    : conversation.imageUrl;
+
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-muted/60 transition-colors"
+    >
+      {isDm || avatarSrc ? (
+        <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0">
+          <Image
+            src={avatarSrc!}
+            alt={displayName}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+        </div>
+      ) : (
+        <GroupAvatar
+          memberIds={conversation.participants?.map((p) => p.id) ?? []}
+          fallbackId={conversation._id}
+          className="h-9 w-9"
+          alt={displayName}
+        />
+      )}
+      <span className="text-sm font-medium truncate flex-1">{displayName}</span>
+    </button>
+  );
+}
+
+function ContactRow({
+  contact,
+  onSelect,
+  disabled,
+}: {
+  contact: ContactOption;
+  onSelect: () => void;
+  disabled?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      disabled={disabled}
+      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-muted/60 transition-colors disabled:opacity-50"
+    >
+      <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0">
+        <Image
+          src={getDefaultAvatarSrc(contact.id)}
+          alt={contact.displayName}
+          fill
+          className="object-cover"
+          unoptimized
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{contact.displayName}</p>
+        {contact.role && (
+          <p className="text-xs text-muted-foreground capitalize">
+            {contact.role.replace("_", " ")}
+          </p>
+        )}
+      </div>
+    </button>
+  );
+}
+
+function ClientListSentinel({
+  hasNextPage,
+  isFetchingNextPage,
+  fetchNextPage,
+}: {
+  hasNextPage: boolean;
+  isFetchingNextPage: boolean;
+  fetchNextPage: () => void;
+}) {
+  const sentinelRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage)
+          fetchNextPage();
+      },
+      { threshold: 0.1 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  return <div ref={sentinelRef} className="h-4" />;
+}
+
+function ForwardContactsSkeleton() {
+  return (
+    <div className="space-y-1 p-1">
+      {[1, 2, 3, 4].map((i) => (
+        <div
+          key={i}
+          className="flex items-center gap-3 px-3 py-2.5 animate-pulse"
+        >
+          <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+          <div className="space-y-1.5 flex-1">
+            <Skeleton className="h-3 w-24 rounded" />
+            <Skeleton className="h-2.5 w-16 rounded" />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

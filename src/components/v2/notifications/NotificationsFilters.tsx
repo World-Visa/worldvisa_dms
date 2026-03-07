@@ -20,6 +20,7 @@ const TYPE_OPTIONS: { value: TypeFilter; label: string }[] = [
   { value: "requested_reviews", label: "Review" },
   { value: "quality_check", label: "Quality Check" },
   { value: "requested_checklist", label: "Checklist" },
+  { value: "chat", label: "Chat" },
   { value: "general", label: "General" },
 ];
 
