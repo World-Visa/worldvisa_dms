@@ -9,6 +9,7 @@ interface GroupAvatarProps {
   fallbackId?: string;
   className?: string;
   alt?: string;
+  memberProfiles?: Record<string, string>;
 }
 
 export function GroupAvatar({
@@ -16,9 +17,12 @@ export function GroupAvatar({
   fallbackId,
   className,
   alt = "Group",
+  memberProfiles,
 }: GroupAvatarProps) {
   const ids = memberIds.slice(0, 4);
   const showFallback = ids.length === 0 && fallbackId;
+
+  const imgSrc = (id: string) => memberProfiles?.[id] ?? getDefaultAvatarSrc(id);
 
   if (showFallback) {
     return (
@@ -46,7 +50,7 @@ export function GroupAvatar({
         aria-label={alt}
       >
         <Image
-          src={getDefaultAvatarSrc(ids[0])}
+          src={imgSrc(ids[0])}
           alt={alt}
           fill
           className="object-cover"
@@ -68,66 +72,30 @@ export function GroupAvatar({
       {ids.length === 2 && (
         <>
           <div className="relative w-full h-full">
-            <Image
-              src={getDefaultAvatarSrc(ids[0])}
-              alt=""
-              fill
-              className="object-cover"
-              unoptimized
-            />
+            <Image src={imgSrc(ids[0])} alt="" fill className="object-cover" unoptimized />
           </div>
           <div className="relative w-full h-full">
-            <Image
-              src={getDefaultAvatarSrc(ids[1])}
-              alt=""
-              fill
-              className="object-cover"
-              unoptimized
-            />
+            <Image src={imgSrc(ids[1])} alt="" fill className="object-cover" unoptimized />
           </div>
         </>
       )}
       {ids.length === 3 && (
         <>
           <div className="relative w-full h-full">
-            <Image
-              src={getDefaultAvatarSrc(ids[0])}
-              alt=""
-              fill
-              className="object-cover"
-              unoptimized
-            />
+            <Image src={imgSrc(ids[0])} alt="" fill className="object-cover" unoptimized />
           </div>
           <div className="relative w-full h-full">
-            <Image
-              src={getDefaultAvatarSrc(ids[1])}
-              alt=""
-              fill
-              className="object-cover"
-              unoptimized
-            />
+            <Image src={imgSrc(ids[1])} alt="" fill className="object-cover" unoptimized />
           </div>
           <div className="relative w-full h-full col-span-2">
-            <Image
-              src={getDefaultAvatarSrc(ids[2])}
-              alt=""
-              fill
-              className="object-cover"
-              unoptimized
-            />
+            <Image src={imgSrc(ids[2])} alt="" fill className="object-cover" unoptimized />
           </div>
         </>
       )}
       {ids.length === 4 &&
         ids.map((id, i) => (
           <div key={`${id}-${i}`} className="relative w-full h-full">
-            <Image
-              src={getDefaultAvatarSrc(id)}
-              alt=""
-              fill
-              className="object-cover"
-              unoptimized
-            />
+            <Image src={imgSrc(id)} alt="" fill className="object-cover" unoptimized />
           </div>
         ))}
     </div>

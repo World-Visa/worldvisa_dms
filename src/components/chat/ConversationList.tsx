@@ -28,12 +28,15 @@ import {
 import { cn } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useConversations,
   useArchiveConversation,
   useDeleteConversation,
+  useStaffUsers,
+  useChatClients,
 } from "@/hooks/useChat";
-import type { Conversation, ConversationType } from "@/types/chat";
+import type { Conversation, ConversationType, ParticipantType } from "@/types/chat";
 
 type TabType = "all" | "dm" | "group";
 
@@ -41,7 +44,6 @@ interface ConversationListProps {
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   currentUserId: string;
-  /** When true, show archive toggle and per-row Archive/Delete actions (admin). */
   showArchiveAndDelete?: boolean;
 }
 
@@ -50,11 +52,13 @@ export function ConversationRow({
   isSelected,
   currentUserId,
   onSelect,
+  getProfileImageUrl,
 }: {
   conversation: Conversation;
   isSelected: boolean;
   currentUserId: string;
   onSelect: (id: string) => void;
+  getProfileImageUrl?: (type: ParticipantType, id: string) => string | undefined;
 }) {
   const isDm = conversation.type === "dm";
   const displayName = isDm
@@ -66,8 +70,29 @@ export function ConversationRow({
     ? conversation.participants?.find((p) => p.id !== currentUserId)
     : null;
   const avatarSrc = isDm
-    ? getDefaultAvatarSrc(otherParticipant?.id ?? conversation._id)
+    ? (otherParticipant
+        ? (getProfileImageUrl?.(otherParticipant.type, otherParticipant.id) ??
+           otherParticipant.profile_image_url ??
+           getDefaultAvatarSrc(otherParticipant.id ?? conversation._id))
+        : getDefaultAvatarSrc(conversation._id))
     : conversation.imageUrl;
+
+  // Enrich group member profiles from lookup when available
+  const memberProfiles =
+    !isDm && conversation.participants?.length && getProfileImageUrl
+      ? Object.fromEntries(
+          (conversation.participants ?? [])
+            .map((p) => {
+              const url = getProfileImageUrl(p.type, p.id) ?? p.profile_image_url;
+              return url ? ([p.id, url] as const) : null;
+            })
+            .filter((x): x is [string, string] => x != null),
+        )
+      : Object.fromEntries(
+          (conversation.participants ?? [])
+            .filter((p) => p.profile_image_url)
+            .map((p) => [p.id, p.profile_image_url as string]),
+        );
 
   const lastMsg = conversation.lastMessage;
   const lastText = lastMsg?.content
@@ -116,6 +141,7 @@ export function ConversationRow({
           fallbackId={conversation._id}
           className="h-10 w-10"
           alt={displayName}
+          memberProfiles={memberProfiles}
         />
       )}
 
@@ -155,6 +181,23 @@ export function ConversationList({
   const [deleteConfirmConvId, setDeleteConfirmConvId] = useState<string | null>(
     null,
   );
+
+  const { user } = useAuth();
+  const { data: staffData } = useStaffUsers();
+  const { data: clientData } = useChatClients({
+    permissionMode: user?.role === "admin" ? "restricted" : "unrestricted",
+    currentUsername: user?.username ?? "",
+  });
+
+  const getProfileImageUrl = (type: ParticipantType, id: string): string | undefined => {
+    if (type === "staff") {
+      return staffData?.data?.find((u) => u._id === id)?.profile_image_url;
+    }
+    if (type === "client") {
+      return clientData?.data?.find((c) => c._id === id)?.profile_image_url;
+    }
+    return undefined;
+  };
 
   const typeFilter: ConversationType | undefined =
     activeTab === "dm" ? "dm" : activeTab === "group" ? "group" : undefined;
@@ -274,6 +317,7 @@ export function ConversationList({
                 deleteMutation.isPending &&
                 deleteMutation.variables === conv._id
               }
+              getProfileImageUrl={getProfileImageUrl}
             />
           ))
         ) : (
@@ -284,6 +328,7 @@ export function ConversationList({
               isSelected={selectedId === conv._id}
               currentUserId={currentUserId}
               onSelect={onSelect}
+              getProfileImageUrl={getProfileImageUrl}
             />
           ))
         )}
@@ -330,6 +375,7 @@ function AdminConversationRow({
   onDeleteRequest,
   isArchiving,
   isDeleting,
+  getProfileImageUrl,
 }: {
   conversation: Conversation;
   isSelected: boolean;
@@ -340,6 +386,7 @@ function AdminConversationRow({
   onDeleteRequest: () => void;
   isArchiving: boolean;
   isDeleting: boolean;
+  getProfileImageUrl?: (type: ParticipantType, id: string) => string | undefined;
 }) {
   return (
     <div className="flex items-center gap-1 py-0.5 group">
@@ -349,6 +396,7 @@ function AdminConversationRow({
           isSelected={isSelected}
           currentUserId={currentUserId}
           onSelect={(id) => onSelect(id)}
+          getProfileImageUrl={getProfileImageUrl}
         />
       </div>
       <DropdownMenu>

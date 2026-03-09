@@ -7,6 +7,8 @@ export interface UserDetailInfo {
   username: string;
   role: "master_admin" | "admin" | "team_leader" | "supervisor";
   last_login: string | null;
+  online_status?: boolean;
+  profile_image_url?: string;
 }
 
 export interface ReviewDocument {

@@ -6,6 +6,7 @@ export type ConversationType = "dm" | "group";
 export interface ChatParticipantRef {
   type: ParticipantType;
   id: string;
+  profile_image_url?: string;
 }
 
 export interface ConversationMember {
@@ -14,6 +15,8 @@ export interface ConversationMember {
   displayName: string;
   email?: string;
   lastReadAt?: string | null;
+  online_status?: boolean;
+  profile_image_url?: string;
 }
 
 // ── Attachment & Message ───────────────────────────────────────
@@ -71,6 +74,7 @@ export interface StaffUser {
   username: string;
   email?: string;
   role: "admin" | "team_leader" | "master_admin" | "supervisor";
+  profile_image_url?: string;
 }
 
 // ── Client User (from /clients/all endpoint) ───────────────────
@@ -81,6 +85,7 @@ export interface ClientUser {
   email?: string;
   lead_owner: string; // admin username who handles this client
   lead_id?: string; // Zoho lead / application id, used to match applications for restricted admins
+  profile_image_url?: string;
 }
 
 // ── Request shapes ─────────────────────────────────────────────

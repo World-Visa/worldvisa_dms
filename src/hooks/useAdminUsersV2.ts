@@ -8,6 +8,7 @@ export interface AdminUserV2 {
   role: "master_admin" | "admin" | "team_leader" | "supervisor";
   __v: number;
   last_login?: string;
+  online_status?: boolean;
   stats: {
     active_applications: number;
     reviews_sent: number;

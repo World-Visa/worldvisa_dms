@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { fetcher } from "@/lib/fetcher";
+import { getStoredToken } from "@/lib/auth";
 import { toast } from "sonner";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 
@@ -150,6 +151,38 @@ export function useDeleteUser() {
     onSettled: () => {
       // Always refetch after error or success to ensure server state
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
+    },
+  });
+}
+
+// 5. Upload Profile Image
+const uploadProfileImage = async (file: File): Promise<void> => {
+  const token = getStoredToken();
+  const formData = new FormData();
+  formData.append("image", file);
+
+  const res = await fetch(`${ZOHO_BASE_URL}/users/profile-image`, {
+    method: "POST",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const msg = await res.text().catch(() => "Upload failed");
+    throw new Error(msg);
+  }
+};
+
+export function useUploadProfileImage(userId: string) {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: uploadProfileImage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["user-details", userId] });
+      toast.success("Profile image updated.");
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to upload image: ${error.message}`);
     },
   });
 }

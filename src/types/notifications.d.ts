@@ -31,6 +31,7 @@ export interface Notification {
   isRead: boolean;
   createdAt: string;
   applicationType?: string | null;
+  sender_profile_image_url?: string | null;
 }
 
 export interface NotificationCreateRequest {
