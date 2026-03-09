@@ -26,23 +26,36 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { NavGroup, NavMainItem } from "@/lib/navigations/sidebar-items";
+import { useTotalUnreadCount } from "@/hooks/useChat";
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];
 }
 
 const IsComingSoon = () => (
-  <span className="ml-auto rounded-md bg-gray-200 px-2 py-1 text-xs dark:text-gray-800">Soon</span>
+  <span className="rounded-md bg-gray-200 px-2 py-1 text-xs dark:text-gray-800">Soon</span>
+);
+
+const IsNew = () => (
+  <span className="rounded-md bg-primary-blue px-2 py-0.5 text-xs text-white font-medium">New</span>
+);
+
+const UnreadBadge = ({ count }: { count: number }) => (
+  <span className="min-w-[18px] h-[18px] flex items-center justify-center rounded-full bg-destructive text-[10px] font-semibold text-white px-1">
+    {count > 99 ? "99+" : count}
+  </span>
 );
 
 const NavItemExpanded = ({
   item,
   isActive,
   isSubmenuOpen,
+  badge,
 }: {
   item: NavMainItem;
   isActive: (url: string, subItems?: NavMainItem["subItems"]) => boolean;
   isSubmenuOpen: (subItems?: NavMainItem["subItems"]) => boolean;
+  badge?: number;
 }) => {
   return (
     <Collapsible key={item.title} asChild defaultOpen={isSubmenuOpen(item.subItems)} className="group/collapsible">
@@ -55,9 +68,15 @@ const NavItemExpanded = ({
               tooltip={item.title}
             >
               {item.icon && <item.icon />}
-              <span>{item.title}</span>
-              {item.comingSoon && <IsComingSoon />}
-              <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+              <span className="flex items-center gap-1.5">
+                <span>{item.title}</span>
+                {item.isNew && <IsNew />}
+              </span>
+              <span className="ml-auto flex items-center justify-end gap-1.5">
+                {item.comingSoon && <IsComingSoon />}
+                {badge ? <UnreadBadge count={badge} /> : null}
+              </span>
+              <ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
             </SidebarMenuButton>
           ) : (
             <SidebarMenuButton
@@ -66,10 +85,16 @@ const NavItemExpanded = ({
               isActive={isActive(item.url)}
               tooltip={item.title}
             >
-              <Link prefetch={false} href={item.url} target={item.newTab ? "_blank" : undefined}>
+              <Link prefetch={false} href={item.url} target={item.newTab ? "_blank" : undefined} className="flex items-center gap-2 w-full">
                 {item.icon && <item.icon />}
-                <span>{item.title}</span>
-                {item.comingSoon && <IsComingSoon />}
+                <span className="flex items-center gap-1.5">
+                  <span>{item.title}</span>
+                  {item.isNew && <IsNew />}
+                </span>
+                <span className="ml-auto flex items-center justify-end gap-1.5">
+                  {item.comingSoon && <IsComingSoon />}
+                  {badge ? <UnreadBadge count={badge} /> : null}
+                </span>
               </Link>
             </SidebarMenuButton>
           )}
@@ -99,9 +124,11 @@ const NavItemExpanded = ({
 const NavItemCollapsed = ({
   item,
   isActive,
+  badge,
 }: {
   item: NavMainItem;
   isActive: (url: string, subItems?: NavMainItem["subItems"]) => boolean;
+  badge?: number;
 }) => {
   return (
     <SidebarMenuItem key={item.title}>
@@ -113,7 +140,14 @@ const NavItemCollapsed = ({
             isActive={isActive(item.url, item.subItems)}
           >
             {item.icon && <item.icon />}
-            <span>{item.title}</span>
+            <span className="flex items-center gap-1.5">
+              <span>{item.title}</span>
+              {item.isNew && <IsNew />}
+            </span>
+            <span className="ml-auto flex items-center justify-end gap-1.5">
+              {item.comingSoon && <IsComingSoon />}
+              {badge ? <UnreadBadge count={badge} /> : null}
+            </span>
             <ChevronRight />
           </SidebarMenuButton>
         </DropdownMenuTrigger>
@@ -141,9 +175,12 @@ const NavItemCollapsed = ({
   );
 };
 
+const CHAT_URL = "/v2/messages";
+
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
   const { state, isMobile } = useSidebar();
+  const totalUnread = useTotalUnreadCount();
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {
@@ -182,6 +219,7 @@ export function NavMain({ items }: NavMainProps) {
                 if (state === "collapsed" && !isMobile) {
                   // If no subItems, just render the button as a link
                   if (!item.subItems) {
+                    const badge = item.url === CHAT_URL && totalUnread > 0 ? totalUnread : undefined;
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
@@ -190,20 +228,40 @@ export function NavMain({ items }: NavMainProps) {
                           tooltip={item.title}
                           isActive={isItemActive(item.url)}
                         >
-                          <Link prefetch={false} href={item.url} target={item.newTab ? "_blank" : undefined}>
+                          <Link prefetch={false} href={item.url} target={item.newTab ? "_blank" : undefined} className="flex items-center gap-2 w-full">
                             {item.icon && <item.icon />}
-                            <span>{item.title}</span>
+                            <span className="flex items-center gap-1.5">
+                              <span>{item.title}</span>
+                              {item.isNew && <IsNew />}
+                            </span>
+                            <span className="ml-auto flex items-center justify-end gap-1.5">
+                              {item.comingSoon && <IsComingSoon />}
+                              {badge ? <UnreadBadge count={badge} /> : null}
+                            </span>
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     );
                   }
                   // Otherwise, render the dropdown as before
-                  return <NavItemCollapsed key={item.title} item={item} isActive={isItemActive} />;
+                  return (
+                    <NavItemCollapsed
+                      key={item.title}
+                      item={item}
+                      isActive={isItemActive}
+                      badge={item.url === CHAT_URL && totalUnread > 0 ? totalUnread : undefined}
+                    />
+                  );
                 }
                 // Expanded view
                 return (
-                  <NavItemExpanded key={item.title} item={item} isActive={isItemActive} isSubmenuOpen={isSubmenuOpen} />
+                  <NavItemExpanded
+                    key={item.title}
+                    item={item}
+                    isActive={isItemActive}
+                    isSubmenuOpen={isSubmenuOpen}
+                    badge={item.url === CHAT_URL && totalUnread > 0 ? totalUnread : undefined}
+                  />
                 );
               })}
             </SidebarMenu>

@@ -3,6 +3,7 @@ export type NotificationSource =
   | "requested_reviews"
   | "quality_check"
   | "requested_checklist"
+  | "chat"
   | "general";
 
 export type NotificationCategory =
@@ -12,7 +13,8 @@ export type NotificationCategory =
   | "applications"
   | "system"
   | "admin message"
-  | "document";
+  | "document"
+  | "chat";
 
 export interface Notification {
   _id: string;

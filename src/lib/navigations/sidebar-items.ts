@@ -113,9 +113,10 @@ export const sidebarItems: NavGroup[] = [
             },
             {
                 title: "Chat",
-                url: "/dashboard/coming-soon",
+                url: "/v2/messages",
                 icon: MessageSquare,
-                comingSoon: true,
+                comingSoon: false,
+                isNew: true,
             },
             // {
             //   title: "Calendar",
