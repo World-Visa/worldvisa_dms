@@ -25,6 +25,7 @@ interface MessageBubbleProps {
   isOwn: boolean;
   senderName: string;
   senderId: string;
+  senderProfileImage?: string;
   showAvatar: boolean;
   showSenderName: boolean;
   onDelete?: (messageId: string) => void;
@@ -50,6 +51,7 @@ export function MessageBubble({
   isOwn,
   senderName,
   senderId,
+  senderProfileImage,
   showAvatar,
   showSenderName,
   onDelete,
@@ -71,7 +73,7 @@ export function MessageBubble({
           {showAvatar && (
             <div className="relative h-7 w-7 rounded-full overflow-hidden mt-5">
               <Image
-                src={getDefaultAvatarSrc(senderId)}
+                src={senderProfileImage ?? getDefaultAvatarSrc(senderId)}
                 alt={senderName}
                 fill
                 className="object-cover"

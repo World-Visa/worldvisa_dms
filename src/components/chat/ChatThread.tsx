@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
+import { useAuth } from "@/hooks/useAuth";
 import {
   useMessages,
   useConversation,
@@ -16,7 +17,8 @@ import {
   useDeleteMessage,
   useForwardMessage,
   useMarkRead,
-  useChatConnectionState,
+  useStaffUsers,
+  useChatClients,
 } from "@/hooks/useChat";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
@@ -69,7 +71,26 @@ export function ChatThread({
   const deleteMessage = useDeleteMessage(conversationId);
   const forwardMessage = useForwardMessage();
   const markRead = useMarkRead();
-  const connectionState = useChatConnectionState();
+
+  const { user } = useAuth();
+  const { data: staffData } = useStaffUsers();
+  const { data: clientData } = useChatClients({
+    permissionMode: user?.role === "admin" ? "restricted" : "unrestricted",
+    currentUsername: user?.username ?? "",
+  });
+
+  const getProfileImageUrl = useCallback(
+    (type: ParticipantType, id: string): string | undefined => {
+      if (type === "staff") {
+        return staffData?.data?.find((u) => u._id === id)?.profile_image_url;
+      }
+      if (type === "client") {
+        return clientData?.data?.find((c) => c._id === id)?.profile_image_url;
+      }
+      return undefined;
+    },
+    [staffData?.data, clientData?.data],
+  );
 
   const [forwardState, setForwardState] = useState<ForwardDialogState>({
     open: false,
@@ -166,7 +187,11 @@ export function ChatThread({
       : null;
   const headerAvatarSrc =
     conversation?.type === "dm"
-      ? getDefaultAvatarSrc(otherParticipant?.id ?? conversation?._id ?? "")
+      ? (otherParticipant
+          ? (getProfileImageUrl(otherParticipant.type, otherParticipant.id) ??
+             otherParticipant.profile_image_url ??
+             getDefaultAvatarSrc(otherParticipant.id ?? conversation?._id ?? ""))
+          : getDefaultAvatarSrc(conversation?._id ?? conversationId))
       : conversation?.imageUrl;
   const groupMemberIds =
     conversation?.type === "group"
@@ -212,6 +237,14 @@ export function ChatThread({
             fallbackId={conversation?._id}
             className="h-9 w-9"
             alt={conversationName}
+            memberProfiles={Object.fromEntries(
+              (conversation.members ?? [])
+                .map((m) => {
+                  const url = getProfileImageUrl(m.type, m.id) ?? m.profile_image_url;
+                  return url ? ([m.id, url] as const) : null;
+                })
+                .filter((x): x is [string, string] => x != null),
+            )}
           />
         ) : (
           <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0 bg-muted">
@@ -237,27 +270,23 @@ export function ChatThread({
               <Users className="h-3 w-3 shrink-0" />
               {memberCount} members
             </p>
-          ) : (
-            <p className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
-              <span
-                className={cn(
-                  "h-1.5 w-1.5 rounded-full shrink-0",
-                  connectionState.isConnected
-                    ? "bg-green-500"
-                    : connectionState.isConnecting
-                      ? "bg-yellow-500 animate-pulse"
-                      : "bg-red-500",
-                )}
-              />
-              <span>
-                {connectionState.isConnected
-                  ? "Online"
-                  : connectionState.isConnecting
-                    ? "Connecting"
-                    : "Offline"}
-              </span>
-            </p>
-          )}
+          ) : conversation?.type === "dm" ? (() => {
+            const otherMember = conversation.members?.find(
+              (m) => m.id !== currentUserId && m.id !== alternativeUserId,
+            );
+            const isOnline = otherMember?.online_status ?? false;
+            return (
+              <p className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
+                <span
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full shrink-0",
+                    isOnline ? "bg-green-500" : "bg-muted-foreground/40",
+                  )}
+                />
+                <span>{isOnline ? "Online" : "Offline"}</span>
+              </p>
+            );
+          })() : null}
         </div>
 
         {/* Group: leave-only (e.g. client) or full settings (e.g. staff) */}
@@ -355,6 +384,7 @@ export function ChatThread({
                     isOwn={isOwn}
                     senderName={senderName}
                     senderId={message.sender.id}
+                    senderProfileImage={member?.profile_image_url}
                     showAvatar={senderChanged && !isOwn}
                     showSenderName={
                       senderChanged && !isOwn && conversation?.type === "group"
@@ -476,6 +506,7 @@ interface ContactOption {
   type: ParticipantType;
   displayName: string;
   role?: string;
+  profile_image_url?: string;
 }
 
 function ForwardPicker({
@@ -535,20 +566,22 @@ function ForwardPicker({
   }
 
   const staffOptions: ContactOption[] = (staffData?.data ?? []).map(
-    (u: { _id: string; username: string; role?: string }) => ({
+    (u: { _id: string; username: string; role?: string; profile_image_url?: string }) => ({
       id: u._id,
       type: "staff" as const,
       displayName: u.username,
       role: u.role,
+      profile_image_url: u.profile_image_url,
     }),
   ).filter((u) => currentUserType !== "staff" || u.id !== currentUserId);
 
   const clientOptions: ContactOption[] =
     currentUserType === "staff"
-      ? (clientData?.data ?? []).map((c: { _id: string; name: string }) => ({
+      ? (clientData?.data ?? []).map((c: { _id: string; name: string; profile_image_url?: string }) => ({
           id: c._id,
           type: "client" as const,
           displayName: c.name,
+          profile_image_url: c.profile_image_url,
         }))
       : [];
 
@@ -736,7 +769,7 @@ function RecentConversationRow({
     ? conversation.participants?.find((p) => p.id !== currentUserId)
     : null;
   const avatarSrc = isDm
-    ? getDefaultAvatarSrc(otherParticipant?.id ?? conversation._id)
+    ? (otherParticipant?.profile_image_url ?? getDefaultAvatarSrc(otherParticipant?.id ?? conversation._id))
     : conversation.imageUrl;
 
   return (
@@ -761,6 +794,11 @@ function RecentConversationRow({
           fallbackId={conversation._id}
           className="h-9 w-9"
           alt={displayName}
+          memberProfiles={Object.fromEntries(
+            (conversation.participants ?? [])
+              .filter((p) => p.profile_image_url)
+              .map((p) => [p.id, p.profile_image_url as string]),
+          )}
         />
       )}
       <span className="text-sm font-medium truncate flex-1">{displayName}</span>
@@ -786,7 +824,7 @@ function ContactRow({
     >
       <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0">
         <Image
-          src={getDefaultAvatarSrc(contact.id)}
+          src={contact.profile_image_url ?? getDefaultAvatarSrc(contact.id)}
           alt={contact.displayName}
           fill
           className="object-cover"

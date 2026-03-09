@@ -14,6 +14,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserDetails } from "@/hooks/useUserDetails";
 import { getFilteredSidebarItems } from "@/lib/navigations/sidebar-items";
 import { formatRole, getAvatarUrl } from "@/lib/utils";
 
@@ -33,13 +34,14 @@ const APP_CONFIG = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { user } = useAuth();
+  const { data: profileData } = useUserDetails(user?._id ?? "");
 
   const filteredItems = getFilteredSidebarItems(user?.role);
 
   const navUser = {
     name: user?.username ?? "",
     email: user?.email ?? "",
-    avatar: user?._id ? getAvatarUrl(user._id) : "",
+    avatar: profileData?.data?.user?.profile_image_url ?? (user?._id ? getAvatarUrl(user._id) : ""),
     role: user?.role ? formatRole(user.role) : "",
   };
 

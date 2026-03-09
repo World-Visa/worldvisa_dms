@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAdminUsersV2 } from "@/hooks/useAdminUsersV2";
+import { useAuth } from "@/hooks/useAuth";
 
 export type TeamMemberRole = "admin" | "master_admin" | "team_leader" | "supervisor";
 
@@ -135,16 +136,20 @@ function RoleDropdown({ memberId, value, onRoleChange }: RoleDropdownProps) {
 }
 
 export function TeamMembers() {
+  const { user: currentUser } = useAuth();
   const { data, isLoading } = useAdminUsersV2({ page: 1, limit: 6 });
 
-  const initialMembers = React.useMemo<TeamMember[]>(() => {
+  const initialMembers = React.useMemo<(TeamMember & { onlineStatus?: boolean })[]>(() => {
     if (!data?.data.users) return [];
-    return data.data.users.map((u) => ({
-      id: u._id,
-      name: u.username,
-      role: u.role,
-    }));
-  }, [data]);
+    return data.data.users
+      .filter((u) => u._id !== currentUser?._id)
+      .map((u) => ({
+        id: u._id,
+        name: u.username,
+        role: u.role,
+        onlineStatus: u.online_status,
+      }));
+  }, [data, currentUser?._id]);
 
   const [roleByMemberId, setRoleByMemberId] = React.useState<Record<string, TeamMemberRole>>({});
 
@@ -168,6 +173,7 @@ export function TeamMembers() {
       })),
     [initialMembers, roleByMemberId],
   );
+
 
   return (
     <Card className="h-fit">
@@ -195,12 +201,19 @@ export function TeamMembers() {
                 key={member.id}
                 className="flex items-center gap-3 rounded-lg py-1"
               >
-                <Avatar className="size-10 shrink-0">
-                  <AvatarImage src={getAvatarSrc(index)} alt={member.name} />
-                  <AvatarFallback className="text-xs">
-                    {getInitials(member.name)}
-                  </AvatarFallback>
-                </Avatar>
+                <div className="relative shrink-0">
+                  <Avatar className="size-10">
+                    <AvatarImage src={getAvatarSrc(index)} alt={member.name} />
+                    <AvatarFallback className="text-xs">
+                      {getInitials(member.name)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <span
+                    className={`absolute bottom-0 right-0 size-3 rounded-full border-2 border-background ${
+                      member.onlineStatus ? "bg-green-500" : "bg-muted-foreground/40"
+                    }`}
+                  />
+                </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-semibold text-foreground">{member.name}</p>
                   <p className="truncate text-sm text-muted-foreground capitalize">

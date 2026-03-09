@@ -58,18 +58,20 @@ const SOURCE_BADGE: Record<NotificationSource, string> = {
 interface SourceIconProps {
   source: NotificationSource;
   isAdminMessage: boolean;
+  senderProfileImageUrl?: string | null;
 }
 
-function SourceIcon({ source, isAdminMessage }: SourceIconProps) {
+function SourceIcon({ source, isAdminMessage, senderProfileImageUrl }: SourceIconProps) {
   if (isAdminMessage || source === "requested_reviews") {
     return (
       <div className="relative size-10 shrink-0">
         <Image
-          src="/avatars/1.png"
+          src={senderProfileImageUrl ?? "/avatars/1.png"}
           alt="Admin"
           width={40}
           height={40}
           className="size-10 rounded-full object-cover ring-1 ring-border"
+          unoptimized
         />
       </div>
     );
@@ -131,7 +133,7 @@ export function NotificationRow({ notification, onMarkAsRead }: NotificationRowP
         notification.isRead && "border-l-2 border-transparent",
       )}
     >
-      <SourceIcon source={notification.source} isAdminMessage={isAdminMessage} />
+      <SourceIcon source={notification.source} isAdminMessage={isAdminMessage} senderProfileImageUrl={notification.sender_profile_image_url} />
 
       <div className="min-w-0 flex-1 space-y-1">
         {/* Title + time */}

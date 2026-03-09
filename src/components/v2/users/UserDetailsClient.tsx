@@ -1,15 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   Bell,
   Briefcase,
   Calendar,
+  Camera,
   CheckCircle2,
   Clock,
   FileText,
+  Loader2,
   SendHorizontal,
   Shield,
   ShieldCheck,
@@ -31,6 +33,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useUserDetails, type Application, type UserNotification } from "@/hooks/useUserDetails";
+import { useUploadProfileImage } from "@/hooks/useUserMutations";
 
 import { ChangePasswordDialog } from "./ChangePasswordDialog";
 
@@ -86,6 +89,7 @@ function stageBadgeClass(stage: string | null): string {
 
 // ─── Profile Card ─────────────────────────────────────────────────────────────
 function ProfileCard({
+  userId,
   username,
   role,
   lastLogin,
@@ -93,7 +97,12 @@ function ProfileCard({
   reviewsReceivedCount,
   applicationsCount,
   notificationsCount,
+  onlineStatus,
+  profileImage,
+  showChangePassword = true,
+  showUpload = false,
 }: {
+  userId: string;
   username: string;
   role: string;
   lastLogin: string | null;
@@ -101,17 +110,79 @@ function ProfileCard({
   reviewsReceivedCount: number;
   applicationsCount: number;
   notificationsCount: number;
+  onlineStatus?: boolean;
+  profileImage?: string;
+  showChangePassword?: boolean;
+  showUpload?: boolean;
 }) {
   const { label, icon } = formatRole(role);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const { mutate: uploadImage, isPending: isUploading } = useUploadProfileImage(userId);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const validTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!validTypes.includes(file.type) || file.size > 5 * 1024 * 1024) {
+      e.target.value = "";
+      return;
+    }
+    uploadImage(file);
+    e.target.value = "";
+  };
 
   return (
     <Card className="flex flex-col gap-0 overflow-hidden">
       {/* Avatar section */}
       <div className="flex flex-col items-center gap-3 bg-gradient-to-b from-muted/60 to-card px-6 pb-6 pt-8">
-        <Avatar className="size-24 ring-4 ring-background shadow-md">
-          <AvatarImage src={getAvatar(username)} alt={username} />
-          <AvatarFallback className="text-2xl font-semibold">{getInitials(username)}</AvatarFallback>
-        </Avatar>
+        <div className="relative">
+          {showUpload ? (
+            <>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="sr-only"
+                onChange={handleFileChange}
+                disabled={isUploading}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
+                className="group relative block size-24 rounded-full ring-4 ring-background shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                aria-label="Change profile photo"
+              >
+                <Avatar className="size-24 pointer-events-none">
+                  <AvatarImage src={profileImage ?? getAvatar(username)} alt={username} />
+                  <AvatarFallback className="text-2xl font-semibold">{getInitials(username)}</AvatarFallback>
+                </Avatar>
+                <span className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/50 group-disabled:bg-black/50 transition-colors duration-200 flex flex-col items-center justify-center gap-1">
+                  {isUploading ? (
+                    <Loader2 className="size-5 text-white animate-spin opacity-0 group-hover:opacity-100 group-disabled:opacity-100 transition-opacity" />
+                  ) : (
+                    <>
+                      <Camera className="size-5 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <span className="text-[10px] font-semibold text-white opacity-0 group-hover:opacity-100 transition-opacity leading-none tracking-wide">
+                        Change
+                      </span>
+                    </>
+                  )}
+                </span>
+              </button>
+            </>
+          ) : (
+            <Avatar className="size-24 ring-4 ring-background shadow-md">
+              <AvatarImage src={profileImage ?? getAvatar(username)} alt={username} />
+              <AvatarFallback className="text-2xl font-semibold">{getInitials(username)}</AvatarFallback>
+            </Avatar>
+          )}
+          <span
+            className={`absolute bottom-1 right-1 z-10 size-4 rounded-full border-2 border-background ${
+              onlineStatus ? "bg-green-500" : "bg-muted-foreground/40"
+            }`}
+          />
+        </div>
         <div className="flex flex-col items-center gap-1 text-center">
           <h2 className="text-xl font-bold capitalize tracking-tight">{username}</h2>
           <Badge variant="outline" className="gap-1 text-xs">
@@ -151,9 +222,11 @@ function ProfileCard({
           <span className="font-medium">{timeAgo(lastLogin)}</span>
         </div>
 
-        <div className="pt-1">
-          <ChangePasswordDialog username={username} />
-        </div>
+        {showChangePassword && (
+          <div className="pt-1">
+            <ChangePasswordDialog username={username} />
+          </div>
+        )}
       </CardContent>
     </Card>
   );
@@ -327,11 +400,10 @@ function ReviewsSentCard({ reviews }: { reviews: { document_name: string; client
                 </div>
                 <Badge
                   variant="outline"
-                  className={`shrink-0 text-xs ${
-                    r.review.status === "reviewed"
+                  className={`shrink-0 text-xs ${r.review.status === "reviewed"
                       ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400"
                       : "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400"
-                  }`}
+                    }`}
                 >
                   {r.review.status}
                 </Badge>
@@ -390,9 +462,12 @@ function PageSkeleton() {
 }
 
 // ─── Main Client ──────────────────────────────────────────────────────────────
-export function UserDetailsClient({ id }: { id: string }) {
+export function UserDetailsClient({ id, showChangePassword }: { id: string; showChangePassword?: boolean }) {
   const router = useRouter();
+  const pathname = usePathname();
+  const isProfilePage = pathname.includes("/profile");
   const { data, isLoading, isError, error } = useUserDetails(id);
+  const title = isProfilePage ? "My Profile" : data?.data?.user?.username;
 
   if (isLoading) {
     return (
@@ -422,11 +497,17 @@ export function UserDetailsClient({ id }: { id: string }) {
     <div className="flex flex-col gap-4">
       {/* Back + page title */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => router.back()}>
-          <ArrowLeft className="size-4" /> 
-        </Button>
-        <div className="h-5 w-px bg-border" />
-        <h1 className="text-xl font-semibold capitalize tracking-tight">{user.username}</h1>
+        {
+          isProfilePage ? null : (
+            <>
+              <Button variant="ghost" size="sm" className="gap-1.5" onClick={() => router.back()}>
+                <ArrowLeft className="size-4" /> Back
+              </Button>
+              <div className="h-5 w-px bg-border" />
+            </>
+          )
+        }
+        <h1 className="text-xl font-semibold capitalize tracking-tight">{title}</h1>
       </div>
 
       {/* Two-column layout */}
@@ -434,6 +515,7 @@ export function UserDetailsClient({ id }: { id: string }) {
         {/* Left — profile card */}
         <div className="flex flex-col gap-4">
           <ProfileCard
+            userId={user._id}
             username={user.username}
             role={user.role}
             lastLogin={user.last_login}
@@ -441,6 +523,10 @@ export function UserDetailsClient({ id }: { id: string }) {
             reviewsReceivedCount={reviews_received.totalRecords}
             applicationsCount={applications.data.length}
             notificationsCount={notifications.totalRecords}
+            onlineStatus={user.online_status}
+            profileImage={user.profile_image_url}
+            showChangePassword={showChangePassword}
+            showUpload={isProfilePage}
           />
         </div>
 

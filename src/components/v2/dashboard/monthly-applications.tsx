@@ -50,7 +50,7 @@ export function MonthlyApplications({
           <p className="text-muted-foreground text-xs">This month · vs last month ({previousMonth ?? "—"})</p>
         </div>
         <Separator />
-        <p className="flex items-center gap-1 text-muted-foreground text-xs">
+        <div className="flex items-center gap-1 text-muted-foreground text-xs">
           {isLoading ? (
             <Skeleton className="h-4 w-32" />
           ) : isPositive ? (
@@ -64,7 +64,7 @@ export function MonthlyApplications({
               Down vs previous month
             </>
           )}
-        </p>
+        </div>
       </CardContent>
     </Card>
   );

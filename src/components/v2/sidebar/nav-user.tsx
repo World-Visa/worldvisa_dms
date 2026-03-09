@@ -82,12 +82,11 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem disabled className="opacity-70">
-                <CircleUser />
-                Account
-                <Badge variant="secondary" className="ml-auto text-[10px] font-normal">
-                  Soon
-                </Badge>
+              <DropdownMenuItem asChild>
+                <Link href="/v2/profile" className="flex items-center gap-2">
+                  <CircleUser />
+                  Account
+                </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/v2/notifications" className="flex items-center gap-2">

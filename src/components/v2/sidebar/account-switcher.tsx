@@ -19,12 +19,14 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/useAuth";
+import { useUserDetails } from "@/hooks/useUserDetails";
 import { formatRole, getAvatarUrl, getInitials } from "@/lib/utils";
 
 export function AccountSwitcher() {
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
   const router = useRouter();
+  const { data: profileData } = useUserDetails(user?._id ?? "");
 
   const handleLogout = useCallback(() => {
     logout(queryClient);
@@ -33,7 +35,7 @@ export function AccountSwitcher() {
 
   const name = user?.username ?? "";
   const role = user?.role ? formatRole(user.role) : "";
-  const avatar = user?._id ? getAvatarUrl(user._id) : "";
+  const avatar = profileData?.data?.user?.profile_image_url ?? (user?._id ? getAvatarUrl(user._id) : "");
   const initials = getInitials(name);
 
   return (
@@ -73,12 +75,11 @@ export function AccountSwitcher() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem disabled className="opacity-70">
-            <BadgeCheck />
-            Account
-            <Badge variant="secondary" className="ml-auto text-[10px] font-normal">
-              Soon
-            </Badge>
+          <DropdownMenuItem asChild>
+            <Link href="/v2/profile" className="flex items-center gap-2">
+              <BadgeCheck />
+              Account
+            </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href="/v2/notifications" className="flex items-center gap-2">

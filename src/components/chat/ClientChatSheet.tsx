@@ -48,7 +48,7 @@ import {
 } from "@/hooks/useChat";
 import { ChatThread } from "@/components/chat/ChatThread";
 import { ConversationRow } from "@/components/chat/ConversationList";
-import type { Conversation } from "@/types/chat";
+import type { Conversation, ParticipantType } from "@/types/chat";
 
 interface ClientChatSheetProps {
   open: boolean;
@@ -86,6 +86,13 @@ export function ClientChatSheet({
   const leaveConversationMutation = useLeaveConversation();
 
   const conversations = conversationsData?.data ?? [];
+
+  const getProfileImageUrl = (type: ParticipantType, id: string): string | undefined => {
+    if (type === "staff") {
+      return staffData?.data?.find((u) => u._id === id)?.profile_image_url;
+    }
+    return undefined;
+  };
 
   // Connect socket when a conversation is selected
   useChatSocket(selectedConversationId);
@@ -246,6 +253,7 @@ export function ClientChatSheet({
                           deleteConversationMutation.isPending &&
                           deleteConversationMutation.variables === conv._id
                         }
+                        getProfileImageUrl={getProfileImageUrl}
                       />
                     ))
                   )}
@@ -316,6 +324,7 @@ function ClientConversationRow({
   onDeleteRequest,
   isArchiving,
   isDeleting,
+  getProfileImageUrl,
 }: {
   conversation: Conversation;
   currentUserId: string;
@@ -325,6 +334,7 @@ function ClientConversationRow({
   onDeleteRequest: () => void;
   isArchiving: boolean;
   isDeleting: boolean;
+  getProfileImageUrl?: (type: ParticipantType, id: string) => string | undefined;
 }) {
   return (
     <div className="flex items-center gap-1 py-0.5 group">
@@ -334,6 +344,7 @@ function ClientConversationRow({
           isSelected={false}
           currentUserId={currentUserId}
           onSelect={onSelect}
+          getProfileImageUrl={getProfileImageUrl}
         />
       </div>
       <DropdownMenu>

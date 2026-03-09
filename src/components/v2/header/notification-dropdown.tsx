@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, ClipboardList, FileUp, MessageCircle, ShieldCheck } from "lucide-react";
+import { Bell, ClipboardList, FileUp, MessageCircle, ShieldCheck, UserCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
