@@ -32,6 +32,8 @@ export interface Application {
   Spouse_Skill_Assessment?: string | null;
   Spouse_Name?: string | null;
   last_communication_activity?: string | null;
+  spouse_lead_id?: string | null;
+  online_status?: boolean;
 }
 
 export interface Document {

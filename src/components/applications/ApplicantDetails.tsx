@@ -5,6 +5,7 @@ import { Application } from "@/types/applications";
 import { formatDate } from "@/utils/format";
 import { formatDistanceToNow } from "date-fns";
 import { BadgeCheck, Check, Copy, MessageCircle, User } from "lucide-react";
+import Link from "next/link";
 import { useState } from "react";
 import { ApplicationDeadlineCard } from "./ApplicationDeadlineCard";
 import { DeadlineUpdateModal } from "./DeadlineUpdateModal";
@@ -182,10 +183,42 @@ export function ApplicantDetails({
                       value={formatValue(application.Main_Applicant || "")}
                     />
                   ) : (
-                    <InfoField
-                      label="Spouse Skill Assessment"
-                      value={`${formatValue(application.Spouse_Skill_Assessment ?? "")} — ${formatValue(application.Spouse_Name ?? "")}`}
-                    />
+                    <div>
+                      <p className="text-xs text-gray-400 mb-0.5">
+                        Spouse Skill Assessment
+                      </p>
+                      <div className="flex items-center gap-1.5 min-w-0 flex-wrap">
+                        {!application.Spouse_Skill_Assessment &&
+                        !application.Spouse_Name ? (
+                          <span className="text-sm font-medium text-slate-800">
+                            Not provided
+                          </span>
+                        ) : (
+                          <>
+                            <span className="text-sm font-medium text-slate-800">
+                              {formatValue(application.Spouse_Skill_Assessment ?? "")}
+                            </span>
+                            <span className="text-sm font-medium text-slate-800">
+                              {" — "}
+                            </span>
+                            {application.spouse_lead_id &&
+                            (application.Spouse_Name ?? "").trim() !== "" ? (
+                              <Link
+                                href={`/v2/spouse-skill-assessment-applications/${application.spouse_lead_id}`}
+                                className="text-sm font-medium text-primary hover:underline truncate min-w-0"
+                                aria-label={`View spouse application: ${application.Spouse_Name}`}
+                              >
+                                {formatValue(application.Spouse_Name ?? "")}
+                              </Link>
+                            ) : (
+                              <span className="text-sm font-medium text-slate-800 truncate min-w-0">
+                                {formatValue(application.Spouse_Name ?? "")}
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
