@@ -25,6 +25,13 @@ export async function getSpouseApplications(
   // Add recent activity filter
   if (filters.recentActivity) searchParams.append("recentActivity", "true");
 
+  // Add handledBy filter
+  if (filters.handledBy && filters.handledBy.length > 0) {
+    for (const admin of filters.handledBy) {
+      searchParams.append("handledBy", admin);
+    }
+  }
+
   // Add deadline category filter
   if (filters.deadlineCategory)
     searchParams.append("deadlineCategory", filters.deadlineCategory);

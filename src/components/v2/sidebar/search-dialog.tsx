@@ -182,7 +182,7 @@ export function SearchDialog() {
     <>
       <Button
         variant="link"
-        className="!px-0 font-normal text-muted-foreground hover:no-underline"
+        className="px-0! font-normal text-muted-foreground hover:no-underline"
         onClick={() => setOpen(true)}
       >
         <Search className="size-4" />

@@ -251,20 +251,20 @@ export async function getChatClients(params: {
   return { status: raw.status, data: raw.data?.clients ?? [] };
 }
 
-// Fetches one page of clients with total count (server caps at 100/page)
+// Fetches one page of clients (backend filters by JWT role, 20/page)
 export async function getChatClientsPage(
   page: number,
 ): Promise<{ clients: ClientUser[]; total: number }> {
-  const qs = new URLSearchParams({ limit: "100", page: String(page) });
+  const qs = new URLSearchParams({ limit: "20", page: String(page) });
   const raw = await fetcher<{
     status: string;
     pagination: { totalRecords: number };
     data: { clients: ClientUser[] };
   }>(`${ZOHO_BASE_URL}/clients/all?${qs.toString()}`);
-  return {
-    clients: raw.data?.clients ?? [],
-    total: raw.pagination?.totalRecords ?? 0,
-  };
+  const clients: ClientUser[] = (raw.data?.clients ?? []).filter(
+    (c) => !!c && !!c._id,
+  );
+  return { clients, total: raw.pagination?.totalRecords ?? 0 };
 }
 
 export async function getStaffUsers(): Promise<StaffUsersResponse> {

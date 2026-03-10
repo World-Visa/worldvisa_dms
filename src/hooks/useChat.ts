@@ -29,8 +29,6 @@ import {
   getStaffUsers,
   getChatClientsPage,
 } from "@/lib/api/chat";
-import { getApplications } from "@/lib/api/applications";
-import { getStoredToken } from "@/lib/auth";
 import type {
   ChatConnectionState,
   ChatMessage,
@@ -41,7 +39,6 @@ import type {
   ConversationListResponse,
   CreateConversationRequest,
   MessageListResponse,
-  PermissionMode,
   SendMessageRequest,
   UpdateGroupRequest,
   UpdateParticipantsRequest,
@@ -448,31 +445,13 @@ export function useStaffUsers() {
   });
 }
 
-export function useChatClients(options: {
-  permissionMode: PermissionMode;
-  currentUsername?: string;
-}) {
+export function useChatClients(p0: { permissionMode?: string; currentUsername?: string; }) {
   const clientsQuery = useInfiniteQuery({
-    queryKey: [...CHAT_QUERY_KEYS.clientUsers, "paginated"],
+    queryKey: CHAT_QUERY_KEYS.clientUsers,
     queryFn: ({ pageParam }: { pageParam: number }) => getChatClientsPage(pageParam),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
-      lastPage.clients.length === 100 ? allPages.length + 1 : undefined,
-    staleTime: 5 * 60 * 1000,
-    gcTime: 15 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-
-  const appsQuery = useQuery({
-    queryKey: ["chat-admin-apps", options.currentUsername],
-    queryFn: () => {
-      const token = getStoredToken();
-      return getApplications(
-        { page: 1, limit: 500, handledBy: [options.currentUsername!] },
-        token ?? undefined,
-      );
-    },
-    enabled: options.permissionMode === "restricted" && !!options.currentUsername,
+      lastPage.clients.length === 20 ? allPages.length + 1 : undefined,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -483,32 +462,13 @@ export function useChatClients(options: {
     [clientsQuery.data],
   );
 
-  const adminAppIds = useMemo(
-    () => new Set(appsQuery.data?.data.map((a) => a.id) ?? []),
-    [appsQuery.data],
-  );
-
-  const filteredClients = useMemo(() => {
-    if (options.permissionMode === "unrestricted") return allLoaded;
-    return allLoaded.filter((c) => adminAppIds.has(c.lead_id ?? ""));
-  }, [allLoaded, adminAppIds, options.permissionMode]);
-
-  const total = useMemo(() => {
-    if (options.permissionMode === "unrestricted") {
-      return clientsQuery.data?.pages[0]?.total ?? filteredClients.length;
-    }
-    return filteredClients.length;
-  }, [clientsQuery.data, filteredClients.length, options.permissionMode]);
-
   return {
-    data: { data: filteredClients },
-    total,
+    data: { data: allLoaded },
+    total: clientsQuery.data?.pages[0]?.total ?? allLoaded.length,
     fetchNextPage: clientsQuery.fetchNextPage,
     hasNextPage: clientsQuery.hasNextPage ?? false,
     isFetchingNextPage: clientsQuery.isFetchingNextPage,
-    isLoading:
-      clientsQuery.isLoading ||
-      (options.permissionMode === "restricted" && appsQuery.isLoading),
+    isLoading: clientsQuery.isLoading,
   };
 }
 
