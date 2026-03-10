@@ -9,6 +9,7 @@ export interface AdminUserV2 {
   __v: number;
   last_login?: string;
   online_status?: boolean;
+  profile_image_url?: string;
   stats: {
     active_applications: number;
     reviews_sent: number;

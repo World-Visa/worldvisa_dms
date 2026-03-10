@@ -204,14 +204,20 @@ export const userColumns: ColumnDef<AdminUserV2>[] = [
     header: "Name",
     cell: ({ row }) => {
       const username = row.getValue<string>("username");
+      const onlineStatus = row.original.online_status;
       return (
         <div className="flex items-center gap-3">
-          <Avatar className="size-9 shrink-0">
-            <AvatarImage src={getAvatar(username)} alt={username} />
-            <AvatarFallback className="text-xs font-medium">
-              {getInitials(username)}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative size-9 shrink-0 group">
+            <Avatar className="size-9">
+              <AvatarImage src={row.original.profile_image_url ?? getAvatar(username)} alt={username} />
+              <AvatarFallback className="text-xs font-medium">
+                {getInitials(username)}
+              </AvatarFallback>
+            </Avatar>
+            <span
+              className={`absolute bottom-0 right-0 size-3 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-background group-hover:border-primary transition-colors duration-200 ${onlineStatus ? "bg-green-500" : "bg-red-500"}`}
+            />
+          </div>
           <span className="font-medium capitalize">{username}</span>
         </div>
       );

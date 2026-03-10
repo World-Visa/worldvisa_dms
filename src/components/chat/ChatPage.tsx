@@ -10,15 +10,6 @@ import { ConversationList } from "@/components/chat/ConversationList";
 import { ChatThread } from "@/components/chat/ChatThread";
 import { NewChatDialog } from "@/components/chat/NewChatDialog";
 import { GroupSettingsSheet } from "@/components/chat/GroupSettingsSheet";
-import type { PermissionMode } from "@/types/chat";
-
-function getPermissionMode(
-  role: string | undefined,
-): PermissionMode {
-  if (role === "admin") return "restricted";
-  return "unrestricted";
-}
-
 export default function ChatPage() {
   const { user } = useAuth();
   const [selectedConversationId, setSelectedConversationId] = useState<
@@ -33,8 +24,6 @@ export default function ChatPage() {
   useChatSocket(selectedConversationId);
 
   const currentUserId = user?._id ?? "";
-  const currentUsername = user?.username ?? "";
-  const permissionMode = getPermissionMode(user?.role);
 
   const handleSelectConversation = (id: string | null) => {
     setSelectedConversationId(id);
@@ -112,8 +101,6 @@ export default function ChatPage() {
         open={showNewChat}
         onOpenChange={setShowNewChat}
         currentUserId={currentUserId}
-        currentUsername={currentUsername}
-        permissionMode={permissionMode}
         onCreated={handleConversationCreated}
       />
 

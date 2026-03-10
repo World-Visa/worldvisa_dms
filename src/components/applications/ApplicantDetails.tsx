@@ -3,7 +3,6 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Application } from "@/types/applications";
 import { formatDate } from "@/utils/format";
-import { formatDistanceToNow } from "date-fns";
 import { BadgeCheck, Check, Copy, MessageCircle, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
@@ -274,9 +273,8 @@ export function ApplicantDetails({
                     <div>
                       <p className="text-xs text-gray-400 mb-0.5">Last Communication</p>
                       <div className="flex items-center gap-1.5">
-                        <MessageCircle className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <p className="text-sm font-medium text-slate-800">
-                          {formatDistanceToNow(new Date(application.last_communication_activity), { addSuffix: true })}
+                          {formatDate(application.last_communication_activity, "datetime")}
                         </p>
                       </div>
                     </div>

@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useMemo, useRef, useEffect } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
-import { Search, X, Users, MessageSquare, Loader2 } from "lucide-react";
+import { Search, X, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +18,6 @@ import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
 import { useCreateConversation, useStaffUsers, useChatClients } from "@/hooks/useChat";
 import type {
   ChatParticipantRef,
-  PermissionMode,
   StaffUser,
 } from "@/types/chat";
 
@@ -26,8 +25,6 @@ interface NewChatDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   currentUserId: string;
-  currentUsername: string;
-  permissionMode: PermissionMode;
   onCreated: (conversationId: string) => void;
 }
 
@@ -88,8 +85,6 @@ export function NewChatDialog({
   open,
   onOpenChange,
   currentUserId,
-  currentUsername,
-  permissionMode,
   onCreated,
 }: NewChatDialogProps) {
   const [activeTab, setActiveTab] = useState<"dm" | "group">("dm");
@@ -108,35 +103,23 @@ export function NewChatDialog({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useChatClients({
-    permissionMode,
-    currentUsername,
-  });
+  } = useChatClients({ permissionMode: "staff", currentUsername: currentUserId });
   const createConversation = useCreateConversation();
 
   const isLoading = staffLoading || clientLoading;
 
-  // Sentinel ref for infinite scroll in client list
-  const clientSentinelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const sentinel = clientSentinelRef.current;
-    if (!sentinel || !hasNextPage) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      { threshold: 0.1 },
-    );
-    observer.observe(sentinel);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
+  const handleClientListScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    const { scrollTop, scrollHeight, clientHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop - clientHeight < 80) {
+      fetchNextPage();
+    }
+  };
 
   const staffOptions: UserOption[] = useMemo(() => {
     const users = staffData?.data ?? [];
     return users
-      .filter((u: StaffUser) => u._id !== currentUserId)
+      .filter((u: StaffUser) => !!u._id && u._id !== currentUserId)
       .map((u: StaffUser) => ({
         _id: u._id,
         displayName: u.username,
@@ -147,12 +130,14 @@ export function NewChatDialog({
 
   const clientOptions: UserOption[] = useMemo(() => {
     const clients = clientData?.data ?? [];
-    return clients.map((c) => ({
-      _id: c._id,
-      displayName: c.name,
-      role: "client",
-      participantType: "client" as const,
-    }));
+    return clients
+      .filter((c) => !!c._id)
+      .map((c) => ({
+        _id: c._id,
+        displayName: c.name,
+        role: "client",
+        participantType: "client" as const,
+      }));
   }, [clientData]);
 
   const filteredOptions = useMemo(() => {
@@ -272,7 +257,7 @@ export function NewChatDialog({
               ))}
             </div>
 
-            <div className="max-h-60 overflow-y-auto space-y-0.5 rounded-xl border border-border/40 p-1">
+            <div className="max-h-60 overflow-y-auto space-y-0.5 rounded-xl border border-border/40 p-1" onScroll={handleClientListScroll}>
               {isLoading ? (
                 <UserListSkeleton />
               ) : filteredOptions.length === 0 ? (
@@ -297,7 +282,6 @@ export function NewChatDialog({
                       setSelectedDmUser(selectedDmUser?._id === u._id ? null : u)
                     }
                   />
-                  <div ref={clientSentinelRef} className="h-1" />
                   {isFetchingNextPage && (
                     <div className="flex justify-center py-1">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
@@ -318,15 +302,10 @@ export function NewChatDialog({
                       }
                     />
                   ))}
-                  {userFilter === "clients" && (
-                    <>
-                      <div ref={clientSentinelRef} className="h-1" />
-                      {isFetchingNextPage && (
-                        <div className="flex justify-center py-1">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                        </div>
-                      )}
-                    </>
+                  {userFilter === "clients" && isFetchingNextPage && (
+                    <div className="flex justify-center py-1">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    </div>
                   )}
                 </>
               )}
@@ -413,7 +392,7 @@ export function NewChatDialog({
               ))}
             </div>
 
-            <div className="max-h-44 overflow-y-auto space-y-0.5 rounded-xl border border-border/40 p-1">
+            <div className="max-h-44 overflow-y-auto space-y-0.5 rounded-xl border border-border/40 p-1" onScroll={handleClientListScroll}>
               {isLoading ? (
                 <UserListSkeleton />
               ) : filteredOptions.length === 0 ? (
@@ -437,7 +416,6 @@ export function NewChatDialog({
                     selectedIds={selectedGroupUsers.map((u) => u._id)}
                     onSelect={toggleGroupUser}
                   />
-                  <div ref={clientSentinelRef} className="h-1" />
                   {isFetchingNextPage && (
                     <div className="flex justify-center py-1">
                       <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
@@ -454,15 +432,10 @@ export function NewChatDialog({
                       onToggle={toggleGroupUser}
                     />
                   ))}
-                  {userFilter === "clients" && (
-                    <>
-                      <div ref={clientSentinelRef} className="h-1" />
-                      {isFetchingNextPage && (
-                        <div className="flex justify-center py-1">
-                          <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-                        </div>
-                      )}
-                    </>
+                  {userFilter === "clients" && isFetchingNextPage && (
+                    <div className="flex justify-center py-1">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+                    </div>
                   )}
                 </>
               )}

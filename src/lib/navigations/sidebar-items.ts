@@ -116,7 +116,7 @@ export const sidebarItems: NavGroup[] = [
                 url: "/v2/messages",
                 icon: MessageSquare,
                 comingSoon: false,
-                isNew: true,
+                isNew: false,
             },
             // {
             //   title: "Calendar",
