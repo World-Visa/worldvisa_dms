@@ -1,17 +1,32 @@
+"use client";
+
 import { formatDistanceToNow } from "date-fns";
 import { Inbox } from "lucide-react";
-import { Mail } from "@/components/mail/data";
+import { useRouter } from "next/navigation";
+import { Mail, MailCategory } from "@/components/mail/data";
 import { useMailStore } from "@/store/mailStore";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { cn } from "@/lib/utils";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 
 interface MailListProps {
   items: Mail[];
+  category: MailCategory;
 }
 
-export function MailList({ items }: MailListProps) {
+export function MailList({ items, category }: MailListProps) {
   const { selectedMail, setSelectedMail } = useMailStore();
+  const router = useRouter();
+  const isMobile = useIsMobile();
+
+  const handleClick = (item: Mail) => {
+    if (isMobile) {
+      setSelectedMail(item);
+    } else {
+      router.push(`/v2/mail/${category}/${item.id}`);
+    }
+  };
 
   if (items.length === 0) {
     return (
@@ -33,13 +48,13 @@ export function MailList({ items }: MailListProps) {
         {items.map((item) => (
           <button
             key={item.id}
+            type="button"
             className={cn(
               "flex flex-col items-start border-b gap-2 cursor-pointer px-2 py-3 text-left text-sm transition-all hover:bg-accent",
               selectedMail?.id === item.id && "bg-accent"
             )}
-            onClick={() => setSelectedMail(item)}>
+            onClick={() => handleClick(item)}>
             <div className="flex w-full items-start gap-2">
-              {/* Name row */}
               <div className="flex min-w-0 flex-1 flex-col gap-1">
                 <div className="flex items-center">
                   <div className="flex items-center gap-2">

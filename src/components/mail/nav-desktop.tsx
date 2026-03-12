@@ -44,18 +44,21 @@ export function MailNavDesktop({ isCollapsed }: MailNavDesktopProps) {
             title: "Inbox",
             label: "128",
             icon: Inbox,
+            href: "/v2/mail/inbox",
             variant: "secondary"
           },
           {
             title: "Drafts",
             label: "9",
             icon: File,
+            href: "/v2/mail/draft",
             variant: "ghost"
           },
           {
             title: "Sent",
             label: "",
             icon: Send,
+            href: "/v2/mail/sent",
             variant: "ghost"
           },
         ]}

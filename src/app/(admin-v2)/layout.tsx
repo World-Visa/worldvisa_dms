@@ -60,11 +60,11 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             </div>
           </div>
         </header>
-        <ContentArea>
-          <Suspense fallback={<AdminContentFallback />}>
+        <Suspense fallback={<AdminContentFallback />}>
+          <ContentArea>
             <AuthGuardV2>{children}</AuthGuardV2>
-          </Suspense>
-        </ContentArea>
+          </ContentArea>
+        </Suspense>
       </SidebarInset>
     </SidebarProvider>
   );

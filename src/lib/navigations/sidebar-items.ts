@@ -107,9 +107,10 @@ export const sidebarItems: NavGroup[] = [
             },
             {
                 title: "Email",
-                url: "/dashboard/coming-soon",
+                url: "/v2/mail",
                 icon: Mail,
                 comingSoon: true,
+                isNew: false,
             },
             {
                 title: "Chat",

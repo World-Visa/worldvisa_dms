@@ -13,6 +13,8 @@ import {
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { Plus } from "lucide-react";
+import { useState } from "react";
+import { IntegrationWorkflow } from "../integration/integration-workflow";
 
 interface MailAccountSwitcherProps {
   isCollapsed: boolean;
@@ -25,51 +27,55 @@ interface MailAccountSwitcherProps {
 
 export function MailAccountSwitcher({ isCollapsed, accounts }: MailAccountSwitcherProps) {
   const [selectedAccount, setSelectedAccount] = React.useState<string>(accounts[0].email);
-
+  const [openIntegrationWorkflow, setOpenIntegrationWorkflow] = useState(false);
+  const handleOpenIntegrationWorkflow = () => {
+    setOpenIntegrationWorkflow(true);
+  }
   return (
-    <Select defaultValue={selectedAccount} onValueChange={setSelectedAccount}>
-      <SelectTrigger
-        className={cn(
-          "hover:bg-accent/70! bg-background flex w-full items-center gap-2 border [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&>span]:line-clamp-1 [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-1 [&>span]:truncate",
-          isCollapsed &&
+    <>
+      <Select defaultValue={selectedAccount} onValueChange={setSelectedAccount}>
+        <SelectTrigger
+          className={cn(
+            "hover:bg-accent/70! bg-background flex w-full items-center gap-2 border [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0 [&>span]:line-clamp-1 [&>span]:flex [&>span]:w-full [&>span]:items-center [&>span]:gap-1 [&>span]:truncate",
+            isCollapsed &&
             "flex h-9 w-9 shrink-0 items-center justify-center p-0 [&>span]:w-auto [&>svg]:hidden"
-        )}
-        aria-label="Select account">
-        <SelectValue placeholder="Select an account">
-          <Image 
-            src="/gmail-icon.svg"
-            alt="Gmail Icon"
-            width={16}
-            height={16}
-            className="w-4 h-4"
-          />
-          <span className={cn("ml-1", isCollapsed && "hidden")}>
-            {accounts.find((account) => account.email === selectedAccount)?.label}
-          </span>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {accounts.map((account) => (
-          <SelectItem key={account.email} value={account.email}>
-            <div className="[&_svg]:text-foreground flex items-center gap-3 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0">
-             <Image 
+          )}
+          aria-label="Select account">
+          <SelectValue placeholder="Select an account">
+            <Image
               src="/gmail-icon.svg"
               alt="Gmail Icon"
               width={16}
               height={16}
               className="w-4 h-4"
-             />
-              <span className="text-sm font-medium">{account.email}</span>
-            </div>
-          </SelectItem>
-        ))}
-        <SelectItem value="add-account" className="p-0" >
-            <Button variant="ghost" size="sm" className="w-full justify-start">
-                <Plus className="w-4 h-4" />
-                <span className="text-sm font-medium">Add Account</span>
-            </Button>
-        </SelectItem>
-      </SelectContent>
-    </Select>
+            />
+            <span className={cn("ml-1", isCollapsed && "hidden")}>
+              {accounts.find((account) => account.email === selectedAccount)?.label}
+            </span>
+          </SelectValue>
+        </SelectTrigger>
+        <SelectContent>
+          {accounts.map((account) => (
+            <SelectItem key={account.email} value={account.email}>
+              <div className="[&_svg]:text-foreground flex items-center gap-3 [&_svg]:h-4 [&_svg]:w-4 [&_svg]:shrink-0">
+                <Image
+                  src="/gmail-icon.svg"
+                  alt="Gmail Icon"
+                  width={16}
+                  height={16}
+                  className="w-4 h-4"
+                />
+                <span className="text-sm font-medium">{account.email}</span>
+              </div>
+            </SelectItem>
+          ))}
+          <Button variant="ghost" size="sm" className="w-full justify-start" onClick={handleOpenIntegrationWorkflow}>
+            <Plus className="w-4 h-4" />
+            <span className="text-sm font-medium">Add Account</span>
+          </Button>
+        </SelectContent>
+      </Select>
+      <IntegrationWorkflow open={openIntegrationWorkflow} onOpenChange={setOpenIntegrationWorkflow} isGmailConnected={false} />
+    </>
   );
 }
