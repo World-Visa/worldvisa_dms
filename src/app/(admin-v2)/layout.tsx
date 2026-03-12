@@ -11,6 +11,7 @@ import { SearchDialog } from "@/components/v2/sidebar/search-dialog";
 import { NotificationDropdown } from "@/components/v2/header/notification-dropdown";
 import { AccountSwitcher } from "@/components/v2/sidebar/account-switcher";
 import { AuthGuardV2 } from "@/components/auth/AuthGuardV2";
+import { ContentArea } from "@/app/(admin-v2)/content-area";
 
 function AdminContentFallback() {
   return (
@@ -59,11 +60,11 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             </div>
           </div>
         </header>
-        <div className="h-full p-4 md:p-6">
+        <ContentArea>
           <Suspense fallback={<AdminContentFallback />}>
             <AuthGuardV2>{children}</AuthGuardV2>
           </Suspense>
-        </div>
+        </ContentArea>
       </SidebarInset>
     </SidebarProvider>
   );
