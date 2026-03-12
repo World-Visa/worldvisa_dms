@@ -1,9 +1,5 @@
 "use client";
 
-import Link from "next/link";
-
-import { Command } from "lucide-react";
-
 import {
   Sidebar,
   SidebarContent,
@@ -23,13 +19,6 @@ import { NavUser } from "@/components/v2/sidebar/nav-user";
 import Image from "next/image";
 import Logo from "../../../../public/logos/world-visa-logo.webp";
 import { Suspense } from "react";
-
-const APP_CONFIG = {
-  name: "WorldVisa DMS",
-  description: "WorldVisa DMS is a secure platform for managing documents, workflows, and collaboration for global visa, immigration, and compliance processes.",
-  version: "1.0.0",
-  copyright: "Copyright © 2026 WorldVisa DMS",
-};
 
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {

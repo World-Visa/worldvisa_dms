@@ -123,7 +123,7 @@ export const OTHER_DOCUMENTS = [
   {
     category: "Other Documents",
     documentType: "RPL (Only for ACS)",
-    allowedDocument: 2,
+    allowedDocument: 1,
   },
   {
     category: "Other Documents",
@@ -139,7 +139,7 @@ export const OTHER_DOCUMENTS = [
     category: "Other Documents",
     documentType: "Portfolio (only for Vetassess)",
     sampleDocument: "/sample_documents/Portfolio_Vetassess_sample.docx",
-    allowedDocument: 2,
+    allowedDocument: 1,
   },
   {
     category: "Other Documents",
@@ -164,22 +164,22 @@ export const OTHER_DOCUMENTS = [
   {
     category: "Other Documents",
     documentType: "Publications List (only for Vetassess)",
-    allowedDocument: 2,
+    allowedDocument: 1,
   },
   {
     category: "Other Documents",
     documentType: "Supervised Teaching Practice (AITSL)",
-    allowedDocument: 2,
+    allowedDocument: 1,
   },
   {
     category: "Other Documents",
     documentType: "Org chart (only for Vetassess)",
-    allowedDocument: 2,
+    allowedDocument: 1,
   },
   {
     category: "Other Documents",
     documentType: "ACS Skill Select Sheet (Only for ACS)",
-    allowedDocument: 2,
+    allowedDocument: 1,
   },
   {
     category: "Other Documents",
@@ -208,7 +208,7 @@ export const COMPANY_DOCUMENTS = [
     category: "Company",
     documentType: "Reference Letter",
     sampleDocument: "/sample_documents/Reference letter format.docx",
-    allowedDocument: 2,
+    allowedDocument: 1,
     importantNote: `*DO NOT GET IT ON COMPANY LETTERHEAD UNLESS IT IS VERIFIED AND APPROVED BY THE CASE OFFICER.*
       The mandatory details that must be checked include: Issue date, Employee ID, employment period (start date to end date), working hours, employment type (full-time/part-time), salary and complete signatory information (Name, Designation, Mobile number, Email ID).`,
   },
@@ -216,7 +216,7 @@ export const COMPANY_DOCUMENTS = [
     category: "Company",
     documentType: "Statutory Decleration",
     sampleDocument: "/sample_documents/Stat Dec sample.docx",
-    allowedDocument: 2,
+    allowedDocument: 1,
     importantNote: `*DO NOT GET IT ON THE STAMP PAPER UNTIL IT IS VERIFIED AND APPROVED BY THE CASE OFFICER.*
       Issue date of stamp paper and the notarisation should have same date.`,
   },
@@ -231,7 +231,7 @@ export const COMPANY_DOCUMENTS = [
   {
     category: "Company",
     documentType: "Salary Certifcate (only VET/ TRA/EA)",
-    allowedDocument: 2,
+    allowedDocument: 1,
   },
   {
     category: "Company",
@@ -269,11 +269,13 @@ export const SELF_EMPLOYMENT_DOCUMENTS = [
   {
     category: "Self Employment/Freelance",
     documentType: "Letter from Accountant (CA)",
+    allowedDocument: 1,
     sampleDocument: "/sample_documents/Letter_from_Accountant_CA_sample.docx",
   },
   {
     category: "Self Employment/Freelance",
     documentType: "Organisational Chart",
+    allowedDocument: 1,
     sampleDocument: "/sample_documents/Organisational_Chart_sample.docx",
     importantNote: `DO NOT GET IT ON A LETTERHEAD UNTIL IT IS VERIFIED AND APPROVED BY THE CASE OFFICER.`,
   },
