@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { usePathname } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useResponsiveMailLayout } from "@/hooks/use-responsive-mail-layout";
@@ -16,23 +16,19 @@ import { type Layout, type PanelImperativeHandle } from "react-resizable-panels"
 const NAV_MIN_SIZE = 15;
 const NAV_MAX_SIZE = "20";
 const NAV_MIN_SIZE_STR = "15";
-const NAV_COLLAPSED_SIZE = "50px";
+const LIST_MIN_SIZE = 20;
 
 interface MailProps {
   defaultLayout: Layout | undefined;
-  defaultCollapsed?: boolean;
-  navCollapsedSize: number;
   list: React.ReactNode;
   detail: React.ReactNode;
 }
 
 export function Mail({
   defaultLayout,
-  defaultCollapsed = false,
   list,
   detail,
 }: MailProps) {
-  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
   const navPanelRef = useRef<PanelImperativeHandle | null>(null);
   const listPanelRef = useRef<PanelImperativeHandle | null>(null);
   const isMobile = useIsMobile();
@@ -61,7 +57,10 @@ export function Mail({
         const raw = decodeURIComponent(match.split("=").slice(1).join("="));
         const saved = JSON.parse(raw);
         const navSize = saved?.["mail-nav"] ?? saved?.[0];
-        if (navSize != null && navSize < NAV_MIN_SIZE) {
+        const listSize = saved?.["mail-list"] ?? saved?.[1];
+        const badNav = navSize != null && navSize < NAV_MIN_SIZE;
+        const badList = listSize != null && listSize < LIST_MIN_SIZE;
+        if (badNav || badList) {
           document.cookie = "react-resizable-panels:layout:mail=; max-age=0; path=/";
         }
       } catch {
@@ -82,7 +81,13 @@ export function Mail({
           orientation="horizontal"
           onLayoutChanged={(layout: Layout) => {
             const navSize = layout["mail-nav"];
-            if (navSize != null && navSize >= NAV_MIN_SIZE) {
+            const listSize = layout["mail-list"];
+            if (
+              navSize != null &&
+              navSize >= NAV_MIN_SIZE &&
+              listSize != null &&
+              listSize >= LIST_MIN_SIZE
+            ) {
               document.cookie = `react-resizable-panels:layout:mail=${JSON.stringify(layout)}`;
             }
           }}
@@ -94,20 +99,13 @@ export function Mail({
             hidden={isMobile}
             panelRef={navPanelRef}
             defaultSize={navDefault}
-            collapsedSize={NAV_COLLAPSED_SIZE}
-            collapsible
+            collapsible={false}
             minSize={NAV_MIN_SIZE_STR}
             maxSize={NAV_MAX_SIZE}
-            onResize={() => {
-              const collapsed = navPanelRef.current?.isCollapsed() ?? false;
-              if (collapsed !== isCollapsed) {
-                setIsCollapsed(collapsed);
-              }
-            }}
             className={cn(
               "min-w-0 overflow-hidden transition-all duration-300 ease-in-out",
             )}>
-            <MailNavDesktop isCollapsed={isCollapsed} />
+            <MailNavDesktop isCollapsed={false} />
           </ResizablePanel>
 
           <ResizableHandle hidden={isMobile} withHandle />
@@ -117,7 +115,7 @@ export function Mail({
             id="mail-list"
             panelRef={listPanelRef}
             defaultSize={listDefault}
-            minSize="18"
+            minSize="24"
             className="min-w-0 overflow-hidden">
             {list}
           </ResizablePanel>

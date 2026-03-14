@@ -6,6 +6,7 @@ import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useMailStore } from "@/store/mailStore";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useMarkEmailRead } from "@/hooks/useEmail";
 import { cn } from "@/lib/utils";
 import type { EmailThread } from "@/types/email";
 import type { MailCategory } from "@/components/mail/data";
@@ -35,6 +36,7 @@ export function MailList({ items, category, fetchNextPage, hasNextPage, isFetchi
   const pathname = usePathname();
   const isMobile = useIsMobile();
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const { mutate: markRead } = useMarkEmailRead();
 
   useEffect(() => {
     const sentinel = sentinelRef.current;
@@ -52,6 +54,9 @@ export function MailList({ items, category, fetchNextPage, hasNextPage, isFetchi
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleClick = (item: EmailThread) => {
+    if (item.direction === "inbound" && !item.is_read) {
+      markRead(item._id);
+    }
     if (isMobile) {
       setSelectedMail(item);
     } else {
@@ -105,7 +110,7 @@ export function MailList({ items, category, fetchNextPage, hasNextPage, isFetchi
                   )}>
                     {getDisplayName(item.from)}
                   </span>
-                  {item.direction === "inbound" && !isSelected && (
+                  {item.direction === "inbound" && !item.is_read && !isSelected && (
                     <span className="flex h-2 w-2 shrink-0 rounded-full bg-blue-500" />
                   )}
                   {item.messageCount > 1 && (

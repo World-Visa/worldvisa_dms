@@ -7,6 +7,7 @@ import {
   getEmailThread,
   getSingleEmail,
   sendEmail,
+  markEmailRead,
 } from "@/lib/api/email";
 import type { SendEmailPayload } from "@/types/email";
 
@@ -110,6 +111,30 @@ export function useSingleEmail(id: string, enabled = true) {
     staleTime: 30 * 1000,
     gcTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
+  });
+}
+
+export function useMarkEmailRead() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => markEmailRead(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["email", "list"] });
+      queryClient.invalidateQueries({ queryKey: ["email", "unread-count"] });
+    },
+  });
+}
+
+export function useEmailUnreadCount() {
+  return useQuery({
+    queryKey: ["email", "unread-count"],
+    queryFn: async () => {
+      const res = await getEmailList({ direction: "inbound", page: 1, limit: 1 });
+      return res.unreadTotal ?? 0;
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 }
 

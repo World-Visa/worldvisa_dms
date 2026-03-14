@@ -2,7 +2,8 @@ export interface EmailAttachment {
   filename: string;
   content_type?: string;
   size: number;
-  storage_url?: string;
+  storage_key: string;
+  url: string | null;
 }
 
 export interface EmailThread {
@@ -18,6 +19,7 @@ export interface EmailThread {
   created_at: string;
   attachments: EmailAttachment[];
   messageCount: number;
+  is_read: boolean;
 }
 
 export interface EmailMessage {
@@ -44,6 +46,7 @@ export interface EmailListResponse {
     limit: number;
     totalPages: number;
   };
+  unreadTotal?: number;
 }
 
 export interface EmailThreadResponse {
@@ -56,8 +59,8 @@ export interface SendEmailPayload {
   html?: string;
   text?: string;
   in_reply_to?: string;
-  message_id?: string;
   cc?: string;
   bcc?: string;
   client_id?: string;
+  attachments?: File[];
 }

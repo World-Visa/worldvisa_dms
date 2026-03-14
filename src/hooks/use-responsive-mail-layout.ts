@@ -3,8 +3,8 @@ import * as React from "react";
 const LAYOUT_BREAKPOINT = 1024;
 
 /** [nav, list, display] as percentage strings. Used when no saved layout cookie. */
-const WIDE_DEFAULTS: [string, string, string] = ["20", "32", "48"];
-const NARROW_DEFAULTS: [string, string, string] = ["15", "40", "45"];
+const WIDE_DEFAULTS: [string, string, string] = ["20", "36", "44"];
+const NARROW_DEFAULTS: [string, string, string] = ["15", "42", "43"];
 
 export function useResponsiveMailLayout(): [string, string, string] {
   const [sizes, setSizes] = React.useState<[string, string, string]>(WIDE_DEFAULTS);
