@@ -1,6 +1,6 @@
 import { MailDisplay } from "@/components/mail/mail-display";
 
-export default async function InboxDetailPage({
+export default async function SystemDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;

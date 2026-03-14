@@ -55,7 +55,7 @@ export function MailNav({ links, isCollapsed }: MailNavProps) {
                     </Button>
                 )}
             </div>
-            <nav className="grid gap-1 px-2 font-medium group-data-[collapsed=true]:justify-center group-data-[collapsed=true]:px-2">
+            <nav className="grid gap-0.5 px-2 font-medium group-data-[collapsed=true]:justify-center group-data-[collapsed=true]:px-2">
                 {links.map((link, index) => {
                     const isActive = pathname.startsWith(link.href);
                     const variant = isActive ? "secondary" : "ghost";
@@ -67,9 +67,14 @@ export function MailNav({ links, isCollapsed }: MailNavProps) {
                                     href={link.href}
                                     className={cn(
                                         buttonVariants({ variant, size: "icon" }),
-                                        "h-9 w-9"
+                                        "h-9 w-9 relative"
                                     )}>
                                     {link.dot ?? <link.icon className="size-4" />}
+                                    {link.label && (
+                                        <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold leading-none text-primary-foreground">
+                                            {link.label}
+                                        </span>
+                                    )}
                                     <span className="sr-only">{link.title}</span>
                                 </Link>
                             </TooltipTrigger>
@@ -84,12 +89,18 @@ export function MailNav({ links, isCollapsed }: MailNavProps) {
                             href={link.href}
                             className={cn(
                                 buttonVariants({ variant, size: "sm" }),
-                                "justify-start"
+                                "justify-start h-9 px-3 gap-2.5",
+                                isActive && "font-semibold"
                             )}>
-                            {link.dot ?? <link.icon className="mr-2 h-4 w-4" />}
-                            {link.title}
+                            {link.dot ?? <link.icon className="h-4 w-4 shrink-0" />}
+                            <span className="truncate">{link.title}</span>
                             {link.label && (
-                                <span className="ml-auto">
+                                <span className={cn(
+                                    "ml-auto shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium leading-none tabular-nums",
+                                    isActive
+                                        ? "bg-primary/15 text-primary"
+                                        : "bg-muted text-muted-foreground"
+                                )}>
                                     {link.label}
                                 </span>
                             )}

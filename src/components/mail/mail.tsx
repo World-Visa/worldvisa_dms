@@ -1,6 +1,7 @@
 "use client";
 
-import * as React from "react";
+import { useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useResponsiveMailLayout } from "@/hooks/use-responsive-mail-layout";
 import { cn } from "@/lib/utils";
@@ -9,6 +10,7 @@ import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from "@/componen
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { MailNavDesktop } from "@/components/mail/nav-desktop";
 import { ComposeOverlay } from "@/components/mail/mail-compose";
+import { MailDisplay } from "@/components/mail/mail-display";
 import { type Layout, type PanelImperativeHandle } from "react-resizable-panels";
 
 const NAV_MIN_SIZE = 15;
@@ -17,11 +19,6 @@ const NAV_MIN_SIZE_STR = "15";
 const NAV_COLLAPSED_SIZE = "50px";
 
 interface MailProps {
-  accounts: {
-    label: string;
-    email: string;
-    icon: React.ReactNode;
-  }[];
   defaultLayout: Layout | undefined;
   defaultCollapsed?: boolean;
   navCollapsedSize: number;
@@ -35,12 +32,29 @@ export function Mail({
   list,
   detail,
 }: MailProps) {
-  const [isCollapsed, setIsCollapsed] = React.useState(defaultCollapsed);
-  const navPanelRef = React.useRef<PanelImperativeHandle | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(defaultCollapsed);
+  const navPanelRef = useRef<PanelImperativeHandle | null>(null);
+  const listPanelRef = useRef<PanelImperativeHandle | null>(null);
   const isMobile = useIsMobile();
   const [defaultNavSize, defaultListSize, defaultDisplaySize] = useResponsiveMailLayout();
+  const pathname = usePathname();
 
-  React.useEffect(() => {
+  const isDetailActive = /\/v2\/mail\/[^/]+\/.+/.test(pathname);
+
+  const isCategoryRoot = /^\/v2\/mail\/[^/]+$/.test(pathname);
+  const detailContent = isCategoryRoot ? <MailDisplay id={null} /> : detail;
+
+  useEffect(() => {
+    if (isMobile) return;
+    if (isDetailActive) {
+      navPanelRef.current?.resize(NAV_MIN_SIZE);
+      listPanelRef.current?.resize(25);
+    } else {
+      listPanelRef.current?.resize(Number(defaultListSize));
+    }
+  }, [isDetailActive, isMobile, defaultListSize]);
+
+  useEffect(() => {
     const match = document.cookie.split(";").find((c) => c.trim().startsWith("react-resizable-panels:layout:mail="));
     if (match) {
       try {
@@ -101,8 +115,9 @@ export function Mail({
           {/* Mail list panel — @list parallel route slot */}
           <ResizablePanel
             id="mail-list"
+            panelRef={listPanelRef}
             defaultSize={listDefault}
-            minSize="25"
+            minSize="18"
             className="min-w-0 overflow-hidden">
             {list}
           </ResizablePanel>
@@ -116,7 +131,7 @@ export function Mail({
             hidden={isMobile}
             minSize="30"
             className="min-w-0 overflow-hidden">
-            {detail}
+            {detailContent}
           </ResizablePanel>
 
         </ResizablePanelGroup>

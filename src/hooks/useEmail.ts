@@ -1,0 +1,133 @@
+"use client";
+
+import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import {
+  getEmailList,
+  getEmailThread,
+  getSingleEmail,
+  sendEmail,
+} from "@/lib/api/email";
+import type { SendEmailPayload } from "@/types/email";
+
+export const EMAIL_KEYS = {
+  list: (
+    direction?: string,
+    q?: string,
+    filter?: string,
+    page?: number,
+    limit?: number
+  ) =>
+    [
+      "email",
+      "list",
+      direction ?? "all",
+      q ?? "",
+      filter ?? "",
+      page ?? 1,
+      limit ?? 10,
+    ] as const,
+  thread: (threadId: string) => ["email", "thread", threadId] as const,
+  message: (id: string) => ["email", "message", id] as const,
+} as const;
+
+export function useEmailList(params: {
+  direction?: "inbound" | "outbound";
+  filter?: string;
+  q?: string;
+  page?: number;
+  limit?: number;
+} = {}) {
+  return useQuery({
+    queryKey: EMAIL_KEYS.list(
+      params.direction,
+      params.q,
+      params.filter,
+      params.page,
+      params.limit
+    ),
+    queryFn: () => getEmailList(params),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+}
+
+export function useInfiniteEmailList(params: {
+  direction?: "inbound" | "outbound";
+  filter?: string;
+  q?: string;
+  limit?: number;
+} = {}) {
+  return useInfiniteQuery({
+    queryKey: ["email", "list", "infinite", params.direction ?? "all", params.q ?? "", params.filter ?? ""],
+    queryFn: ({ pageParam }) => getEmailList({ ...params, page: pageParam as number }),
+    initialPageParam: 1,
+    getNextPageParam: (lastPage) => {
+      const { page, totalPages } = lastPage.pagination;
+      return page < totalPages ? page + 1 : undefined;
+    },
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchOnMount: false,
+  });
+}
+
+export function useEmailCount(params: {
+  direction?: "inbound" | "outbound";
+  filter?: string;
+} = {}) {
+  return useQuery({
+    queryKey: ["email", "count", params.direction ?? "all", params.filter ?? ""],
+    queryFn: async () => {
+      const res = await getEmailList({ ...params, page: 1, limit: 1 });
+      return res.pagination.total;
+    },
+    staleTime: 2 * 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useEmailThread(threadId: string, enabled = true) {
+  return useQuery({
+    queryKey: EMAIL_KEYS.thread(threadId),
+    queryFn: () => getEmailThread(threadId),
+    enabled: enabled && !!threadId,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useSingleEmail(id: string, enabled = true) {
+  return useQuery({
+    queryKey: EMAIL_KEYS.message(id),
+    queryFn: () => getSingleEmail(id),
+    enabled: enabled && !!id,
+    staleTime: 30 * 1000,
+    gcTime: 5 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+}
+
+export function useSendEmail() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: SendEmailPayload) => sendEmail(payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: EMAIL_KEYS.list("outbound") });
+      queryClient.invalidateQueries({ queryKey: EMAIL_KEYS.list() });
+      if (variables.in_reply_to) {
+        // We don't know the thread_id here, but caller can invalidate manually
+        queryClient.invalidateQueries({ queryKey: ["email", "thread"] });
+      }
+      toast.success("Email sent");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Failed to send email");
+    },
+  });
+}
