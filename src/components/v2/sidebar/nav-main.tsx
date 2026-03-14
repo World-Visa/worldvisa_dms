@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/sidebar";
 import type { NavGroup, NavMainItem } from "@/lib/navigations/sidebar-items";
 import { useTotalUnreadCount } from "@/hooks/useChat";
+import { useEmailUnreadCount } from "@/hooks/useEmail";
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];
@@ -173,11 +174,13 @@ const NavItemCollapsed = ({
 };
 
 const CHAT_URL = "/v2/messages";
+const EMAIL_URL = "/v2/mail";
 
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
   const { state, isMobile } = useSidebar();
   const totalUnread = useTotalUnreadCount();
+  const { data: emailUnread } = useEmailUnreadCount();
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {
@@ -246,7 +249,11 @@ export function NavMain({ items }: NavMainProps) {
                       key={item.title}
                       item={item}
                       isActive={isItemActive}
-                      badge={item.url === CHAT_URL && totalUnread > 0 ? totalUnread : undefined}
+                      badge={
+                        item.url === CHAT_URL && totalUnread > 0 ? totalUnread :
+                        item.url === EMAIL_URL && (emailUnread ?? 0) > 0 ? (emailUnread ?? 0) :
+                        undefined
+                      }
                     />
                   );
                 }
@@ -257,7 +264,11 @@ export function NavMain({ items }: NavMainProps) {
                     item={item}
                     isActive={isItemActive}
                     isSubmenuOpen={isSubmenuOpen}
-                    badge={item.url === CHAT_URL && totalUnread > 0 ? totalUnread : undefined}
+                    badge={
+                        item.url === CHAT_URL && totalUnread > 0 ? totalUnread :
+                        item.url === EMAIL_URL && (emailUnread ?? 0) > 0 ? (emailUnread ?? 0) :
+                        undefined
+                      }
                   />
                 );
               })}

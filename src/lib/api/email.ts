@@ -35,6 +35,17 @@ export async function getSingleEmail(id: string): Promise<EmailMessage> {
   return fetcher<EmailMessage>(`${BASE}/${id}`);
 }
 
+export async function markEmailRead(id: string): Promise<void> {
+  const token = getStoredToken();
+  const headers: Record<string, string> = {};
+  if (token) headers["Authorization"] = `Bearer ${token}`;
+  const res = await fetch(`${BASE}/${id}/read`, { method: "PATCH", headers });
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: `HTTP ${res.status}` }));
+    throw new Error(body.error ?? `HTTP ${res.status}`);
+  }
+}
+
 export async function sendEmail(payload: SendEmailPayload): Promise<void> {
   const token = getStoredToken();
 
@@ -44,10 +55,14 @@ export async function sendEmail(payload: SendEmailPayload): Promise<void> {
   if (payload.html) form.append("html", payload.html);
   if (payload.text) form.append("text", payload.text);
   if (payload.in_reply_to) form.append("in_reply_to", payload.in_reply_to);
-  if (payload.message_id) form.append("message_id", payload.message_id);
   if (payload.cc) form.append("cc", payload.cc);
   if (payload.bcc) form.append("bcc", payload.bcc);
   if (payload.client_id) form.append("client_id", payload.client_id);
+  if (payload.attachments?.length) {
+    for (const file of payload.attachments) {
+      form.append("attachments", file, file.name);
+    }
+  }
 
   const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;

@@ -7,7 +7,6 @@ import {
   ChevronDown,
   ChevronUp,
   CornerUpRight,
-  Download,
   MessageSquare,
   MousePointerClickIcon,
   Paperclip,
@@ -19,11 +18,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Textarea } from "@/components/ui/textarea";
 import { useEmailThread, useSingleEmail, useSendEmail, EMAIL_KEYS } from "@/hooks/useEmail";
 import { useQueryClient } from "@tanstack/react-query";
 import type { EmailMessage, EmailAttachment } from "@/types/email";
 import { cn } from "@/lib/utils";
+import { RichMailEditor, isEditorEmpty, stripTags } from "@/components/mail/rich-mail-editor";
+import { FileTypeIcon, getFileTypeLabel } from "@/components/mail/file-type-icon";
 
 interface MailDisplayProps {
   id: string | null;
@@ -82,19 +82,64 @@ function avatarColor(from: string): string {
 
 // ─── sub-components ─────────────────────────────────────────────────────────
 
+function formatFileSize(bytes: number): string {
+  if (bytes < 1024) return "< 1 KB";
+  if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function AttachmentItem({ att }: { att: EmailAttachment }) {
-  const sizeKb = Math.round(att.size / 1024);
+  const available = !!att.storage_key && !!att.url;
+  const label = getFileTypeLabel(att.content_type);
+  const size = formatFileSize(att.size);
+
+  const inner = (
+    <div
+      className={cn(
+        "group flex items-center gap-3 rounded-xl border px-3 py-2.5 transition-all duration-150 min-w-0 w-full",
+        available
+          ? "border-gray-200 dark:border-gray-700/80 bg-white dark:bg-gray-900 hover:border-gray-300 dark:hover:border-gray-600 hover:shadow-md hover:shadow-black/5 dark:hover:shadow-black/20 cursor-pointer"
+          : "border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/40 cursor-not-allowed opacity-50"
+      )}>
+      <div className="shrink-0 size-9">
+        <FileTypeIcon contentType={att.content_type} className="size-9" />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={cn(
+          "text-[13px] font-medium truncate leading-snug",
+          available
+            ? "text-gray-800 dark:text-gray-100 group-hover:text-gray-900 dark:group-hover:text-white"
+            : "text-gray-400 dark:text-gray-600"
+        )}>
+          {att.filename}
+        </p>
+        <p className="text-[11px] text-gray-400 dark:text-gray-500 mt-0.5 truncate">
+          {available ? `${label} · ${size}` : `${label} · Upload failed`}
+        </p>
+      </div>
+      {available && (
+        <div className="shrink-0 ml-1">
+          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 group-hover:bg-gray-200 dark:group-hover:bg-gray-700 transition-colors">
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+              <path d="M5 1v5M5 6L2.5 3.5M5 6L7.5 3.5" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" strokeLinejoin="round" className="text-gray-500 dark:text-gray-400" />
+              <path d="M1.5 8h7" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" className="text-gray-500 dark:text-gray-400" />
+            </svg>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
+  if (!available) return inner;
+
   return (
     <a
-      href={att.storage_url ?? "#"}
-      download={att.filename}
-      rel="noopener noreferrer"
+      href={att.url ?? "#"}
       target="_blank"
-      className="inline-flex items-center gap-2 rounded-lg border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60 px-3 py-2 text-xs hover:bg-gray-100 dark:hover:bg-gray-700/60 transition-colors max-w-[260px]">
-      <Paperclip className="size-3 shrink-0 text-gray-400" />
-      <span className="truncate font-medium text-gray-700 dark:text-gray-300">{att.filename}</span>
-      <span className="ml-auto shrink-0 text-gray-400 whitespace-nowrap">{sizeKb} KB</span>
-      <Download className="size-3 shrink-0 text-gray-400" />
+      rel="noopener noreferrer"
+      title={`Download ${att.filename}`}
+      className="block min-w-0">
+      {inner}
     </a>
   );
 }
@@ -137,7 +182,7 @@ function CollapsedMessage({ msg, onExpand }: { msg: EmailMessage; onExpand: () =
 function ExpandedMessage({ msg, onCollapse }: { msg: EmailMessage; onCollapse: () => void }) {
   const initials = getInitials(msg.from);
   return (
-    <div className="border-b border-gray-100 dark:border-gray-800/60 last:border-b-0">
+    <div className="border-b max-w-[840px] border-gray-100 dark:border-gray-800/60 last:border-b-0">
       {/* Clickable header */}
       <button
         type="button"
@@ -171,23 +216,28 @@ function ExpandedMessage({ msg, onCollapse }: { msg: EmailMessage; onCollapse: (
       </button>
 
       {/* Email body */}
-      <div className="px-6 pb-6 pl-[60px]">
+      <div className="px-4 pb-6 pl-[52px] min-w-0 overflow-hidden">
         {msg.html ? (
           <div
-            className="text-sm leading-relaxed text-gray-800 dark:text-gray-200 [&_p]:mb-2 [&_a]:text-blue-600 [&_a:hover]:underline [&_br]:block"
+            className="text-sm leading-relaxed text-gray-800 dark:text-gray-200 [&_p]:mb-2 [&_a]:text-blue-600 [&_a:hover]:underline [&_br]:block max-w-full overflow-x-hidden [&_table]:max-w-full [&_table]:w-full [&_table]:table-fixed [&_img]:max-w-full **:box-border **:max-w-full"
             // biome-ignore lint/security/noDangerouslySetInnerHtml: sanitized before render
             dangerouslySetInnerHTML={{ __html: sanitizeHtml(msg.html) }}
           />
         ) : (
-          <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800 dark:text-gray-200">
+          <div className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800 dark:text-gray-200 wrap-break-word">
             {msg.text ?? ""}
           </div>
         )}
         {msg.attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
-            {msg.attachments.map((att, i) => (
-              <AttachmentItem key={`${i}-${att.filename}-${att.size}`} att={att} />
-            ))}
+          <div className="mt-4 pt-3 border-t border-gray-100 dark:border-gray-800">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-gray-400 dark:text-gray-600 mb-2.5">
+              {msg.attachments.length} attachment{msg.attachments.length > 1 ? "s" : ""}
+            </p>
+            <div className="grid grid-cols-1 gap-2 min-[520px]:grid-cols-2">
+              {msg.attachments.map((att, i) => (
+                <AttachmentItem key={`${i}-${att.filename}-${att.size}`} att={att} />
+              ))}
+            </div>
           </div>
         )}
       </div>
@@ -206,15 +256,11 @@ function ReplyTray({
   threadId: string | null;
   onClose: () => void;
 }) {
-  const [body, setBody] = useState("");
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [bodyHtml, setBodyHtml] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { mutate: send, isPending } = useSendEmail();
   const queryClient = useQueryClient();
-
-  useEffect(() => {
-    const t = setTimeout(() => textareaRef.current?.focus(), 120);
-    return () => clearTimeout(t);
-  }, []);
 
   const replyTo = getEmail(lastMessage.from);
   const replySubject = lastMessage.subject.startsWith("Re:")
@@ -222,20 +268,20 @@ function ReplyTray({
     : `Re: ${lastMessage.subject}`;
 
   const handleSend = () => {
-    const trimmed = body.trim();
-    if (!trimmed || isPending) return;
+    if (isEditorEmpty(bodyHtml) || isPending) return;
     send(
       {
         to: replyTo,
         subject: replySubject,
-        html: `<p>${trimmed.replace(/\n/g, "<br>")}</p>`,
-        text: trimmed,
+        html: bodyHtml,
+        text: stripTags(bodyHtml),
         in_reply_to: lastMessage.message_id,
-        message_id: lastMessage.message_id,
+        attachments: attachments.length > 0 ? attachments : undefined,
       },
       {
         onSuccess: () => {
-          setBody("");
+          setBodyHtml("");
+          setAttachments([]);
           onClose();
           if (threadId) {
             queryClient.invalidateQueries({ queryKey: EMAIL_KEYS.thread(threadId) });
@@ -243,6 +289,17 @@ function ReplyTray({
         },
       }
     );
+  };
+
+  const handleAttachFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    setAttachments((prev) => [...prev, ...files]);
+    e.target.value = "";
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
   };
 
   return (
@@ -270,13 +327,12 @@ function ReplyTray({
         </div>
       </div>
 
-      {/* Body */}
-      <Textarea
-        ref={textareaRef}
-        value={body}
-        onChange={(e) => setBody(e.target.value)}
+      {/* Rich text editor */}
+      <RichMailEditor
+        content={bodyHtml}
+        onChange={setBodyHtml}
         placeholder="Write your reply…"
-        className="min-h-[120px] max-h-[200px] resize-none rounded-none border-0 bg-transparent px-4 pt-3 text-sm shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 placeholder:text-gray-300 dark:placeholder:text-gray-600"
+        minHeight="120px"
         onKeyDown={(e) => {
           if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
             e.preventDefault();
@@ -285,18 +341,57 @@ function ReplyTray({
         }}
       />
 
+      {/* Attachment chips */}
+      {attachments.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 border-t border-gray-100 dark:border-gray-800 px-4 py-2">
+          {attachments.map((file, i) => (
+            <span
+              key={`${file.name}-${i}`}
+              className="inline-flex items-center gap-1 rounded-full border bg-gray-50 dark:bg-gray-800 px-2.5 py-0.5 text-xs text-gray-500 dark:text-gray-400">
+              <Paperclip className="size-3 shrink-0" />
+              <span className="max-w-[120px] truncate">{file.name}</span>
+              <button
+                type="button"
+                aria-label={`Remove ${file.name}`}
+                onClick={() => removeAttachment(i)}
+                className="ml-0.5 rounded-full hover:text-gray-700 dark:hover:text-gray-200 transition-colors">
+                <X className="size-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
       {/* Footer */}
       <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 px-4 py-2.5">
-        <span className="text-xs text-gray-300 dark:text-gray-600">⌘↵ to send</span>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            aria-label="Attach files"
+            onClick={() => fileInputRef.current?.click()}
+            className="flex h-7 w-7 items-center justify-center rounded-full text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600 dark:hover:text-gray-300 transition-colors">
+            <Paperclip className="size-3.5" />
+          </button>
+          <span className="text-xs text-gray-300 dark:text-gray-600">⌘↵ to send</span>
+        </div>
         <Button
           size="sm"
           className="h-8 gap-1.5 rounded-full px-5 text-xs font-medium"
           onClick={handleSend}
-          disabled={isPending || !body.trim()}>
+          disabled={isPending || isEditorEmpty(bodyHtml)}>
           <Send className="size-3" />
           {isPending ? "Sending…" : "Send"}
         </Button>
       </div>
+
+      {/* Hidden file input */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        multiple
+        className="hidden"
+        onChange={handleAttachFiles}
+      />
     </div>
   );
 }

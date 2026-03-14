@@ -117,7 +117,7 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
           </Card>
         )}
 
-        {!isDataLoading && !error && currentRequests.length === 0 && (
+        {/* {!isDataLoading && !error && currentRequests.length === 0 && (
           <Card className="mb-6 border-blue-200 bg-blue-50/50">
             <CardContent className="p-8">
               <div className="text-center">
@@ -134,7 +134,7 @@ const ChecklistRequestsPage = memo(function ChecklistRequestsPage() {
               </div>
             </CardContent>
           </Card>
-        )}
+        )} */}
 
         {!error && (
           <div className="mb-8">

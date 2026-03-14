@@ -20,52 +20,82 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, ChevronLeft, ChevronRight, FileText } from "lucide-react";
-import { QualityCheckApplication } from "@/lib/api/qualityCheck";
-import { useRouter } from "next/navigation";
+import {
+  ArrowUpDown,
+  FileText,
+  MessageSquare,
+  ChevronLeft,
+  ChevronRight,
+  Clock,
+  Eye,
+  AlertCircle,
+  ExternalLink,
+} from "lucide-react";
 import { usePagination } from "@/hooks/usePagination";
+import { HighlightText } from "@/components/ui/HighlightText";
+import { useRouter } from "next/navigation";
+import type { QualityCheckListItem } from "@/lib/api/qualityCheck";
 
-function getRecordTypeBadgeVariant(recordType?: string) {
-  switch (recordType) {
-    case "spouse_skill_assessment":
-      return "default";
-    case "visa_application":
-      return "secondary";
-    default:
-      return "outline";
+function QCStatusBadge({ status }: { status: string }) {
+  if (status === "reviewed") {
+    return (
+      <Badge variant="default" className="bg-emerald-50 text-emerald-800 border border-emerald-200/90 text-xs px-1.5 py-0.5 flex items-center gap-1 w-fit">
+        <Eye className="h-3 w-3" />
+        Reviewed
+      </Badge>
+    );
   }
-}
-
-function getRecordTypeDisplayName(recordType?: string) {
-  switch (recordType) {
-    case "spouse_skill_assessment":
-      return "Spouse Assessment";
-    case "visa_application":
-      return "Visa Application";
-    default:
-      return recordType || "Unknown";
+  if (status === "removed") {
+    return (
+      <Badge variant="destructive" className="text-xs px-1.5 py-0.5 flex items-center gap-1 w-fit">
+        <AlertCircle className="h-3 w-3" />
+        Removed
+      </Badge>
+    );
   }
+  return (
+    <Badge variant="secondary" className="text-xs px-1.5 py-0.5 flex items-center gap-1 w-fit">
+      <Clock className="h-3 w-3" />
+      Pending
+    </Badge>
+  );
 }
 
 interface QualityCheckDataTableProps {
-  applications: QualityCheckApplication[];
+  items: QualityCheckListItem[];
   isLoading: boolean;
   totalItems: number;
   currentPage: number;
   limit: number;
+  searchQuery?: string;
   onPageChange: (page: number) => void;
+  onRowClick: (item: QualityCheckListItem) => void;
 }
 
 export function QualityCheckDataTable({
-  applications,
+  items,
   isLoading,
   totalItems,
   currentPage,
   limit,
+  searchQuery = "",
   onPageChange,
+  onRowClick,
 }: QualityCheckDataTableProps) {
-  const router = useRouter();
   const [sorting, setSorting] = useState<SortingState>([]);
+  const router = useRouter();
+
+  const handleViewApplication = useCallback(
+    (item: QualityCheckListItem, e: React.MouseEvent) => {
+      e.stopPropagation();
+      const route =
+        item.Record_Type === "spouse_skill_assessment"
+          ? `/v2/spouse-skill-assessment-applications/${item.id}`
+          : `/v2/applications/${item.id}`;
+      router.push(route);
+    },
+    [router],
+  );
 
   const {
     paginationRange,
@@ -76,26 +106,14 @@ export function QualityCheckDataTable({
     prevPage,
     startIndex,
     endIndex,
-  } = usePagination({
-    total: totalItems,
-    currentPage,
-    pageSize: limit,
-  });
+  } = usePagination({ total: totalItems, currentPage, pageSize: limit });
 
   const handleRowClick = useCallback(
-    (applicationId: string, recordType?: string) => {
-      if (recordType === "spouse_skill_assessment") {
-        router.push(
-          `/v2/spouse-skill-assessment-applications/${applicationId}`,
-        );
-      } else {
-        router.push(`/v2/applications/${applicationId}`);
-      }
-    },
-    [router],
+    (item: QualityCheckListItem) => onRowClick(item),
+    [onRowClick],
   );
 
-  const columns = useMemo<ColumnDef<QualityCheckApplication>[]>(
+  const columns = useMemo<ColumnDef<QualityCheckListItem>[]>(
     () => [
       {
         accessorKey: "Name",
@@ -111,100 +129,111 @@ export function QualityCheckDataTable({
         ),
         cell: ({ row }) => (
           <div className="min-w-[180px]">
-            <p className="font-medium text-neutral-900 truncate">
-              {row.original.Name}
+            <p className="font-medium text-foreground truncate">
+              <HighlightText text={row.original.Name} query={searchQuery} />
             </p>
-            <p className="text-xs text-neutral-500 truncate">
-              ID: {row.original.id}
+            <p className="text-xs text-muted-foreground truncate">
+              <HighlightText text={row.original.Email} query={searchQuery} />
             </p>
           </div>
         ),
         enableSorting: true,
       },
       {
-        accessorKey: "Record_Type",
-        header: "Application Type",
-        cell: ({ row }) => (
-          <Badge
-            variant={getRecordTypeBadgeVariant(row.original.Record_Type)}
-            className="text-xs"
-          >
-            {getRecordTypeDisplayName(row.original.Record_Type)}
-          </Badge>
-        ),
+        id: "qcStatus",
+        header: "Status",
+        cell: ({ row }) => <QCStatusBadge status={row.original.qcStatus} />,
         enableSorting: false,
       },
       {
-        accessorKey: "Application_Handled_By",
-        header: "Handled By",
-        cell: ({ row }) => (
-          <span className="text-sm text-foreground">
-            {row.original.Application_Handled_By}
-          </span>
-        ),
-        enableSorting: true,
+        id: "requestedBy",
+        header: "Requested By",
+        cell: ({ row }) => {
+          const by = row.original.qcRequestedBy || row.original.Quality_Check_From;
+          const to = row.original.qcRequestedTo;
+          return (
+            <div className="text-sm">
+              <p className="text-foreground">{by || "—"}</p>
+            </div>
+          );
+        },
+        enableSorting: false,
       },
       {
-        accessorKey: "Quality_Check_From",
-        header: "QC From",
-        cell: ({ row }) => (
-          <span className="text-sm text-foreground">
-            {row.original.Quality_Check_From}
-          </span>
-        ),
-        enableSorting: true,
-      },
-      {
-        accessorKey: "Created_Time",
+        accessorKey: "qcRequestedAt",
         header: ({ column }) => (
           <Button
             variant="ghost"
-            className="-ml-3 h-8 font-medium"
+            className="-ml-3 h-8 font-medium hover:bg-gray-100" 
             onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           >
-            Created
+            Requested
             <ArrowUpDown className="ml-2 h-4 w-4 opacity-50" />
           </Button>
         ),
         cell: ({ row }) => {
-          const date = new Date(row.original.Created_Time);
+          const val = row.original.qcRequestedAt;
+          if (!val)
+            return <span className="text-sm text-muted-foreground">—</span>;
           return (
-            <div className="text-sm text-foreground">
-              {date.toLocaleDateString("en-US", {
+            <span className="text-sm text-foreground">
+              {new Date(val).toLocaleDateString("en-US", {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
               })}
-            </div>
+            </span>
           );
         },
         enableSorting: true,
         sortingFn: "datetime",
       },
       {
+        id: "messageCount",
+        header: "Messages",
+        cell: ({ row }) => (
+          <div className="flex items-center gap-1.5 text-sm text-muted-foreground">
+            <MessageSquare className="h-3.5 w-3.5" />
+            <span>{row.original.messageCount}</span>
+          </div>
+        ),
+        enableSorting: false,
+      },
+      {
         id: "actions",
         header: () => <span className="sr-only">Actions</span>,
         cell: ({ row }) => (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="h-8 text-muted-foreground hover:text-foreground"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleRowClick(row.original.id, row.original.Record_Type);
-            }}
-          >
-            View
-          </Button>
+          <div className="flex items-center gap-1">
+            {/* <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-muted-foreground hover:text-foreground"
+              onClick={(e) => handleViewApplication(row.original, e)}
+              title="View Application"
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+            </Button> */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 text-foreground hover:text-gray-900"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleRowClick(row.original);
+              }}
+            >
+              View
+            </Button>
+          </div>
         ),
         enableSorting: false,
       },
     ],
-    [handleRowClick],
+    [handleRowClick, handleViewApplication, searchQuery],
   );
 
   const table = useReactTable({
-    data: applications || [],
+    data: items ?? [],
     columns,
     state: { sorting },
     onSortingChange: setSorting,
@@ -224,13 +253,13 @@ export function QualityCheckDataTable({
     );
   }
 
-  if (!applications || applications.length === 0) {
+  if (!items || items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-16 text-center">
-        <div className="rounded-full bg-gray-100 p-3 mb-4">
-          <FileText className="h-6 w-6 text-gray-400" />
+        <div className="rounded-full bg-muted p-3 mb-4">
+          <FileText className="h-6 w-6 text-muted-foreground" />
         </div>
-        <h3 className="text-sm font-medium text-gray-900 mb-1">
+        <h3 className="text-sm font-medium text-foreground mb-1">
           No applications found
         </h3>
         <p className="text-sm text-muted-foreground">
@@ -266,18 +295,14 @@ export function QualityCheckDataTable({
             {rows.map((row) => (
               <TableRow
                 key={row.id}
-                className="cursor-pointer hover:bg-gray-50/80 transition-colors"
-                onClick={() =>
-                  handleRowClick(row.original.id, row.original.Record_Type)
-                }
+                className="cursor-pointer hover:bg-muted/50 transition-colors"
+                onClick={() => handleRowClick(row.original)}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell
                     key={cell.id}
                     onClick={(e) => {
-                      if (cell.column.id === "actions") {
-                        e.stopPropagation();
-                      }
+                      if (cell.column.id === "actions") e.stopPropagation();
                     }}
                   >
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -289,7 +314,6 @@ export function QualityCheckDataTable({
         </Table>
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-1">
           <p className="text-sm text-muted-foreground">
