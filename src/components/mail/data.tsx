@@ -1,4 +1,4 @@
-export type MailCategory = "inbox" | "draft" | "sent";
+export type MailCategory = "inbox" | "draft" | "sent" | "system";
 
 export const mails = [
     {

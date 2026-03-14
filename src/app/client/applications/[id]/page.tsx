@@ -1,5 +1,12 @@
 import ClientApplicationDetailsPageContent from "@/components/applications/ClientApplicationDetailsPageContent";
 
-export default function ClientApplicationDetailsPage() {
-  return <ClientApplicationDetailsPageContent />;
+interface ClientApplicationDetailsPageProps {
+  params: Promise<{ id: string }>;
+}
+
+export default async function ClientApplicationDetailsPage({
+  params,
+}: ClientApplicationDetailsPageProps) {
+  const { id } = await params;
+  return <ClientApplicationDetailsPageContent applicationId={id} />;
 }

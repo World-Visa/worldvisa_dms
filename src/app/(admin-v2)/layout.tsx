@@ -12,6 +12,7 @@ import { NotificationDropdown } from "@/components/v2/header/notification-dropdo
 import { AccountSwitcher } from "@/components/v2/sidebar/account-switcher";
 import { AuthGuardV2 } from "@/components/auth/AuthGuardV2";
 import { ContentArea } from "@/app/(admin-v2)/content-area";
+import { SidebarController } from "@/app/(admin-v2)/sidebar-controller";
 
 function AdminContentFallback() {
   return (
@@ -30,6 +31,9 @@ function AdminContentFallback() {
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <SidebarProvider defaultOpen={true}>
+      <Suspense fallback={null}>
+        <SidebarController />
+      </Suspense>
       <AppSidebar />
       <SidebarInset
         className={cn(

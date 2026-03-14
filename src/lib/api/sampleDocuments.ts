@@ -7,6 +7,7 @@ import type {
   DeleteSampleDocumentResponse,
 } from "@/types/sampleDocuments";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
+import { isValidApplicationId } from "@/lib/applications/validateApplicationId";
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
@@ -28,6 +29,10 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export async function fetchSampleDocuments(
   applicationId: string,
 ): Promise<SampleDocumentsResponse> {
+  if (!isValidApplicationId(applicationId)) {
+    throw new Error("Invalid application ID");
+  }
+
   const token = getStoredToken();
 
   const headers: Record<string, string> = {

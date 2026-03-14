@@ -11,6 +11,7 @@ import type {
   UpdateSampleDocumentRequest,
 } from "@/types/sampleDocuments";
 import { sampleDocumentService } from "@/lib/samples/sampleService";
+import { isValidApplicationId } from "@/lib/applications/validateApplicationId";
 
 const queryKey = (applicationId: string) => ["sample-documents", applicationId];
 
@@ -18,7 +19,7 @@ export function useSampleDocuments(applicationId: string) {
   return useQuery({
     queryKey: queryKey(applicationId),
     queryFn: () => fetchSampleDocuments(applicationId),
-    enabled: !!applicationId,
+    enabled: !!applicationId && isValidApplicationId(applicationId),
     staleTime: 30_000,
   });
 }

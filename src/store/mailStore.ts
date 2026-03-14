@@ -1,11 +1,18 @@
 import { create } from "zustand";
-import { Mail } from "@/components/mail/data";
+import type { EmailThread } from "@/types/email";
 
 type ComposeState = "full" | "minimized";
 
+interface ComposeDraft {
+  to: string;
+  subject: string;
+  inReplyTo: string;
+  threadId: string;
+}
+
 type MailStore = {
-  selectedMail: Mail | null;
-  setSelectedMail: (mail: Mail | null) => void;
+  selectedMail: EmailThread | null;
+  setSelectedMail: (mail: EmailThread | null) => void;
 
   isComposeOpen: boolean;
   composeState: ComposeState;
@@ -13,6 +20,10 @@ type MailStore = {
   closeCompose: () => void;
   minimizeCompose: () => void;
   maximizeCompose: () => void;
+
+  composeDraft: ComposeDraft | null;
+  setComposeDraft: (draft: ComposeDraft) => void;
+  clearComposeDraft: () => void;
 };
 
 export const useMailStore = create<MailStore>((set) => ({
@@ -25,4 +36,8 @@ export const useMailStore = create<MailStore>((set) => ({
   closeCompose: () => set({ isComposeOpen: false }),
   minimizeCompose: () => set({ composeState: "minimized" }),
   maximizeCompose: () => set({ composeState: "full" }),
+
+  composeDraft: null,
+  setComposeDraft: (draft) => set({ composeDraft: draft }),
+  clearComposeDraft: () => set({ composeDraft: null }),
 }));

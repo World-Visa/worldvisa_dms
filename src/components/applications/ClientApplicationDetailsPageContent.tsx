@@ -46,11 +46,18 @@ import {
 } from "@/utils/companyDocuments";
 import { toast } from "sonner";
 import { Badge } from "../ui/badge";
+import { isValidApplicationId } from "@/lib/applications/validateApplicationId";
 
-export default function ClientApplicationDetailsPageContent() {
+interface ClientApplicationDetailsPageContentProps {
+  applicationId?: string;
+}
+
+export default function ClientApplicationDetailsPageContent({
+  applicationId: applicationIdProp,
+}: ClientApplicationDetailsPageContentProps = {}) {
   const params = useParams();
   const router = useRouter();
-  const applicationId = params.id as string;
+  const applicationId = (applicationIdProp ?? params?.id) as string;
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
   const queryClient = useQueryClient();
 
