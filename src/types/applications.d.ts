@@ -34,6 +34,14 @@ export interface Application {
   last_communication_activity?: string | null;
   spouse_lead_id?: string | null;
   online_status?: boolean;
+  Checklist_Requested?: boolean;
+  qc_requested?: {
+    qcId: string;
+    status: "pending" | "reviewed" | "removed";
+    requested_at: string;
+    requested_by: string;
+    requested_to: string;
+  } | null;
 }
 
 export interface Document {
