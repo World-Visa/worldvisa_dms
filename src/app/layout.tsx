@@ -4,6 +4,7 @@ import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -43,7 +44,9 @@ export default function RootLayout({
         suppressHydrationWarning={true}
       >
         <Providers>
-          <NotificationProvider>{children}</NotificationProvider>
+          <NotificationProvider>
+            <TooltipProvider>{children}</TooltipProvider>
+          </NotificationProvider>
           <Toaster />
         </Providers>
       </body>

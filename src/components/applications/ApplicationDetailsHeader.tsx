@@ -14,13 +14,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Clock,
   CheckCircle,
-  RefreshCw,
-  Download,
-  Key,
+  XCircle,
   MoreVertical,
 } from "lucide-react";
 import type { MandatoryDocumentValidationDetail } from "@/utils/checklistValidation";
+
+interface QcRequested {
+  qcId: string;
+  status: "pending" | "reviewed" | "removed";
+  requested_at: string;
+  requested_by: string;
+  requested_to: string;
+}
 
 interface ApplicationDetailsHeaderProps {
   areAllDocumentsApproved: boolean;
@@ -33,6 +40,53 @@ interface ApplicationDetailsHeaderProps {
   onActivateAccount?: () => void;
   onAddNote?: () => void;
   userRole?: string;
+  qcRequested?: QcRequested | null;
+}
+
+function QcStatusButton({
+  qcRequested,
+  onPushForQualityCheck,
+}: {
+  qcRequested: QcRequested;
+  onPushForQualityCheck: () => void;
+}) {
+  if (qcRequested.status === "reviewed") {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onPushForQualityCheck}
+        className="flex items-center gap-2 cursor-pointer border-emerald-300 bg-emerald-50 text-emerald-800 hover:bg-emerald-100 hover:text-emerald-900"
+      >
+        <CheckCircle className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">QC Reviewed</span>
+      </Button>
+    );
+  }
+  if (qcRequested.status === "removed") {
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onPushForQualityCheck}
+        className="flex items-center gap-2 cursor-pointer border-red-300 bg-red-50 text-red-700 hover:bg-red-100 hover:text-red-800"
+      >
+        <XCircle className="h-3.5 w-3.5" />
+        <span className="hidden sm:inline">QC Removed</span>
+      </Button>
+    );
+  }
+  // pending
+  return (
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={onPushForQualityCheck}
+      className="flex items-center gap-2 text-sm cursor-pointer border-amber-100 bg-amber-50 text-amber-800 hover:bg-amber-100/80 hover:text-amber-900"
+    >
+      <span className="hidden sm:inline">Quality Check Pending</span>
+    </Button>
+  );
 }
 
 export function ApplicationDetailsHeader({
@@ -46,91 +100,90 @@ export function ApplicationDetailsHeader({
   onActivateAccount,
   onAddNote,
   userRole,
+  qcRequested,
 }: ApplicationDetailsHeaderProps) {
   const isAdmin = userRole !== "client";
 
   return (
     <div className="flex items-center gap-2">
       {/* Push for Quality Check Button */}
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <div>
-            <Button
-              variant={areAllDocumentsApproved ? "default" : "outline"}
-              size="sm"
-              premium3D={true}
-              onClick={onPushForQualityCheck}
-              disabled={!areAllDocumentsApproved}
-              className={`flex items-center gap-2 cursor-pointer ${
-                areAllDocumentsApproved
-                  ? "bg-green-600 hover:bg-green-700 text-white"
-                  : "opacity-50 cursor-not-allowed"
-              }`}
-            >
-              <span className="hidden sm:inline">Push to QC</span>
-            </Button>
-          </div>
-        </TooltipTrigger>
-        <TooltipContent className="bg-white border border-gray-200 rounded-sm text-foreground">
-          {areAllDocumentsApproved ? (
-            "All mandatory documents are reviewed or approved. Ready for quality check."
-          ) : (
-            <div className="space-y-2 w-full">
-              <p className="font-semibold text-foreground">Cannot push for quality check:</p>
-              {validationDetails.length === 0 ? (
-                <p className="text-sm text-foreground">
-                  All mandatory documents must be submitted and reviewed or
-                  approved.
-                </p>
-              ) : (
-                <div className="text-sm space-y-1">
-                  <p>The following mandatory documents need attention:</p>
-                  <ul className="list-disc pl-4 space-y-1">
-                    {validationDetails.slice(0, 5).map((detail, index) => (
-                      <li key={index}>
-                        <span className="font-medium">
-                          {detail.documentType}
-                        </span>
-                        {detail.companyName && (
-                          <span className="text-gray-400">
-                            {" "}
-                            ({detail.companyName})
-                          </span>
-                        )}
-                        {" - "}
-                        <span className="text-yellow-400">
-                          {detail.status === "missing"
-                            ? "Not uploaded"
-                            : detail.status}
-                        </span>
-                      </li>
-                    ))}
-                    {validationDetails.length > 5 && (
-                      <li className="text-gray-400">
-                        ...and {validationDetails.length - 5} more
-                      </li>
-                    )}
-                  </ul>
-                </div>
-              )}
-            </div>
-          )}
-        </TooltipContent>
-      </Tooltip>
-
-      {/* Refresh Button */}
-      {/* <Button
-        variant="outline"
-        size="sm"
-        onClick={onRefresh}
-        disabled={isRefreshing}
-        className="flex items-center gap-2 cursor-pointer"
-      >
-        <RefreshCw
-          className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
+      {qcRequested ? (
+        <QcStatusButton
+          qcRequested={qcRequested}
+          onPushForQualityCheck={onPushForQualityCheck}
         />
-        <span className="hidden sm:inline">Refresh</span>
-      </Button> */}
+      ) : (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <div>
+              <Button
+                variant={areAllDocumentsApproved ? "default" : "outline"}
+                size="sm"
+                onClick={onPushForQualityCheck}
+                disabled={!areAllDocumentsApproved}
+                className={`flex items-center gap-2 cursor-pointer ${
+                  areAllDocumentsApproved
+                    ? "bg-slate-900 hover:bg-slate-800 text-white"
+                    : "opacity-50 cursor-not-allowed"
+                }`}
+              >
+                <span className="hidden sm:inline">
+                  {areAllDocumentsApproved
+                    ? "Ready for Quality Check"
+                    : "Push to Quality Check"}
+                </span>
+              </Button>
+            </div>
+          </TooltipTrigger>
+          <TooltipContent className="bg-white border border-gray-200 rounded-sm text-foreground">
+            {areAllDocumentsApproved ? (
+              "All mandatory documents are reviewed or approved. Ready for quality check."
+            ) : (
+              <div className="space-y-2 w-full">
+                <p className="font-semibold text-foreground">
+                  Cannot push for quality check:
+                </p>
+                {validationDetails.length === 0 ? (
+                  <p className="text-sm text-foreground">
+                    All mandatory documents must be submitted and reviewed or
+                    approved.
+                  </p>
+                ) : (
+                  <div className="text-sm space-y-1">
+                    <p>The following mandatory documents need attention:</p>
+                    <ul className="list-disc pl-4 space-y-1">
+                      {validationDetails.slice(0, 5).map((detail, index) => (
+                        <li key={index}>
+                          <span className="font-medium">
+                            {detail.documentType}
+                          </span>
+                          {detail.companyName && (
+                            <span className="text-gray-400">
+                              {" "}
+                              ({detail.companyName})
+                            </span>
+                          )}
+                          {" - "}
+                          <span className="text-yellow-400">
+                            {detail.status === "missing"
+                              ? "Not uploaded"
+                              : detail.status}
+                          </span>
+                        </li>
+                      ))}
+                      {validationDetails.length > 5 && (
+                        <li className="text-gray-400">
+                          ...and {validationDetails.length - 5} more
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </TooltipContent>
+        </Tooltip>
+      )}
 
       {isAdmin && (
         <DropdownMenu>

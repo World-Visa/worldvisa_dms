@@ -319,12 +319,12 @@ export default function UnifiedApplicationDetailsPage({
   }, [applicationId, isSpouseApplication, queryClient]);
 
   const handlePushForQualityCheck = useCallback(() => {
-    if (isSpouseApplication || !user?.username || !application?.id) {
-      console.error("Missing user or application data, or spouse application");
+    if (!user?.username || !application?.id) {
+      console.error("Missing user or application data");
       return;
     }
     modals.openQualityCheckModal();
-  }, [isSpouseApplication, user?.username, application?.id, modals]);
+  }, [user?.username, application?.id, modals]);
 
   const handleReuploadDocument = useCallback(
     (documentId: string, documentType: string, category: string) => {
@@ -631,42 +631,42 @@ export default function UnifiedApplicationDetailsPage({
   return (
     <main className="max-w-6xl mx-auto">
       {/* Header */}
-      <TooltipProvider>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="secondary"
-              className="rounded-full w-9 h-9 cursor-pointer"
-              size="sm"
-              onClick={() => router.push(backPath)}
-            >
-              <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div>
-              <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-medium">
-                {application?.Name} {pageTitle}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <Button
+            variant="secondary"
+            className="rounded-full w-9 h-9 cursor-pointer"
+            size="sm"
+            onClick={() => router.push(backPath)}
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div>
+            <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-medium">
+              {application?.Name} {pageTitle}
 
-              </h1>
-            </div>
+            </h1>
           </div>
-          <ApplicationDetailsHeader
-            areAllDocumentsApproved={areAllDocumentsApproved}
-            validationDetails={mandatoryDocValidationDetails}
-            onPushForQualityCheck={handlePushForQualityCheck}
-            onRefresh={handleRefresh}
-            isRefreshing={isRefreshing}
-            onDownloadAll={modals.openDownloadAllModal}
-            onResetPassword={modals.openResetPasswordModal}
-            onActivateAccount={modals.openActivateAccountSheet}
-            onAddNote={() => {
-              setEditingNote(null);
-              setIsNoteModalOpen(true);
-            }}
-            userRole={user?.role}
-          />
         </div>
-      </TooltipProvider>
-      {notes && notes.length > 0 &&  (
+        <ApplicationDetailsHeader
+          areAllDocumentsApproved={areAllDocumentsApproved}
+          validationDetails={mandatoryDocValidationDetails}
+          onPushForQualityCheck={handlePushForQualityCheck}
+          onRefresh={handleRefresh}
+          isRefreshing={isRefreshing}
+          onDownloadAll={modals.openDownloadAllModal}
+          onResetPassword={modals.openResetPasswordModal}
+          onActivateAccount={modals.openActivateAccountSheet}
+          onAddNote={() => {
+            setEditingNote(null);
+            setIsNoteModalOpen(true);
+          }}
+          userRole={user?.role}
+          qcRequested={application?.qc_requested}
+        />
+      </div>
+
+      {notes && notes.length > 0 && (
         <NotesBanner
           notes={notes as ApplicationNote[]}
           isAdmin={user?.role !== "client"}
@@ -794,16 +794,15 @@ export default function UnifiedApplicationDetailsPage({
         isClientView={false}
       />
 
-      {!isSpouseApplication && (
-        <QualityCheckModal
-          applicationId={applicationId}
-          leadId={application?.id || ""}
-          isOpen={modals.isQualityCheckModalOpen}
-          onOpenChange={modals.setQualityCheckModalOpen}
-          disabled={!areAllDocumentsApproved}
-          recordType={application?.Record_Type}
-        />
-      )}
+      <QualityCheckModal
+        applicationId={applicationId}
+        leadId={application?.id || ""}
+        isOpen={modals.isQualityCheckModalOpen}
+        onOpenChange={modals.setQualityCheckModalOpen}
+        disabled={!areAllDocumentsApproved}
+        recordType={application?.Record_Type}
+        existingQc={application?.qc_requested}
+      />
 
       {user?.role !== "client" && (
         <>

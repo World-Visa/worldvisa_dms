@@ -1,16 +1,17 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { CheckCircle, Loader2, Users, AlertCircle, Send } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
@@ -18,9 +19,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { useQualityCheck } from "@/hooks/useQualityCheck";
 import { useAuth } from "@/hooks/useAuth";
+import { getQualityCheckDetails } from "@/lib/api/qualityCheck";
+import { addQualityCheckMessage } from "@/lib/api/qualityCheckMessages";
+
+interface ExistingQc {
+  qcId: string;
+  status: "pending" | "reviewed" | "removed";
+  requested_at: string;
+  requested_by: string;
+  requested_to: string;
+}
 
 interface QualityCheckModalProps {
   applicationId: string;
@@ -29,6 +41,30 @@ interface QualityCheckModalProps {
   onOpenChange: (open: boolean) => void;
   disabled?: boolean;
   recordType?: string;
+  existingQc?: ExistingQc | null;
+}
+
+function getRoleBadgeClass(role: string): string {
+  switch (role) {
+    case "master_admin":
+      return "bg-purple-50 text-purple-700 border-purple-200/70";
+    case "team_leader":
+      return "bg-blue-50 text-blue-700 border-blue-200/70";
+    case "supervisor":
+      return "bg-amber-50 text-amber-700 border-amber-200/70";
+    default:
+      return "bg-muted/60 text-muted-foreground border-border/60";
+  }
+}
+
+function QcStatusBadge({ status }: { status: ExistingQc["status"] }) {
+  const styles = {
+    reviewed: "text-[10px] font-medium tracking-wide text-emerald-700 bg-emerald-50/90 border border-emerald-200/60 rounded px-1.5 py-0.5",
+    removed: "text-[10px] font-medium tracking-wide text-red-700/90 bg-red-50/90 border border-red-200/60 rounded px-1.5 py-0.5",
+    pending: "text-[10px] font-medium tracking-wide text-amber-700 bg-amber-50/90 border border-amber-200/60 rounded px-1.5 py-0.5",
+  };
+  const label = status === "reviewed" ? "Reviewed" : status === "removed" ? "Removed" : "Pending";
+  return <span className={styles[status]}>{label}</span>;
 }
 
 export function QualityCheckModal({
@@ -38,6 +74,7 @@ export function QualityCheckModal({
   onOpenChange,
   disabled = false,
   recordType = "default_record_type",
+  existingQc,
 }: QualityCheckModalProps) {
   const { user } = useAuth();
   const {
@@ -46,27 +83,28 @@ export function QualityCheckModal({
     error: adminError,
   } = useAdminUsers();
 
-  // Quality check mutation
   const qualityCheckMutation = useQualityCheck({
-    onSuccess: () => {
-      // Reset form state
-      setSelectedUser("");
-      setNotes("");
-      onOpenChange(false);
-    },
     onError: (error) => {
       console.error("Quality check failed:", error);
     },
   });
 
-  const [selectedUser, setSelectedUser] = useState("");
-  const [notes, setNotes] = useState("");
+  const [selectedUser, setSelectedUser] = useState(
+    existingQc?.requested_to ?? "",
+  );
+  const [note, setNote] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Filter admin users to show only team_leader, master_admin, and supervisor
-  // Exclude the currently logged-in user
+  // Sync pre-fill when existingQc changes (e.g. modal re-opens)
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedUser(existingQc?.requested_to ?? "");
+      setNote("");
+    }
+  }, [isOpen, existingQc?.requested_to]);
+
   const eligibleUsers = useMemo(() => {
     if (!adminUsers) return [];
-
     return adminUsers.filter(
       (admin) =>
         ["team_leader", "master_admin", "supervisor"].includes(admin.role) &&
@@ -74,149 +112,214 @@ export function QualityCheckModal({
     );
   }, [adminUsers, user?.username]);
 
+  const selectedUserDetails = useMemo(
+    () => eligibleUsers.find((u) => u.username === selectedUser),
+    [eligibleUsers, selectedUser],
+  );
+
+  const isResend = !!existingQc;
+
+  const handleClose = () => {
+    if (isSubmitting) return;
+    setSelectedUser("");
+    setNote("");
+    onOpenChange(false);
+  };
+
   const handleSend = async () => {
     if (!selectedUser || !user?.username) return;
+    setIsSubmitting(true);
 
     try {
-      // Use the quality check mutation with selected user as reqUserName
       await qualityCheckMutation.mutateAsync({
         data: {
-          reqUserName: selectedUser, // Use selected user instead of current user
-          leadId: leadId,
-          recordType: recordType,
+          reqUserName: selectedUser,
+          leadId,
+          recordType,
         },
         page: 1,
         limit: 10,
       });
+
+      const trimmedNote = note.trim();
+      if (trimmedNote) {
+        try {
+          const detailsResponse = await getQualityCheckDetails(leadId);
+          const qcId = detailsResponse.data._id;
+          await addQualityCheckMessage(qcId, { message: trimmedNote });
+        } catch (noteError) {
+          console.error("Failed to post QC note as message:", noteError);
+        }
+      }
+
+      setSelectedUser("");
+      setNote("");
+      onOpenChange(false);
     } catch (error) {
-      // Error handling is done in the mutation hook
       console.error("Failed to send quality check request:", error);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const isSubmitting = qualityCheckMutation.isPending;
-  const canSend = selectedUser && !isSubmitting && !!user?.username;
+  const canSend = !!selectedUser && !isSubmitting && !!user?.username;
+
+  const requestedAtFormatted = existingQc?.requested_at
+    ? new Date(existingQc.requested_at).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+        timeZone: "UTC",
+      })
+    : null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[95vw] max-w-2xl max-h-[90vh] mx-4 flex flex-col">
-        <DialogHeader className="pb-4 flex-shrink-0">
-          <DialogTitle className="text-lg font-semibold flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            Push for Quality Check
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="w-[calc(100vw-2rem)] max-w-[400px] p-0 flex flex-col overflow-hidden gap-0 rounded-xl border border-border/50 shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.35)]">
+        <DialogHeader className="shrink-0 px-5 pt-4 pb-3 border-b border-border/40">
+          <DialogTitle className="text-lg font-semibold tracking-tight text-foreground">
+            {isResend ? "Re-send Quality Check" : "Quality Check"}
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6 flex-1 overflow-y-auto pr-2">
-          {/* Application Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <div className="flex items-center gap-2 mb-2">
-              <CheckCircle className="h-4 w-4 text-blue-600" />
-              <h3 className="text-sm font-medium text-blue-900">
-                Application Ready for Quality Check
-              </h3>
-            </div>
-            <p className="text-sm text-blue-700">
-              All submitted documents have been reviewed. This application is
-              ready to be pushed for quality check for approval.
-            </p>
-            <div className="mt-2 text-xs text-blue-600">
-              Application ID: {applicationId}
-            </div>
-          </div>
-
-          {/* User Selection */}
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Users className="h-4 w-4 text-gray-600" />
-              <h3 className="text-sm font-medium text-gray-900">
-                Select Quality Check Reviewer *
-              </h3>
-            </div>
-
-            {!user?.username ? (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                <div className="text-sm text-red-700">
-                  You must be logged in to send quality check requests.
+        <ScrollArea className="flex-1 min-h-0 max-h-[50vh]">
+          <div className="px-5 py-4 space-y-4">
+            {isResend && existingQc && (
+              <div className="rounded-md border border-border/40 bg-muted/30 px-3 py-2.5 space-y-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-xs text-muted-foreground">Current request</span>
+                  <QcStatusBadge status={existingQc.status} />
+                </div>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                  <div>
+                    <span className="text-muted-foreground">By </span>
+                    <span className="font-medium text-foreground">{existingQc.requested_by}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">To </span>
+                    <span className="font-medium text-foreground">{existingQc.requested_to}</span>
+                  </div>
+                  {requestedAtFormatted && (
+                    <div className="col-span-2 text-muted-foreground">
+                      {requestedAtFormatted}
+                    </div>
+                  )}
                 </div>
               </div>
-            ) : adminError ? (
-              <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-red-500 flex-shrink-0" />
-                <div className="text-sm text-red-700">
-                  Failed to load admin users. Please refresh and try again.
-                </div>
-              </div>
-            ) : eligibleUsers.length === 0 && !isLoadingAdmins ? (
-              <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <AlertCircle className="h-4 w-4 text-yellow-500 flex-shrink-0" />
-                <div className="text-sm text-yellow-700">
-                  No eligible reviewers available (Team Leaders, Master Admins,
-                  or Supervisors).
-                </div>
-              </div>
-            ) : (
-              <Select
-                value={selectedUser}
-                onValueChange={setSelectedUser}
-                disabled={isLoadingAdmins || isSubmitting}
-              >
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select a reviewer..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {eligibleUsers.map((admin) => (
-                    <SelectItem key={admin.username} value={admin.username}>
-                      <div className="flex items-center gap-2">
-                        <span className="font-medium">{admin.username}</span>
-                        <span className="text-xs text-gray-500 capitalize">
-                          ({admin.role.replace("_", " ")})
-                        </span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
             )}
 
-            {selectedUser && (
-              <div className="text-xs text-gray-500">
-                Selected reviewer:{" "}
-                <span className="font-medium">{selectedUser}</span>
-              </div>
-            )}
-          </div>
-        </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">
+                Reviewer <span className="text-destructive">*</span>
+              </Label>
 
-        {/* Action Buttons - Fixed at bottom */}
-        <div className="flex flex-col sm:flex-row justify-end gap-3 pt-4 border-t bg-white flex-shrink-0">
+              {!user?.username ? (
+                <p className="text-xs text-destructive rounded-md bg-destructive/5 border border-destructive/20 px-3 py-2">
+                  Sign in to send quality check requests.
+                </p>
+              ) : adminError ? (
+                <p className="text-xs text-destructive rounded-md bg-destructive/5 border border-destructive/20 px-3 py-2">
+                  Could not load reviewers. Refresh and try again.
+                </p>
+              ) : eligibleUsers.length === 0 && !isLoadingAdmins ? (
+                <p className="text-xs text-amber-700 rounded-md bg-amber-50/80 border border-amber-200/60 px-3 py-2">
+                  No eligible reviewers available.
+                </p>
+              ) : (
+                <Select
+                  value={selectedUser}
+                  onValueChange={setSelectedUser}
+                  disabled={isLoadingAdmins || isSubmitting}
+                >
+                  <SelectTrigger className="h-9 text-sm border-border/60 rounded-md focus:ring-1 focus:ring-ring/30">
+                    <SelectValue
+                      placeholder={
+                        isLoadingAdmins ? "Loading…" : "Select reviewer…"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {eligibleUsers.map((admin) => (
+                      <SelectItem key={admin.username} value={admin.username}>
+                        <div className="flex items-center gap-2 py-0.5">
+                          <span className="font-medium text-sm">
+                            {admin.username}
+                          </span>
+                          <span
+                            className={`text-[10px] px-1.5 py-0.5 rounded border capitalize ${getRoleBadgeClass(admin.role)}`}
+                          >
+                            {admin.role.replace("_", " ")}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+
+              {/* {selectedUserDetails && (
+                <p className="text-[11px] text-muted-foreground">
+                  → {selectedUserDetails.username}
+                  <span
+                    className={`ml-1.5 text-[10px] px-1.5 py-0.5 rounded border capitalize ${getRoleBadgeClass(selectedUserDetails.role)}`}
+                  >
+                    {selectedUserDetails.role.replace("_", " ")}
+                  </span>
+                </p>
+              )} */}
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium text-foreground">
+                Note <span className="text-muted-foreground font-normal">(optional)</span>
+              </Label>
+              <Textarea
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                placeholder="Instructions for reviewer…"
+                className="min-h-[72px] resize-none text-sm border-border/60 rounded-md placeholder:text-muted-foreground/50 focus-visible:ring-1 focus-visible:ring-ring/30 py-2"
+                disabled={isSubmitting}
+                maxLength={2000}
+              />
+              <div className="flex justify-end">
+                <span className="text-[11px] text-muted-foreground tabular-nums">
+                  {note.length}/2000
+                </span>
+              </div>
+            </div>
+          </div>
+        </ScrollArea>
+
+        <DialogFooter className="shrink-0 px-5 py-3 border-t border-border/40 gap-2">
           <Button
-            variant="outline"
-            onClick={() => onOpenChange(false)}
+            variant="ghost"
+            size="sm"
+            onClick={handleClose}
             disabled={isSubmitting}
-            className="w-full sm:w-auto"
+            className="text-muted-foreground hover:text-foreground"
           >
             Cancel
           </Button>
           <Button
+            size="sm"
             onClick={handleSend}
             disabled={!canSend}
-            className="cursor-pointer bg-green-600 hover:bg-green-700 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed"
+            className="min-w-[90px] disabled:opacity-50 bg-primary-blue hover:bg-primary-blue/90"
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Sending Quality Check Request...
+                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                Sending…
               </>
+            ) : isResend ? (
+              "Send again"
             ) : (
-              <>
-                <Send className="h-4 w-4 mr-2" />
-                Send to {selectedUser || "Reviewer"}
-              </>
+              "Send request"
             )}
           </Button>
-        </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
