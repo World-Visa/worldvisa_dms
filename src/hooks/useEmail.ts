@@ -120,7 +120,11 @@ export function useMarkEmailRead() {
     mutationFn: (id: string) => markEmailRead(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["email", "list"] });
-      queryClient.invalidateQueries({ queryKey: ["email", "unread-count"] });
+      // Optimistically decrement — callers only invoke markRead when email is unread
+      queryClient.setQueryData<number>(
+        ["email", "unread-count"],
+        (old) => (old != null && old > 0 ? old - 1 : old)
+      );
     },
   });
 }
