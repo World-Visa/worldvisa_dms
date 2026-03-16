@@ -12,6 +12,7 @@ import { useMailStore } from "@/store/mailStore";
 
 interface MailNavProps {
     isCollapsed: boolean;
+    hideCompose?: boolean;
     links: {
         title: string;
         label?: string;
@@ -22,7 +23,7 @@ interface MailNavProps {
     }[];
 }
 
-export function MailNav({ links, isCollapsed }: MailNavProps) {
+export function MailNav({ links, isCollapsed, hideCompose = false }: MailNavProps) {
     const pathname = usePathname();
     const { openCompose } = useMailStore();
 
@@ -30,7 +31,8 @@ export function MailNav({ links, isCollapsed }: MailNavProps) {
         <div
             data-collapsed={isCollapsed}
             className="group flex flex-col gap-4 py-2 data-[collapsed=true]:py-2">
-            <div className="px-3">
+            {!hideCompose && (
+              <div className="px-3">
                 {isCollapsed ? (
                     <Tooltip delayDuration={0}>
                         <TooltipTrigger asChild>
@@ -54,7 +56,8 @@ export function MailNav({ links, isCollapsed }: MailNavProps) {
                         <span className="text-base tracking-tight font-medium">Compose mail</span>
                     </Button>
                 )}
-            </div>
+              </div>
+            )}
             <nav className="grid gap-0.5 px-2 font-medium group-data-[collapsed=true]:justify-center group-data-[collapsed=true]:px-2">
                 {links.map((link, index) => {
                     const isActive = pathname.startsWith(link.href);

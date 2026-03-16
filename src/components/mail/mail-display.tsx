@@ -145,7 +145,7 @@ function AttachmentItem({ att }: { att: EmailAttachment }) {
 }
 
 function CollapsedMessage({ msg, onExpand }: { msg: EmailMessage; onExpand: () => void }) {
-  const preview = (msg.text ?? "").slice(0, 90);
+  const preview = (msg.text ?? "").slice(0, 60);
   const initials = getInitials(msg.from);
   return (
     <button
@@ -164,7 +164,7 @@ function CollapsedMessage({ msg, onExpand }: { msg: EmailMessage; onExpand: () =
         </span>
         {preview && (
           <span className="min-w-0 truncate text-sm text-gray-400 dark:text-gray-500">
-            {preview}
+            {preview} ....
           </span>
         )}
       </div>
@@ -550,12 +550,6 @@ export function MailDisplay({ id }: MailDisplayProps) {
             className="flex items-center gap-2 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-transparent px-5 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors shadow-sm">
             <Reply className="size-4" />
             Reply
-          </button>
-          <button
-            type="button"
-            className="flex items-center gap-2 rounded-full border border-gray-300 dark:border-gray-700 bg-white dark:bg-transparent px-5 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800/60 transition-colors shadow-sm">
-            <CornerUpRight className="size-4" />
-            Forward
           </button>
           <button
             type="button"
