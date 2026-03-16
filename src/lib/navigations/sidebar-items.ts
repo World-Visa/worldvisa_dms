@@ -111,6 +111,7 @@ export const sidebarItems: NavGroup[] = [
                 icon: Mail,
                 comingSoon: false,
                 isNew: false,
+                allowedRoles: ["master_admin"],
             },
             {
                 title: "Chat",
