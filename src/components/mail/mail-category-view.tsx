@@ -6,8 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PenLine } from "lucide-react";
 import { MailList } from "@/components/mail/mail-list";
 import { MailNavMobile } from "@/components/mail/mail-nav-mobile";
+import { MailDisplayMobile } from "@/components/mail/mail-display-mobile";
 import { useMailStore } from "@/store/mailStore";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useInfiniteEmailList } from "@/hooks/useEmail";
@@ -56,7 +58,7 @@ export function MailCategoryView({ category }: MailCategoryViewProps) {
   const [search, setSearch] = useState("");
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const { setSelectedMail } = useMailStore();
+  const { setSelectedMail, openCompose } = useMailStore();
   const isMobile = useIsMobile();
 
   // Clear stale selection when switching categories
@@ -103,6 +105,7 @@ export function MailCategoryView({ category }: MailCategoryViewProps) {
   if (category === "draft") {
     return (
       <div className="flex h-full flex-col">
+        {isMobile && <MailDisplayMobile />}
         <div className="flex h-14 shrink-0 items-center px-4">
           <div className="flex items-center gap-2">
             {isMobile && <MailNavMobile />}
@@ -116,6 +119,15 @@ export function MailCategoryView({ category }: MailCategoryViewProps) {
             Draft support will be available in a future update.
           </p>
         </div>
+        {isMobile && (
+          <button
+            type="button"
+            onClick={openCompose}
+            className="fixed bottom-6 right-5 z-40 flex h-14 items-center gap-2.5 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-95">
+            <PenLine className="size-4 shrink-0" />
+            Compose
+          </button>
+        )}
       </div>
     );
   }
@@ -124,6 +136,7 @@ export function MailCategoryView({ category }: MailCategoryViewProps) {
   if (category === "system") {
     return (
       <div className="flex h-full flex-col gap-0">
+        {isMobile && <MailDisplayMobile />}
         <div className="flex h-14 shrink-0 items-center px-4">
           <div className="flex items-center gap-2">
             {isMobile && <MailNavMobile />}
@@ -161,6 +174,15 @@ export function MailCategoryView({ category }: MailCategoryViewProps) {
             />
           )}
         </div>
+        {isMobile && (
+          <button
+            type="button"
+            onClick={openCompose}
+            className="fixed bottom-6 right-5 z-40 flex h-14 items-center gap-2.5 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-95">
+            <PenLine className="size-4 shrink-0" />
+            Compose
+          </button>
+        )}
       </div>
     );
   }
@@ -174,6 +196,7 @@ export function MailCategoryView({ category }: MailCategoryViewProps) {
       value={tabValue}
       onValueChange={onTabChange}
       className="flex h-full flex-col gap-0">
+      {isMobile && <MailDisplayMobile />}
       <div className="flex h-14 shrink-0 items-center px-4">
         <div className="flex items-center gap-2">
           {isMobile && <MailNavMobile />}
@@ -215,6 +238,15 @@ export function MailCategoryView({ category }: MailCategoryViewProps) {
             />
         )}
       </div>
+      {isMobile && (
+        <button
+          type="button"
+          onClick={openCompose}
+          className="fixed bottom-6 right-5 z-40 flex h-14 items-center gap-2.5 rounded-full bg-primary px-5 text-sm font-semibold text-primary-foreground shadow-lg shadow-primary/25 transition-transform active:scale-95">
+          <PenLine className="size-4 shrink-0" />
+          Compose
+        </button>
+      )}
     </Tabs>
   );
 }

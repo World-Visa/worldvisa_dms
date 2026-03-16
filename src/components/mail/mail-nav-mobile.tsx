@@ -54,6 +54,7 @@ export function MailNavMobile() {
 
         <MailNav
           isCollapsed={false}
+          hideCompose={true}
           links={[
             {
               title: "Inbox",

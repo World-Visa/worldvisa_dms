@@ -5,6 +5,7 @@ import { Minus, Paperclip, Send, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useMailStore } from "@/store/mailStore";
 import { useSendEmail } from "@/hooks/useEmail";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RichMailEditor, isEditorEmpty, stripTags } from "@/components/mail/rich-mail-editor";
@@ -32,6 +33,7 @@ export function ComposeOverlay() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const { mutate: send, isPending } = useSendEmail();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (isComposeOpen && composeDraft) {
@@ -104,13 +106,17 @@ export function ComposeOverlay() {
       {isComposeOpen && (
         <motion.div
           key="compose"
-          className="fixed bottom-0 right-6 z-50 flex w-[620px] flex-col overflow-hidden rounded-t-xl border bg-background shadow-2xl"
+          className={cn(
+            "fixed z-50 flex flex-col overflow-hidden bg-background shadow-2xl",
+            isMobile
+              ? "inset-0 rounded-none border-0"
+              : "bottom-0 right-6 w-[620px] rounded-t-xl border"
+          )}
           initial={{ y: "100%", opacity: 0 }}
-          animate={{
-            y: 0,
-            opacity: 1,
-            height: composeState === "minimized" ? 48 : 560,
-          }}
+          animate={isMobile
+            ? { y: 0, opacity: 1, height: "100%" }
+            : { y: 0, opacity: 1, height: composeState === "minimized" ? 48 : 560 }
+          }
           exit={{ y: "100%", opacity: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 40 }}>
 
@@ -120,15 +126,17 @@ export function ComposeOverlay() {
             onClick={composeState === "minimized" ? maximizeCompose : undefined}>
             <span className="text-sm font-medium text-background">New Message</span>
             <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  composeState === "minimized" ? maximizeCompose() : minimizeCompose();
-                }}
-                className="flex h-7 w-7 items-center justify-center rounded text-background/70 hover:bg-white/10 hover:text-background transition-colors">
-                <Minus className="size-4" />
-              </button>
+              {!isMobile && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    composeState === "minimized" ? maximizeCompose() : minimizeCompose();
+                  }}
+                  className="flex h-7 w-7 items-center justify-center rounded text-background/70 hover:bg-white/10 hover:text-background transition-colors">
+                  <Minus className="size-4" />
+                </button>
+              )}
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); handleClose(); }}
@@ -138,8 +146,8 @@ export function ComposeOverlay() {
             </div>
           </div>
 
-          {/* Body — invisible when minimized (stays mounted to preserve draft) */}
-          <div className={cn("flex flex-1 flex-col overflow-hidden", composeState === "minimized" && "invisible")}>
+          {/* Body — invisible when minimized (stays mounted to preserve draft); always visible on mobile */}
+          <div className={cn("flex flex-1 flex-col overflow-hidden", !isMobile && composeState === "minimized" && "invisible")}>
 
             {/* To row */}
             <div className="flex items-center border-b px-4">
@@ -228,7 +236,7 @@ export function ComposeOverlay() {
               content={bodyHtml}
               onChange={setBodyHtml}
               placeholder="Write your message…"
-              minHeight="260px"
+              minHeight={isMobile ? "200px" : "260px"}
               className="flex-1 overflow-hidden"
               onKeyDown={(e) => {
                 if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {

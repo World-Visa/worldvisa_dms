@@ -109,8 +109,9 @@ export const sidebarItems: NavGroup[] = [
                 title: "Email",
                 url: "/v2/mail",
                 icon: Mail,
-                comingSoon: true,
+                comingSoon: false,
                 isNew: false,
+                allowedRoles: ["master_admin"],
             },
             {
                 title: "Chat",
