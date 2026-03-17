@@ -3,8 +3,10 @@
 import React from "react";
 import {
   Sheet,
+  SheetClose,
   SheetContent,
   SheetDescription,
+  SheetFooter,
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
@@ -56,8 +58,7 @@ export function RejectionDetailsSheet({
             View the full rejection details and reupload your document
           </SheetDescription>
         </SheetHeader>
-
-        <div className="mt-6 space-y-6">
+        <div className="space-y-3 p-4">
           {/* Document Information */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
@@ -136,7 +137,7 @@ export function RejectionDetailsSheet({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex flex-col gap-3 pt-4 border-t">
+          <SheetFooter>
             <Button
               onClick={() =>
                 onReupload(document._id, finalDocumentType, finalCategory)
@@ -148,10 +149,12 @@ export function RejectionDetailsSheet({
               {isReuploading ? "Reuploading..." : "Reupload Document"}
             </Button>
 
-            <Button variant="outline" onClick={onClose} className="w-full">
-              Close
-            </Button>
-          </div>
+            <SheetClose asChild>
+              <Button variant="outline" className="w-full">
+                Close
+              </Button>
+            </SheetClose>
+          </SheetFooter>
         </div>
       </SheetContent>
     </Sheet>

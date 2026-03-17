@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -20,6 +23,7 @@ import {
   MoreVertical,
 } from "lucide-react";
 import type { MandatoryDocumentValidationDetail } from "@/utils/checklistValidation";
+import { ApplicationActivitySheet } from "@/components/applications/ApplicationActivitySheet";
 
 interface QcRequested {
   qcId: string;
@@ -41,6 +45,7 @@ interface ApplicationDetailsHeaderProps {
   onAddNote?: () => void;
   userRole?: string;
   qcRequested?: QcRequested | null;
+  applicationId: string;
 }
 
 function QcStatusButton({
@@ -101,8 +106,10 @@ export function ApplicationDetailsHeader({
   onAddNote,
   userRole,
   qcRequested,
+  applicationId,
 }: ApplicationDetailsHeaderProps) {
   const isAdmin = userRole !== "client";
+  const [isActivitySheetOpen, setIsActivitySheetOpen] = useState(false);
 
   return (
     <div className="flex items-center gap-2">
@@ -238,9 +245,26 @@ export function ApplicationDetailsHeader({
                 Add Note
               </DropdownMenuItem>
             </DropdownMenuGroup>
+
+            <DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuLabel>History</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => setIsActivitySheetOpen(true)}
+                className="cursor-pointer hover:bg-gray-100"
+              >
+                View Activity Log
+              </DropdownMenuItem>
+            </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
       )}
+
+      <ApplicationActivitySheet
+        open={isActivitySheetOpen}
+        onOpenChange={setIsActivitySheetOpen}
+        applicationId={applicationId}
+      />
     </div>
   );
 }
