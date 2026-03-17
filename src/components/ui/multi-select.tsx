@@ -179,7 +179,7 @@ export function MultiSelect({
           </div>
 
           {/* Options List */}
-          <div className="max-h-48 overflow-y-auto">
+          <div className="max-h-48 overflow-y-auto" data-lenis-prevent>
             {filteredOptions.length === 0 ? (
               <div className="px-3 py-2 text-sm text-gray-500 text-center">
                 {searchTerm ? "No admins found" : "No admins available"}

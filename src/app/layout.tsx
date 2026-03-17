@@ -5,6 +5,7 @@ import { Providers } from "@/lib/providers";
 import { Toaster } from "@/components/ui/sonner";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { SmoothScroll } from "@/components/SmoothScroll";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -43,12 +44,14 @@ export default function RootLayout({
         className={`${outfit.variable} antialiased`}
         suppressHydrationWarning={true}
       >
-        <Providers>
-          <NotificationProvider>
-            <TooltipProvider>{children}</TooltipProvider>
-          </NotificationProvider>
-          <Toaster />
-        </Providers>
+        <SmoothScroll>
+          <Providers>
+            <NotificationProvider>
+              <TooltipProvider>{children}</TooltipProvider>
+            </NotificationProvider>
+            <Toaster />
+          </Providers>
+        </SmoothScroll>
       </body>
     </html>
   );

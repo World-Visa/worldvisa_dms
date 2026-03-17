@@ -227,7 +227,7 @@ export function NotificationDropdown() {
         <Separator className="shrink-0" />
 
         {/* List */}
-        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden" data-lenis-prevent>
           {isLoading ? (
             <div className="flex items-center justify-center py-10 text-sm text-muted-foreground">
               Loading…

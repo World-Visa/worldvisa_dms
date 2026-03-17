@@ -657,6 +657,7 @@ export default function UnifiedApplicationDetailsPage({
           onDownloadAll={modals.openDownloadAllModal}
           onResetPassword={modals.openResetPasswordModal}
           onActivateAccount={modals.openActivateAccountSheet}
+          applicationId={applicationId}
           onAddNote={() => {
             setEditingNote(null);
             setIsNoteModalOpen(true);
