@@ -191,7 +191,6 @@ export function AddCompanyDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center py-2 gap-2">
-            <Building2 className="h-5 w-5" />
             Add New Company
           </DialogTitle>
         </DialogHeader>

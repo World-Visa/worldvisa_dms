@@ -24,7 +24,7 @@ export function NotificationProvider({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
   const { desktopNotificationsEnabled, soundEnabled } = useNotificationStore();
 
   // Connect / disconnect socket on auth change
@@ -42,12 +42,14 @@ export function NotificationProvider({
 
   // Real-time Sonner toast on new notification
   useEffect(() => {
+    const isClient = user?.role === "client";
+
     const unsubscribe = notificationSocket.onNotificationNew((notification) => {
       const action = getActionFromEvent(notification);
       toast(notification.title ?? "New notification", {
         description: notification.message,
         duration: 6000,
-        action: action
+        action: action && !isClient
           ? {
               label: action.label,
               onClick: () => router.push(action.href),
@@ -57,7 +59,7 @@ export function NotificationProvider({
     });
 
     return unsubscribe;
-  }, [router]);
+  }, [router, user?.role]);
 
   // Desktop (browser) notifications
   useEffect(() => {

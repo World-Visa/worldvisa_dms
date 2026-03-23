@@ -184,7 +184,7 @@ export function ClientHeader() {
         <div className="flex justify-between items-center h-[70px]">
           {/* Logo and Title Section */}
           <div className="flex items-center space-x-6">
-            <div className="hidden sm:block">
+            <div className="">
               <div className="relative">
                 <Image
                   src={Logo}

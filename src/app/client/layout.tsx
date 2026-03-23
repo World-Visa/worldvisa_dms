@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { AuthGuard } from "@/components/auth/AuthGuard";
 import { ClientHeader } from "@/components/auth/ClientHeader";
+import { NotificationPrompt } from "@/components/NotificationPrompt";
 
 export const metadata: Metadata = {
   title: "WorldVisa DMS - Client Portal",
@@ -15,6 +16,7 @@ export default function ClientLayout({
   return (
     <AuthGuard requiredRole="client" redirectTo="/auth/user/login">
       <ClientHeader />
+      <NotificationPrompt />
       {children}
     </AuthGuard>
   );

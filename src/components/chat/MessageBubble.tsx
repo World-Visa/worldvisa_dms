@@ -1,14 +1,11 @@
 "use client";
 
 import Image from "next/image";
-import { formatDistanceToNow } from "date-fns";
 import {
   MoreVertical,
   Trash2,
   Forward,
   CornerUpRight,
-  FileIcon,
-  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -19,8 +16,12 @@ import {
 import { cn } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
 import type { ChatMessage } from "@/types/chat";
+import { ReadTick } from "@/components/chat/ReadTick";
+import { ImageSection, FileCard } from "@/components/chat/AttachmentGroup";
 
-interface MessageBubbleProps {
+// ── Types ──────────────────────────────────────────────────────────────────
+
+export interface MessageBubbleProps {
   message: ChatMessage;
   isOwn: boolean;
   senderName: string;
@@ -28,23 +29,26 @@ interface MessageBubbleProps {
   senderProfileImage?: string;
   showAvatar: boolean;
   showSenderName: boolean;
+  /** Other participant's lastReadAt (from ConversationMember). DM only. */
+  otherLastReadAt?: string | null;
   onDelete?: (messageId: string) => void;
   onForward?: (message: ChatMessage) => void;
 }
 
-function formatFileSize(bytes: number): string {
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-}
+// ── Helpers ────────────────────────────────────────────────────────────────
 
-function timeAgo(dateStr: string): string {
+function formatTime(dateStr: string): string {
   try {
-    return formatDistanceToNow(new Date(dateStr), { addSuffix: true });
+    return new Date(dateStr).toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   } catch {
     return "";
   }
 }
+
+// ── MessageBubble ──────────────────────────────────────────────────────────
 
 export function MessageBubble({
   message,
@@ -54,11 +58,56 @@ export function MessageBubble({
   senderProfileImage,
   showAvatar,
   showSenderName,
+  otherLastReadAt,
   onDelete,
   onForward,
 }: MessageBubbleProps) {
   const isDeleted = !!message.deletedAt;
   const hasActions = !isDeleted && (onDelete || onForward);
+
+  const attachments = message.attachments ?? [];
+  const imageAttachments = attachments.filter((a) =>
+    a.contentType.startsWith("image/"),
+  );
+  const fileAttachments = attachments.filter(
+    (a) => !a.contentType.startsWith("image/"),
+  );
+  const hasImages = imageAttachments.length > 0;
+  const hasFiles = fileAttachments.length > 0;
+  const hasContent = !!message.content;
+  // Image-only: no text, no files — image IS the bubble card
+  const isMediaOnly = hasImages && !hasContent && !hasFiles;
+
+  const isRead =
+    !!otherLastReadAt &&
+    new Date(otherLastReadAt) >= new Date(message.createdAt);
+
+  const bubbleCn = cn(
+    "rounded-2xl text-sm overflow-hidden",
+    isOwn
+      ? "bg-foreground text-background rounded-br-sm"
+      : "bg-muted text-foreground rounded-bl-sm",
+  );
+
+  // Timestamp + tick row — shown inside the content area
+  const metaRow = (
+    <div
+      className={cn(
+        "flex items-center gap-1.5 mt-1",
+        isOwn ? "justify-end" : "justify-start",
+      )}
+    >
+      <span
+        className={cn(
+          "text-[10px]",
+          isOwn ? "text-background/50" : "text-muted-foreground",
+        )}
+      >
+        {formatTime(message.createdAt)}
+      </span>
+      {isOwn && !isDeleted && <ReadTick isRead={isRead} />}
+    </div>
+  );
 
   return (
     <div
@@ -67,7 +116,7 @@ export function MessageBubble({
         isOwn ? "ml-auto flex-row-reverse max-w-[85%]" : "mr-auto max-w-[85%]",
       )}
     >
-      {/* Avatar */}
+      {/* Sender avatar */}
       {!isOwn && (
         <div className="shrink-0 w-7">
           {showAvatar && (
@@ -84,20 +133,15 @@ export function MessageBubble({
         </div>
       )}
 
-      <div className="space-y-1 min-w-0">
-        {/* Sender name + time (others only) */}
+      <div className="space-y-0.5 min-w-0">
+        {/* Sender name (group chats, others only) */}
         {!isOwn && showSenderName && (
-          <div className="flex items-center gap-2 px-1">
-            <span className="text-xs font-medium text-foreground capitalize">
-              {senderName}
-            </span>
-            <span className="text-[11px] text-muted-foreground">
-              {timeAgo(message.createdAt)}
-            </span>
-          </div>
+          <p className="text-xs font-medium text-foreground capitalize px-1">
+            {senderName}
+          </p>
         )}
 
-        {/* Forwarded indicator */}
+        {/* Forwarded label */}
         {message.forwardedFromMessageId && (
           <div
             className={cn(
@@ -110,103 +154,88 @@ export function MessageBubble({
           </div>
         )}
 
-        {/* Bubble + actions */}
-        <div className="relative flex items-start gap-1">
-          <div
-            className={cn(
-              "relative rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
-              isOwn
-                ? "bg-foreground text-background rounded-br-sm"
-                : "bg-muted text-foreground rounded-bl-sm",
-              isDeleted && "opacity-50 italic",
-            )}
-          >
-            {isDeleted ? (
+        {/* Bubble row: [actions] [bubble] or [bubble] [actions] */}
+        <div
+          className={cn(
+            "flex items-end gap-1",
+            isOwn ? "flex-row-reverse" : "flex-row",
+          )}
+        >
+          {/* Hover action menu */}
+
+
+          {/* ── The bubble itself ── */}
+          {isDeleted ? (
+            <div className={cn(bubbleCn, "px-3.5 py-2.5 opacity-50 italic")}>
               <p className="text-xs">This message was deleted</p>
-            ) : (
-              <>
-                {message.content && (
-                  <p className="whitespace-pre-wrap break-words">
+            </div>
+          ) : isMediaOnly ? (
+            /* Image-only: image IS the card, timestamp overlaid */
+            <div className="rounded-2xl overflow-hidden relative min-w-[160px] max-w-[260px]">
+              <ImageSection images={imageAttachments} />
+              {isOwn && (
+                <div className="absolute bottom-1.5 right-2 flex items-center gap-1 bg-black/40 rounded-full px-1.5 py-0.5">
+                  <span className="text-[10px] text-white/90">
+                    {formatTime(message.createdAt)}
+                  </span>
+                  <ReadTick isRead={isRead} className="text-white/90" />
+                </div>
+              )}
+            </div>
+          ) : (
+            /* Text / files / mixed: single bubble */
+            <div className={cn(bubbleCn, "max-w-[320px]")}>
+              {/* Images bleed edge-to-edge at top */}
+              {hasImages && <ImageSection images={imageAttachments} />}
+
+              {/* Content area */}
+              <div className="px-3.5 py-2.5">
+                {hasContent && (
+                  <p className="whitespace-pre-wrap wrap-break-word leading-relaxed">
                     {message.content}
                   </p>
                 )}
-
-                {/* Attachments */}
-                {message.attachments && message.attachments.length > 0 && (
-                  <div className="mt-2 space-y-1.5">
-                    {message.attachments.map((att, i) => (
-                      <a
-                        key={i}
-                        href={att.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(
-                          "flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs transition-colors",
-                          isOwn
-                            ? "bg-background/15 hover:bg-background/25 text-background"
-                            : "bg-background/50 hover:bg-background/80 text-foreground",
-                        )}
-                      >
-                        <FileIcon className="h-4 w-4 shrink-0" />
-                        <span className="truncate flex-1 max-w-[180px]">
-                          {att.name}
-                        </span>
-                        <span className="text-[10px] opacity-60 shrink-0">
-                          {formatFileSize(att.size)}
-                        </span>
-                        <Download className="h-3 w-3 shrink-0 opacity-60" />
-                      </a>
+                {hasFiles && (
+                  <div className={cn("space-y-1.5", hasContent && "mt-2")}>
+                    {fileAttachments.map((att, i) => (
+                      <FileCard key={i} attachment={att} isOwn={isOwn} />
                     ))}
                   </div>
                 )}
+                {metaRow}
+              </div>
+            </div>
+          )}
 
-                {isOwn && (
-                  <p
-                    className={cn(
-                      "text-[10px] mt-1.5",
-                      isOwn ? "text-background/50" : "text-muted-foreground",
-                    )}
-                  >
-                    {timeAgo(message.createdAt)}
-                  </p>
-                )}
-              </>
-            )}
-          </div>
-
-          {/* Hover actions */}
           {hasActions && (
-            <div
-              className={cn(
-                "shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150 self-center",
-                isOwn ? "order-first" : "",
-              )}
-            >
+            <div className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-150">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="h-6 w-6 flex items-center justify-center rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
+                    className="h-6 w-6 flex items-center justify-center rounded-lg hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <MoreVertical className="h-3 w-3" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align={isOwn ? "start" : "end"}>
+                <DropdownMenuContent align={"center"} className="rounded-2xl">
                   {onForward && (
                     <DropdownMenuItem
                       className="cursor-pointer"
+                      variant="default"
                       onSelect={() => onForward(message)}
                     >
-                      <Forward className="h-3 w-3 mr-2" />
+                      <Forward className="h-3 w-3 mr-1" />
                       Forward
                     </DropdownMenuItem>
                   )}
                   {isOwn && onDelete && (
                     <DropdownMenuItem
-                      className="text-destructive focus:text-destructive cursor-pointer"
+                      className="cursor-pointer"
+                      variant="destructive"
                       onSelect={() => onDelete(message._id)}
                     >
-                      <Trash2 className="h-3 w-3 mr-2" />
+                      <Trash2 className="h-3 w-3 mr-1" />
                       Delete
                     </DropdownMenuItem>
                   )}

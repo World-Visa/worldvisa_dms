@@ -74,14 +74,14 @@ export function ClientDocumentsSummary({
   };
 
   return (
-    <div className="flex flex-wrap gap-2" role="group" aria-label="Document status summary">
+    <div className="flex flex-wrap gap-1" role="group" aria-label="Document status summary">
       {STATUS_CONFIG.map(({ title, status, dot, inactiveClasses }) => {
         const count = counts[status] ?? 0;
         return (
           <div
             key={status}
             className={cn(
-              "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium cursor-default",
+              "inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium cursor-default",
               inactiveClasses,
             )}
           >

@@ -36,9 +36,9 @@ export const AddCompanyButton = memo(function AddCompanyButton({
       variant="default"
       size="sm"
       onClick={onAddCompany}
-      className="bg-primary-blue"
+      className="bg-primary-blue cursor-pointer whitespace-nowrap h-10"
     >
-      <Plus className="h-4 w-4" />
+      <Plus className="size-4" />
       <span>Add Company</span>
     </Button>
   );

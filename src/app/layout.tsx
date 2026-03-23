@@ -17,13 +17,14 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: "WorldVisa DMS",
   description: "Document Management System for WorldVisa",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: [
-      { url: "/favicon.ico?v=1", sizes: "any" },
-      { url: "/favicon.ico?v=1", type: "image/x-icon" },
+      { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512x512.png", sizes: "512x512", type: "image/png" },
     ],
-    shortcut: "/favicon.ico?v=1",
-    apple: "/favicon.ico?v=1",
+    shortcut: "/icons/icon-192x192.png",
+    apple: "/icons/apple-touch-icon.png",
   },
 };
 
@@ -35,10 +36,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <link rel="icon" href="/favicon.ico?v=1" sizes="any" />
-        <link rel="shortcut icon" href="/favicon.ico?v=1" />
-        <link rel="apple-touch-icon" href="/favicon.ico?v=1" />
-        <meta name="msapplication-TileImage" content="/favicon.ico?v=1" />
+        <link rel="manifest" href="/manifest.webmanifest" />
+        <link rel="icon" href="/icons/icon-192x192.png" type="image/png" />
+        <link rel="icon" href="/icons/icon-512x512.png" type="image/png" />
+        <link rel="shortcut icon" href="/icons/icon-192x192.png" />
+        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        <meta name="msapplication-TileImage" content="/icons/icon-512x512.png" />
       </head>
       <body
         className={`${outfit.variable} antialiased`}
