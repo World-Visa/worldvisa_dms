@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { realtimeManager } from "@/lib/realtime";
 
-export function useRequestedDocumentRealtimeState() {
+export function useRequestedDocumentRealtime() {
   const [connectionState, setConnectionState] = useState(
     realtimeManager.getConnectionState(),
   );
