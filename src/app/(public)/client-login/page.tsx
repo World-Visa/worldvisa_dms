@@ -1,5 +1,4 @@
-import { ClientLoginForm } from "@/components/auth/ClientLoginForm";
+import { redirect } from "next/navigation";
 
-export default function ClientLoginPage() {
-  return <ClientLoginForm />;
-}
+
+redirect("/auth/user/login");
