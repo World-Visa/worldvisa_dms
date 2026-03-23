@@ -118,17 +118,21 @@ export async function getRequestedDocumentsToMe(
       console.warn(`Slow requested documents response: ${responseTime}ms`);
     }
 
-    if (response.status !== "success") {
-      throw new Error("Failed to fetch requested documents");
-    }
-
     return response;
   } catch (error) {
     const responseTime = Date.now() - startTime;
+    const err =
+      error instanceof Error
+        ? {
+            name: error.name,
+            message: error.message,
+            stack: error.stack,
+          }
+        : { message: String(error) };
 
     console.error("Failed to fetch requested documents:", {
       params,
-      error,
+      error: err,
       responseTime,
     });
 

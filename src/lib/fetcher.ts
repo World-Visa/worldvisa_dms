@@ -90,7 +90,7 @@ export async function fetcher<T>(
           removeStoredToken();
           if (typeof window !== "undefined") {
             const userData = sessionStorage.getItem("user_data") ?? localStorage.getItem("user_data");
-            let redirectPath = "/portal";
+            let redirectPath = "/auth/user/login";
 
             if (userData) {
               try {

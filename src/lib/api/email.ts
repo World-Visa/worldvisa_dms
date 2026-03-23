@@ -66,7 +66,6 @@ export async function sendEmail(payload: SendEmailPayload): Promise<void> {
 
   const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
-  // No Content-Type — browser sets it with multipart boundary automatically
 
   const res = await fetch(`${BASE}/send`, {
     method: "POST",
