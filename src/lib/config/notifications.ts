@@ -11,6 +11,9 @@ export const NOTIFICATION_ENDPOINTS = {
   UPDATE_READ_STATUS: "/api/zoho_dms/users/notifications/read",
   DELETE: "/api/zoho_dms/users/notifications",
 
+  // FCM token registration
+  REGISTER_FCM_TOKEN: "/api/notifications/register-token",
+
   // WebSocket configuration
   SOCKET_PATH: "/socket.io",
 } as const;

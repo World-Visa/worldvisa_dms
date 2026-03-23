@@ -75,12 +75,14 @@ export async function fetcher<T>(
         );
         const isMessagesEndpoint =
           url.includes("/requested_reviews/") && url.includes("/messages");
+        const isFCMEndpoint = url.includes("/notifications/register-token");
 
         if (
           isClientEndpoint ||
           isChecklistEndpoint ||
           url.includes("/comment") ||
-          isMessagesEndpoint
+          isMessagesEndpoint ||
+          isFCMEndpoint
         ) {
           // Let hook handle the error for client/checklist/comments/messages endpoints
         } else {

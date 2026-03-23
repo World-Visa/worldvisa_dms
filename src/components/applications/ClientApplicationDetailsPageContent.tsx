@@ -262,10 +262,6 @@ export default function ClientApplicationDetailsPageContent({
   // Use extracted companies (which now prioritizes actual company data)
   const finalCompanies = extractedCompanies;
 
-  const handleDocumentsPageChange = (page: number) => {
-    setDocumentsPage(page);
-  };
-
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
     setDocumentsPage(1);
@@ -569,21 +565,12 @@ export default function ClientApplicationDetailsPageContent({
   }
 
   return (
-    <main className="max-w-7xl mx-auto">
+    <main className="max-w-7xl mx-auto px-4 md:px-0">
       {/* Header — match admin structure */}
-      <div className="flex items-center justify-between pt-10">
+      <div className="flex md:items-center md:flex-row flex-wrap justify-between gap-4 pt-10">
         <div className="flex items-center space-x-4">
-          {/* <Button
-            variant="secondary"
-            className="rounded-full w-9 h-9 cursor-pointer"
-            size="sm"
-            onClick={() => router.push("/client/applications")}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button> */}
           <div>
             <h1 className="text-xl flex md:flex-row capitalize flex-col items-start md:items-center gap-4 sm:text-2xl font-medium">
-              {applicationData?.data?.Name ?? "My Application"}{" "}
               Application Details
             </h1>
           </div>
@@ -592,28 +579,22 @@ export default function ClientApplicationDetailsPageContent({
           {applicationData?.data?.Application_Handled_By && (
             <div className="relative">
               <Button
-                variant="secondary"
-                size="sm"
+                variant="outline"
+                title="Chat with Processing Advisor"
                 onClick={() => setIsChatOpen(true)}
-                className="flex items-center gap-2 cursor-pointer"
+                className="flex items-center gap-1 cursor-pointer bg-white border border-gray-200 rounded-lg"
               >
-                <span className="hidden sm:inline">Chat</span>
+                <MessageCircle className="h-4 w-4" />
+                <span className="">Chat</span>
                 {chatUnreadCount > 0 && (
                   <Badge variant="default" className="text-xs min-w-5 h-5 px-1.5">
                     {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
                   </Badge>
                 )}
-                {
-                  chatUnreadCount === 0 && (
-                    <Badge variant="default" className="text-xs bg-primary-blue text-white px-1.5">
-                      New
-                    </Badge>
-                  )
-                }
               </Button>
             </div>
           )}
-          <Button
+          {/* <Button
             variant="outline"
             size="sm"
             onClick={handleRefresh}
@@ -624,7 +605,7 @@ export default function ClientApplicationDetailsPageContent({
               className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
             />
             <span className="hidden sm:inline">Refresh</span>
-          </Button>
+          </Button> */}
         </div>
       </div>
       {/* Loading State */}

@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
-import { Settings, Users, ArrowLeft, MessageSquare, LogOut, Search, XIcon } from "lucide-react";
+import { Settings, Users, ArrowLeft, MessageSquare, LogOut } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
@@ -22,9 +21,11 @@ import {
 } from "@/hooks/useChat";
 import { MessageBubble } from "@/components/chat/MessageBubble";
 import { ChatInput } from "@/components/chat/ChatInput";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Input } from "@/components/ui/input";
-import type { ChatMessage, Conversation, ParticipantType } from "@/types/chat";
+import { DateSeparator, getDateLabel } from "@/components/chat/DateSeparator";
+import { ForwardMessageOverlay } from "@/components/chat/ForwardPicker";
+import type { ChatMessage, ParticipantType } from "@/types/chat";
+
+// ── Types ──────────────────────────────────────────────────────────────────
 
 interface ChatThreadProps {
   conversationId: string;
@@ -32,11 +33,11 @@ interface ChatThreadProps {
   currentUserType: "staff" | "client";
   alternativeUserId?: string;
   onBack?: () => void;
-  /** When true, back button is visible on all screen sizes (e.g. in a sheet with a list behind). Default: only on mobile. */
+  /** When true, back button is visible on all screen sizes. Default: only on mobile. */
   alwaysShowBack?: boolean;
   /** Opens full group settings (e.g. for staff). */
   onOpenGroupSettings?: () => void;
-  /** When set, shows only a "Leave group" header action instead of settings (e.g. for client). */
+  /** When set, shows only a "Leave group" header action (e.g. for client). */
   onLeaveGroup?: () => void;
   onForwardMessage?: (message: ChatMessage, targetId: string) => void;
   /** When set (e.g. inside a sheet), emoji picker portals here so scroll works. */
@@ -47,6 +48,8 @@ interface ForwardDialogState {
   open: boolean;
   message: ChatMessage | null;
 }
+
+// ── ChatThread ─────────────────────────────────────────────────────────────
 
 export function ChatThread({
   conversationId,
@@ -104,18 +107,19 @@ export function ChatThread({
 
   const conversation = conversationData?.data;
 
-  // Mark as read when conversation opens
+  // Mark conversation as read on open
   useEffect(() => {
     markRead.mutate({ conversationId });
   }, [conversationId]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Flatten all pages into a single array (oldest first)
-  const allMessages =
-    messagesData?.pages.flatMap((page) => page.data).reverse() ?? [];
   // Pages are loaded newest-first (before cursor), so reverse the pages order
-  const orderedMessages = messagesData
-    ? [...messagesData.pages].reverse().flatMap((page) => [...page.data])
-    : [];
+  const orderedMessages = useMemo(
+    () =>
+      messagesData
+        ? [...messagesData.pages].reverse().flatMap((page) => [...page.data])
+        : [],
+    [messagesData],
+  );
 
   // Scroll to bottom on initial load and new messages
   useEffect(() => {
@@ -127,7 +131,7 @@ export function ChatThread({
     }
   }, [orderedMessages.length]);
 
-  // Reset on conversation change
+  // Reset scroll state on conversation change
   useEffect(() => {
     isInitialLoad.current = true;
   }, [conversationId]);
@@ -136,7 +140,6 @@ export function ChatThread({
   useEffect(() => {
     const sentinel = topSentinelRef.current;
     if (!sentinel || !hasNextPage) return;
-
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
@@ -145,7 +148,6 @@ export function ChatThread({
       },
       { threshold: 0.1 },
     );
-
     observer.observe(sentinel);
     return () => observer.disconnect();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
@@ -168,9 +170,11 @@ export function ChatThread({
     setForwardState({ open: true, message });
   }, []);
 
+  // ── Derived conversation state ───────────────────────────────────────────
+
   const memberCount = conversation?.members?.length ?? 0;
 
-  // DM fallback: in a DM, the single participant of currentUserType is "me" (backend returns participants; use for attribution).
+  // DM fallback: single participant of currentUserType = "me"
   const sameTypeParticipants =
     conversation?.type === "dm" && conversation.participants
       ? conversation.participants.filter((p) => p.type === currentUserType)
@@ -178,47 +182,61 @@ export function ChatThread({
   const dmOwnId =
     sameTypeParticipants.length === 1 ? sameTypeParticipants[0].id : null;
 
-  // Avatar for header: DM = other participant; group = imageUrl or combined member avatars
   const otherParticipant =
     conversation?.type === "dm" && conversation.participants
       ? conversation.participants.find(
           (p) => p.id !== (dmOwnId ?? currentUserId),
         )
       : null;
+
   const headerAvatarSrc =
     conversation?.type === "dm"
-      ? (otherParticipant
-          ? (getProfileImageUrl(otherParticipant.type, otherParticipant.id) ??
-             otherParticipant.profile_image_url ??
-             getDefaultAvatarSrc(otherParticipant.id ?? conversation?._id ?? ""))
-          : getDefaultAvatarSrc(conversation?._id ?? conversationId))
+      ? otherParticipant
+        ? (getProfileImageUrl(otherParticipant.type, otherParticipant.id) ??
+          otherParticipant.profile_image_url ??
+          getDefaultAvatarSrc(otherParticipant.id ?? conversation?._id ?? ""))
+        : getDefaultAvatarSrc(conversation?._id ?? conversationId)
       : conversation?.imageUrl;
+
   const groupMemberIds =
     conversation?.type === "group"
-      ? conversation.members?.map((m) => m.id) ??
+      ? (conversation.members?.map((m) => m.id) ??
         conversation.participants?.map((p) => p.id) ??
-        []
+        [])
       : [];
 
-  // DM name: prefer otherDisplayName, then resolve from members by other participant's id/type
   const otherMember =
-    conversation?.type === "dm" &&
-    conversation.members &&
-    otherParticipant
+    conversation?.type === "dm" && conversation.members && otherParticipant
       ? conversation.members.find(
           (m) =>
             m.type === otherParticipant.type && m.id === otherParticipant.id,
         )
       : null;
+
   const conversationName =
     conversation?.type === "dm"
-      ? conversation.otherDisplayName ??
-        otherMember?.displayName ??
-        "Chat"
-      : conversation?.name ?? "Group Chat";
+      ? (conversation.otherDisplayName ?? otherMember?.displayName ?? "Chat")
+      : (conversation?.name ?? "Group Chat");
+
+  // Read receipt: other participant's lastReadAt (DM only)
+  const otherLastReadAt = useMemo(() => {
+    if (conversation?.type !== "dm" || !conversation.members) return null;
+    const other = conversation.members.find(
+      (m) =>
+        !(
+          m.type === currentUserType &&
+          (m.id === currentUserId ||
+            (alternativeUserId != null && m.id === alternativeUserId))
+        ),
+    );
+    return other?.lastReadAt ?? null;
+  }, [conversation, currentUserType, currentUserId, alternativeUserId]);
+
+  // ── Render ───────────────────────────────────────────────────────────────
 
   return (
     <div className="flex flex-col h-full min-h-0">
+      {/* Header */}
       <div className="flex items-center gap-3 px-4 py-[14px] border-b border-border/40 shrink-0">
         {onBack && (
           <Button
@@ -240,7 +258,8 @@ export function ChatThread({
             memberProfiles={Object.fromEntries(
               (conversation.members ?? [])
                 .map((m) => {
-                  const url = getProfileImageUrl(m.type, m.id) ?? m.profile_image_url;
+                  const url =
+                    getProfileImageUrl(m.type, m.id) ?? m.profile_image_url;
                   return url ? ([m.id, url] as const) : null;
                 })
                 .filter((x): x is [string, string] => x != null),
@@ -270,26 +289,28 @@ export function ChatThread({
               <Users className="h-3 w-3 shrink-0" />
               {memberCount} members
             </p>
-          ) : conversation?.type === "dm" ? (() => {
-            const otherMember = conversation.members?.find(
-              (m) => m.id !== currentUserId && m.id !== alternativeUserId,
-            );
-            const isOnline = otherMember?.online_status ?? false;
-            return (
-              <p className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
-                <span
-                  className={cn(
-                    "h-1.5 w-1.5 rounded-full shrink-0",
-                    isOnline ? "bg-green-500" : "bg-muted-foreground/40",
-                  )}
-                />
-                <span>{isOnline ? "Online" : "Offline"}</span>
-              </p>
-            );
-          })() : null}
+          ) : conversation?.type === "dm" ? (
+            (() => {
+              const dmOther = conversation.members?.find(
+                (m) =>
+                  m.id !== currentUserId && m.id !== alternativeUserId,
+              );
+              const isOnline = dmOther?.online_status ?? false;
+              return (
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
+                  <span
+                    className={cn(
+                      "h-1.5 w-1.5 rounded-full shrink-0",
+                      isOnline ? "bg-green-500" : "bg-muted-foreground/40",
+                    )}
+                  />
+                  <span>{isOnline ? "Online" : "Offline"}</span>
+                </p>
+              );
+            })()
+          ) : null}
         </div>
 
-        {/* Group: leave-only (e.g. client) or full settings (e.g. staff) */}
         {conversation?.type === "group" && onLeaveGroup && (
           <Button
             variant="ghost"
@@ -317,7 +338,6 @@ export function ChatThread({
       {/* Messages */}
       <ScrollArea className="flex-1 min-h-0">
         <div className="p-4 space-y-1" ref={scrollAreaRef}>
-          {/* Top sentinel for load-more */}
           <div ref={topSentinelRef} className="h-1" />
 
           {isFetchingNextPage && (
@@ -331,7 +351,8 @@ export function ChatThread({
           ) : orderedMessages.length === 0 ? (
             <EmptyState />
           ) : (
-            orderedMessages.map((message, index) => { 
+            orderedMessages.map((message, index) => {
+              // Resolve currentMemberId for isOwn detection
               const currentUserMember = conversation?.members?.find(
                 (m) =>
                   m.type === currentUserType &&
@@ -339,8 +360,6 @@ export function ChatThread({
                     (alternativeUserId != null && m.id === alternativeUserId)),
               );
               let currentMemberId = currentUserMember?.id ?? null;
-              // In groups, backend may store client with a different id (e.g. lead_id) than auth user._id.
-              // If there's exactly one member of currentUserType, treat that member as "me" for isOwn.
               if (
                 currentMemberId == null &&
                 conversation?.type === "group" &&
@@ -349,9 +368,7 @@ export function ChatThread({
                 const sameType = conversation.members.filter(
                   (m) => m.type === currentUserType,
                 );
-                if (sameType.length === 1) {
-                  currentMemberId = sameType[0].id;
-                }
+                if (sameType.length === 1) currentMemberId = sameType[0].id;
               }
 
               const isOwn =
@@ -362,7 +379,6 @@ export function ChatThread({
                     message.sender.id === currentMemberId) ||
                   (!!dmOwnId && message.sender.id === dmOwnId));
 
-              // Find sender display name
               const member = conversation?.members?.find(
                 (m) =>
                   m.type === message.sender.type &&
@@ -370,28 +386,46 @@ export function ChatThread({
               );
               const senderName = member?.displayName ?? "Unknown";
 
-              // Show avatar/name for first message or when sender changes
               const prevMessage = index > 0 ? orderedMessages[index - 1] : null;
               const senderChanged =
                 !prevMessage ||
                 prevMessage.sender.id !== message.sender.id ||
                 prevMessage.sender.type !== message.sender.type;
 
+              // Date separator
+              const messageDate = new Date(message.createdAt);
+              const prevMessageDate = prevMessage
+                ? new Date(prevMessage.createdAt)
+                : null;
+              const isNewDay =
+                !prevMessageDate ||
+                messageDate.getFullYear() !== prevMessageDate.getFullYear() ||
+                messageDate.getMonth() !== prevMessageDate.getMonth() ||
+                messageDate.getDate() !== prevMessageDate.getDate();
+
               return (
-                <div key={message._id} className="py-0.5">
-                  <MessageBubble
-                    message={message}
-                    isOwn={isOwn}
-                    senderName={senderName}
-                    senderId={message.sender.id}
-                    senderProfileImage={member?.profile_image_url}
-                    showAvatar={senderChanged && !isOwn}
-                    showSenderName={
-                      senderChanged && !isOwn && conversation?.type === "group"
-                    }
-                    onDelete={isOwn ? handleDelete : undefined}
-                    onForward={handleForward}
-                  />
+                <div key={message._id}>
+                  {isNewDay && (
+                    <DateSeparator label={getDateLabel(messageDate)} />
+                  )}
+                  <div className="py-0.5">
+                    <MessageBubble
+                      message={message}
+                      isOwn={isOwn}
+                      senderName={senderName}
+                      senderId={message.sender.id}
+                      senderProfileImage={member?.profile_image_url}
+                      showAvatar={senderChanged && !isOwn}
+                      showSenderName={
+                        senderChanged &&
+                        !isOwn &&
+                        conversation?.type === "group"
+                      }
+                      otherLastReadAt={otherLastReadAt}
+                      onDelete={isOwn ? handleDelete : undefined}
+                      onForward={handleForward}
+                    />
+                  </div>
                 </div>
               );
             })
@@ -408,7 +442,7 @@ export function ChatThread({
         emojiPopoverContainerRef={emojiPopoverContainerRef}
       />
 
-      {/* Forward dialog — Recent + Contacts with avatars */}
+      {/* Forward dialog */}
       {forwardState.open && forwardState.message && (
         <ForwardMessageOverlay
           message={forwardState.message}
@@ -428,6 +462,8 @@ export function ChatThread({
     </div>
   );
 }
+
+// ── Local helpers ──────────────────────────────────────────────────────────
 
 function EmptyState() {
   return (
@@ -449,7 +485,9 @@ function MessageSkeleton() {
           key={i}
           className={cn(
             "flex gap-2.5 animate-pulse",
-            i % 2 === 0 ? "ml-auto flex-row-reverse max-w-[75%]" : "mr-auto max-w-[75%]",
+            i % 2 === 0
+              ? "ml-auto flex-row-reverse max-w-[75%]"
+              : "mr-auto max-w-[75%]",
           )}
         >
           {i % 2 !== 0 && (
@@ -466,421 +504,6 @@ function MessageSkeleton() {
               <div className="h-3 bg-muted-foreground/10 rounded w-full mb-1.5" />
               <div className="h-3 bg-muted-foreground/10 rounded w-2/3" />
             </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// Forward overlay — Recent (chats with avatars) + Contacts (staff/clients, create DM if needed)
-function ForwardMessageOverlay({
-  message,
-  currentConversationId,
-  currentUserId,
-  currentUserType,
-  onForward,
-  onClose,
-}: {
-  message: ChatMessage;
-  currentConversationId: string;
-  currentUserId: string;
-  currentUserType: "staff" | "client";
-  onForward: (conversationId: string) => void;
-  onClose: () => void;
-}) {
-  return (
-    <ForwardPicker
-      forwardedFromMessageId={message._id}
-      currentConversationId={currentConversationId}
-      currentUserId={currentUserId}
-      currentUserType={currentUserType}
-      onForward={onForward}
-      onClose={onClose}
-    />
-  );
-}
-
-interface ContactOption {
-  id: string;
-  type: ParticipantType;
-  displayName: string;
-  role?: string;
-  profile_image_url?: string;
-}
-
-function ForwardPicker({
-  forwardedFromMessageId,
-  currentConversationId,
-  currentUserId,
-  currentUserType,
-  onForward,
-  onClose,
-}: {
-  forwardedFromMessageId: string;
-  currentConversationId: string;
-  currentUserId: string;
-  currentUserType: "staff" | "client";
-  onForward: (conversationId: string) => void;
-  onClose: () => void;
-}) {
-  const { useConversations, useStaffUsers, useChatClients, useCreateConversation } =
-    require("@/hooks/useChat") as typeof import("@/hooks/useChat");
-  const { useAuth } = require("@/hooks/useAuth") as { useAuth: () => { user?: { role?: string; username?: string } } };
-
-  const { user } = useAuth();
-  const { data: conversationsData } = useConversations();
-  const { data: staffData, isLoading: staffLoading } = useStaffUsers();
-  const createConversation = useCreateConversation();
-
-  const permissionMode =
-    user?.role === "admin" ? ("restricted" as const) : ("unrestricted" as const);
-  const currentUsername = user?.username ?? "";
-  const {
-    data: clientData,
-    isLoading: clientLoading,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = useChatClients({
-    permissionMode,
-    currentUsername,
-  });
-
-  const conversations = (conversationsData?.data ?? []) as Conversation[];
-  const recentConversations = conversations
-    .filter((c) => c._id !== currentConversationId)
-    .sort((a, b) => {
-      const aAt = a.lastMessageAt ? new Date(a.lastMessageAt).getTime() : 0;
-      const bAt = b.lastMessageAt ? new Date(b.lastMessageAt).getTime() : 0;
-      return bAt - aAt;
-    });
-
-  // Map (type, id) -> conversationId for existing DMs
-  const dmByParticipant = new Map<string, string>();
-  for (const c of conversations) {
-    if (c.type === "dm" && c.participants?.length) {
-      const other = c.participants.find((p) => p.id !== currentUserId);
-      if (other) dmByParticipant.set(`${other.type}:${other.id}`, c._id);
-    }
-  }
-
-  const staffOptions: ContactOption[] = (staffData?.data ?? []).map(
-    (u: { _id: string; username: string; role?: string; profile_image_url?: string }) => ({
-      id: u._id,
-      type: "staff" as const,
-      displayName: u.username,
-      role: u.role,
-      profile_image_url: u.profile_image_url,
-    }),
-  ).filter((u) => currentUserType !== "staff" || u.id !== currentUserId);
-
-  const clientOptions: ContactOption[] =
-    currentUserType === "staff"
-      ? (clientData?.data ?? []).map((c: { _id: string; name: string; profile_image_url?: string }) => ({
-          id: c._id,
-          type: "client" as const,
-          displayName: c.name,
-          profile_image_url: c.profile_image_url,
-        }))
-      : [];
-
-  const [activeTab, setActiveTab] = useState<"recent" | "contacts">("recent");
-  const [contactSearch, setContactSearch] = useState("");
-
-  const searchLower = contactSearch.trim().toLowerCase();
-  const filteredStaffOptions = searchLower
-    ? staffOptions.filter((u) =>
-        u.displayName.toLowerCase().includes(searchLower),
-      )
-    : staffOptions;
-  const filteredClientOptions = searchLower
-    ? clientOptions.filter((c) =>
-        c.displayName.toLowerCase().includes(searchLower),
-      )
-    : clientOptions;
-
-  const isLoadingContacts =
-    currentUserType === "staff" ? staffLoading || clientLoading : staffLoading;
-  const hasContacts =
-    staffOptions.length > 0 || clientOptions.length > 0;
-  const hasFilteredContacts =
-    filteredStaffOptions.length > 0 || filteredClientOptions.length > 0;
-
-  const handleContactSelect = async (contact: ContactOption) => {
-    const key = `${contact.type}:${contact.id}`;
-    const existingId = dmByParticipant.get(key);
-    if (existingId) {
-      onForward(existingId);
-      return;
-    }
-    try {
-      const res = await createConversation.mutateAsync({
-        type: "dm",
-        participant: { type: contact.type, id: contact.id },
-      });
-      if (res?.data?._id) onForward(res.data._id);
-    } catch {
-      // toast already in useCreateConversation
-    }
-  };
-
-  const recentList = (
-    <div className="overflow-y-auto flex-1 min-h-0 px-2 space-y-0.5">
-      {recentConversations.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6">
-          No other conversations
-        </p>
-      ) : (
-        recentConversations.map((c) => (
-          <RecentConversationRow
-            key={c._id}
-            conversation={c}
-            currentUserId={currentUserId}
-            onSelect={() => onForward(c._id)}
-          />
-        ))
-      )}
-    </div>
-  );
-
-  const contactsList = (
-    <div className="flex flex-col flex-1 min-h-0">
-      <div className="px-2 pb-2 shrink-0">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            type="search"
-            placeholder="Search contacts…"
-            value={contactSearch}
-            onChange={(e) => setContactSearch(e.target.value)}
-            className="pl-8 h-9"
-          />
-        </div>
-      </div>
-      <div className="overflow-y-auto flex-1 min-h-0 px-2 space-y-1">
-        {isLoadingContacts ? (
-          <ForwardContactsSkeleton />
-        ) : !hasContacts ? (
-          <p className="text-sm text-muted-foreground text-center py-6">
-            No contacts
-          </p>
-        ) : !hasFilteredContacts ? (
-          <p className="text-sm text-muted-foreground text-center py-6">
-            No matches for &quot;{contactSearch.trim()}&quot;
-          </p>
-        ) : (
-          <>
-            {filteredStaffOptions.length > 0 && (
-              <>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1">
-                  Staff ({filteredStaffOptions.length})
-                </p>
-                {filteredStaffOptions.map((u) => (
-                  <ContactRow
-                    key={`staff-${u.id}`}
-                    contact={u}
-                    onSelect={() => handleContactSelect(u)}
-                    disabled={createConversation.isPending}
-                  />
-                ))}
-              </>
-            )}
-            {currentUserType === "staff" && filteredClientOptions.length > 0 && (
-              <>
-                <p className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider px-2 py-1 mt-2">
-                  Clients ({filteredClientOptions.length})
-                </p>
-                {filteredClientOptions.map((u) => (
-                  <ContactRow
-                    key={`client-${u.id}`}
-                    contact={u}
-                    onSelect={() => handleContactSelect(u)}
-                    disabled={createConversation.isPending}
-                  />
-                ))}
-                {hasNextPage && (
-                  <ClientListSentinel
-                    hasNextPage={hasNextPage}
-                    isFetchingNextPage={isFetchingNextPage}
-                    fetchNextPage={fetchNextPage}
-                  />
-                )}
-              </>
-            )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="absolute inset-0 z-50 bg-background/90 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-background border border-border rounded-2xl shadow-xl w-full max-w-md flex flex-col max-h-[65vh] min-h-0">
-        <div className="flex items-center justify-between p-4 shrink-0">
-          <h3 className="text-sm font-semibold">Forward to…</h3>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-muted"
-            aria-label="Close"
-          >
-            <XIcon className="size-4" />
-          </button>
-        </div>
-        {currentUserType === "client" ? (
-          <div className="flex flex-col flex-1 min-h-0 mt-0">
-            {recentList}
-          </div>
-        ) : (
-          <Tabs
-            value={activeTab}
-            onValueChange={(v) => setActiveTab(v as "recent" | "contacts")}
-            className="flex flex-col flex-1 min-h-0 max-w-[420px]"
-          >
-            <TabsList className="w-full grid grid-cols-2 mx-4 shrink-0">
-              <TabsTrigger value="recent">Recent</TabsTrigger>
-              <TabsTrigger value="contacts">Contacts</TabsTrigger>
-            </TabsList>
-            <div className="flex flex-col flex-1 min-h-0 mt-2">
-              {activeTab === "recent" ? recentList : contactsList}
-            </div>
-          </Tabs>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RecentConversationRow({
-  conversation,
-  currentUserId,
-  onSelect,
-}: {
-  conversation: Conversation;
-  currentUserId: string;
-  onSelect: () => void;
-}) {
-  const isDm = conversation.type === "dm";
-  const displayName = isDm
-    ? (conversation.otherDisplayName ?? "Chat")
-    : (conversation.name ?? "Group Chat");
-  const otherParticipant = isDm
-    ? conversation.participants?.find((p) => p.id !== currentUserId)
-    : null;
-  const avatarSrc = isDm
-    ? (otherParticipant?.profile_image_url ?? getDefaultAvatarSrc(otherParticipant?.id ?? conversation._id))
-    : conversation.imageUrl;
-
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-muted/60 transition-colors"
-    >
-      {isDm || avatarSrc ? (
-        <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0">
-          <Image
-            src={avatarSrc!}
-            alt={displayName}
-            fill
-            className="object-cover"
-            unoptimized
-          />
-        </div>
-      ) : (
-        <GroupAvatar
-          memberIds={conversation.participants?.map((p) => p.id) ?? []}
-          fallbackId={conversation._id}
-          className="h-9 w-9"
-          alt={displayName}
-          memberProfiles={Object.fromEntries(
-            (conversation.participants ?? [])
-              .filter((p) => p.profile_image_url)
-              .map((p) => [p.id, p.profile_image_url as string]),
-          )}
-        />
-      )}
-      <span className="text-sm font-medium truncate flex-1">{displayName}</span>
-    </button>
-  );
-}
-
-function ContactRow({
-  contact,
-  onSelect,
-  disabled,
-}: {
-  contact: ContactOption;
-  onSelect: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      disabled={disabled}
-      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-left hover:bg-muted/60 transition-colors disabled:opacity-50"
-    >
-      <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0">
-        <Image
-          src={contact.profile_image_url ?? getDefaultAvatarSrc(contact.id)}
-          alt={contact.displayName}
-          fill
-          className="object-cover"
-          unoptimized
-        />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{contact.displayName}</p>
-        {contact.role && (
-          <p className="text-xs text-muted-foreground capitalize">
-            {contact.role.replace("_", " ")}
-          </p>
-        )}
-      </div>
-    </button>
-  );
-}
-
-function ClientListSentinel({
-  hasNextPage,
-  isFetchingNextPage,
-  fetchNextPage,
-}: {
-  hasNextPage: boolean;
-  isFetchingNextPage: boolean;
-  fetchNextPage: () => void;
-}) {
-  const sentinelRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const el = sentinelRef.current;
-    if (!el || !hasNextPage) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage)
-          fetchNextPage();
-      },
-      { threshold: 0.1 },
-    );
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
-  return <div ref={sentinelRef} className="h-4" />;
-}
-
-function ForwardContactsSkeleton() {
-  return (
-    <div className="space-y-1 p-1">
-      {[1, 2, 3, 4].map((i) => (
-        <div
-          key={i}
-          className="flex items-center gap-3 px-3 py-2.5 animate-pulse"
-        >
-          <Skeleton className="h-9 w-9 rounded-full shrink-0" />
-          <div className="space-y-1.5 flex-1">
-            <Skeleton className="h-3 w-24 rounded" />
-            <Skeleton className="h-2.5 w-16 rounded" />
           </div>
         </div>
       ))}
