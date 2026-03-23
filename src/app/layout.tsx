@@ -6,6 +6,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { ClarityAnalytics } from "@/components/ClarityAnalytics";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -54,6 +55,7 @@ export default function RootLayout({
             </NotificationProvider>
             <Toaster />
           </Providers>
+          <ClarityAnalytics />
         </SmoothScroll>
       </body>
     </html>
