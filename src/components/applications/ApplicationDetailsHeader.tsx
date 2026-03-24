@@ -37,8 +37,6 @@ interface ApplicationDetailsHeaderProps {
   areAllDocumentsApproved: boolean;
   validationDetails?: MandatoryDocumentValidationDetail[];
   onPushForQualityCheck: () => void;
-  onRefresh: () => void;
-  isRefreshing: boolean;
   onDownloadAll: () => void;
   onResetPassword: () => void;
   onActivateAccount?: () => void;
@@ -98,8 +96,6 @@ export function ApplicationDetailsHeader({
   areAllDocumentsApproved,
   validationDetails = [],
   onPushForQualityCheck,
-  onRefresh,
-  isRefreshing,
   onDownloadAll,
   onResetPassword,
   onActivateAccount,

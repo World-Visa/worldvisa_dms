@@ -49,6 +49,7 @@ function Button({
   size,
   asChild = false,
   premium3D = false,
+  ref,
   ...props
 }: ButtonProps) {
   const Comp = asChild ? Slot : "button";
@@ -70,7 +71,8 @@ function Button({
 
   return (
     <Comp
-      className={cn(buttonVariants({ variant, size }), premiumClass, className)}
+      ref={ref as React.RefObject<HTMLButtonElement>}
+      className={cn(buttonVariants({ variant, size, className }), premiumClass, className)}
       data-slot="button"
       {...props}
     />

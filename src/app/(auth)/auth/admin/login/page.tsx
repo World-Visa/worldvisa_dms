@@ -13,7 +13,7 @@ export default function LoginV2() {
     <>
       <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[350px]">
         <div className="space-y-2 text-center items-center flex flex-col justify-center">
-          <div className="relative h-12 w-36">
+          <div className="relative md:hidden h-12 w-36">
             <Image
               src={Logo}
               alt="WorldVisa Logo"
@@ -44,7 +44,7 @@ export default function LoginV2() {
         </div>
       </div>
 
-      <div className="absolute bottom-5 flex w-full justify-between px-10">
+      <div className="absolute bottom-5 flex w-full justify-between md:px-10 px-4">
         <div className="text-sm">Copyright © 2026 WorldVisa DMS</div>
         <div className="flex items-center gap-1 text-sm">
           <Globe className="size-4 text-muted-foreground" />

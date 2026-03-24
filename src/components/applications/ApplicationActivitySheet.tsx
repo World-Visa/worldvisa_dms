@@ -16,32 +16,15 @@ import type {
   ActivityLog,
   ActivityType,
 } from "@/lib/api/getApplicationActivity";
-import type { LucideIcon } from "lucide-react";
 import {
   AlertCircle,
-  CheckCircle,
   ChevronDown,
-  ChevronRight,
-  ClipboardCheck,
-  ClipboardX,
   Clock,
-  Edit3,
-  Eye,
-  FileText,
   Filter,
-  Inbox,
-  ListChecks,
   Loader2,
-  MessageCircle,
-  MessageSquare,
-  RefreshCw,
-  Send,
-  StickyNote,
-  Trash2,
-  Upload,
-  XCircle,
 } from "lucide-react";
 import { Button } from "../ui/button";
+import { TimelineContainer, TimelineStep } from "@/components/ui/timeline";
 
 // ─── Filter groups ────────────────────────────────────────────────────────────
 
@@ -96,32 +79,31 @@ const FILTER_GROUPS: Array<{
 // ─── Activity style map ───────────────────────────────────────────────────────
 
 interface ActivityStyle {
-  icon: LucideIcon;
   label: string;
 }
 
 const ACTIVITY_STYLE: Record<ActivityType, ActivityStyle> = {
-  application_created: { icon: FileText, label: "application created" },
-  document_uploaded: { icon: Upload, label: "document uploaded" },
-  document_reuploaded: { icon: RefreshCw, label: "document reuploaded" },
-  document_status_changed: { icon: CheckCircle, label: "document status changed" },
-  comment_added: { icon: MessageCircle, label: "comment added" },
-  comment_edited: { icon: Edit3, label: "comment edited" },
-  comment_deleted: { icon: Trash2, label: "comment deleted" },
-  review_requested: { icon: Eye, label: "review requested" },
-  review_status_updated: { icon: CheckCircle, label: "review status updated" },
-  review_cancelled: { icon: XCircle, label: "review cancelled" },
-  review_message_added: { icon: MessageSquare, label: "review message added" },
-  quality_check_requested: { icon: ClipboardCheck, label: "quality check requested" },
-  quality_check_removed: { icon: ClipboardX, label: "quality check removed" },
-  checklist_created: { icon: ListChecks, label: "checklist item added" },
-  checklist_updated: { icon: ListChecks, label: "checklist item updated" },
-  checklist_deleted: { icon: Trash2, label: "checklist item deleted" },
-  note_added: { icon: StickyNote, label: "note added" },
-  note_updated: { icon: StickyNote, label: "note updated" },
-  note_deleted: { icon: Trash2, label: "note deleted" },
-  email_sent: { icon: Send, label: "email sent" },
-  email_received: { icon: Inbox, label: "email received" },
+  application_created: { label: "Application started" },
+  document_uploaded: { label: "Document uploaded" },
+  document_reuploaded: { label: "Document re-uploaded" },
+  document_status_changed: { label: "Document status changed" },
+  comment_added: { label: "Comment added" },
+  comment_edited: { label: "Comment edited" },
+  comment_deleted: { label: "Comment deleted" },
+  review_requested: { label: "Review requested" },
+  review_status_updated: { label: "Review updated" },
+  review_cancelled: { label: "Review cancelled" },
+  review_message_added: { label: "Review message added" },
+  quality_check_requested: { label: "Quality check requested" },
+  quality_check_removed: { label: "Quality check removed" },
+  checklist_created: { label: "Checklist item added" },
+  checklist_updated: { label: "Checklist item updated" },
+  checklist_deleted: { label: "Checklist item deleted" },
+  note_added: { label: "Note added" },
+  note_updated: { label: "Note updated" },
+  note_deleted: { label: "Note deleted" },
+  email_sent: { label: "Email sent" },
+  email_received: { label: "Email received" },
 };
 
 // ─── Grouping ─────────────────────────────────────────────────────────────────
@@ -230,15 +212,6 @@ function ActivityTimelineEmpty({ hasFilter }: { hasFilter: boolean }) {
   );
 }
 
-// Timeline node — uniform monochrome circle with icon
-function TimelineNode({ icon: Icon }: { icon: LucideIcon }) {
-  return (
-    <div className="w-6 h-6 rounded-full bg-gray-200 flex items-center justify-center shrink-0 border border-gray-300">
-      <Icon className="w-3 h-3 text-[#222222]" strokeWidth={2} />
-    </div>
-  );
-}
-
 // Single log card
 function ActivityLogCard({
   log,
@@ -259,13 +232,7 @@ function ActivityLogCard({
       {/* Actor + timestamp */}
       <div className="flex items-start justify-between gap-3 mb-2">
         <div className="flex items-center gap-2 min-w-0">
-          {/* Actor avatar initials */}
-          {/* <div className="w-5 h-5 rounded-full bg-zinc-100 border border-zinc-200 flex items-center justify-center shrink-0">
-            <span className="text-[9px] font-bold text-zinc-600 uppercase leading-none">
-              {log.actor_name.slice(0, 2)}
-            </span>
-          </div> */}
-          <span className="text-[12.5px] capitalize font-semibold text-[#222222] truncate max-w-[130px]">
+          <span className="text-[12.5px] capitalize font-semibold text-neutral-950 truncate max-w-[130px]">
             {log.actor_name}
           </span>
           {log.actor_role && (
@@ -308,26 +275,20 @@ function ActivityLogCard({
 }
 
 // Grouped item — collapsible when count > 1
-function ActivityGroupItem({ group }: { group: ActivityGroup }) {
+function ActivityGroupItem({ group, index }: { group: ActivityGroup; index: number }) {
   const [expanded, setExpanded] = useState(false);
-  const style = ACTIVITY_STYLE[group.activity_type] ?? {
-    icon: ChevronRight,
-    label: "event",
-  };
+  const style = ACTIVITY_STYLE[group.activity_type] ?? { label: "event" };
   const count = group.logs.length;
   const isGrouped = count > 1;
 
   // Single item
   if (!isGrouped) {
     return (
-      <li className="relative flex gap-3.5 pb-3 last:pb-0">
-        <div className="relative z-10 shrink-0 flex flex-col items-center pt-[14px]">
-          <TimelineNode icon={style.icon} />
-        </div>
-        <div className="flex-1 min-w-0 pt-0.5">
+      <TimelineStep index={index} title={style.label}>
+        <div className="mt-2">
           <ActivityLogCard log={group.logs[0]} />
         </div>
-      </li>
+      </TimelineStep>
     );
   }
 
@@ -336,12 +297,8 @@ function ActivityGroupItem({ group }: { group: ActivityGroup }) {
   const oldestLog = group.logs[count - 1];
 
   return (
-    <li className="relative flex gap-3.5 pb-3 last:pb-0">
-      <div className="relative z-10 shrink-0 flex flex-col items-center pt-[14px]">
-        <TimelineNode icon={style.icon} />
-      </div>
-
-      <div className="flex-1 min-w-0 pt-0.5 space-y-2">
+    <TimelineStep index={index}  title={`${count} ${style.label}s`}>
+      <div className="mt-2 space-y-2">
         {/* Group header card */}
         <button
           type="button"
@@ -353,9 +310,6 @@ function ActivityGroupItem({ group }: { group: ActivityGroup }) {
               {/* Count pill */}
               <span className="shrink-0 inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-zinc-900 text-white text-[10px] font-bold tabular-nums">
                 {count}
-              </span>
-              <span className="text-[12.5px] font-semibold text-zinc-900">
-                {style.label}s
               </span>
               <span className="text-[11.5px] text-zinc-400 hidden sm:block truncate">
                 · {newestLog.actor_name}
@@ -394,7 +348,7 @@ function ActivityGroupItem({ group }: { group: ActivityGroup }) {
           </div>
         )}
       </div>
-    </li>
+    </TimelineStep>
   );
 }
 
@@ -553,15 +507,10 @@ export function ApplicationActivitySheet({
           )}
 
           {!isLoading && !isError && groups.length > 0 && (
-            <div className="relative">
-              {/* Vertical connector line */}
-              <div className="absolute left-[11px] top-[26px] bottom-6 w-px bg-gray-200" />
-
-              <ol className="relative space-y-0">
-                {groups.map((group) => (
-                  <ActivityGroupItem key={group.groupId} group={group} />
-                ))}
-              </ol>
+            <TimelineContainer>
+              {groups.map((group, index) => (
+                <ActivityGroupItem key={group.groupId} group={group} index={index} />
+              ))}
 
               <div ref={sentinelRef} className="h-1" />
 
@@ -585,7 +534,7 @@ export function ApplicationActivitySheet({
                   <div className="flex-1 h-px bg-zinc-200" />
                 </div>
               )}
-            </div>
+            </TimelineContainer>
           )}
         </div>
       </SheetContent>

@@ -6,37 +6,38 @@ import {
 } from "@/types/applications";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 
-/**
- * Fetches spouse skill assessment applications with pagination and filters
- */
 export async function getSpouseApplications(
   filters: ApplicationsFilters,
 ): Promise<ApplicationsResponse> {
   const searchParams = new URLSearchParams();
 
-  // Add pagination parameters
   if (filters.page) searchParams.append("page", filters.page.toString());
   if (filters.limit) searchParams.append("limit", filters.limit.toString());
 
-  // Add date range filters
   if (filters.startDate) searchParams.append("startDate", filters.startDate);
   if (filters.endDate) searchParams.append("endDate", filters.endDate);
 
-  // Add recent activity filter
   if (filters.recentActivity) searchParams.append("recentActivity", "true");
 
-  // Add handledBy filter
   if (filters.handledBy && filters.handledBy.length > 0) {
     for (const admin of filters.handledBy) {
       searchParams.append("handledBy", admin);
     }
   }
 
-  // Add deadline category filter
+  if (filters.applicationStage && filters.applicationStage.length > 0) {
+    for (const stage of filters.applicationStage) {
+      searchParams.append("applicationStage", stage);
+    }
+  }
+
+  if (filters.applicationState) {
+    searchParams.append("applicationState", filters.applicationState);
+  }
+
   if (filters.deadlineCategory)
     searchParams.append("deadlineCategory", filters.deadlineCategory);
 
-  // Add country filter
   if (filters.country) searchParams.append("country", filters.country);
 
   const url = `${ZOHO_BASE_URL}/visa_applications/spouse/applications?${searchParams.toString()}`;
@@ -44,9 +45,6 @@ export async function getSpouseApplications(
   return fetcher<ApplicationsResponse>(url);
 }
 
-/**
- * Searches spouse applications by name, phone, or email
- */
 export async function searchSpouseApplications(searchParams: {
   name?: string;
   phone?: string;

@@ -1,12 +1,13 @@
 import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Application } from "@/types/applications";
 import { formatDate } from "@/utils/format";
-import { BadgeCheck, Check, Copy, MessageCircle, User } from "lucide-react";
+import { BadgeCheck, Check, Copy, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
-import { ApplicationDeadlineCard } from "./ApplicationDeadlineCard";
+import { ApplicationDeadlineCard, shouldShowDeadlineCard } from "./ApplicationDeadlineCard";
 import { DeadlineUpdateModal } from "./DeadlineUpdateModal";
 
 interface ApplicantDetailsProps {
@@ -108,14 +109,7 @@ export function ApplicantDetails({
   }
 
   if (error) {
-    return (
-      <div className="flex gap-6">
-        <div className="flex-7 min-w-0 bg-white border border-gray-200 rounded-2xl p-8 text-center">
-          <p className="text-destructive text-sm">Failed to load applicant details</p>
-          <p className="text-xs text-muted-foreground mt-1">{error.message}</p>
-        </div>
-      </div>
-    );
+    return <ErrorState title="Failed to load applicant details" message={error.message} />;
   }
 
   if (!application) {
@@ -132,12 +126,18 @@ export function ApplicantDetails({
     if (!value || value === "N/A") return "Not provided";
     return value;
   };
+  const showDeadlineCard = shouldShowDeadlineCard(application.Application_Stage);
 
   return (
     <>
       <div className="flex gap-6 items-stretch">
         {/* Left — Application Information (70%) */}
-        <div className="flex-7 min-w-0 bg-white border border-gray-200 rounded-2xl overflow-hidden">
+        <div
+          className={cn(
+            "min-w-0 bg-white border border-gray-200 rounded-2xl overflow-hidden",
+            showDeadlineCard ? "flex-7" : "flex-1",
+          )}
+        >
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -304,15 +304,16 @@ export function ApplicantDetails({
           </div>
         </div>
 
-        {/* Right — Application Deadline (30%) */}
-        <div className="flex-3 min-w-0">
-          <ApplicationDeadlineCard
-            deadline={application.Deadline_For_Lodgment}
-            user={user}
-            onEditDeadline={() => setIsDeadlineModalOpen(true)}
-            applicationStage={application.Application_Stage}
-          />
-        </div>
+        {showDeadlineCard && (
+          <div className="flex-3 min-w-0">
+            <ApplicationDeadlineCard
+              deadline={application.Deadline_For_Lodgment}
+              user={user}
+              onEditDeadline={() => setIsDeadlineModalOpen(true)}
+              applicationStage={application.Application_Stage}
+            />
+          </div>
+        )}
       </div>
 
       <DeadlineUpdateModal

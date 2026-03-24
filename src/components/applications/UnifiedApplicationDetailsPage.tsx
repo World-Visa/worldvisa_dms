@@ -14,8 +14,7 @@ import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumen
 import { ResetPasswordModal } from "@/components/applications/ResetPasswordModal";
 import { LayoutChips } from "@/components/applications/layouts/LayoutChips";
 import { SkillAssessmentLayout } from "@/components/applications/layouts/SkillAssessmentLayout";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
+import { ErrorState } from "@/components/ui/ErrorState";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSpouseApplicationDetails } from "@/hooks/useSpouseApplicationDetails";
@@ -29,10 +28,10 @@ import { useApplicationState } from "@/hooks/useApplicationState";
 import { useApplicationModals } from "@/hooks/useApplicationModals";
 import { useLayoutState } from "@/hooks/useLayoutState";
 import { useChecklistURLState } from "@/lib/urlState";
-import { ApplicationDetailsResponse, Document } from "@/types/applications";
-import { useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, BadgeCheck } from "lucide-react";
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { ApplicationDetailsResponse } from "@/types/applications";
+import { ArrowLeft } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useDeepLinkDocument } from "@/hooks/useDeepLinkDocument";
 import {
   useEffect,
   useMemo,
@@ -42,23 +41,15 @@ import {
   useState,
 } from "react";
 import { useApplicationDetails } from "@/hooks/useApplicationDetails";
-import { TooltipProvider } from "../ui/tooltip";
 import type { DocumentCategory } from "@/types/documents";
 import {
   areAllMandatoryDocumentsReviewed,
   getMandatoryDocumentValidationDetails,
-  type MandatoryDocumentValidationDetail,
 } from "@/utils/checklistValidation";
-import { useDeleteDocument } from "@/hooks/useMutationsDocuments";
 import { useApplicationNotes, useDeleteNote } from "@/hooks/useApplicationNotes";
+import { useRemoveCompany } from "@/hooks/useRemoveCompany";
 import type { ApplicationNote } from "@/lib/api/applicationNotes";
-import {
-  getCompanyDocuments,
-  filterDocumentsWithValidIds,
-} from "@/utils/companyDocuments";
 import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
-import { toast } from "sonner";
-import type { Company } from "@/types/documents";
 
 const OutcomeLayout = lazy(() =>
   import("@/components/applications/layouts/OutcomeLayout").then((mod) => ({
@@ -95,8 +86,6 @@ export default function UnifiedApplicationDetailsPage({
 }: UnifiedApplicationDetailsPageProps) {
   const router = useRouter();
   const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const queryClient = useQueryClient();
-
   const { category: urlCategory } = useChecklistURLState(applicationId);
 
   const layoutState = useLayoutState();
@@ -205,24 +194,21 @@ export default function UnifiedApplicationDetailsPage({
   }, [allDocuments, checklistState.checklistData]);
 
   const [documentsPage, setDocumentsPage] = useState(1);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [showSampleDocuments, setShowSampleDocuments] = useState(false);
   const maxCompanies = 10;
 
-  // State for remove company dialog with document check
-  const [removeCompanyDialog, setRemoveCompanyDialog] = useState<{
-    isOpen: boolean;
-    company: Company | null;
-    hasDocuments: boolean;
-    documentCount: number;
-  }>({
-    isOpen: false,
-    company: null,
-    hasDocuments: false,
-    documentCount: 0,
+  const {
+    removeCompanyDialog,
+    isDeletingDocuments,
+    handleRemoveCompanyWithDocuments,
+    handleRemoveDocumentsAndCompany,
+    handleRemoveCompanyDirect,
+    handleCloseRemoveCompanyDialog,
+  } = useRemoveCompany({
+    allDocuments,
+    companies: appState.companies,
+    onRemoveCompany: appState.handleRemoveCompany,
   });
-  const [isDeletingDocuments, setIsDeletingDocuments] = useState(false);
-  const deleteDocumentMutation = useDeleteDocument();
 
   // Notes state
   const [isNoteModalOpen, setIsNoteModalOpen] = useState(false);
@@ -232,95 +218,17 @@ export default function UnifiedApplicationDetailsPage({
   const deleteNoteMutation = useDeleteNote(applicationId, isSpouseApplication);
 
   // Deep-link: auto-open a document sheet when navigating from a notification
-  const searchParams = useSearchParams();
-  const pathname = usePathname();
-  const rawDocId = searchParams.get("documentId");
-  const [targetDocId, setTargetDocId] = useState<string | null>(null);
-  const [deepLinkDoc, setDeepLinkDoc] = useState<Document | null>(null);
-
-  // Phase 1: capture the URL param into state and immediately clean the URL.
-  // This prevents URL oscillation from canceling the sheet open on same-page navigation.
-  useEffect(() => {
-    if (!rawDocId) return;
-    setTargetDocId(rawDocId);
-    router.replace(pathname, { scroll: false });
-  }, [rawDocId, pathname, router]);
-
-  // Phase 2: once we have a captured ID and documents are loaded, find and open the sheet.
-  useEffect(() => {
-    if (!targetDocId) return;
-    const allDocs = allDocuments ?? documents;
-    if (!allDocs?.length) return;
-    const found = allDocs.find((d) => d._id === targetDocId);
-    if (!found) return;
-    setDeepLinkDoc(found);
-    setTargetDocId(null);
-  }, [targetDocId, allDocuments, documents]);
+  const { deepLinkDoc, clearDeepLinkDoc } = useDeepLinkDocument({
+    allDocuments,
+    documents,
+  });
 
   useEffect(() => {
     setDocumentsPage(1);
   }, [appState.selectedCategory]);
 
-  useEffect(() => {
-    if (
-      !isAuthLoading &&
-      (!isAuthenticated ||
-        (user?.role !== "admin" &&
-          user?.role !== "team_leader" &&
-          user?.role !== "master_admin" &&
-          user?.role !== "supervisor"))
-    ) {
-      router.push("/admin-login");
-    }
-  }, [isAuthenticated, isAuthLoading, user?.role, router]);
-
-  const handleRefresh = useCallback(async () => {
-    setIsRefreshing(true);
-    try {
-      const queries = [
-        queryClient.invalidateQueries({
-          queryKey: ["application-documents", applicationId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["application-documents-all", applicationId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["application-documents-paginated", applicationId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["checklist", applicationId],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["document-comment-counts"],
-        }),
-        queryClient.invalidateQueries({ queryKey: ["application"] }),
-      ];
-
-      if (isSpouseApplication) {
-        queries.push(
-          queryClient.invalidateQueries({
-            queryKey: ["spouse-application-details", applicationId],
-          }),
-        );
-      } else {
-        queries.push(
-          queryClient.invalidateQueries({
-            queryKey: ["application-details", applicationId],
-          }),
-        );
-      }
-
-      await Promise.all(queries);
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-    } finally {
-      setIsRefreshing(false);
-    }
-  }, [applicationId, isSpouseApplication, queryClient]);
-
   const handlePushForQualityCheck = useCallback(() => {
     if (!user?.username || !application?.id) {
-      console.error("Missing user or application data");
       return;
     }
     modals.openQualityCheckModal();
@@ -332,7 +240,6 @@ export default function UnifiedApplicationDetailsPage({
         (doc) => doc._id === documentId,
       );
       if (!documentToReupload) {
-        console.error("Document not found for reupload:", documentId);
         return;
       }
       modals.openReuploadModal(documentToReupload, documentType, category);
@@ -371,218 +278,6 @@ export default function UnifiedApplicationDetailsPage({
     appState.handleCategoryChange(targetCategory);
   }, [appState, checklistState]);
 
-  // Handler to check for documents and open remove company dialog
-  const handleRemoveCompanyWithDocuments = useCallback(
-    (companyName: string, companyCategory: string) => {
-      // Find the company object
-      const company = appState.companies.find(
-        (c) => c.name.toLowerCase() === companyName.toLowerCase(),
-      );
-
-      if (!company) {
-        console.error("[RemoveCompany] Company not found:", companyName);
-        toast.error("Company not found");
-        return;
-      }
-
-      // Check if company has documents
-      const companyDocuments = getCompanyDocuments(
-        companyCategory,
-        allDocuments || [],
-      );
-      const hasDocuments = companyDocuments.length > 0;
-      const documentCount = companyDocuments.length;
-
-      // Open dialog with company info
-      setRemoveCompanyDialog({
-        isOpen: true,
-        company,
-        hasDocuments,
-        documentCount,
-      });
-    },
-    [appState.companies, allDocuments],
-  );
-
-  // Handler to delete all documents and then remove company
-  const handleRemoveDocumentsAndCompany = useCallback(async () => {
-    const { company, hasDocuments, documentCount } = removeCompanyDialog;
-
-    if (!company) {
-      console.error("[RemoveCompany] No company selected");
-      return;
-    }
-
-    if (!hasDocuments || documentCount === 0) {
-      // No documents, just remove company
-      console.log("[RemoveCompany] No documents, removing company directly");
-      appState.handleRemoveCompany(company.name);
-      setRemoveCompanyDialog({
-        isOpen: false,
-        company: null,
-        hasDocuments: false,
-        documentCount: 0,
-      });
-      toast.success("Company removed successfully");
-      return;
-    }
-
-    // Find company category
-    const companyCategory =
-      company.category || `${company.name} Company Documents`;
-    const companyDocuments = getCompanyDocuments(
-      companyCategory,
-      allDocuments || [],
-    );
-
-    if (companyDocuments.length === 0) {
-      appState.handleRemoveCompany(company.name);
-      setRemoveCompanyDialog({
-        isOpen: false,
-        company: null,
-        hasDocuments: false,
-        documentCount: 0,
-      });
-      toast.success("Company removed successfully");
-      return;
-    }
-
-    // Filter out documents without valid IDs
-    const validDocuments = filterDocumentsWithValidIds(companyDocuments);
-    const invalidDocumentCount =
-      companyDocuments.length - validDocuments.length;
-
-    if (invalidDocumentCount > 0) {
-      console.warn(
-        `[RemoveCompany] Skipping ${invalidDocumentCount} document(s) with invalid or missing IDs`,
-      );
-    }
-
-    if (validDocuments.length === 0) {
-      appState.handleRemoveCompany(company.name);
-      setRemoveCompanyDialog({
-        isOpen: false,
-        company: null,
-        hasDocuments: false,
-        documentCount: 0,
-      });
-      toast.success("Company removed successfully");
-      return;
-    }
-
-    // Set deleting state
-    setIsDeletingDocuments(true);
-
-    try {
-      // Process each document individually, tracking results
-      const deletionResults: Array<{
-        success: boolean;
-        documentId: string;
-        fileName?: string;
-        error?: string;
-      }> = [];
-
-      for (const doc of validDocuments) {
-        // Additional inline validation right before mutation call
-        if (!doc._id || typeof doc._id !== "string" || doc._id.trim() === "") {
-          deletionResults.push({
-            success: false,
-            documentId: doc._id || "unknown",
-            fileName: doc.file_name,
-            error: "Invalid document ID",
-          });
-          continue;
-        }
-
-        try {
-          await deleteDocumentMutation.mutateAsync(doc._id);
-          deletionResults.push({
-            success: true,
-            documentId: doc._id,
-            fileName: doc.file_name,
-          });
-        } catch (error) {
-          // Log but continue with other documents
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error";
-          deletionResults.push({
-            success: false,
-            documentId: doc._id,
-            fileName: doc.file_name,
-            error: errorMessage,
-          });
-        }
-      }
-      const successCount = deletionResults.filter((r) => r.success).length;
-      const failureCount = deletionResults.filter((r) => !r.success).length;
-
-      if (successCount === 0 && validDocuments.length > 0) {
-        setIsDeletingDocuments(false);
-        toast.error(
-          "Failed to delete all documents. Company was not removed. Please try again.",
-        );
-        return;
-      }
-
-      if (failureCount > 0) {
-        toast.warning(
-          `Company removed. ${successCount} document${successCount !== 1 ? "s" : ""} deleted successfully, but ${failureCount} document${failureCount !== 1 ? "s" : ""} could not be deleted.`,
-        );
-      } else {
-        toast.success(
-          `Company and ${successCount} document${successCount !== 1 ? "s" : ""} removed successfully`,
-        );
-      }
-
-      appState.handleRemoveCompany(company.name);
-
-      setRemoveCompanyDialog({
-        isOpen: false,
-        company: null,
-        hasDocuments: false,
-        documentCount: 0,
-      });
-      setIsDeletingDocuments(false);
-    } catch (error) {
-      setIsDeletingDocuments(false);
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error";
-      console.error(
-        "[RemoveCompany] Unexpected error during document deletion:",
-        errorMessage,
-      );
-
-      toast.error(
-        "An unexpected error occurred. Company was not removed. Please try again.",
-      );
-    }
-  }, [removeCompanyDialog, allDocuments, appState, deleteDocumentMutation]);
-
-  const handleCloseRemoveCompanyDialog = useCallback(() => {
-    if (isDeletingDocuments) {
-      return;
-    }
-    setRemoveCompanyDialog({
-      isOpen: false,
-      company: null,
-      hasDocuments: false,
-      documentCount: 0,
-    });
-  }, [isDeletingDocuments]);
-
-  const handleRemoveCompanyDirect = useCallback(() => {
-    const { company } = removeCompanyDialog;
-    if (!company) return;
-
-    appState.handleRemoveCompany(company.name);
-    setRemoveCompanyDialog({
-      isOpen: false,
-      company: null,
-      hasDocuments: false,
-      documentCount: 0,
-    });
-    toast.success("Company removed successfully");
-  }, [removeCompanyDialog, appState]);
 
   const backPath = useMemo(
     () =>
@@ -614,16 +309,13 @@ export default function UnifiedApplicationDetailsPage({
   if (applicationError || documentsError) {
     return (
       <div className="container mx-auto p-6 space-y-6">
-        <div className="flex items-center space-x-4">
-          <Button variant="outline" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="h-4 w-4 mr-2" />
-          </Button>
-        </div>
-        <Alert variant="destructive">
-          <AlertDescription>
-            Failed to load application details. Please try again later.
-          </AlertDescription>
-        </Alert>
+        <Button variant="outline" size="sm" onClick={() => router.back()}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+        </Button>
+        <ErrorState
+          title="Failed to load application details"
+          message="Please try again later."
+        />
       </div>
     );
   }
@@ -652,8 +344,6 @@ export default function UnifiedApplicationDetailsPage({
           areAllDocumentsApproved={areAllDocumentsApproved}
           validationDetails={mandatoryDocValidationDetails}
           onPushForQualityCheck={handlePushForQualityCheck}
-          onRefresh={handleRefresh}
-          isRefreshing={isRefreshing}
           onDownloadAll={modals.openDownloadAllModal}
           onResetPassword={modals.openResetPasswordModal}
           onActivateAccount={modals.openActivateAccountSheet}
@@ -811,7 +501,7 @@ export default function UnifiedApplicationDetailsPage({
             isOpen={modals.isResetPasswordModalOpen}
             onOpenChange={modals.setResetPasswordModalOpen}
             leadId={application?.id || ""}
-            onSuccess={() => console.log("Password reset successfully")}
+            onSuccess={() => {}}
           />
 
           <DownloadAllDocumentsModal
@@ -835,7 +525,7 @@ export default function UnifiedApplicationDetailsPage({
           documents={allDocuments ?? documents ?? []}
           applicationId={applicationId}
           isOpen
-          onClose={() => setDeepLinkDoc(null)}
+          onClose={clearDeepLinkDoc}
         />
       )}
     </main>

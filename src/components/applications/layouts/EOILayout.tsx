@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { IconFolderCode } from "@tabler/icons-react";
 import {
   Empty,
@@ -22,8 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { AlertCircle, MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
+import { MoreHorizontal, Eye, Pencil, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   useStage2Documents,
@@ -53,6 +51,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 interface EOILayoutComponentProps extends EOILayoutProps {
   isClientView?: boolean;
@@ -149,25 +148,9 @@ export function EOILayout({
     return code;
   };
 
-  const uniqueFileCount = useMemo(() => {
-    const names = new Set(
-      sortedDocuments.map((d) => d.file_name || d.document_name),
-    );
-    return names.size;
-  }, [sortedDocuments]);
-
-  const uniqueStateCount = useMemo(() => {
-    const states = new Set(sortedDocuments.map((d) => d.state).filter(Boolean));
-    return states.size;
-  }, [sortedDocuments]);
-
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>EOI Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="space-y-4">
           {isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
@@ -175,12 +158,7 @@ export function EOILayout({
               <Skeleton className="h-20 w-full" />
             </div>
           ) : error ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Failed to load EOI documents. Please try again later.
-              </AlertDescription>
-            </Alert>
+            <ErrorState title="Failed to load EOI documents" message="Please try again later." />
           ) : documents.length === 0 ? (
             <Empty>
               <EmptyHeader>
@@ -207,22 +185,16 @@ export function EOILayout({
             </Empty>
           ) : (
             <div>
-              {!isClientView && (
-                <div className="flex justify-end mb-4">
-                  <Button onClick={() => setIsModalOpen(true)}>
-                    Add EOI Document
-                  </Button>
-                </div>
-              )}
-              {documents.length > 1 && (
-                <p className="text-sm text-muted-foreground mb-3">
-                  {documents.length} EOI document
-                  {documents.length !== 1 ? "s" : ""}
-                  {uniqueFileCount > 1 || uniqueStateCount > 1
-                    ? ` (${uniqueFileCount} file${uniqueFileCount !== 1 ? "s" : ""} across ${uniqueStateCount} state${uniqueStateCount !== 1 ? "s" : ""})`
-                    : ""}
-                </p>
-              )}
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-medium">EOI Documents</h2>
+                {!isClientView && (
+                  <div className="flex justify-end">
+                    <Button onClick={() => setIsModalOpen(true)}>
+                      Add EOI Document
+                    </Button>
+                  </div>
+                )}
+              </div>
               <div className="rounded-md border overflow-x-auto max-h-[60vh] overflow-y-auto">
                 <Table>
                   <TableHeader>
@@ -333,8 +305,7 @@ export function EOILayout({
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+      </div>
 
       {!isClientView && (
         <>
