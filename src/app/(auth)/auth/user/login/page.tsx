@@ -1,8 +1,5 @@
 import Link from "next/link";
-
 import { Globe } from "lucide-react";
-
-
 import { LoginFormV2 } from "@/components/auth/LoginFormV2";
 import { GoogleButton } from "@/components/auth/GoogleButton";
 import Image from "next/image";
@@ -10,10 +7,10 @@ import Logo from "../../../../../../public/logos/world-visa-logo.webp";
 
 export default function LoginV2() {
   return (
-    <>
+    <div className="flex h-full min-h-0 w-full items-center justify-center overflow-auto p-4 md:p-0">
       <div className="mx-auto flex w-full flex-col justify-center space-y-8 sm:w-[350px]">
-      <div className="space-y-2 text-center items-center flex flex-col justify-center">
-          <div className="relative h-12 w-36">
+        <div className="space-y-2 text-center items-center flex flex-col justify-center">
+          <div className="relative md:hidden h-12 w-36">
             <Image
               src={Logo}
               alt="WorldVisa Logo"
@@ -29,7 +26,7 @@ export default function LoginV2() {
         <div className="space-y-4">
           <GoogleButton className="w-full" />
           <div className="relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:flex after:items-center after:border-border after:border-t">
-            <span className="relative z-10 bg-background px-2 text-muted-foreground">Or continue with</span>
+            <span className="relative z-10 bg-gray-50 px-2 text-muted-foreground">Or continue with</span>
           </div>
           <LoginFormV2 type="client" />
         </div>
@@ -51,6 +48,6 @@ export default function LoginV2() {
           ENG
         </div>
       </div>
-    </>
+    </div>
   );
 }

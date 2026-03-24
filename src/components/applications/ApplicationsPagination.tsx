@@ -48,15 +48,13 @@ export function ApplicationsPagination({
       <div className="flex items-center justify-center space-x-1 sm:space-x-2">
         {/* Previous button */}
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => prevPage && onPageChange(prevPage)}
           disabled={!hasPrev}
           className="flex items-center gap-1 px-2 sm:px-3"
         >
           <ChevronLeft className="h-3 w-3 sm:h-4 sm:w-4" />
-          <span className="hidden xs:inline sm:inline">Previous</span>
-          <span className="xs:hidden">Prev</span>
         </Button>
 
         {/* Page numbers */}
@@ -69,7 +67,7 @@ export function ApplicationsPagination({
                 </span>
               ) : (
                 <Button
-                  variant={page === currentPage ? "default" : "outline"}
+                  variant={page === currentPage ? "secondary" : "ghost"}
                   size="sm"
                   onClick={() => onPageChange(page as number)}
                   className="w-7 h-7 sm:w-8 sm:h-8 p-0 text-xs sm:text-sm"
@@ -83,13 +81,12 @@ export function ApplicationsPagination({
 
         {/* Next button */}
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
           onClick={() => nextPage && onPageChange(nextPage)}
           disabled={!hasNext}
           className="flex items-center gap-1 px-2 sm:px-3"
         >
-          <span className="hidden xs:inline sm:inline">Next</span>
           <ChevronRight className="h-3 w-3 sm:h-4 sm:w-4" />
         </Button>
       </div>

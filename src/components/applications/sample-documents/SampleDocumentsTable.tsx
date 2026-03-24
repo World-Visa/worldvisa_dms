@@ -5,7 +5,6 @@ import { IconFolderCode } from "@tabler/icons-react";
 import { Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
@@ -42,6 +41,7 @@ import {
 import type { SampleDocument } from "@/types/sampleDocuments";
 import { SampleDocumentsModal } from "./SampleDocumentsModal";
 import { SampleDocumentsUploadModal } from "./SampleDocumentsUploadModal";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 interface SampleDocumentsTableProps {
   applicationId: string;
@@ -151,7 +151,7 @@ export function SampleDocumentsTable({
     <>
       <div className="space-y-8">
         <div className="flex flex-row items-center justify-between">
-          <p className="text-base font-bold">Sample Documents</p>
+          <p className="text-lg font-medium">Sample Documents</p>
           {!isClientView && (
             <Button
               variant="default"
@@ -169,11 +169,7 @@ export function SampleDocumentsTable({
             <Skeleton className="h-20 w-full" />
           </div>
         ) : error ? (
-          <Alert variant="destructive">
-            <AlertDescription>
-              Failed to load sample documents. Please try again later.
-            </AlertDescription>
-          </Alert>
+          <ErrorState title="Failed to load sample documents" message="Please try again later." />
         ) : groupedDocuments.length === 0 ? (
           <Empty>
             <EmptyHeader>

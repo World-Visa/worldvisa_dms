@@ -125,3 +125,23 @@ export interface SearchParams {
   word?: string;
   country?: string;
 }
+
+// ─── Applications List Page shared types ─────────────────────────────────────
+
+export type Country = "Australia" | "Canada";
+
+export type DeadlineCategory =
+  | "approaching"
+  | "overdue"
+  | "noDeadline"
+  | "future";
+
+export type SearchType = "name" | "phone" | "email";
+
+export type ApplicationStateFilter = "Active" | "In-Active";
+
+export interface EnabledFilters {
+  handledBy: boolean;
+  applicationStage: boolean;
+  applicationState: boolean;
+}

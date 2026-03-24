@@ -86,7 +86,7 @@ export function LoginFormV2({ type }: { type: "admin" | "client" }) {
               <FormItem>
                 <FormLabel>Username</FormLabel>
                 <FormControl>
-                  <Input id="username" type="text" placeholder="Enter your username" autoComplete="username" {...field} />
+                  <Input id="username" type="text" className="h-10" placeholder="Enter your username" autoComplete="username" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -105,7 +105,7 @@ export function LoginFormV2({ type }: { type: "admin" | "client" }) {
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
                       autoComplete="current-password"
-                      className="pr-10"
+                      className="pr-10 h-10"
                       {...field}
                     />
                     <Button
@@ -139,7 +139,7 @@ export function LoginFormV2({ type }: { type: "admin" | "client" }) {
               </FormItem>
             )}
           />
-          <Button className="w-full" type="submit" disabled={isPending}>
+          <Button className="w-full h-10 font-medium" type="submit" disabled={isPending}>
             {isPending ? <><Loader2 className="mr-2 size-4 animate-spin" /> Logging in...</> : "Login"}
           </Button>
         </form>
@@ -157,7 +157,7 @@ export function LoginFormV2({ type }: { type: "admin" | "client" }) {
             <FormItem>
               <FormLabel>Email Address</FormLabel>
               <FormControl>
-                <Input id="email" type="email" placeholder="you@example.com" autoComplete="email" {...field} />
+                <Input id="email" type="email" className="h-10" placeholder="you@example.com" autoComplete="email" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -176,7 +176,7 @@ export function LoginFormV2({ type }: { type: "admin" | "client" }) {
                     type={showPassword ? "text" : "password"}
                     placeholder="••••••••"
                     autoComplete="current-password"
-                    className="pr-10"
+                    className="pr-10 h-10"
                     {...field}
                   />
                   <Button
@@ -210,7 +210,7 @@ export function LoginFormV2({ type }: { type: "admin" | "client" }) {
             </FormItem>
           )}
         />
-        <Button className="w-full" type="submit" disabled={isPending}>
+        <Button className="w-full h-10 font-medium" type="submit" disabled={isPending}>
           {isPending ? <><Loader2 className="mr-2 size-4 animate-spin" /> Logging in...</> : "Login"}
         </Button>
       </form>

@@ -5,13 +5,24 @@ import { cn } from "@/lib/utils";
 import { formatDate } from "@/utils/format";
 import { AlertTriangle, Calendar, Edit3 } from "lucide-react";
 
-const STAGES_WITH_DEADLINE = [
+export const STAGES_WITH_DEADLINE = [
   "Stage 1 Documentation: Approved",
   "Stage 1 Documentation: Rejected",
   "Stage 1 Milestone Completed",
   "Stage 1 Documentation Reviewed",
   "Skill Assessment Stage",
 ] as const;
+
+export function shouldShowDeadlineCard(
+  applicationStage: string | undefined,
+  alwaysShowWhenDeadline = false,
+) {
+  if (alwaysShowWhenDeadline) return true;
+  if (applicationStage === undefined) return true;
+  return STAGES_WITH_DEADLINE.includes(
+    applicationStage as (typeof STAGES_WITH_DEADLINE)[number],
+  );
+}
 
 interface ApplicationDeadlineCardProps {
   deadline: string | undefined;
@@ -56,13 +67,7 @@ export function ApplicationDeadlineCard({
   showEdit = true,
   alwaysShowWhenDeadline = false,
 }: ApplicationDeadlineCardProps) {
-  if (
-    !alwaysShowWhenDeadline &&
-    applicationStage !== undefined &&
-    !STAGES_WITH_DEADLINE.includes(
-      applicationStage as (typeof STAGES_WITH_DEADLINE)[number],
-    )
-  ) {
+  if (!shouldShowDeadlineCard(applicationStage, alwaysShowWhenDeadline)) {
     return null;
   }
 

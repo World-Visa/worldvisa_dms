@@ -2,7 +2,6 @@ import { HydrationBoundary, dehydrate } from "@tanstack/react-query";
 
 import { getApplicationById } from "@/lib/api/getApplicationById";
 import { getAllApplicationDocuments } from "@/lib/api/getApplicationDocuments";
-import { getChecklist } from "@/lib/api/checklist";
 import { createServerQueryClient } from "@/lib/react-query/server";
 import { ChecklistPage } from "@/components/checklist/ChecklistPage";
 
@@ -24,10 +23,6 @@ export default async function ChecklistRoutePage({
     queryClient.prefetchQuery({
       queryKey: ["application-documents-all", applicationId],
       queryFn: () => getAllApplicationDocuments(applicationId),
-    }),
-    queryClient.prefetchQuery({
-      queryKey: ["checklist", applicationId],
-      queryFn: () => getChecklist(applicationId),
     }),
   ]);
 

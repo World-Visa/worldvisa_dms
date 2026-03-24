@@ -52,22 +52,21 @@ export function useChecklist(applicationId: string) {
         console.warn("useChecklist: API returned unexpected structure", result);
         return { success: true, data: [] };
       } catch (error) {
-        console.error("useChecklist: API call failed", error);
-
-        // Handle authentication errors gracefully
-        if (
+        // Handle expected authentication/session errors gracefully
+        // without logging a noisy hard error in the console.
+        const isAuthError =
           error instanceof Error &&
           (error.message.includes("User not found") ||
             error.message.includes("401") ||
             error.message.includes("Unauthorized") ||
-            error.message.includes("Token expired"))
-        ) {
-          console.warn(
-            "useChecklist: Authentication error, returning empty checklist",
-          );
+            error.message.includes("Token expired"));
+
+        if (isAuthError) {
+          console.warn("useChecklist: auth/session error, using empty checklist");
           return { success: true, data: [] };
         }
 
+        console.error("useChecklist: API call failed", error);
         throw error;
       }
     },

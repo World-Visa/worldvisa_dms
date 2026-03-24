@@ -1,5 +1,13 @@
 import { cookies } from "next/headers";
 import { Mail } from "@/components/mail/mail";
+import { createMeta } from "@/lib/seo";
+
+export const metadata = createMeta({
+  title: 'DMS - Mailbox',
+  description:
+    'View all mail in the WorldVisa DMS system.',
+  noIndex: true,
+});
 
 const MIN_NAV_SIZE = 15;
 const MIN_LIST_SIZE = 20;

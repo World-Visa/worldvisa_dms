@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Empty,
   EmptyContent,
@@ -22,8 +21,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Eye, Trash2, Pencil, MoreHorizontal, AlertCircle } from "lucide-react";
+import { Eye, Trash2, Pencil, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -55,6 +53,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ErrorState } from "@/components/ui/ErrorState";
 
 interface InvitationLayoutComponentProps extends InvitationLayoutProps {
   isClientView?: boolean;
@@ -140,11 +139,7 @@ export function InvitationLayout({
 
   return (
     <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Invitation Documents</CardTitle>
-        </CardHeader>
-        <CardContent>
+        <div className="space-y-4">
           {isLoading ? (
             <div className="space-y-3">
               <Skeleton className="h-10 w-full" />
@@ -152,12 +147,7 @@ export function InvitationLayout({
               <Skeleton className="h-20 w-full" />
             </div>
           ) : error ? (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertDescription>
-                Failed to load invitation documents. Please try again later.
-              </AlertDescription>
-            </Alert>
+            <ErrorState title="Failed to load invitation documents" message="Please try again later." />
           ) : documents.length === 0 ? (
             <Empty>
               <EmptyHeader>
@@ -185,19 +175,16 @@ export function InvitationLayout({
             </Empty>
           ) : (
             <div>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-medium">Invitation Documents</h2>
               {!isClientView && (
-                <div className="flex justify-end mb-4">
-                  <Button onClick={() => setIsModalOpen(true)}>
-                    Add Invitation Document
-                  </Button>
-                </div>
-              )}
-              {documents.length > 1 && (
-                <p className="text-sm text-muted-foreground mb-3">
-                  {documents.length} invitation document
-                  {documents.length !== 1 ? "s" : ""}
-                </p>
-              )}
+                  <div className="flex justify-end">
+                    <Button onClick={() => setIsModalOpen(true)}>
+                      Add Invitation Document
+                    </Button>
+                  </div>
+                )}
+              </div>
               <div className="rounded-md border overflow-x-auto max-h-[60vh] overflow-y-auto">
                 <Table>
                   <TableHeader>
@@ -292,8 +279,7 @@ export function InvitationLayout({
               </div>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
       {!isClientView && (
         <>
