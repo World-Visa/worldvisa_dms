@@ -4,7 +4,8 @@ import { fetcher } from "@/lib/fetcher";
 
 export interface AdminUserV2 {
   _id: string;
-  username: string;
+  username?: string;
+  full_name?: string;
   role: "master_admin" | "admin" | "team_leader" | "supervisor";
   __v: number;
   last_login?: string;
