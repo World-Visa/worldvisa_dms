@@ -4,7 +4,8 @@ import { fetcher } from "@/lib/fetcher";
 
 export interface AdminUser {
   _id: string;
-  username: string;
+  username?: string;
+  full_name?: string;
   role: "admin" | "team_leader" | "master_admin" | "supervisor";
   __v: number;
 }
@@ -12,7 +13,7 @@ export interface AdminUser {
 const fetchAdminUsers = async (): Promise<AdminUser[]> => {
   try {
     const result = await fetcher<unknown>(
-      `${ZOHO_BASE_URL}/users/all`,
+      `${ZOHO_BASE_URL}/users/all?page=1&limit=100`,
     );
 
     const list: AdminUser[] =
@@ -57,9 +58,9 @@ export function useAdminUsers() {
   return useQuery({
     queryKey: ["admin-users"],
     queryFn: fetchAdminUsers,
-    enabled: true, // Always fetch admin users
-    staleTime: 5 * 60 * 1000, // 5 minutes - admin list doesn't change frequently
-    gcTime: 10 * 60 * 1000, // 10 minutes cache time
+    enabled: true,
+    staleTime: 5 * 60 * 1000, 
+    gcTime: 10 * 60 * 1000, 
     retry: 2,
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     refetchOnWindowFocus: false, // Don't refetch on window focus for admin list
@@ -86,7 +87,7 @@ export function useAdminUsers() {
           const roleDiff = (rolePriority[a.role] ?? 4) - (rolePriority[b.role] ?? 4);
           return roleDiff !== 0
             ? roleDiff
-            : a.username.localeCompare(b.username);
+            : (a.username ?? a.full_name ?? "").localeCompare(b.username ?? b.full_name ?? "");
         });
     },
     meta: {
