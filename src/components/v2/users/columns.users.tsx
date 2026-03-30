@@ -1,13 +1,18 @@
 "use client";
 
 import * as React from "react";
-import { type ColumnDef, flexRender } from "@tanstack/react-table";
-import { Check, ChevronDown, MoreHorizontal, Trash2, UserRound } from "lucide-react";
+import { type ColumnDef } from "@tanstack/react-table";
+import {
+  Check,
+  ChevronDown,
+  EllipsisVerticalIcon,
+  Trash2,
+  UserRound,
+} from "lucide-react";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
+import { PresenceDot } from "@/components/ui/presence-dot";
 import {
   Command,
   CommandEmpty,
@@ -30,37 +35,21 @@ import {
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
-import { useUpdateUserRole, useDeleteUser } from "@/hooks/useUserMutations";
+import {
+  useUpdateUserRole,
+  useDeleteUser,
+  useMigrateUserToClerk,
+} from "@/hooks/useUserMutations";
 import type { AdminUserV2 } from "@/hooks/useAdminUsersV2";
+import { ROLE_OPTIONS, formatRole, getInitials } from "@/lib/constants/users";
+import { StatusCell } from "@/components/v2/users/StatusCell";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import { InviteClerkAction } from "@/components/v2/invitations/InviteClerkAction";
+import { useAuth } from "@/hooks/useAuth";
+import { getProfileAvatarSrc } from "@/lib/utils";
+import { ROUTES } from "@/utils/routes";
 
-const AVATAR_INDICES = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12];
-
-function getAvatar(username: string): string {
-  const idx = username.charCodeAt(0) % AVATAR_INDICES.length;
-  return `/avatars/${AVATAR_INDICES[idx]}.png`;
-}
-
-function getInitials(username: string): string {
-  return username.slice(0, 2).toUpperCase();
-}
-
-const ROLE_OPTIONS: { value: string; label: string; description: string }[] = [
-  { value: "master_admin", label: "Master Admin", description: "Full access to all resources and settings." },
-  { value: "admin", label: "Admin", description: "Can manage applications and team workflows." },
-  { value: "team_leader", label: "Team Leader", description: "Can lead a team and review quality checks." },
-  { value: "supervisor", label: "Supervisor", description: "Can view, comment and supervise applications." },
-];
-
-function formatRole(role: string): string {
-  return ROLE_OPTIONS.find((r) => r.value === role)?.label ?? role;
-}
-
-interface RoleCellProps {
-  username: string;
-  currentRole: string;
-}
-
-function RoleCell({ username, currentRole }: RoleCellProps) {
+function RoleCell({ username, currentRole }: { username?: string; currentRole: string }) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const { mutate: updateRole, isPending } = useUpdateUserRole();
@@ -76,10 +65,7 @@ function RoleCell({ username, currentRole }: RoleCellProps) {
   }, [searchQuery]);
 
   const handleSelect = (newRole: string) => {
-    if (newRole === currentRole) {
-      setOpen(false);
-      return;
-    }
+    if (newRole === currentRole || !username) { setOpen(false); return; }
     updateRole({ username, newRole });
     setOpen(false);
     setSearchQuery("");
@@ -141,84 +127,117 @@ function RoleCell({ username, currentRole }: RoleCellProps) {
   );
 }
 
-interface ActionsCellProps {
-  user: AdminUserV2;
-}
 
-function ActionsCell({ user }: ActionsCellProps) {
+// ─── Actions cell ─────────────────────────────────────────────────────────────
+
+function ActionsCell({ user }: { user: AdminUserV2 }) {
   const router = useRouter();
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
   const { mutate: deleteUser, isPending } = useDeleteUser();
+  const { mutate: migrateUser, isPending: isMigrating } = useMigrateUserToClerk();
+  const { user: currentUser } = useAuth();
+  const isSelf = currentUser?.username === user.username;
+  const needsInvite = !user.clerk_id;
+
+  const handleConfirm = () => {
+    deleteUser(
+      { username: user.username },
+      { onSettled: () => setConfirmOpen(false) },
+    );
+  };
+
+  const handleMigrate = () => {
+    migrateUser(user.email ?? "");
+  };
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="size-8">
-          <MoreHorizontal className="size-4" />
-          <span className="sr-only">Open actions</span>
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => router.push(`/v2/users/${user._id}`)}>
-          <UserRound className="size-4" />
-          View Details
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem
+    <div className="flex items-center gap-1">
+      {needsInvite && (
+        <InviteClerkAction
+          isLoading={isMigrating}
+          onConfirm={handleMigrate}
+          title="Migrate to new authentication?"
+          description={`This will send ${user.full_name ?? user.username ?? "this user"} an email invitation to migrate to the new Clerk authentication system. They will need to set up their account via the emailed link.`}
+          confirmText="Send Invite"
+        />
+      )}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" className="size-8">
+            <EllipsisVerticalIcon className="size-4" />
+            <span className="sr-only">Open actions</span>
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={() => router.push(ROUTES.USER_DETAILS(user._id))}>
+            <UserRound className="size-4" />
+            View Details
+          </DropdownMenuItem>
+          {!isSelf && (
+            <>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                variant="destructive"
+                disabled={isPending}
+                onClick={() => setConfirmOpen(true)}
+              >
+                <Trash2 className="size-4" />
+                Delete
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      {!isSelf && (
+        <ConfirmationModal
+          open={confirmOpen}
+          onOpenChange={setConfirmOpen}
+          onConfirm={handleConfirm}
+          title="Delete user?"
+          description={`This will permanently delete ${user.full_name ?? user.username ?? "this user"}. This action cannot be undone.`}
+          confirmText="Delete"
+          isLoading={isPending}
           variant="destructive"
-          disabled={isPending}
-          onClick={() => deleteUser({ username: user.username })}
-        >
-          <Trash2 className="size-4" />
-          Delete
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+        />
+      )}
+    </div>
   );
 }
 
+// ─── Column definitions ───────────────────────────────────────────────────────
+
 export const userColumns: ColumnDef<AdminUserV2>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={
-          table.getIsAllPageRowsSelected() ||
-          (table.getIsSomePageRowsSelected() && "indeterminate")
-        }
-        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
   {
     accessorKey: "username",
     header: "Name",
     cell: ({ row }) => {
-      const username = row.getValue<string>("username");
+      const username = row.getValue<string | undefined>("username");
+      const fullName = row.original.full_name;
+      const displayName = username ?? fullName;
       const onlineStatus = row.original.online_status;
       return (
         <div className="flex items-center gap-3">
-          <div className="relative size-9 shrink-0 group">
+          <div className="group relative size-9 shrink-0">
             <Avatar className="size-9">
-              <AvatarImage src={row.original.profile_image_url ?? getAvatar(username)} alt={username} />
+              <AvatarImage
+                src={getProfileAvatarSrc({
+                  profileImageUrl: row.original.profile_image_url,
+                  seed: row.original._id,
+                })}
+                alt={displayName}
+              />
               <AvatarFallback className="text-xs font-medium">
-                {getInitials(username)}
+                {getInitials(username, fullName)}
               </AvatarFallback>
             </Avatar>
-            <span
-              className={`absolute bottom-0 right-0 size-3 translate-x-1/4 translate-y-1/4 rounded-full border-2 border-background group-hover:border-primary transition-colors duration-200 ${onlineStatus ? "bg-green-500" : "bg-red-500"}`}
+            <PresenceDot
+              online={onlineStatus ?? false}
+              className="absolute bottom-0 right-0 size-3 translate-x-1/4 translate-y-1/4 border-2 border-background transition-colors duration-200 group-hover:border-primary"
             />
           </div>
-          <span className="font-medium capitalize">{username}</span>
+          <span className="font-medium capitalize">{displayName}</span>
         </div>
       );
     },
@@ -226,35 +245,28 @@ export const userColumns: ColumnDef<AdminUserV2>[] = [
   {
     accessorKey: "role",
     header: "Role",
-    cell: ({ row }) => {
-      const user = row.original;
-      return <RoleCell username={user.username} currentRole={user.role} />;
-    },
+    cell: ({ row }) => (
+      <RoleCell username={row.original.username} currentRole={row.original.role} />
+    ),
   },
   {
-    id: "active_applications",
-    header: "Active Applications",
-    cell: ({ row }) => {
-      const count = row.original.stats?.active_applications ?? 0;
-      return <span className="tabular-nums text-sm">{count}</span>;
-    },
+    accessorKey: "email",
+    header: "Email",
+    cell: ({ row }) => (
+      <span className="text-sm text-muted-foreground">
+        {row.original.email ?? "-"}
+      </span>
+    ),
   },
   {
     id: "status",
     header: "Status",
-    cell: () => (
-      <Badge
-        variant="outline"
-        className="border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400"
-      >
-        Active
-      </Badge>
-    ),
+    cell: ({ row }) => <StatusCell user={row.original} />,
     enableSorting: false,
   },
   {
     id: "actions",
-    header: "",
+    header: "Action",
     cell: ({ row }) => <ActionsCell user={row.original} />,
     enableSorting: false,
     enableHiding: false,

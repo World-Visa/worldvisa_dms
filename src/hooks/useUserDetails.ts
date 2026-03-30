@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ZOHO_BASE_URL } from "@/lib/config/api";
+import { API_ENDPOINTS } from "@/lib/config/api";
 import { fetcher } from "@/lib/fetcher";
 
 export interface UserDetailInfo {
@@ -70,13 +70,14 @@ export interface UserDetailsResponse {
 }
 
 const fetchUserDetails = async (id: string): Promise<UserDetailsResponse> => {
-  return fetcher<UserDetailsResponse>(`${ZOHO_BASE_URL}/users/${id}`);
+  return fetcher<UserDetailsResponse>(API_ENDPOINTS.USERS.BY_ID(id));
 };
 
-export function useUserDetails(id: string) {
+export function useUserDetails(id: string, initialData?: UserDetailsResponse) {
   return useQuery({
     queryKey: ["user-details", id],
     queryFn: () => fetchUserDetails(id),
+    initialData,
     enabled: Boolean(id),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,

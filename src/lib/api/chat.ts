@@ -1,5 +1,5 @@
 import { fetcher } from "@/lib/fetcher";
-import { getStoredToken } from "@/lib/auth";
+import { getClerkToken } from "@/lib/getToken";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 import { CHAT_ENDPOINTS } from "@/lib/config/chat";
 import type {
@@ -122,7 +122,7 @@ export async function sendMessageWithFiles(
     formData.append("forwardedFromMessageId", forwardedFromMessageId);
   }
 
-  const token = getStoredToken();
+  const token = await getClerkToken();
   const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
 
@@ -153,7 +153,7 @@ export async function uploadAttachment(
   const formData = new FormData();
   formData.append("file", file);
 
-  const token = getStoredToken();
+  const token = await getClerkToken();
   const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
 

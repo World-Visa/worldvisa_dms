@@ -65,7 +65,7 @@ export interface CreateClientAccountPayload {
   lead_id: string;
   lead_owner: string;
   record_type: string;
-  password: string;
+  password?: string | null;
 }
 
 export interface CreateClientAccountResponseClient {

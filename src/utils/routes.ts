@@ -1,0 +1,15 @@
+export const ROUTES = {
+  SIGN_IN: '/auth/sign-in',
+  SIGN_UP: '/accept-invite',
+  VERIFYING: '/verifying',
+  ADMIN_HOME: '/v2/applications',
+  CLIENT_HOME: '/client/applications',
+  USERS: '/v2/users',
+  USER_INVITATIONS: '/v2/users/invitations',
+  CLIENTS: '/v2/clients',
+  CLIENT_INVITATIONS: '/v2/clients/invitations',
+  USER_DETAILS: (id: string) => `/v2/users/${id}`,
+  PROFILE: '/v2/profile',
+  PROFILE_SETTINGS: '/v2/profile/settings',
+  SETTINGS_ACCOUNT: '/client/settings/account',
+} as const;

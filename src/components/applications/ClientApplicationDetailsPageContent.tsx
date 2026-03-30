@@ -131,11 +131,6 @@ export default function ClientApplicationDetailsPageContent({
     }
   };
 
-  useEffect(() => {
-    if (!isAuthLoading && (!isAuthenticated || user?.role !== "client")) {
-      router.push("/auth/user/login");
-    }
-  }, [isAuthenticated, isAuthLoading, user?.role, router]);
 
   const {
     data: applicationData,

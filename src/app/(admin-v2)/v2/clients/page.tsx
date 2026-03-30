@@ -1,9 +1,10 @@
 import { ClientsManageClient } from "@/components/v2/clients/ClientsManageClient";
+import { ClientsPageShell } from "@/components/v2/clients/ClientsPageShell";
 
 export default function ClientsPage() {
   return (
-    <main className="p-6">
+    <ClientsPageShell>
       <ClientsManageClient />
-    </main>
+    </ClientsPageShell>
   );
 }

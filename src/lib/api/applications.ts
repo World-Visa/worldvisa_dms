@@ -14,10 +14,6 @@ export async function getApplications(
   if (filters.page) searchParams.append("page", filters.page.toString());
   if (filters.limit) searchParams.append("limit", filters.limit.toString());
 
-  if (filters.startDate) searchParams.append("startDate", filters.startDate);
-  if (filters.endDate) searchParams.append("endDate", filters.endDate);
-
-  if (filters.recentActivity) searchParams.append("recentActivity", "true");
 
   if (filters.handledBy && filters.handledBy.length > 0) {
     filters.handledBy.forEach((admin) => {

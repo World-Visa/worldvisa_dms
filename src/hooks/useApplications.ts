@@ -30,12 +30,8 @@ export const useApplications = (filters: ApplicationsFilters) => {
   });
   const url = `${ZOHO_BASE_URL}/visa_applications?${query}`;
 
-  const isRecentActivity = filters.recentActivity === true;
-
   const hasActiveFilters = Boolean(
     (filters.handledBy && filters.handledBy.length > 0) ||
-      filters.startDate ||
-      filters.endDate ||
       (filters.applicationStage && filters.applicationStage.length > 0) ||
       filters.applicationState ||
       filters.deadlineCategory,
@@ -44,12 +40,11 @@ export const useApplications = (filters: ApplicationsFilters) => {
   return useQuery<ApplicationsResponse>({
     queryKey: ["applications", filters],
     queryFn: () => fetcher<ApplicationsResponse>(url),
-    placeholderData:
-      isRecentActivity || hasActiveFilters ? undefined : (prev) => prev,
-    staleTime: isRecentActivity || hasActiveFilters ? 0 : 1000 * 60,
-    gcTime: isRecentActivity ? 0 : 5 * 60 * 1000,
+    placeholderData: hasActiveFilters ? undefined : (prev) => prev,
+    staleTime: hasActiveFilters ? 0 : 1000 * 60,
+    gcTime: 5 * 60 * 1000,
     retry: 2,
-    refetchOnWindowFocus: isRecentActivity,
-    refetchOnMount: hasActiveFilters || isRecentActivity,
+    refetchOnWindowFocus: false,
+    refetchOnMount: hasActiveFilters,
   });
 };

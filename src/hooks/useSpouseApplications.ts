@@ -14,17 +14,14 @@ import {
  * Hook to fetch spouse skill assessment applications with pagination and filters
  */
 export const useSpouseApplications = (filters: ApplicationsFilters) => {
-  // Disable cache for recent activities to ensure real-time data
-  const isRecentActivity = filters.recentActivity === true;
-
   return useQuery<ApplicationsResponse>({
     queryKey: ["spouse-applications", filters],
     queryFn: () => getSpouseApplications(filters),
-    placeholderData: isRecentActivity ? undefined : (prev) => prev,
-    staleTime: isRecentActivity ? 0 : 1000 * 60, // No cache for recent activities
-    gcTime: isRecentActivity ? 0 : 5 * 60 * 1000, // No garbage collection time for recent activities
+    placeholderData: (prev) => prev,
+    staleTime: 1000 * 60,
+    gcTime: 5 * 60 * 1000,
     retry: 2,
-    refetchOnWindowFocus: isRecentActivity, // Refetch on focus for recent activities
+    refetchOnWindowFocus: false,
     meta: {
       errorMessage: "Failed to load spouse applications. Please try again.",
     },

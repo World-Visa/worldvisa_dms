@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
+import { PresenceDot } from "@/components/ui/presence-dot";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useMessages,
@@ -298,12 +299,7 @@ export function ChatThread({
               const isOnline = dmOther?.online_status ?? false;
               return (
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
-                  <span
-                    className={cn(
-                      "h-1.5 w-1.5 rounded-full shrink-0",
-                      isOnline ? "bg-green-500" : "bg-muted-foreground/40",
-                    )}
-                  />
+                  <PresenceDot online={isOnline} className="h-1.5 w-1.5 shrink-0" />
                   <span>{isOnline ? "Online" : "Offline"}</span>
                 </p>
               );

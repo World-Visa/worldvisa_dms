@@ -1,3 +1,11 @@
+export interface ApplicationOnboarding {
+  client_record_exists: boolean;
+  clerk_id: string | null;
+  clerk_invitation_id: string | null;
+  account_status: "active" | "invited" | "inactive" | "suspended" | "deleted" | null;
+  email_verified: boolean;
+}
+
 export interface VisaApplication {
   id: string;
   Name: string;
@@ -42,6 +50,7 @@ export interface Application {
     requested_by: string;
     requested_to: string;
   } | null;
+  application_onboarding?: ApplicationOnboarding | null;
 }
 
 export interface Document {
@@ -107,10 +116,7 @@ export interface ApplicationsResponse {
 export interface ApplicationsFilters {
   page: number;
   limit: number;
-  startDate?: string;
-  endDate?: string;
   search?: string;
-  recentActivity?: boolean;
   handledBy?: string[];
   applicationStage?: string[];
   applicationState?: "Active" | "In-Active";
@@ -144,4 +150,5 @@ export interface EnabledFilters {
   handledBy: boolean;
   applicationStage: boolean;
   applicationState: boolean;
+  deadline: boolean;
 }

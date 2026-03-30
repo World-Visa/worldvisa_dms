@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { Check, ChevronDown, ArrowUpRight } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProfileAvatarSrc } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -20,6 +20,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PresenceDot } from "@/components/ui/presence-dot";
 import { useAdminUsersV2 } from "@/hooks/useAdminUsersV2";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -37,12 +38,6 @@ const ROLE_OPTIONS: { value: TeamMemberRole; label: string; description: string 
   { value: "supervisor", label: "Supervisor", description: "Can view, comment and supervise applications." },
   { value: "team_leader", label: "Team Leader", description: "Can lead a team and review quality checks." },
 ];
-
-const AVATAR_INDICES = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12];
-
-function getAvatarSrc(index: number): string {
-  return `/avatars/${AVATAR_INDICES[index % AVATAR_INDICES.length]}.png`;
-}
 
 function getInitials(name: string): string {
   return name
@@ -146,7 +141,7 @@ export function TeamMembers() {
       .filter((u) => u._id !== currentUser?._id)
       .map((u) => ({
         id: u._id,
-        name: u.username,
+        name: u.username ?? u.full_name ?? "—",
         role: u.role,
         onlineStatus: u.online_status,
         profile_image_url: u.profile_image_url,
@@ -220,15 +215,20 @@ export function TeamMembers() {
               >
                 <div className="relative shrink-0">
                   <Avatar className="size-10">
-                    <AvatarImage src={member.profile_image_url ?? getAvatarSrc(index)} alt={member.name} />
+                    <AvatarImage
+                      src={getProfileAvatarSrc({
+                        profileImageUrl: member.profile_image_url,
+                        seed: member.id,
+                      })}
+                      alt={member.name}
+                    />
                     <AvatarFallback className="text-xs">
                       {getInitials(member.name)}
                     </AvatarFallback>
                   </Avatar>
-                  <span
-                    className={`absolute bottom-0 right-0 size-3 rounded-full border-2 border-background ${
-                      member.onlineStatus ? "bg-green-500" : "bg-muted-foreground/40"
-                    }`}
+                  <PresenceDot
+                    online={member.onlineStatus ?? false}
+                    className="absolute bottom-0 right-0 size-3 border-2 border-background"
                   />
                 </div>
                 <div className="min-w-0 flex-1">

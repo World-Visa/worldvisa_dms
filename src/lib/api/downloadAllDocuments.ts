@@ -1,4 +1,4 @@
-import { getStoredToken } from "@/lib/auth";
+import { getClerkToken } from "@/lib/getToken";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 /** Result when blob download was triggered in the client */
@@ -84,25 +84,11 @@ export async function downloadAllDocuments(
   const url = `${ZOHO_BASE_URL}/visa_applications/${leadId}/documents/download/all`;
 
   try {
-    const token = getStoredToken();
+    const token = await getClerkToken();
 
     const headers: Record<string, string> = {};
     if (token) {
       headers.Authorization = `Bearer ${token}`;
-
-      if (typeof window !== "undefined") {
-        const userData = localStorage.getItem("user_data");
-        if (userData) {
-          try {
-            const user = JSON.parse(userData);
-            if (user.role) {
-              headers["X-User-Role"] = user.role;
-            }
-          } catch (error) {
-            console.warn("Failed to parse user data from localStorage:", error);
-          }
-        }
-      }
     }
 
     const response = await fetch(url, {

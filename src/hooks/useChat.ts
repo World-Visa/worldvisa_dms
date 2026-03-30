@@ -11,6 +11,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { chatSocket } from "@/lib/chatSocket";
 import { CHAT_QUERY_KEYS } from "@/lib/config/chat";
+import { PRESENCE_POLLING_INTERVAL_MS } from "@/lib/config/presence";
 import {
   getConversations,
   getConversation,
@@ -66,6 +67,8 @@ export function useConversation(conversationId: string) {
     enabled: !!conversationId,
     staleTime: 30 * 1000,
     refetchOnWindowFocus: false,
+    refetchInterval: PRESENCE_POLLING_INTERVAL_MS,
+    refetchIntervalInBackground: false,
   });
 }
 

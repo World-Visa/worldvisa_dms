@@ -12,6 +12,16 @@ export function getAvatarUrl(userId: string): string {
   return `/avatars/${AVATAR_INDICES[sum % AVATAR_INDICES.length]}.png`;
 }
 
+export function getProfileAvatarSrc({
+  profileImageUrl,
+  seed,
+}: {
+  profileImageUrl?: string | null;
+  seed: string;
+}): string {
+  return profileImageUrl ? profileImageUrl : getAvatarUrl(seed);
+}
+
 export function formatRole(role: string): string {
   return role.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }

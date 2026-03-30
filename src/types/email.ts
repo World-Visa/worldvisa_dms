@@ -1,3 +1,5 @@
+export type EmailHistoryCategory = "all" | "received" | "sent" | "system";
+
 export interface EmailAttachment {
   filename: string;
   content_type?: string;

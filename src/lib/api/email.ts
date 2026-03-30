@@ -1,5 +1,5 @@
 import { fetcher } from "@/lib/fetcher";
-import { getStoredToken } from "@/lib/auth";
+import { getClerkToken } from "@/lib/getToken";
 import { API_BASE_URL } from "@/lib/config/api";
 import type {
   EmailListResponse,
@@ -36,7 +36,7 @@ export async function getSingleEmail(id: string): Promise<EmailMessage> {
 }
 
 export async function markEmailRead(id: string): Promise<void> {
-  const token = getStoredToken();
+  const token = await getClerkToken();
   const headers: Record<string, string> = {};
   if (token) headers["Authorization"] = `Bearer ${token}`;
   const res = await fetch(`${BASE}/${id}/read`, { method: "PATCH", headers });
@@ -47,7 +47,7 @@ export async function markEmailRead(id: string): Promise<void> {
 }
 
 export async function sendEmail(payload: SendEmailPayload): Promise<void> {
-  const token = getStoredToken();
+  const token = await getClerkToken();
 
   const form = new FormData();
   form.append("to", payload.to);

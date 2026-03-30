@@ -7,6 +7,8 @@ import { NotificationProvider } from "@/components/notifications/NotificationPro
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { ClarityAnalytics } from "@/components/ClarityAnalytics";
+import { ClerkProvider } from "@clerk/nextjs";
+import { ClerkTokenProvider } from "@/components/auth/ClerkTokenProvider";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -48,6 +50,8 @@ export default function RootLayout({
         className={`${outfit.variable} antialiased`}
         suppressHydrationWarning={true}
       >
+        <ClerkProvider>
+        <ClerkTokenProvider />
         <SmoothScroll>
           <Providers>
             <NotificationProvider>
@@ -57,6 +61,7 @@ export default function RootLayout({
           </Providers>
           <ClarityAnalytics />
         </SmoothScroll>
+        </ClerkProvider>
       </body>
     </html>
   );

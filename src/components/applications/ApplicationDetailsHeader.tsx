@@ -17,10 +17,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Clock,
   CheckCircle,
   XCircle,
-  MoreVertical,
+  ChevronDown,
 } from "lucide-react";
 import type { MandatoryDocumentValidationDetail } from "@/utils/checklistValidation";
 import { ApplicationActivitySheet } from "@/components/applications/ApplicationActivitySheet";
@@ -38,9 +37,9 @@ interface ApplicationDetailsHeaderProps {
   validationDetails?: MandatoryDocumentValidationDetail[];
   onPushForQualityCheck: () => void;
   onDownloadAll: () => void;
-  onResetPassword: () => void;
   onActivateAccount?: () => void;
   onAddNote?: () => void;
+  onEmailHistory?: () => void;
   userRole?: string;
   qcRequested?: QcRequested | null;
   applicationId: string;
@@ -97,9 +96,9 @@ export function ApplicationDetailsHeader({
   validationDetails = [],
   onPushForQualityCheck,
   onDownloadAll,
-  onResetPassword,
   onActivateAccount,
   onAddNote,
+  onEmailHistory,
   userRole,
   qcRequested,
   applicationId,
@@ -132,30 +131,30 @@ export function ApplicationDetailsHeader({
               >
                 <span className="hidden sm:inline">
                   {areAllDocumentsApproved
-                    ? "Ready for Quality Check"
-                    : "Push to Quality Check"}
+                    ? "Ready for QC"
+                    : "Push to QC"}
                 </span>
               </Button>
             </div>
           </TooltipTrigger>
-          <TooltipContent className="bg-white border border-gray-200 rounded-sm text-foreground">
+          <TooltipContent variant="default">
             {areAllDocumentsApproved ? (
-              "All mandatory documents are reviewed or approved. Ready for quality check."
+              <span>
+                All mandatory documents are.
+                <br />Ready for quality check.
+              </span>
             ) : (
-              <div className="space-y-2 w-full">
-                <p className="font-semibold text-foreground">
-                  Cannot push for quality check:
-                </p>
+              <div className="w-full">
                 {validationDetails.length === 0 ? (
-                  <p className="text-sm text-foreground">
-                    All mandatory documents must be submitted and reviewed or
+                  <p className="text-sm text-gray-500">
+                    All mandatory documents must be reviewed or
                     approved.
                   </p>
                 ) : (
-                  <div className="text-sm space-y-1">
-                    <p>The following mandatory documents need attention:</p>
-                    <ul className="list-disc pl-4 space-y-1">
-                      {validationDetails.slice(0, 5).map((detail, index) => (
+                  <div className="space-y-2">
+                    <p className="font-medium text-sm">The following mandatory documents need attention:</p>
+                    <ul className="list-disc pl-4 text-xs space-y-1">
+                      {validationDetails.slice(0, 10).map((detail, index) => (
                         <li key={index}>
                           <span className="font-medium">
                             {detail.documentType}
@@ -196,19 +195,13 @@ export function ApplicationDetailsHeader({
               size="sm"
               className="flex items-center gap-2 cursor-pointer"
             >
-              <MoreVertical className="h-4 w-4" />
               <span className="hidden sm:inline">Actions</span>
+              <ChevronDown className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent className="w-44 mt-1" align="end">
             <DropdownMenuGroup>
-              <DropdownMenuLabel>Account</DropdownMenuLabel>
-              <DropdownMenuItem
-                onClick={onResetPassword}
-                className="cursor-pointer hover:bg-gray-100"
-              >
-                Reset Password
-              </DropdownMenuItem>
+              <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold py-1">Account</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={
                   onActivateAccount ? () => onActivateAccount() : undefined
@@ -221,7 +214,7 @@ export function ApplicationDetailsHeader({
 
             <DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>Documents</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold py-1">Documents</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={onDownloadAll}
                 disabled={!areAllDocumentsApproved}
@@ -233,7 +226,7 @@ export function ApplicationDetailsHeader({
 
             <DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>Notes</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold py-1">Notes</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={onAddNote}
                 className="cursor-pointer hover:bg-gray-100"
@@ -244,12 +237,18 @@ export function ApplicationDetailsHeader({
 
             <DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel>History</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold">History</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={() => setIsActivitySheetOpen(true)}
                 className="cursor-pointer hover:bg-gray-100"
               >
                 View Activity Log
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={onEmailHistory}
+                className="cursor-pointer hover:bg-gray-100"
+              >
+                Email History
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>

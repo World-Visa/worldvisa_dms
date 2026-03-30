@@ -1,6 +1,5 @@
 "use client";
 
-import { ActivateAccountSheet } from "@/components/applications/ActivateAccountSheet";
 import ViewDocumentSheet from "@/components/applications/ViewDocumentSheet";
 import { AddNoteModal } from "@/components/applications/AddNoteModal";
 import { NotesBanner } from "@/components/applications/NotesBanner";
@@ -9,9 +8,9 @@ import { ApplicationDetailsSkeleton } from "@/components/applications/Applicatio
 import { ApplicantDetails } from "@/components/applications/ApplicantDetails";
 import { ApplicationDetailsHeader } from "@/components/applications/ApplicationDetailsHeader";
 import { DownloadAllDocumentsModal } from "@/components/applications/DownloadAllDocumentsModal";
+import { EmailHistoryModal } from "@/components/applications/EmailHistoryModal";
 import { QualityCheckModal } from "@/components/applications/QualityCheckModal";
 import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
-import { ResetPasswordModal } from "@/components/applications/ResetPasswordModal";
 import { LayoutChips } from "@/components/applications/layouts/LayoutChips";
 import { SkillAssessmentLayout } from "@/components/applications/layouts/SkillAssessmentLayout";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -28,7 +27,10 @@ import { useApplicationState } from "@/hooks/useApplicationState";
 import { useApplicationModals } from "@/hooks/useApplicationModals";
 import { useLayoutState } from "@/hooks/useLayoutState";
 import { useChecklistURLState } from "@/lib/urlState";
-import { ApplicationDetailsResponse } from "@/types/applications";
+import {
+  ApplicationDetailsResponse,
+  type ApplicationOnboarding,
+} from "@/types/applications";
 import { ArrowLeft } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useDeepLinkDocument } from "@/hooks/useDeepLinkDocument";
@@ -41,6 +43,7 @@ import {
   useState,
 } from "react";
 import { useApplicationDetails } from "@/hooks/useApplicationDetails";
+import { useOnboardingSteps } from "@/hooks/use-onboarding-steps";
 import type { DocumentCategory } from "@/types/documents";
 import {
   areAllMandatoryDocumentsReviewed,
@@ -50,6 +53,7 @@ import { useApplicationNotes, useDeleteNote } from "@/hooks/useApplicationNotes"
 import { useRemoveCompany } from "@/hooks/useRemoveCompany";
 import type { ApplicationNote } from "@/lib/api/applicationNotes";
 import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
+import { ClientOnboardingModal } from "@/components/applications/onboarding/ClientOnboardingModal";
 
 const OutcomeLayout = lazy(() =>
   import("@/components/applications/layouts/OutcomeLayout").then((mod) => ({
@@ -66,6 +70,14 @@ const InvitationLayout = lazy(() =>
     default: mod.InvitationLayout,
   })),
 );
+
+const DEFAULT_APPLICATION_ONBOARDING: ApplicationOnboarding = {
+  client_record_exists: false,
+  clerk_id: null,
+  clerk_invitation_id: null,
+  account_status: null,
+  email_verified: false,
+};
 
 interface UnifiedApplicationDetailsPageProps {
   applicationId: string;
@@ -85,13 +97,17 @@ export default function UnifiedApplicationDetailsPage({
   isSpouseApplication = false,
 }: UnifiedApplicationDetailsPageProps) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
+  const { user } = useAuth();
   const { category: urlCategory } = useChecklistURLState(applicationId);
 
   const layoutState = useLayoutState();
   const modals = useApplicationModals();
 
-  const spouseApplicationQuery = useSpouseApplicationDetails(applicationId);
+  const spouseApplicationQuery = useSpouseApplicationDetails(
+    applicationId,
+    undefined,
+    { enabled: isSpouseApplication },
+  );
   const regularApplicationQuery = useApplicationDetails(applicationId);
   const applicationData = isSpouseApplication
     ? spouseApplicationQuery.data
@@ -163,6 +179,15 @@ export default function UnifiedApplicationDetailsPage({
     (applicationData as ApplicationDetailsResponse)?.data || applicationData;
   const documents = documentsData?.data;
   const allDocuments = allDocumentsData?.data;
+
+  const onboardingData =
+    application?.application_onboarding ?? DEFAULT_APPLICATION_ONBOARDING;
+  const { isFullyOnboarded } = useOnboardingSteps(onboardingData);
+  const [isClientOnboardingOpen, setIsClientOnboardingOpen] = useState(false);
+
+  useEffect(() => {
+    setIsClientOnboardingOpen(!isFullyOnboarded);
+  }, [applicationId, isFullyOnboarded]);
 
   const appState = useApplicationState({
     applicationId,
@@ -295,17 +320,6 @@ export default function UnifiedApplicationDetailsPage({
     [isSpouseApplication],
   );
 
-  const isAuthorized = useMemo(
-    () =>
-      !isAuthLoading &&
-      isAuthenticated &&
-      (user?.role === "admin" ||
-        user?.role === "team_leader" ||
-        user?.role === "master_admin" ||
-        user?.role === "supervisor"),
-    [isAuthLoading, isAuthenticated, user?.role],
-  );
-
   if (applicationError || documentsError) {
     return (
       <div className="container mx-auto p-6 space-y-6">
@@ -321,22 +335,21 @@ export default function UnifiedApplicationDetailsPage({
   }
 
   return (
-    <main className="max-w-6xl mx-auto">
+    <main className="max-w-[1200px] mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2">
           <Button
             variant="secondary"
-            className="rounded-full w-9 h-9 cursor-pointer"
+            className="rounded-full w-8 h-8 cursor-pointer"
             size="sm"
             onClick={() => router.push(backPath)}
           >
-            <ArrowLeft className="h-5 w-5" />
+            <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
-            <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-medium">
+            <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-xl font-medium">
               {application?.Name} {pageTitle}
-
             </h1>
           </div>
         </div>
@@ -345,13 +358,13 @@ export default function UnifiedApplicationDetailsPage({
           validationDetails={mandatoryDocValidationDetails}
           onPushForQualityCheck={handlePushForQualityCheck}
           onDownloadAll={modals.openDownloadAllModal}
-          onResetPassword={modals.openResetPasswordModal}
-          onActivateAccount={modals.openActivateAccountSheet}
+          onActivateAccount={() => setIsClientOnboardingOpen(true)}
           applicationId={applicationId}
           onAddNote={() => {
             setEditingNote(null);
             setIsNoteModalOpen(true);
           }}
+          onEmailHistory={modals.openEmailHistoryModal}
           userRole={user?.role}
           qcRequested={application?.qc_requested}
         />
@@ -379,9 +392,9 @@ export default function UnifiedApplicationDetailsPage({
         editNote={editingNote}
       />
 
-      {isAuthLoading || isApplicationLoading || isDocumentsLoading ? (
+      {isApplicationLoading || isDocumentsLoading ? (
         <ApplicationDetailsSkeleton variant="admin" showHeader={false} />
-      ) : isAuthorized ? (
+      ) : (
         <div className="space-y-6 mt-6">
           <ApplicantDetails
             application={application}
@@ -443,15 +456,6 @@ export default function UnifiedApplicationDetailsPage({
             </Suspense>
           ) : null}
         </div>
-      ) : (
-        <div className="text-center py-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Access Denied
-          </h2>
-          <p className="text-gray-600">
-            You don&apos;t have permission to access this page.
-          </p>
-        </div>
       )}
 
       <AddCompanyDialog
@@ -496,28 +500,19 @@ export default function UnifiedApplicationDetailsPage({
       />
 
       {user?.role !== "client" && (
-        <>
-          <ResetPasswordModal
-            isOpen={modals.isResetPasswordModalOpen}
-            onOpenChange={modals.setResetPasswordModalOpen}
-            leadId={application?.id || ""}
-            onSuccess={() => {}}
-          />
-
-          <DownloadAllDocumentsModal
-            isOpen={modals.isDownloadAllModalOpen}
-            onOpenChange={modals.setDownloadAllModalOpen}
-            leadId={application?.id || ""}
-          />
-
-          <ActivateAccountSheet
-            open={modals.isActivateAccountSheetOpen}
-            onOpenChange={modals.setActivateAccountSheetOpen}
-            leadId={application?.id || ""}
-            application={application}
-          />
-        </>
+        <DownloadAllDocumentsModal
+          isOpen={modals.isDownloadAllModalOpen}
+          onOpenChange={modals.setDownloadAllModalOpen}
+          leadId={application?.id || ""}
+        />
       )}
+
+      <EmailHistoryModal
+        isOpen={modals.isEmailHistoryModalOpen}
+        onOpenChange={modals.setEmailHistoryModalOpen}
+        clientEmail={application?.Email ?? ""}
+        clientName={application?.Name ?? ""}
+      />
 
       {deepLinkDoc && (
         <ViewDocumentSheet
@@ -528,6 +523,14 @@ export default function UnifiedApplicationDetailsPage({
           onClose={clearDeepLinkDoc}
         />
       )}
+
+      <ClientOnboardingModal
+        applicationId={applicationId}
+        application={application}
+        onboarding={onboardingData}
+        open={isClientOnboardingOpen}
+        onOpenChange={setIsClientOnboardingOpen}
+      />
     </main>
   );
 }

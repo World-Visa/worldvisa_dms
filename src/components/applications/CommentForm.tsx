@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
+import { useUser } from "@clerk/nextjs";
 import { Button } from "../ui/button";
 import { Textarea } from "../ui/textarea";
 import { Send, Loader2 } from "lucide-react";
@@ -6,7 +7,9 @@ import {
   useAddComment,
   useCommentValidation,
 } from "@/hooks/useCommentMutations";
-import { getStoredToken } from "@/lib/auth";
+import { useAuth } from "@/hooks/useAuth";
+import { useClientApplication } from "@/hooks/useClientApplication";
+import { isClientRole } from "@/lib/roles";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -25,43 +28,9 @@ const CommentForm: React.FC<CommentFormProps> = ({
   const [comment, setComment] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const { user } = useAuth();
   const addCommentMutation = useAddComment(documentId);
   const { validateComment } = useCommentValidation();
-
-  const getCurrentUser = useCallback(() => {
-    if (typeof window !== "undefined") {
-      const userData = localStorage.getItem("user_data");
-      if (userData) {
-        try {
-          const user = JSON.parse(userData);
-          if (user.username) {
-            return user.username;
-          }
-        } catch (error) {
-          console.warn("Failed to parse user data from localStorage:", error);
-        }
-      }
-    }
-
-    const token = getStoredToken();
-    if (!token) return "Unknown User";
-
-    try {
-      const payload = JSON.parse(atob(token.split(".")[1]));
-      return (
-        payload.username ||
-        payload.email ||
-        payload.name ||
-        payload.user?.username ||
-        payload.user?.email ||
-        payload.user?.name ||
-        "Unknown User"
-      );
-    } catch (error) {
-      console.warn("Failed to parse user from token:", error);
-      return "Unknown User";
-    }
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,7 +48,7 @@ const CommentForm: React.FC<CommentFormProps> = ({
     try {
       await addCommentMutation.mutateAsync({
         comment: comment.trim(),
-        added_by: getCurrentUser(),
+        added_by: user?.username ?? user?.role ?? "Unknown User",
       });
 
       setComment("");

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
+import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import { AppSidebar } from "@/components/v2/sidebar/app-sidebar";
 import { Separator } from "@/components/ui/separator";
@@ -10,7 +11,6 @@ import { cn } from "@/lib/utils";
 import { SearchDialog } from "@/components/v2/sidebar/search-dialog";
 import { NotificationDropdown } from "@/components/v2/header/notification-dropdown";
 import { AccountSwitcher } from "@/components/v2/sidebar/account-switcher";
-import { AuthGuardV2 } from "@/components/auth/AuthGuardV2";
 import { ContentArea } from "@/app/(admin-v2)/content-area";
 import { SidebarController } from "@/app/(admin-v2)/sidebar-controller";
 
@@ -53,20 +53,22 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
               <SearchDialog />
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1">
               {/* <LayoutControls />
               <ThemeSwitcher /> */}
               <NotificationDropdown />
-              <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
+              <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-6" />
               <AccountSwitcher />
             </div>
           </div>
         </header>
-        <Suspense fallback={<AdminContentFallback />}>
-          <ContentArea>
-            <AuthGuardV2>{children}</AuthGuardV2>
-          </ContentArea>
-        </Suspense>
+        <NuqsAdapter>
+          <Suspense fallback={<AdminContentFallback />}>
+            <ContentArea>
+              {children}
+            </ContentArea>
+          </Suspense>
+        </NuqsAdapter>
       </SidebarInset>
     </SidebarProvider>
   );

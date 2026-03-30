@@ -195,16 +195,16 @@ export function MailCategoryView({ category }: MailCategoryViewProps) {
     <Tabs
       value={tabValue}
       onValueChange={onTabChange}
-      className="flex h-full flex-col gap-0">
+      className="flex h-full flex-col gap-0 w-full">
       {isMobile && <MailDisplayMobile />}
       <div className="flex h-14 shrink-0 items-center px-4">
         <div className="flex items-center gap-2">
           {isMobile && <MailNavMobile />}
           <h1 className="text-xl font-medium tracking-tight">{CATEGORY_LABELS[category]}</h1>
         </div>
-        <TabsList className="ml-auto h-8 rounded-full bg-muted/60 p-0.5">
-          <TabsTrigger value="all" className="rounded-full px-3 text-xs">All mail</TabsTrigger>
-          <TabsTrigger value="received" className="rounded-full px-3 text-xs">Received</TabsTrigger>
+        <TabsList variant="default" className="ml-auto h-8 w-fit auto-cols-max justify-center rounded-full bg-neutral-alpha-100 p-0.5">
+          <TabsTrigger variant="regular" value="all" className="rounded-full px-3 text-xs">All mail</TabsTrigger>
+          <TabsTrigger variant="regular" value="received" className="rounded-full px-3 text-xs">Received</TabsTrigger>
         </TabsList>
       </div>
       <Separator />

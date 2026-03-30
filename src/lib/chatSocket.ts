@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // @ts-expect-error
 import { io, type Socket } from "socket.io-client";
-import { getStoredToken } from "./auth";
+import { getClerkToken } from "./getToken";
 import {
   CHAT_API_BASE_URL,
   CHAT_ENDPOINTS,
@@ -50,15 +50,19 @@ export class ChatSocketManager {
       return;
     }
 
-    const token = getStoredToken();
-    if (!token) {
-      this.handleConnectionError("No authentication token available");
-      return;
-    }
-
     this.isConnecting = true;
     this.updateConnectionState({ isConnecting: true, error: null });
 
+    getClerkToken().then((token) => {
+      if (!token) {
+        this.handleConnectionError("No authentication token available");
+        return;
+      }
+      this._connectWithToken(token);
+    });
+  }
+
+  private _connectWithToken(token: string): void {
     try {
       this.socket = io(CHAT_API_BASE_URL, {
         path: CHAT_ENDPOINTS.SOCKET_PATH,

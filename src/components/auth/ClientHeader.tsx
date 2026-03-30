@@ -1,46 +1,17 @@
 "use client";
 
-import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
-import { LogOut, Menu, X, KeyRound } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Menu, X } from "lucide-react";
 import { useCallback, useState, useRef, useEffect } from "react";
 import { gsap } from "gsap";
 import Logo from "../../../public/logos/world-visa-logo.webp";
 import Image from "next/image";
-import { ResetClientPasswordDialog } from "./ResetClientPassword";
-import { useQueryClient } from "@tanstack/react-query";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuGroup,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { getAvatarUrl, getInitials } from "@/lib/utils";
+import { UserProfile } from "@/components/client/user-profile";
 
 export function ClientHeader() {
-  const { user, logout } = useAuth();
-  const queryClient = useQueryClient();
-  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isResetPassword, setIsResetPassword] = useState(false);
   const mobileMenuRef = useRef<HTMLDivElement>(null);
   const menuItemsRef = useRef<HTMLDivElement[]>([]);
-
-  const name = user?.username ?? "Client";
-  const role = "Client";
-  const avatar = getAvatarUrl(user?._id || user?.username || "client");
-  const initials = getInitials(name);
-
-  const handleLogout = useCallback(() => {
-    logout(queryClient);
-    router.push("/auth/user/login");
-    setIsMobileMenuOpen(false);
-  }, [logout, queryClient, router]);
 
   const toggleMobileMenu = useCallback(() => {
     setIsMobileMenuOpen((prev) => !prev);
@@ -122,64 +93,9 @@ export function ClientHeader() {
     };
   }, []);
 
-  const accountDropdown = (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent transition-colors outline-none"
-        >
-          <Avatar className="size-8 rounded-lg">
-            <AvatarImage src={avatar || undefined} alt={name} />
-            <AvatarFallback className="rounded-lg text-xs">{initials}</AvatarFallback>
-          </Avatar>
-          <div className="grid text-left text-sm leading-tight">
-            <span className="truncate font-medium">{name}</span>
-            <span className="truncate text-xs text-muted-foreground">{role}</span>
-          </div>
-        </button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent
-        className="min-w-56 space-y-1 rounded-lg"
-        side="bottom"
-        align="end"
-        sideOffset={4}
-      >
-        <DropdownMenuLabel className="p-0 font-normal">
-          <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
-            <Avatar className="size-9 rounded-lg">
-              <AvatarImage src={avatar || undefined} alt={name} />
-              <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>
-            </Avatar>
-            <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-semibold">{name}</span>
-              <span className="truncate text-xs text-muted-foreground">{role}</span>
-            </div>
-          </div>
-        </DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => setIsResetPassword(true)}>
-            <KeyRound />
-            Reset Password
-          </DropdownMenuItem>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={handleLogout}>
-          <LogOut />
-          Log out
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  );
-
   return (
     <header className="sticky top-0 z-50 bg-white/95 border-b border-gray-200/60">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <ResetClientPasswordDialog
-          isOpen={isResetPassword}
-          onClose={() => setIsResetPassword(false)}
-        />
         {/* Top Row - Logo and User Info */}
         <div className="flex justify-between items-center h-[70px]">
           {/* Logo and Title Section */}
@@ -198,8 +114,10 @@ export function ClientHeader() {
             </div>
           </div>
 
-          {/* Desktop: account dropdown */}
-          <div className="hidden md:flex items-center">{accountDropdown}</div>
+          {/* Desktop: UserButton */}
+          <div className="hidden md:flex items-center">
+            <UserProfile />
+          </div>
 
           {/* Mobile Menu Button */}
           <div className="md:hidden flex items-center space-x-2">
@@ -243,7 +161,7 @@ export function ClientHeader() {
               <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">
                 Account
               </p>
-              {accountDropdown}
+              <UserProfile />
             </div>
           </div>
         </div>

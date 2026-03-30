@@ -5,10 +5,8 @@ import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { CircleUser, EllipsisVertical, LogOut, MessageSquareDot, Settings } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,6 +19,7 @@ import {
 import { SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
 import { useAuth } from "@/hooks/useAuth";
 import { getInitials } from "@/lib/utils";
+import { ROUTES } from "@/utils/routes";
 
 export function NavUser({
   user,
@@ -35,12 +34,10 @@ export function NavUser({
   const { isMobile } = useSidebar();
   const { logout } = useAuth();
   const queryClient = useQueryClient();
-  const router = useRouter();
 
   const handleLogout = useCallback(() => {
     logout(queryClient);
-    router.push("/auth/user/login");
-  }, [logout, queryClient, router]);
+  }, [logout, queryClient]);
 
   return (
     <SidebarMenu>
@@ -94,12 +91,11 @@ export function NavUser({
                   Notifications
                 </Link>
               </DropdownMenuItem>
-              <DropdownMenuItem disabled className="opacity-70">
-                <Settings />
-                Settings
-                <Badge variant="secondary" className="ml-auto text-[10px] font-normal">
-                  Soon
-                </Badge>
+              <DropdownMenuItem asChild>
+                <Link href={ROUTES.PROFILE_SETTINGS} className="flex items-center gap-2">
+                  <Settings />
+                  Settings
+                </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
