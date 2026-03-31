@@ -31,6 +31,7 @@ import { UploadDocumentsModal } from "@/components/applications/UploadDocumentsM
 
 interface DocumentsTableProps {
   applicationId: string;
+  clientLeadId?: string;
   documents?: ApplicationDocument[];
   isLoading?: boolean;
   error?: Error | null;
@@ -63,6 +64,7 @@ const TableLoadingRow = memo(function TableLoadingRow() {
 
 export function DocumentsTable({
   applicationId,
+  clientLeadId,
   documents: adminDocuments,
   isLoading: adminIsLoading,
   error: adminError,
@@ -283,6 +285,7 @@ export function DocumentsTable({
         isOpen={false}
         onClose={() => {}}
         applicationId={applicationId}
+        clientLeadId={clientLeadId}
         company={undefined}
         isClientView={isClientView}
         onSuccess={onUploadSuccess}
@@ -325,6 +328,7 @@ export function DocumentsTable({
         isOpen={isReuploadModalOpen}
         onClose={handleReuploadModalClose}
         applicationId={applicationId}
+        clientLeadId={clientLeadId}
         document={selectedReuploadDocument}
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}

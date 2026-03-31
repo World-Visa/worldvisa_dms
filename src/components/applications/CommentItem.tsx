@@ -1,6 +1,7 @@
 import React from "react";
+import Image from "next/image";
 import { Button } from "../ui/button";
-import { Trash2, MoreVertical } from "lucide-react";
+import { Trash2, MoreVertical, FileText, ExternalLink } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,6 +36,29 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onDelete,
   isDeleting = false,
 }) => {
+  const getSafeDocumentLink = (link?: string | null): string | null => {
+    if (!link?.trim()) return null;
+    try {
+      const parsed = new URL(link);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed.toString();
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getDocumentLabel = (link: string): string => {
+    try {
+      const pathSegment = new URL(link).pathname.split("/").pop();
+      if (!pathSegment) return "Attached document";
+      return decodeURIComponent(pathSegment) || "Attached document";
+    } catch {
+      return "Attached document";
+    }
+  };
+
   const { user } = useAuth();
 
   const isImportant =
@@ -54,6 +78,10 @@ const CommentItem: React.FC<CommentItemProps> = ({
   const timeAgo = formatDistanceToNow(new Date(comment.created_at), {
     addSuffix: true,
   });
+  const hasCommentText = Boolean(comment.comment?.trim());
+  const documentLink = getSafeDocumentLink(comment.document_link);
+  const hasDocumentLink = Boolean(documentLink);
+  const safeProfileImageUrl = comment.profile_image_url?.trim() || null;
 
   return (
     <div
@@ -64,10 +92,24 @@ const CommentItem: React.FC<CommentItemProps> = ({
     >
       {/* Avatar for others' messages */}
       {!isOwnMessage && (
-        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted mt-5">
-          <span className="text-[11px] font-medium uppercase text-muted-foreground">
-            {(comment.added_by ?? "?").charAt(0)}
-          </span>
+        <div className="mt-5 shrink-0">
+          {safeProfileImageUrl ? (
+            <div className="relative h-7 w-7 overflow-hidden rounded-full">
+              <Image
+                src={safeProfileImageUrl}
+                alt={comment.added_by ?? "User"}
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ) : (
+            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted">
+              <span className="text-[11px] font-medium uppercase text-muted-foreground">
+                {(comment.added_by ?? "?").charAt(0)}
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -86,7 +128,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
         <div className="relative flex items-start gap-1">
           <div
             className={cn(
-              "relative rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed",
+              "relative rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed max-w-[320px]",
               isOwnMessage
                 ? "bg-foreground text-background rounded-br-sm"
                 : isImportant
@@ -94,7 +136,49 @@ const CommentItem: React.FC<CommentItemProps> = ({
                   : "bg-muted text-foreground rounded-bl-sm",
             )}
           >
-            <p className="whitespace-pre-wrap wrap-break-word">{comment.comment}</p>
+            {hasDocumentLink && documentLink && (
+              <a
+                href={documentLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "flex items-center gap-2 rounded-xl border px-2.5 py-2 transition-colors",
+                  isOwnMessage
+                    ? "border-background/30 bg-background/10 hover:bg-background/20"
+                    : "border-border/60 bg-background/80 hover:bg-background",
+                  hasCommentText && "mb-2",
+                )}
+              >
+                <div
+                  className={cn(
+                    "flex h-7 w-7 shrink-0 items-center justify-center rounded-lg",
+                    isOwnMessage ? "bg-white" : "bg-muted",
+                  )}
+                >
+                  <Image src="/icons/pdf_small.svg" alt="File" width={16} height={16} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-medium leading-tight">
+                    {getDocumentLabel(documentLink).slice(0, 20)}...
+                  </p>
+                  <p
+                    className={cn(
+                      "text-[11px] leading-tight",
+                      isOwnMessage ? "text-background/70" : "text-muted-foreground",
+                    )}
+                  >
+                    Document attachment
+                  </p>
+                </div>
+                <ExternalLink className="h-3.5 w-3.5 shrink-0" />
+              </a>
+            )}
+
+            {hasCommentText && (
+              <p className="whitespace-pre-wrap wrap-break-word">
+                {comment.comment}
+              </p>
+            )}
 
             {/* Timestamp for own messages */}
             {isOwnMessage && (

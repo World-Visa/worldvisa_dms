@@ -129,8 +129,14 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     ? (props as ReuploadDocumentModalProps)
     : undefined;
 
-  const { isOpen, onClose, applicationId, isClientView = false, instruction } =
-    props;
+  const {
+    isOpen,
+    onClose,
+    applicationId,
+    isClientView = false,
+    instruction,
+    clientLeadId,
+  } = props;
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>(
@@ -513,13 +519,29 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     return "";
   };
 
-  // Prefer non-empty _id, then non-empty lead_id; in client view fall back to applicationId
+  const isMongoObjectId = (value: string): boolean =>
+    /^[a-fA-F0-9]{24}$/.test(value);
+
+  // Resolve canonical client ID for /clients/:id/* endpoints.
+  // Priority: explicit lead id -> auth lead_id -> route/app id (if not Mongo ObjectId) -> safe legacy fallback.
   const getClientId = (): string | undefined => {
-    const a = user?._id?.trim();
-    const b = user?.lead_id?.trim();
-    if (a) return a;
-    if (b) return b;
-    if (isClientView && applicationId?.trim()) return applicationId.trim();
+    const explicitLeadId = clientLeadId?.trim();
+    const authLeadId = user?.lead_id?.trim();
+    const appScopedId = applicationId?.trim();
+    const authUserId = user?._id?.trim();
+
+    if (explicitLeadId) return explicitLeadId;
+    if (authLeadId) return authLeadId;
+
+    if (isClientView && appScopedId && !isMongoObjectId(appScopedId)) {
+      return appScopedId;
+    }
+
+    // Legacy fallback for unexpected non-Mongo identifiers only.
+    if (authUserId && !isMongoObjectId(authUserId)) {
+      return authUserId;
+    }
+
     return undefined;
   };
 
@@ -551,7 +573,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
     const clientId = getClientId();
     if (isClientView && !clientId) {
-      toast.error("Client information not available. Please login again.");
+      toast.error("Client lead ID is missing. Please refresh and try again.");
       return;
     }
 
@@ -708,7 +730,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
     const clientId = getClientId();
     if (isClientView && !clientId) {
-      toast.error("Client information not available. Please login again.");
+      toast.error("Client lead ID is missing. Please refresh and try again.");
       return;
     }
 

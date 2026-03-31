@@ -116,6 +116,7 @@ const DocumentChecklistTableComponent = ({
   isLoading,
   error,
   applicationId,
+  clientLeadId,
   selectedCategory,
   companies,
   checklistState = "none",
@@ -618,6 +619,7 @@ const DocumentChecklistTableComponent = ({
         isOpen={isModalOpen}
         onClose={handleModalClose}
         applicationId={applicationId}
+        clientLeadId={clientLeadId}
         selectedDocumentType={selectedDocumentType}
         selectedDocumentCategory={selectedDocumentCategory}
         company={selectedCompany}
@@ -665,6 +667,7 @@ const DocumentChecklistTableComponent = ({
         isOpen={isReuploadModalOpen}
         onClose={handleReuploadModalClose}
         applicationId={applicationId}
+        clientLeadId={clientLeadId}
         document={selectedReuploadDocument}
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}

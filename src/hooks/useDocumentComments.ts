@@ -35,6 +35,8 @@ export function useDocumentComments(documentId: string) {
             added_by: c.added_by || "Unknown",
             created_at: c.added_at,
             document_id: documentId,
+            document_link: c.document_link ?? null,
+            profile_image_url: c.profile_image_url ?? null,
             is_important: Boolean(
               c.added_by?.toLowerCase().includes("moshin"),
             ),

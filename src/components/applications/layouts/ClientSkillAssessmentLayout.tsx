@@ -30,7 +30,6 @@ interface ClientSkillAssessmentLayoutProps {
     companyName: string,
     companyCategory: string,
   ) => void;
-  documentsResponse?: ClientDocumentsResponse;
   isDocumentsLoading: boolean;
   documentsError: Error | null;
   allDocumentsResponse?: ClientDocumentsResponse;
@@ -64,7 +63,6 @@ export function ClientSkillAssessmentLayout({
   onAddCompany,
   onRemoveCompany,
   onRemoveCompanyWithCheck: _onRemoveCompanyWithCheck,
-  documentsResponse,
   isDocumentsLoading,
   documentsError,
   allDocumentsResponse,
@@ -135,17 +133,19 @@ export function ClientSkillAssessmentLayout({
   }, [allDocuments]);
 
   const filteredDocumentsResponse = useMemo(() => {
-    if (!documentStatusFilter || !documentsResponse?.data) return documentsResponse;
+    if (!documentStatusFilter || !allDocumentsResponse?.data) {
+      return allDocumentsResponse;
+    }
     return {
-      ...documentsResponse,
+      ...allDocumentsResponse,
       data: {
-        ...documentsResponse.data,
-        documents: documentsResponse.data.documents?.filter(
+        ...allDocumentsResponse.data,
+        documents: allDocumentsResponse.data.documents?.filter(
           (d) => d.status === documentStatusFilter,
         ) ?? [],
       },
     };
-  }, [documentsResponse, documentStatusFilter]);
+  }, [allDocumentsResponse, documentStatusFilter]);
 
   const handleChecklistRefresh = useCallback(() => {
     onChecklistRefresh?.();
@@ -253,6 +253,7 @@ export function ClientSkillAssessmentLayout({
                       </div>
                       <DocumentsTable
                         applicationId={applicationId}
+                        clientLeadId={leadId}
                         isClientView
                         clientDocumentsData={filteredDocumentsResponse}
                         clientIsLoading={isDocumentsLoading}
@@ -299,6 +300,7 @@ export function ClientSkillAssessmentLayout({
                       </div>
                       <DocumentsTable
                         applicationId={applicationId}
+                        clientLeadId={leadId}
                         isClientView
                         clientDocumentsData={filteredDocumentsResponse}
                         clientIsLoading={isDocumentsLoading}
@@ -317,6 +319,7 @@ export function ClientSkillAssessmentLayout({
                     isLoading={isChecklistLoading}
                     error={checklistError}
                     applicationId={applicationId}
+                    clientLeadId={leadId}
                     selectedCategory={selectedCategory as DocumentCategory}
                     companies={companies}
                     isClientView

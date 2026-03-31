@@ -34,6 +34,9 @@ export function useAddComment(documentId: string) {
             body: JSON.stringify({
               comment: data.comment,
               added_by: data.added_by,
+              ...(data.document_link
+                ? { document_link: data.document_link }
+                : {}),
             }),
           },
         );
@@ -59,6 +62,8 @@ export function useAddComment(documentId: string) {
           added_by: latest.added_by || data.added_by,
           created_at: latest.added_at || new Date().toISOString(),
           document_id: documentId,
+          document_link: latest.document_link ?? data.document_link ?? null,
+          profile_image_url: latest.profile_image_url ?? null,
           is_important: Boolean(
             (latest.added_by || "").toLowerCase().includes("moshin"),
           ),
@@ -128,6 +133,8 @@ export function useAddComment(documentId: string) {
         added_by: newComment.added_by || currentUser,
         created_at: new Date().toISOString(),
         document_id: documentId,
+        document_link: newComment.document_link ?? null,
+        profile_image_url: null,
         is_important: (newComment.added_by ?? "")
           .toLowerCase()
           .includes("moshin"),

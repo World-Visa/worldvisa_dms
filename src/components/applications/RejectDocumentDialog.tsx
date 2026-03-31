@@ -6,12 +6,11 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 
 interface RejectDocumentDialogProps {
   isOpen: boolean;
@@ -43,41 +42,61 @@ export function RejectDocumentDialog({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          handleClose();
+        }
+      }}
+    >
+      <DialogContent
+        showCloseButton={false}
+        className="max-w-[440px] gap-4 overflow-hidden p-5"
+      >
+        <div className="flex items-start justify-between">
+          <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-900 dark:text-red-300">
+            <AlertTriangle className="size-5" />
+          </div>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-label="Close"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
+
+        <DialogHeader className="gap-1">
+          <DialogTitle className="text-base font-semibold leading-snug">
             Reject Document
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-4">
-          <div>
-            <p className="text-sm text-gray-600">
+        <div className="space-y-5">
+          {/* <div>
+            <p className="text-sm text-foreground/90">
               You are about to reject the document:{" "}
               <strong>{documentName}</strong>
             </p>
-            <p className="text-sm text-gray-500 mt-1">
-              Please provide a reason for rejection. This will help the client
-              understand what needs to be corrected.
-            </p>
-          </div>
+          </div> */}
 
           <div className="space-y-2">
-            <Label htmlFor="reject-reason">Reason for rejection *</Label>
+            <Label htmlFor="reject-reason">Please provide a reason for rejection *</Label>
             <Textarea
               id="reject-reason"
               placeholder="Enter the reason for rejecting this document..."
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              className="min-h-[100px] resize-none"
+              className="min-h-[110px] resize-none"
               disabled={isLoading}
+              required
             />
           </div>
         </div>
 
-        <DialogFooter>
+        <div className="-mx-5 -mb-5 flex flex-row items-center justify-end gap-2 border-t bg-muted/50 px-5 py-4">
           <Button variant="outline" onClick={handleClose} disabled={isLoading}>
             Cancel
           </Button>
@@ -90,16 +109,15 @@ export function RejectDocumentDialog({
             {isLoading ? (
               <>
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Rejecting...
+                Sending request...
               </>
             ) : (
               <>
-                <AlertTriangle className="h-4 w-4" />
                 Reject Document
               </>
             )}
           </Button>
-        </DialogFooter>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -245,7 +245,7 @@ export default function RequestedDocsClient() {
   };
 
   return (
-    <main className="">
+    <main className="max-w-[1200px] mx-auto">
       {/* Page title */}
       <div className="mb-6">
         <h1 className="text-2xl font-medium text-foreground">Requested Documents</h1>

@@ -17,6 +17,36 @@ const LAYOUT_TAB_LABELS = [
   "EOI",
   "Invitation",
 ] as const;
+const CATEGORY_CARD_SKELETON_COUNT = 5;
+
+function FolderCategoryCardSkeleton({ isAction = false }: { isAction?: boolean }) {
+  if (isAction) {
+    return (
+      <div className="flex w-[190px] shrink-0 flex-col overflow-hidden rounded-2xl border border-dashed border-neutral-300">
+        <div className="m-1 flex h-[140px] items-center justify-center rounded-xl bg-neutral-50/80">
+          <Skeleton className="h-11 w-11 rounded-full" />
+        </div>
+        <div className="flex h-[60px] flex-col items-center justify-center gap-1 bg-white px-3">
+          <Skeleton className="h-4 w-36 rounded-md" />
+          <Skeleton className="h-3 w-20 rounded-md" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex w-[190px] shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-200/70">
+      <div className="relative m-1 flex h-[140px] items-center justify-center rounded-xl bg-neutral-100/80">
+        <Skeleton className="absolute left-3 top-3 h-[9px] w-[9px] rounded-sm" />
+        <Skeleton className="h-24 w-24 rounded-xl" />
+      </div>
+      <div className="flex h-[60px] flex-col items-center justify-center gap-1 bg-white px-3">
+        <Skeleton className="h-4 w-32 rounded-md" />
+        <Skeleton className="h-3 w-16 rounded-md" />
+      </div>
+    </div>
+  );
+}
 
 export function ApplicationDetailsSkeleton({
   variant = "admin",
@@ -86,14 +116,23 @@ export function ApplicationDetailsSkeleton({
           </div>
         </div>
 
-        <div className="flex flex-wrap gap-2">
-          {[80, 96, 80, 96, 80].map((w, i) => (
-            <Skeleton
-              key={i}
-              className="h-8 rounded-md"
-              style={{ width: w }}
-            />
-          ))}
+        <div className="space-y-3">
+          <div className="hidden md:block">
+            <div className="flex items-end gap-3 overflow-x-auto pb-3 pt-4 pr-1 scrollbar-hide">
+              {Array.from({ length: CATEGORY_CARD_SKELETON_COUNT }).map((_, i) => (
+                <FolderCategoryCardSkeleton key={i} />
+              ))}
+              <FolderCategoryCardSkeleton isAction />
+            </div>
+          </div>
+
+          <div className="space-y-2 md:hidden">
+            <Skeleton className="h-11 w-full rounded-md" />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-8 w-36 rounded-md" />
+              <Skeleton className="h-8 w-28 rounded-md" />
+            </div>
+          </div>
         </div>
 
         <Skeleton className="h-96 w-full rounded-xl" />

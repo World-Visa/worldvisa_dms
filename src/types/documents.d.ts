@@ -45,6 +45,7 @@ export interface DocumentChecklistTableProps {
   isLoading: boolean;
   error: Error | null;
   applicationId: string;
+  clientLeadId?: string;
   selectedCategory: DocumentCategory;
   companies: Company[];
   isClientView?: boolean;
@@ -73,6 +74,7 @@ export interface UploadDocumentsModalProps {
   isOpen: boolean;
   onClose: () => void;
   applicationId: string;
+  clientLeadId?: string;
   selectedDocumentType?: string;
   selectedDocumentCategory?: string;
   company?: Company;
@@ -88,6 +90,7 @@ export interface ReuploadDocumentModalProps {
   isOpen: boolean;
   onClose: () => void;
   applicationId: string;
+  clientLeadId?: string;
   document: ApplicationDocument | null;
   documentType: string;
   category: string;

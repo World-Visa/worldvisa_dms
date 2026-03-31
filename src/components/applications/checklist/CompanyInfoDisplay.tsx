@@ -101,7 +101,9 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
   }, [selectedCategory, extractedCompanies]);
 
   if (!displayCompany) {
-    return null;
+    // Keep a stable DOM node between server and client to avoid hydration mismatches
+    // when company data becomes available during the first client render.
+    return <div className="h-0 w-0 overflow-hidden" aria-hidden="true" />;
   }
 
   // Extract original case company name from description

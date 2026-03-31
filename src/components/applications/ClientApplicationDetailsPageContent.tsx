@@ -21,10 +21,7 @@ import { OutcomeLayout } from "@/components/applications/layouts/OutcomeLayout";
 import { Company } from "@/types/documents";
 import { Document } from "@/types/applications";
 import { useClientApplication } from "@/hooks/useClientApplication";
-import {
-  useClientDocuments,
-  useAllClientDocuments,
-} from "@/hooks/useClientDocuments";
+import { useAllClientDocuments } from "@/hooks/useClientDocuments";
 import { useClientChecklist } from "@/hooks/useClientChecklist";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
@@ -67,8 +64,6 @@ export default function ClientApplicationDetailsPageContent({
   const [selectedLayout, setSelectedLayout] =
     useState<ApplicationLayout>("skill-assessment");
   const [selectedCategory, setSelectedCategory] = useState<string>("submitted");
-  const [documentsPage, setDocumentsPage] = useState(1);
-  const documentsLimit = 10;
   const [showSampleDocuments, setShowSampleDocuments] = useState(false);
 
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -115,7 +110,6 @@ export default function ClientApplicationDetailsPageContent({
       // Invalidate all relevant queries
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["client-application"] }),
-        queryClient.invalidateQueries({ queryKey: ["client-documents"] }),
         queryClient.invalidateQueries({ queryKey: ["client-documents-all"] }),
         queryClient.invalidateQueries({
           queryKey: ["client-checklist", applicationId],
@@ -140,12 +134,6 @@ export default function ClientApplicationDetailsPageContent({
     isLoading: isApplicationLoading,
     error: applicationError,
   } = useClientApplication();
-
-  const {
-    data: documentsData,
-    isLoading: isDocumentsLoading,
-    error: documentsError,
-  } = useClientDocuments(documentsPage, documentsLimit);
 
   // Fetch all documents for categories and checklist (not paginated)
   const {
@@ -262,12 +250,11 @@ export default function ClientApplicationDetailsPageContent({
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategory(category);
-    setDocumentsPage(1);
   };
 
   const handleDeleteSuccess = () => {
     // Just invalidate queries to refresh the data without page reload
-    queryClient.invalidateQueries({ queryKey: ["client-documents"] });
+    queryClient.invalidateQueries({ queryKey: ["client-documents-all"] });
     queryClient.invalidateQueries({ queryKey: ["client-checklist"] });
   };
 
@@ -498,7 +485,7 @@ export default function ClientApplicationDetailsPageContent({
     category: string,
   ) => {
     // Find the document to reupload
-    const documentToReupload = documentsData?.data?.documents?.find(
+    const documentToReupload = allDocumentsData?.data?.documents?.find(
       (doc) => doc._id === documentId,
     );
     if (!documentToReupload) {
@@ -522,7 +509,6 @@ export default function ClientApplicationDetailsPageContent({
   // Handle document upload success to refresh data
   const handleUploadSuccess = () => {
     // Invalidate all relevant queries to ensure UI updates
-    queryClient.invalidateQueries({ queryKey: ["client-documents"] });
     queryClient.invalidateQueries({ queryKey: ["client-documents-all"] });
     queryClient.invalidateQueries({
       queryKey: ["client-checklist", applicationId],
@@ -588,7 +574,6 @@ export default function ClientApplicationDetailsPageContent({
       {/* Loading State */}
       {isAuthLoading ||
         isApplicationLoading ||
-        isDocumentsLoading ||
         isAllDocumentsLoading ||
         isChecklistLoading ? (
         <ApplicationDetailsSkeleton variant="admin" showHeader={false} />
@@ -626,9 +611,8 @@ export default function ClientApplicationDetailsPageContent({
                   onAddCompany={() => setIsAddCompanyDialogOpen(true)}
                   onRemoveCompany={handleRemoveCompany}
                   onRemoveCompanyWithCheck={handleRemoveCompanyWithDocuments}
-                  documentsResponse={documentsData}
-                  isDocumentsLoading={isDocumentsLoading}
-                  documentsError={documentsError}
+                  isDocumentsLoading={isAllDocumentsLoading}
+                  documentsError={allDocumentsError}
                   allDocumentsResponse={allDocumentsData}
                   isAllDocumentsLoading={isAllDocumentsLoading}
                   allDocumentsError={allDocumentsError}
@@ -718,6 +702,7 @@ export default function ClientApplicationDetailsPageContent({
         isOpen={isReuploadModalOpen}
         onClose={handleReuploadModalClose}
         applicationId={applicationId}
+        clientLeadId={leadId}
         document={selectedReuploadDocument}
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}
