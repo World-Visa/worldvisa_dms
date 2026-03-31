@@ -1,9 +1,10 @@
-// Client API Response Types
 
 import { Comment } from "./comments";
 
 export interface ClientApplicationResponse {
   data: {
+    name?: string;
+    full_name?: string | null;
     Email: string;
     Phone: string;
     Created_Time: string;

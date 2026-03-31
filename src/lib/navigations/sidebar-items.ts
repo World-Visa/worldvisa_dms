@@ -20,6 +20,7 @@ import {
     SquareArrowUpRight,
     Users,
 } from "lucide-react";
+import { ROLES } from "@/lib/roles";
 
 export interface NavSubItem {
     title: string;
@@ -57,7 +58,7 @@ export const sidebarItems: NavGroup[] = [
                 title: "Admin Dashboard",
                 url: "/v2",
                 icon: LayoutDashboard,
-                allowedRoles: ["master_admin"],
+                allowedRoles: [ROLES.MASTER_ADMIN],
             },
         ],
     },
@@ -85,14 +86,14 @@ export const sidebarItems: NavGroup[] = [
                 url: "/v2/quality-check",
                 icon: Forklift,
                 comingSoon: false,
-                allowedRoles: ["master_admin", "team_leader", "supervisor"],
+                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
             },
             {
                 title: "Checklist Requests",
                 url: "/v2/checklist-requests",
                 icon: ClipboardList,
                 comingSoon: false,
-                allowedRoles: ["master_admin", "admin", "team_leader"],
+                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER],
             },
             {
                 title: "Users",
@@ -103,7 +104,7 @@ export const sidebarItems: NavGroup[] = [
                     { title: "Manage Clients", url: "/v2/clients", newTab: false },
                 ],
                 comingSoon: false,
-                allowedRoles: ["master_admin"],
+                allowedRoles: [ROLES.MASTER_ADMIN],
             },
             {
                 title: "Email",
@@ -111,7 +112,7 @@ export const sidebarItems: NavGroup[] = [
                 icon: Mail,
                 comingSoon: false,
                 isNew: false,
-                allowedRoles: ["master_admin"],
+                allowedRoles: [ROLES.MASTER_ADMIN],
             },
             {
                 title: "Chat",

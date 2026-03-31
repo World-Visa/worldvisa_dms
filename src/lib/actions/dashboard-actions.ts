@@ -1,10 +1,10 @@
 "use server";
 
-import { ZOHO_BASE_URL } from "@/lib/config/api";
+import { BACKEND_ZOHO_URL } from "@/lib/config/api";
 import type { DashboardData } from "@/types/dashboard";
 
 export async function getDashboardStats(token: string): Promise<DashboardData> {
-  const response = await fetch(`${ZOHO_BASE_URL}/visa_applications/admin/dashboard`, {
+  const response = await fetch(`${BACKEND_ZOHO_URL}/visa_applications/admin/dashboard`, {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",

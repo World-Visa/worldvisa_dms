@@ -54,12 +54,30 @@ function AlertDialogContent({
       <AlertDialogPrimitive.Content
         data-slot="alert-dialog-content"
         className={cn(
-          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200 sm:max-w-lg",
+          "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 flex w-full max-w-[calc(100%-2rem)] translate-x-[-50%] translate-y-[-50%] flex-col gap-0 overflow-hidden rounded-2xl border p-4 shadow-xl duration-200 sm:max-w-[440px]",
           className,
         )}
         {...props}
+        
       />
     </AlertDialogPortal>
+  );
+}
+
+// Icon container — place at the top of AlertDialogContent before AlertDialogHeader
+function AlertDialogIcon({
+  className,
+  ...props
+}: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="alert-dialog-icon"
+      className={cn(
+        "mb-5 flex size-14 shrink-0 items-center justify-center rounded-xl",
+        className,
+      )}
+      {...props}
+    />
   );
 }
 
@@ -70,7 +88,7 @@ function AlertDialogHeader({
   return (
     <div
       data-slot="alert-dialog-header"
-      className={cn("flex flex-col gap-2 text-center sm:text-left", className)}
+      className={cn("flex flex-col gap-2", className)}
       {...props}
     />
   );
@@ -84,7 +102,7 @@ function AlertDialogFooter({
     <div
       data-slot="alert-dialog-footer"
       className={cn(
-        "flex flex-col-reverse gap-2 sm:flex-row sm:justify-end",
+        "-mx-4 -mb-4 mt-4 flex flex-row items-center justify-end gap-3 border-t bg-muted/50 px-4 py-4",
         className,
       )}
       {...props}
@@ -99,7 +117,7 @@ function AlertDialogTitle({
   return (
     <AlertDialogPrimitive.Title
       data-slot="alert-dialog-title"
-      className={cn("text-lg font-semibold", className)}
+      className={cn("text-xl font-bold", className)}
       {...props}
     />
   );
@@ -112,7 +130,7 @@ function AlertDialogDescription({
   return (
     <AlertDialogPrimitive.Description
       data-slot="alert-dialog-description"
-      className={cn("text-muted-foreground text-sm", className)}
+      className={cn("text-muted-foreground text-sm leading-relaxed", className)}
       {...props}
     />
   );
@@ -148,6 +166,7 @@ export {
   AlertDialogOverlay,
   AlertDialogTrigger,
   AlertDialogContent,
+  AlertDialogIcon,
   AlertDialogHeader,
   AlertDialogFooter,
   AlertDialogTitle,

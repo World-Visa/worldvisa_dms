@@ -136,11 +136,12 @@ export function SendDocumentModal({
       .filter(
         (admin) =>
           allowedRoles.includes(admin.role) &&
-          admin.username !== user.username,
+          admin.username !== user.username &&
+          (admin.username ?? admin.full_name),
       )
       .map((admin) => ({
-        value: admin.username,
-        label: admin.username,
+        value: admin.username ?? admin.full_name ?? "",
+        label: admin.username ?? admin.full_name ?? "",
         role: admin.role,
       }));
   }, [adminUsers, user?.role, user?.username]);

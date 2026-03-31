@@ -4,17 +4,134 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Application } from "@/types/applications";
 import { formatDate } from "@/utils/format";
-import { BadgeCheck, Check, Copy, User } from "lucide-react";
+import { BadgeCheck, User } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { ApplicationDeadlineCard, shouldShowDeadlineCard } from "./ApplicationDeadlineCard";
+import { ApplicationDeadlineCardSkeleton } from "./ApplicationDeadlineCardSkeleton";
 import { DeadlineUpdateModal } from "./DeadlineUpdateModal";
+import { CopyButton } from "@/components/ui/primitives/copy-button";
 
 interface ApplicantDetailsProps {
   application: Application | undefined;
   isLoading: boolean;
   error: Error | null;
   user: { role?: string } | null;
+  isSpouseApplication?: boolean;
+  suppressErrorUI?: boolean;
+}
+
+function LabeledValueSkeleton({ label, className }: { label: string; className?: string }) {
+  return (
+    <div>
+      <p className="text-xs text-gray-400 mb-0.5">{label}</p>
+      <Skeleton className={cn("h-4 max-w-[220px]", className ?? "w-full")} />
+    </div>
+  );
+}
+
+/** Same layout as loaded ApplicantDetails: real labels, skeleton values (used by full-page skeletons). */
+export function ApplicantDetailsLoadingPlaceholder({
+  isSpouseApplication = false,
+}: {
+  isSpouseApplication?: boolean;
+}) {
+  const showDeadlineColumnWhileLoading = shouldShowDeadlineCard(undefined);
+
+  return (
+    <div className="flex gap-6 items-stretch">
+      <div
+        className={cn(
+          "min-w-0 bg-white border border-gray-200 rounded-2xl overflow-hidden",
+          showDeadlineColumnWhileLoading ? "flex-7" : "flex-1",
+        )}
+      >
+        <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+              <User className="h-4 w-4 text-primary" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-800">
+              Application Information
+            </h3>
+          </div>
+          <div className="flex items-center gap-2">
+            {!isSpouseApplication && (
+              <Skeleton className="h-6 w-28 rounded-full" />
+            )}
+            <Skeleton className="h-6 w-36 rounded-full" />
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100">
+                Personal Information
+              </h4>
+              <div className="space-y-3">
+                <LabeledValueSkeleton label="Full Name" />
+                <LabeledValueSkeleton label="Email" />
+                <LabeledValueSkeleton label="Phone" />
+                {isSpouseApplication ? (
+                  <LabeledValueSkeleton label="Main Applicant" />
+                ) : (
+                  <div>
+                    <p className="text-xs text-gray-400 mb-0.5">
+                      Spouse Skill Assessment
+                    </p>
+                    <Skeleton className="h-4 w-full max-w-[200px]" />
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100">
+                Visa Details
+              </h4>
+              <div className="space-y-3">
+                <LabeledValueSkeleton label="Target Country" />
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Service Type</p>
+                  <Skeleton className="h-5 w-20 rounded" />
+                </div>
+                <LabeledValueSkeleton label="Suggested ANZSCO" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100">
+                Application Mgmt
+              </h4>
+              <div className="space-y-3">
+                <LabeledValueSkeleton label="Handled By" />
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Created Date</p>
+                  <Skeleton className="h-4 w-44 max-w-full" />
+                </div>
+                <LabeledValueSkeleton label="Assessing Authority" />
+              </div>
+            </div>
+            <div className="space-y-4">
+              <h4 className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest pb-2 border-b border-gray-100">
+                Assets & Files
+              </h4>
+              <div className="space-y-3">
+                <LabeledValueSkeleton label="Record Type" />
+                <div>
+                  <p className="text-xs text-gray-400 mb-1">Total Documents</p>
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {showDeadlineColumnWhileLoading && (
+        <div className="flex-3 min-w-0">
+          <ApplicationDeadlineCardSkeleton />
+        </div>
+      )}
+    </div>
+  );
 }
 
 interface InfoFieldProps {
@@ -23,46 +140,25 @@ interface InfoFieldProps {
 }
 
 function InfoField({ label, value }: InfoFieldProps) {
-  const [copied, setCopied] = useState(false);
   const isProvided = value !== "Not provided";
-
-  const handleCopy = () => {
-    if (!isProvided) return;
-    navigator.clipboard.writeText(value);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
 
   return (
     <div>
       <p className="text-xs text-gray-400 mb-0.5">{label}</p>
-      <div className="group flex items-center gap-1.5 min-w-0">
+      <div className="group flex items-center gap-0.5 min-w-0">
         <p
-          className={cn(
-            "text-sm font-medium text-slate-800 truncate min-w-0 flex-1",
-            isProvided && "cursor-pointer hover:text-slate-600 transition-colors",
-          )}
+          className="text-sm font-medium text-slate-800 truncate min-w-0 flex-1"
           title={isProvided ? value : undefined}
-          onClick={isProvided ? handleCopy : undefined}
         >
           {value}
         </p>
         {isProvided && (
-          <button
-            type="button"
-            onClick={handleCopy}
-            className="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+          <CopyButton
+            valueToCopy={value}
+            size="2xs"
+            className="shrink-0 p-1 opacity-0 transition-opacity group-hover:opacity-100 hover:bg-muted/70"
             aria-label={`Copy ${label}`}
-          >
-            {copied ? (
-              <span className="inline-flex items-center gap-0.5 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded">
-                <Check className="h-3 w-3" />
-                Copied!
-              </span>
-            ) : (
-              <Copy className="h-3.5 w-3.5 text-gray-400 hover:text-gray-600" />
-            )}
-          </button>
+          />
         )}
       </div>
     </div>
@@ -74,41 +170,20 @@ export function ApplicantDetails({
   isLoading,
   error,
   user,
+  isSpouseApplication = false,
+  suppressErrorUI = false,
 }: ApplicantDetailsProps) {
   const [isDeadlineModalOpen, setIsDeadlineModalOpen] = useState(false);
 
   if (isLoading) {
     return (
-      <div className="flex gap-6 items-stretch">
-        <div className="flex-7 min-w-0 bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-            <Skeleton className="h-5 w-48" />
-            <Skeleton className="h-6 w-24 rounded-full" />
-          </div>
-          <div className="p-6 grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="space-y-3">
-                <Skeleton className="h-3 w-20" />
-                <div className="space-y-2">
-                  {[1, 2, 3].map((j) => (
-                    <div key={j} className="space-y-1">
-                      <Skeleton className="h-3 w-14" />
-                      <Skeleton className="h-4 w-full" />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="flex-3 min-w-0">
-          <Skeleton className="h-48 w-full rounded-2xl" />
-        </div>
-      </div>
+      <ApplicantDetailsLoadingPlaceholder
+        isSpouseApplication={isSpouseApplication}
+      />
     );
   }
 
-  if (error) {
+  if (error && !suppressErrorUI) {
     return <ErrorState title="Failed to load applicant details" message={error.message} />;
   }
 
@@ -141,10 +216,7 @@ export function ApplicantDetails({
           {/* Header */}
           <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-                <User className="h-4 w-4 text-primary" />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-800">
+              <h3 className="text-base font-medium text-foreground-900">
                 Application Information
               </h3>
             </div>
@@ -234,10 +306,8 @@ export function ApplicantDetails({
                   />
                   <div>
                     <p className="text-xs text-gray-400 mb-1">Service Type</p>
-                    <span className="inline-block px-2 py-0.5 bg-primary text-white text-[10px] font-bold rounded">
-                      {formatValue(
-                        application.Service_Finalized || "",
-                      ).toUpperCase()}
+                    <span className="text-foreground-900 text-sm font-medium">
+                      {formatValue(application.Service_Finalized || "")}
                     </span>
                   </div>
                   <InfoField

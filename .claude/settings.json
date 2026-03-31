@@ -1,4 +1,11 @@
 {
+  "permissions": {
+    "allow": [
+      "Bash(grep -r \"notification.*comment\\\\|comment.*notification\" src/lib src/hooks --include=*.ts --include=*.tsx)",
+      "Skill(clerk-nextjs-patterns)",
+      "Skill(clerk-nextjs-patterns:*)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
@@ -10,11 +17,6 @@
           }
         ]
       }
-    ]
-  },
-  "permissions": {
-    "allow": [
-      "Bash(grep -r \"notification.*comment\\\\|comment.*notification\" src/lib src/hooks --include=*.ts --include=*.tsx)"
     ]
   }
 }

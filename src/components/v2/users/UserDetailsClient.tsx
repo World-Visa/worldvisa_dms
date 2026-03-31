@@ -2,6 +2,8 @@
 
 import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
+import { useUser } from "@clerk/nextjs";
 import {
   ArrowLeft,
   Bell,
@@ -13,6 +15,7 @@ import {
   FileText,
   Loader2,
   SendHorizontal,
+  Settings,
   Shield,
   ShieldCheck,
   Users,
@@ -20,6 +23,7 @@ import {
 import { formatDistanceToNow, format } from "date-fns";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { PresenceDot } from "@/components/ui/presence-dot";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,21 +36,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useUserDetails, type Application, type UserNotification } from "@/hooks/useUserDetails";
+import { useUserDetails, type Application, type UserNotification, type UserDetailsResponse } from "@/hooks/useUserDetails";
 import { useUploadProfileImage } from "@/hooks/useUserMutations";
-
-import { ChangePasswordDialog } from "./ChangePasswordDialog";
-
-const AVATAR_INDICES = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12];
-
-function getAvatar(username: string): string {
-  const idx = username.charCodeAt(0) % AVATAR_INDICES.length;
-  return `/avatars/${AVATAR_INDICES[idx]}.png`;
-}
-
-function getInitials(username: string): string {
-  return username.slice(0, 2).toUpperCase();
-}
+import { getInitials } from "@/lib/constants/users";
+import { getProfileAvatarSrc } from "@/lib/utils";
+import { ROUTES } from "@/utils/routes";
 
 const ROLE_LABELS: Record<string, { label: string; icon: React.ReactNode }> = {
   master_admin: { label: "Master Admin", icon: <ShieldCheck className="size-3" /> },
@@ -68,10 +62,10 @@ function formatDate(date: string | null): string {
   }
 }
 
-function timeAgo(date: string | null): string {
+function timeAgo(date: Date | string | null): string {
   if (!date) return "—";
   try {
-    return formatDistanceToNow(new Date(date), { addSuffix: true });
+    return formatDistanceToNow(new Date(date as string), { addSuffix: true });
   } catch {
     return "—";
   }
@@ -99,20 +93,18 @@ function ProfileCard({
   notificationsCount,
   onlineStatus,
   profileImage,
-  showChangePassword = true,
   showUpload = false,
 }: {
   userId: string;
   username: string;
   role: string;
-  lastLogin: string | null;
+  lastLogin: Date | string | null;
   reviewsSentCount: number;
   reviewsReceivedCount: number;
   applicationsCount: number;
   notificationsCount: number;
   onlineStatus?: boolean;
   profileImage?: string;
-  showChangePassword?: boolean;
   showUpload?: boolean;
 }) {
   const { label, icon } = formatRole(role);
@@ -134,7 +126,7 @@ function ProfileCard({
   return (
     <Card className="flex flex-col gap-0 overflow-hidden">
       {/* Avatar section */}
-      <div className="flex flex-col items-center gap-3 bg-gradient-to-b from-muted/60 to-card px-6 pb-6 pt-8">
+      <div className="flex flex-col items-center gap-3 bg-linear-to-b from-muted/60 to-card px-6 pb-6 pt-8">
         <div className="relative">
           {showUpload ? (
             <>
@@ -154,7 +146,13 @@ function ProfileCard({
                 aria-label="Change profile photo"
               >
                 <Avatar className="size-24 pointer-events-none">
-                  <AvatarImage src={profileImage ?? getAvatar(username)} alt={username} />
+                  <AvatarImage
+                    src={getProfileAvatarSrc({
+                      profileImageUrl: profileImage,
+                      seed: userId,
+                    })}
+                    alt={username}
+                  />
                   <AvatarFallback className="text-2xl font-semibold">{getInitials(username)}</AvatarFallback>
                 </Avatar>
                 <span className="absolute inset-0 rounded-full bg-black/0 group-hover:bg-black/50 group-disabled:bg-black/50 transition-colors duration-200 flex flex-col items-center justify-center gap-1">
@@ -173,14 +171,19 @@ function ProfileCard({
             </>
           ) : (
             <Avatar className="size-24 ring-4 ring-background shadow-md">
-              <AvatarImage src={profileImage ?? getAvatar(username)} alt={username} />
+              <AvatarImage
+                src={getProfileAvatarSrc({
+                  profileImageUrl: profileImage,
+                  seed: userId,
+                })}
+                alt={username}
+              />
               <AvatarFallback className="text-2xl font-semibold">{getInitials(username)}</AvatarFallback>
             </Avatar>
           )}
-          <span
-            className={`absolute bottom-1 right-1 z-10 size-4 rounded-full border-2 border-background ${
-              onlineStatus ? "bg-green-500" : "bg-muted-foreground/40"
-            }`}
+          <PresenceDot
+            online={onlineStatus ?? false}
+            className="absolute bottom-1 right-1 z-10 size-4 border-2 border-background"
           />
         </div>
         <div className="flex flex-col items-center gap-1 text-center">
@@ -221,11 +224,13 @@ function ProfileCard({
           <span className="text-muted-foreground">Last login:</span>
           <span className="font-medium">{timeAgo(lastLogin)}</span>
         </div>
-
-        {showChangePassword && (
-          <div className="pt-1">
-            <ChangePasswordDialog username={username} />
-          </div>
+        {showUpload && (
+          <Button variant="outline" size="sm" className="w-full gap-2" asChild>
+            <Link href={ROUTES.PROFILE_SETTINGS}>
+              <Settings className="size-4" />
+              Account Settings
+            </Link>
+          </Button>
         )}
       </CardContent>
     </Card>
@@ -417,7 +422,7 @@ function ReviewsSentCard({ reviews }: { reviews: { document_name: string; client
 }
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
-function PageSkeleton() {
+export function PageSkeleton() {
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[300px_1fr]">
       <div className="flex flex-col gap-4">
@@ -439,7 +444,6 @@ function PageSkeleton() {
           </div>
           <CardContent className="flex flex-col gap-3 pt-4">
             <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-9 w-full" />
           </CardContent>
         </Card>
       </div>
@@ -462,14 +466,15 @@ function PageSkeleton() {
 }
 
 // ─── Main Client ──────────────────────────────────────────────────────────────
-export function UserDetailsClient({ id, showChangePassword }: { id: string; showChangePassword?: boolean }) {
+export function UserDetailsClient({ id, initialData }: { id: string; initialData?: UserDetailsResponse }) {
   const router = useRouter();
   const pathname = usePathname();
+  const { user: clerkUser } = useUser();
   const isProfilePage = pathname.includes("/profile");
-  const { data, isLoading, isError, error } = useUserDetails(id);
+  const { data, isLoading, isError, error } = useUserDetails(id, initialData);
   const title = isProfilePage ? "My Profile" : data?.data?.user?.username;
 
-  if (isLoading) {
+  if (isLoading && !initialData) {
     return (
       <div className="flex flex-col gap-6 p-6">
         <Skeleton className="h-8 w-32" />
@@ -492,6 +497,10 @@ export function UserDetailsClient({ id, showChangePassword }: { id: string; show
   }
 
   const { user, reviews_sent, reviews_received, applications, notifications } = data.data;
+
+  const lastLogin: Date | string | null = isProfilePage
+    ? (clerkUser?.lastSignInAt ?? null)
+    : user.last_login;
 
   return (
     <div className="flex flex-col gap-4">
@@ -518,14 +527,13 @@ export function UserDetailsClient({ id, showChangePassword }: { id: string; show
             userId={user._id}
             username={user.username}
             role={user.role}
-            lastLogin={user.last_login}
+            lastLogin={lastLogin}
             reviewsSentCount={reviews_sent.totalRecords}
             reviewsReceivedCount={reviews_received.totalRecords}
             applicationsCount={applications.data.length}
             notificationsCount={notifications.totalRecords}
             onlineStatus={user.online_status}
             profileImage={user.profile_image_url}
-            showChangePassword={showChangePassword}
             showUpload={isProfilePage}
           />
         </div>

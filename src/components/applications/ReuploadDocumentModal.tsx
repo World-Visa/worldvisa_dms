@@ -7,6 +7,7 @@ interface ReuploadDocumentModalProps {
   isOpen: boolean;
   onClose: () => void;
   applicationId: string;
+  clientLeadId?: string;
   document: Document | null;
   documentType: string;
   category: string;
@@ -21,6 +22,7 @@ export function ReuploadDocumentModal(props: ReuploadDocumentModalProps) {
       isOpen={props.isOpen}
       onClose={props.onClose}
       applicationId={props.applicationId}
+      clientLeadId={props.clientLeadId}
       document={props.document}
       documentType={props.documentType}
       category={props.category}

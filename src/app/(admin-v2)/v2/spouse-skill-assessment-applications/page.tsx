@@ -45,6 +45,7 @@ const SpouseSkillAssessmentApplications = memo(
             handledBy: true,
             applicationStage: false,
             applicationState: false,
+            deadline: false,
           }}
           isSpouseApplication={true}
           onRefresh={handleRefresh}

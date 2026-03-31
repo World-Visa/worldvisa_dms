@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useAddDocument } from "@/hooks/useMutationsDocuments";
 import { useClientUploadDocument } from "@/hooks/useClientDocumentMutations";
 import { useReuploadDocument } from "@/hooks/useReuploadDocument";
@@ -24,7 +23,6 @@ import {
   X,
   FileText,
   File,
-  AlertCircle,
   FileCheck,
   RotateCcw,
   Eye,
@@ -45,6 +43,7 @@ import {
   getChecklistDocumentMeta,
   isDocumentTypeWithSampleInModal,
 } from "@/lib/documents/metadata";
+import { InlineToast } from "@/components/ui/primitives/inline-toast";
 import { SampleDocumentModal } from "./SampleDocumentModal";
 
 // ─── Module-scope helpers ─────────────────────────────────────────────────────
@@ -130,8 +129,14 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     ? (props as ReuploadDocumentModalProps)
     : undefined;
 
-  const { isOpen, onClose, applicationId, isClientView = false, instruction } =
-    props;
+  const {
+    isOpen,
+    onClose,
+    applicationId,
+    isClientView = false,
+    instruction,
+    clientLeadId,
+  } = props;
 
   // ── State ─────────────────────────────────────────────────────────────────
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>(
@@ -337,14 +342,14 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     const allowedDocument = documentMeta?.allowedDocument;
     if (allowedDocument === undefined) return true;
 
+    const existingCount = uploadProps?.existingDocumentCount ?? 0;
     const currentCount = uploadedFiles.length;
-    const totalCount = currentCount + fileCount;
+    const totalCount = existingCount + currentCount + fileCount;
 
     if (totalCount > allowedDocument) {
       toast.error(
         `Maximum ${allowedDocument} file${allowedDocument === 1 ? "" : "s"} allowed for "${effectiveDocumentType}". ` +
-        `You are trying to upload ${fileCount} file${fileCount === 1 ? "" : "s"}, ` +
-        `but you already have ${currentCount} file${currentCount === 1 ? "" : "s"} selected.`,
+        `${existingCount} already uploaded, ${currentCount} selected in this session.`,
       );
       return false;
     }
@@ -514,13 +519,29 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     return "";
   };
 
-  // Prefer non-empty _id, then non-empty lead_id; in client view fall back to applicationId
+  const isMongoObjectId = (value: string): boolean =>
+    /^[a-fA-F0-9]{24}$/.test(value);
+
+  // Resolve canonical client ID for /clients/:id/* endpoints.
+  // Priority: explicit lead id -> auth lead_id -> route/app id (if not Mongo ObjectId) -> safe legacy fallback.
   const getClientId = (): string | undefined => {
-    const a = user?._id?.trim();
-    const b = user?.lead_id?.trim();
-    if (a) return a;
-    if (b) return b;
-    if (isClientView && applicationId?.trim()) return applicationId.trim();
+    const explicitLeadId = clientLeadId?.trim();
+    const authLeadId = user?.lead_id?.trim();
+    const appScopedId = applicationId?.trim();
+    const authUserId = user?._id?.trim();
+
+    if (explicitLeadId) return explicitLeadId;
+    if (authLeadId) return authLeadId;
+
+    if (isClientView && appScopedId && !isMongoObjectId(appScopedId)) {
+      return appScopedId;
+    }
+
+    // Legacy fallback for unexpected non-Mongo identifiers only.
+    if (authUserId && !isMongoObjectId(authUserId)) {
+      return authUserId;
+    }
+
     return undefined;
   };
 
@@ -552,7 +573,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
     const clientId = getClientId();
     if (isClientView && !clientId) {
-      toast.error("Client information not available. Please login again.");
+      toast.error("Client lead ID is missing. Please refresh and try again.");
       return;
     }
 
@@ -709,7 +730,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
     const clientId = getClientId();
     if (isClientView && !clientId) {
-      toast.error("Client information not available. Please login again.");
+      toast.error("Client lead ID is missing. Please refresh and try again.");
       return;
     }
 
@@ -830,54 +851,31 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
             {/* Instruction banner */}
             {instruction?.trim() ? (
-              <div className="rounded-md border border-border/80 bg-muted/20 px-2 py-2">
-                <strong>Note:</strong> {instruction}
-              </div>
+              <InlineToast
+                variant="warning"
+                title="Instruction"
+                description={instruction}
+              />
             ) : null}
 
             {/* Document info card */}
             {(effectiveDocumentType || (isReupload && displayDocument)) ? (
               <section className="rounded-md border border-border/80 bg-muted/20 p-2">
-                {isReupload && displayDocument ? (
-                  <>
+                <div className="flex items-start justify-between gap-2">
+                  <div>
                     <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Replacing
+                      Document type
                     </p>
-                    <p className="mt-1 truncate font-medium text-foreground">
-                      {displayDocument.file_name}
+                    <p className="mt-1 font-medium text-foreground">
+                      {effectiveDocumentType}
                     </p>
-                    <dl className="mt-3 space-y-1 text-sm text-muted-foreground">
-                      <div>
-                        <span className="font-medium text-foreground">
-                          Type:
-                        </span>{" "}
-                        {effectiveDocumentType}
-                      </div>
-                      <div>
-                        <span className="font-medium text-foreground">
-                          Category:
-                        </span>{" "}
-                        {effectiveCategory}
-                      </div>
-                    </dl>
-                  </>
-                ) : (
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                        Document type
-                      </p>
-                      <p className="mt-1 font-medium text-foreground">
-                        {effectiveDocumentType}
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                      {documentMeta?.allowedDocument !== undefined
-                        ? `Max ${documentMeta.allowedDocument} file${documentMeta.allowedDocument === 1 ? "" : "s"}`
-                        : "Multiple files allowed"}
-                    </span>
                   </div>
-                )}
+                  <span className="shrink-0 rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
+                    {documentMeta?.allowedDocument !== undefined
+                      ? `Max ${documentMeta.allowedDocument} file${documentMeta.allowedDocument === 1 ? "" : "s"}`
+                      : "Multiple files allowed"}
+                  </span>
+                </div>
               </section>
             ) : null}
 
@@ -889,22 +887,6 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
               </div>
             ) : null}
 
-            {/* Important note alert */}
-            {documentMeta?.importantNote ? (
-              <Alert className="border-amber-200/80 bg-amber-50/80 text-amber-900">
-                <AlertCircle className="h-4 w-4 text-amber-600" />
-                <AlertDescription className="space-y-1">
-                  <p className="text-xs font-semibold uppercase tracking-wide">
-                    Important
-                  </p>
-                  <p className="whitespace-pre-line text-sm font-medium">
-                    {documentMeta.importantNote}
-                  </p>
-                </AlertDescription>
-              </Alert>
-            ) : null}
-
-            {/* ★ Prominent Sample Document Card */}
             {hasSample ? (
               <section className="rounded-md border border-violet-200/80 px-2 py-2">
                 <div className="flex items-start gap-3">
@@ -1051,6 +1033,20 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
                 </ul>
               </section>
             )}
+
+            {/* Important note */}
+            {documentMeta?.importantNote ? (
+              <InlineToast
+                variant="warning"
+                title="Important"
+                description={
+                  <span className="whitespace-pre-line">
+                    {documentMeta.importantNote}
+                  </span>
+                }
+              />
+            ) : null}
+
           </div>
 
           {/* ── Fixed Footer ─────────────────────────────────────────────── */}

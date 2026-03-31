@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
 
 export type ApplicationLayout =
@@ -9,11 +9,9 @@ export type ApplicationLayout =
 
 interface LayoutChipsProps {
   selectedLayout: ApplicationLayout;
-  onLayoutChange: (layout: ApplicationLayout) => void;
+  onLayoutChange?: (layout: ApplicationLayout) => void;
   availableLayouts?: ApplicationLayout[];
   badges?: Record<ApplicationLayout, number | undefined>;
-  showSampleDocuments?: boolean;
-  onToggleSampleDocuments?: () => void;
 }
 
 const layoutChips: { id: ApplicationLayout; label: string }[] = [
@@ -25,85 +23,45 @@ const layoutChips: { id: ApplicationLayout; label: string }[] = [
 
 export function LayoutChips({
   selectedLayout,
-  onLayoutChange,
   availableLayouts,
   badges,
-  showSampleDocuments,
-  onToggleSampleDocuments,
 }: LayoutChipsProps) {
   const chipsToShow = availableLayouts
     ? layoutChips.filter((chip) => availableLayouts.includes(chip.id))
     : layoutChips;
 
   return (
-    <>
-      <div className="flex flex-wrap md:flex-nowrap md:items-end md:justify-between justify-start border-b border-gray-200 gap-2">
-        {/* Underline tabs */}
-        <div className="flex" role="tablist">
-          {chipsToShow.map((chip) => {
-            const isActive = selectedLayout === chip.id;
-            const badge = badges?.[chip.id];
-            return (
-              <button
-                key={chip.id}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => onLayoutChange(chip.id)}
-                className={cn(
-                  "relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium transition-all duration-150 focus:outline-none whitespace-nowrap",
-                  "-mb-px border-b-2",
-                  isActive
-                    ? "border-gray-900 text-gray-900 font-semibold"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
-                )}
-              >
-                {chip.label}
-                {badge !== undefined && (
-                  <span
-                    className={cn(
-                      "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums transition-all duration-150",
-                      isActive
-                        ? "bg-gray-900 text-white"
-                        : "bg-gray-100 text-gray-500",
-                    )}
-                  >
-                    {badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Sample documents toggle */}
-        {selectedLayout === "skill-assessment" && onToggleSampleDocuments && (
-          <div className="pb-2 md:pl-4 pl-0 hidden md:block">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onToggleSampleDocuments}
-              className="cursor-pointer"
+    <div className="flex flex-col gap-2 border-b border-gray-200 ">
+      <TabsList
+        variant="regular"
+        className="w-full gap-1 border-t-0 border-b-0 px-0 md:w-auto"
+      >
+        {chipsToShow.map((chip) => {
+          const badge = badges?.[chip.id];
+          return (
+            <TabsTrigger
+              key={chip.id}
+              value={chip.id}
+              variant="regular"
+              size="lg"
+              className="group gap-2 whitespace-nowrap px-4 py-2"
             >
-              {showSampleDocuments ? "Back to checklist" : "Sample documents"}
-            </Button>
-          </div>
-        )}
-      </div>
-      {
-        selectedLayout === "skill-assessment" && onToggleSampleDocuments && (
-          <div className="md:hidden w-full flex justify-center">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={onToggleSampleDocuments}
-              className="cursor-pointer w-full h-11"
-            >
-              {showSampleDocuments ? "Back to checklist" : "Sample documents"}
-            </Button>
-          </div>
-        )
-      }
-    </>
+              <span>{chip.label}</span>
+              {badge !== undefined && (
+                <span
+                  className={cn(
+                    "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums transition-colors duration-200",
+                    "bg-neutral-alpha-100 text-muted-foreground",
+                    "group-data-[state=active]:bg-foreground group-data-[state=active]:text-background",
+                  )}
+                >
+                  {badge}
+                </span>
+              )}
+            </TabsTrigger>
+          );
+        })}
+      </TabsList>
+    </div>
   );
 }

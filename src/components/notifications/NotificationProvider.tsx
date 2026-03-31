@@ -7,6 +7,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { notificationSocket } from "@/lib/notificationSocket";
 import { useNotificationStore } from "@/store/notificationStore";
 import { getNotificationAction } from "@/components/v2/notifications/NotificationRow";
+import { usePresence } from "@/hooks/usePresence";
 import type { NotificationNewEvent } from "@/types/notifications";
 
 // Cast socket event to Notification-compatible shape for getNotificationAction.
@@ -26,6 +27,8 @@ export function NotificationProvider({
   const router = useRouter();
   const { isAuthenticated, user } = useAuth();
   const { desktopNotificationsEnabled, soundEnabled } = useNotificationStore();
+
+  usePresence();
 
   // Connect / disconnect socket on auth change
   useEffect(() => {

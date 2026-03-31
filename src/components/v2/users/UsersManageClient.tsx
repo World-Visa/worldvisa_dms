@@ -1,19 +1,17 @@
 "use client";
 
-import * as React from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
   getCoreRowModel,
   getFacetedRowModel,
   getFacetedUniqueValues,
   getSortedRowModel,
   type PaginationState,
-  type RowSelectionState,
   type SortingState,
   type VisibilityState,
   useReactTable,
 } from "@tanstack/react-table";
-import { AlertCircle, RefreshCw, Search, Users } from "lucide-react";
-
+import { AlertCircle, Users } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,32 +21,24 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DataTable } from "@/components/v2/datatable/data-table";
 import { DataTablePagination } from "@/components/v2/datatable/data-table-pagination";
-import { DataTableViewOptions } from "@/components/v2/datatable/data-table-view-options";
-import { useAdminUsersV2, type AdminUserV2 } from "@/hooks/useAdminUsersV2";
+import {
+  useAdminUsersV2,
+  type AdminUserV2,
+  type AdminUsersV2Response,
+} from "@/hooks/useAdminUsersV2";
+import { FacetedFormFilter } from "@/components/ui/faceted-filter/facated-form-filter";
+import { Button as PrimitiveButton } from "@/components/ui/primitives/button";
+import { ROLE_OPTIONS } from "@/lib/constants/users";
+import { useAuth } from "@/hooks/useAuth";
 
-import { AddUserDialog } from "./AddUserDialog";
 import { userColumns } from "./columns.users";
 
-const ROLE_FILTER_OPTIONS = [
-  { value: "all", label: "All Roles" },
-  { value: "master_admin", label: "Master Admin" },
-  { value: "admin", label: "Admin" },
-  { value: "team_leader", label: "Team Leader" },
-  { value: "supervisor", label: "Supervisor" },
-];
+const ROLE_FILTER_OPTIONS = ROLE_OPTIONS.map((r) => ({ value: r.value, label: r.label }));
 
-function TableSkeleton() {
+export function TableSkeleton() {
   return (
     <div className="space-y-3">
       {Array.from({ length: 8 }).map((_, i) => (
@@ -81,21 +71,24 @@ function EmptyState() {
   );
 }
 
-export function UsersManageClient() {
-  const [searchInput, setSearchInput] = React.useState("");
-  const [debouncedSearch, setDebouncedSearch] = React.useState("");
-  const [roleFilter, setRoleFilter] = React.useState("all");
+interface UsersManageClientProps {
+  initialData?: AdminUsersV2Response;
+}
 
-  const [pagination, setPagination] = React.useState<PaginationState>({
+export function UsersManageClient({ initialData }: UsersManageClientProps) {
+  const { user: currentUser } = useAuth();
+  const [searchInput, setSearchInput] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string[]>([]);
+
+  const [pagination, setPagination] = useState<PaginationState>({
     pageIndex: 0,
     pageSize: 10,
   });
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [rowSelection, setRowSelection] = React.useState<RowSelectionState>({});
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
 
-  // Debounce search input
-  React.useEffect(() => {
+  useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchInput);
       setPagination((prev) => ({ ...prev, pageIndex: 0 }));
@@ -103,22 +96,28 @@ export function UsersManageClient() {
     return () => clearTimeout(timer);
   }, [searchInput]);
 
-  // Reset to page 1 on role filter change
-  const handleRoleFilterChange = (value: string) => {
-    setRoleFilter(value);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
-  };
-
-  const { data, isLoading, isError, error, refetch, isFetching } = useAdminUsersV2({
+  const queryParams = {
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
-    role: roleFilter === "all" ? undefined : roleFilter,
     search: debouncedSearch || undefined,
-  });
+    role: roleFilter[0] || undefined,
+  };
 
-  const users: AdminUserV2[] = data?.data?.users ?? [];
-  const totalPages = data?.pagination?.totalPages ?? 1;
-  const totalRecords = data?.pagination?.totalRecords ?? 0;
+  const { data, isLoading, isError, error, refetch } = useAdminUsersV2(queryParams);
+
+  const isDefaultParams = queryParams.page === 1 && !queryParams.search && !queryParams.role;
+  const resolvedData = data ?? (isDefaultParams ? initialData : undefined);
+
+  const users: AdminUserV2[] = useMemo(() => {
+    const raw = resolvedData?.data?.users ?? [];
+    if (!currentUser?._id) return raw;
+    return raw.map((u) =>
+      u._id === currentUser._id ? { ...u, online_status: true } : u,
+    );
+  }, [resolvedData?.data?.users, currentUser?._id]);
+  
+  const totalPages = resolvedData?.pagination?.totalPages ?? 1;
+  const totalRecords = resolvedData?.pagination?.totalRecords ?? 0;
 
   const table = useReactTable({
     data: users,
@@ -126,14 +125,11 @@ export function UsersManageClient() {
     state: {
       sorting,
       columnVisibility,
-      rowSelection,
       pagination,
     },
     manualPagination: true,
     pageCount: totalPages,
-    enableRowSelection: true,
     getRowId: (row) => row._id,
-    onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
     onColumnVisibilityChange: setColumnVisibility,
     onPaginationChange: setPagination,
@@ -143,44 +139,48 @@ export function UsersManageClient() {
     getFacetedUniqueValues: getFacetedUniqueValues(),
   });
 
-  const selectedCount = table.getFilteredSelectedRowModel().rows.length;
+  const hasActiveFilters = searchInput.trim() !== "" || roleFilter.length > 0;
+
+  const clearFilters = () => {
+    setSearchInput("");
+    setRoleFilter([]);
+    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+  };
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl tracking-tight">Manage Users</h1>
-        </div>
-        <AddUserDialog />
-      </div>
-
-      {/* Filters */}
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="relative min-w-[200px] max-w-xs flex-1">
-          <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            placeholder="Search users..."
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Select value={roleFilter} onValueChange={handleRoleFilterChange}>
-          <SelectTrigger className="w-[160px]">
-            <SelectValue placeholder="Filter by role" />
-          </SelectTrigger>
-          <SelectContent>
-            {ROLE_FILTER_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <div className="ml-auto flex items-center gap-2">
-          <DataTableViewOptions table={table} />
-        </div>
+      {/* Filter pills */}
+      <div className="flex flex-wrap items-center gap-2 py-1">
+        <FacetedFormFilter
+          type="text"
+          size="small"
+          title="Search"
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Search users…"
+        />
+        <FacetedFormFilter
+          type="single"
+          size="small"
+          title="Role"
+          options={ROLE_FILTER_OPTIONS}
+          selected={roleFilter}
+          onSelect={(vals) => {
+            setRoleFilter(vals);
+            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+          }}
+        />
+        {hasActiveFilters && (
+          <PrimitiveButton
+            variant="secondary"
+            mode="ghost"
+            size="2xs"
+            className="text-xs! font-normal! text-neutral-700"
+            onClick={clearFilters}
+          >
+            Reset
+          </PrimitiveButton>
+        )}
       </div>
 
       {/* Error state */}
@@ -189,7 +189,11 @@ export function UsersManageClient() {
           <AlertCircle className="size-4" />
           <AlertDescription>
             {error instanceof Error ? error.message : "Failed to load users."}{" "}
-            <Button variant="link" className="h-auto p-0 text-destructive" onClick={() => refetch()}>
+            <Button
+              variant="link"
+              className="h-auto p-0 text-destructive"
+              onClick={() => refetch()}
+            >
               Try again
             </Button>
           </AlertDescription>
@@ -198,7 +202,7 @@ export function UsersManageClient() {
 
       {/* Table */}
       <div className="overflow-hidden rounded-md border">
-        {isLoading ? (
+        {isLoading && !resolvedData ? (
           <div className="py-4">
             <TableSkeleton />
           </div>
@@ -209,10 +213,10 @@ export function UsersManageClient() {
         )}
       </div>
 
-      {/* Pagination footer — hide the built-in selected-row count from DataTablePagination */}
+      {/* Pagination */}
       <div className="flex items-center justify-between">
         <p className="text-muted-foreground text-sm">
-          {selectedCount} of {totalRecords} row(s) selected.
+          Total {totalRecords} row(s).
         </p>
         <div className="[&>div>div:first-child]:hidden!">
           <DataTablePagination table={table} />

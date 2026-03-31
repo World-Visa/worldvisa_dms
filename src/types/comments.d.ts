@@ -4,6 +4,8 @@ export interface Comment {
   added_by: string;
   created_at: string;
   document_id: string;
+  document_link?: string | null;
+  profile_image_url?: string | null;
   is_important?: boolean;
 }
 
@@ -13,12 +15,15 @@ export interface ZohoComment {
   comment?: string;
   added_by: string;
   added_at: string;
+  document_link?: string | null;
+  profile_image_url?: string | null;
 }
 
 export interface AddCommentRequest {
   comment: string;
   added_by: string;
   document_id: string;
+  document_link?: string;
 }
 
 export interface AddCommentResponse {

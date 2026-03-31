@@ -71,10 +71,18 @@ export function useDocumentStatusUpdate({
         // If document is rejected and has a rejection message, create a comment
         if (status === "rejected" && rejectMessage && documentId) {
           try {
+            const currentDocument = queryClient.getQueryData<Document>([
+              "document",
+              documentId,
+            ]);
+            const documentLink =
+              currentDocument?.document_link || currentDocument?.download_url;
+
             // Use the comment creation mutation but don't await it to avoid blocking
             addCommentMutation.mutate({
               comment: `Document rejected: ${rejectMessage}`,
               added_by: changedBy,
+              ...(documentLink ? { document_link: documentLink } : {}),
             });
           } catch (commentError) {
             // Log comment creation error but don't fail the status update

@@ -3,15 +3,15 @@ import { fetcher } from "@/lib/fetcher";
 import {
   Comment,
   AddCommentRequest,
-  AddCommentResponse,
   DeleteCommentRequest,
   DeleteCommentResponse,
+  ZohoComment,
 } from "@/types/comments";
-import { getStoredToken } from "@/lib/auth";
+import { getClerkToken } from "@/lib/getToken";
 import { commentMonitor } from "@/lib/commentMonitoring";
 import * as Sentry from "@sentry/nextjs";
 import { toast } from "sonner";
-import { ZOHO_BASE_URL } from "@/lib/config/api";
+import { API_ENDPOINTS } from "@/lib/config/api";
 
 export function useAddComment(documentId: string) {
   const queryClient = useQueryClient();
@@ -23,24 +23,32 @@ export function useAddComment(documentId: string) {
       const startTime = Date.now();
 
       try {
-        const response = await fetcher<AddCommentResponse>(
-          `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/comment`,
+        const response = await fetcher<{
+          success: boolean;
+          data?: { comments?: ZohoComment[] };
+          message?: string;
+        }>(
+          API_ENDPOINTS.VISA_APPLICATIONS.DOCUMENTS.COMMENT(documentId),
           {
             method: "POST",
             body: JSON.stringify({
               comment: data.comment,
               added_by: data.added_by,
+              ...(data.document_link
+                ? { document_link: data.document_link }
+                : {}),
             }),
           },
         );
 
         const responseTime = Date.now() - startTime;
 
-        if (response.status === "error") {
+        if (!response.success) {
           throw new Error(response.message || "Failed to add comment");
         }
 
-        if (!response.data) {
+        const latest = response.data?.comments?.at(-1);
+        if (!latest) {
           throw new Error("No comment data returned");
         }
 
@@ -48,15 +56,17 @@ export function useAddComment(documentId: string) {
         commentMonitor.trackCommentCreated(data.added_by, responseTime);
         commentMonitor.reportPerformanceIssue("add_comment", responseTime);
 
-        // Normalize: backend may use added_at; ensure created_at for cache/sort
-        const raw = response.data as Comment & { added_at?: string };
         return {
-          ...raw,
-          created_at:
-            raw.created_at ?? raw.added_at ?? new Date().toISOString(),
-          added_by: raw.added_by ?? data.added_by,
-          comment: raw.comment ?? data.comment,
-          document_id: raw.document_id ?? documentId,
+          _id: latest._id,
+          comment: latest.comment || data.comment,
+          added_by: latest.added_by || data.added_by,
+          created_at: latest.added_at || new Date().toISOString(),
+          document_id: documentId,
+          document_link: latest.document_link ?? data.document_link ?? null,
+          profile_image_url: latest.profile_image_url ?? null,
+          is_important: Boolean(
+            (latest.added_by || "").toLowerCase().includes("moshin"),
+          ),
         } as Comment;
       } catch (error) {
         const responseTime = Date.now() - startTime;
@@ -101,7 +111,7 @@ export function useAddComment(documentId: string) {
 
       // Fallback to JWT token
       if (currentUser === "Unknown User") {
-        const token = getStoredToken();
+        const token = await getClerkToken();
         if (token) {
           try {
             const payload = JSON.parse(atob(token.split(".")[1]));
@@ -123,6 +133,8 @@ export function useAddComment(documentId: string) {
         added_by: newComment.added_by || currentUser,
         created_at: new Date().toISOString(),
         document_id: documentId,
+        document_link: newComment.document_link ?? null,
+        profile_image_url: null,
         is_important: (newComment.added_by ?? "")
           .toLowerCase()
           .includes("moshin"),
@@ -272,7 +284,7 @@ export function useDeleteComment(documentId: string) {
 
         // Fallback to JWT token
         if (currentUser === "Unknown User") {
-          const token = getStoredToken();
+          const token = await getClerkToken();
           if (token) {
             try {
               const payload = JSON.parse(atob(token.split(".")[1]));
@@ -288,7 +300,7 @@ export function useDeleteComment(documentId: string) {
         }
 
         const response = await fetcher<DeleteCommentResponse>(
-          `/api/zoho_dms/visa_applications/documents/${documentId}/comment`,
+          API_ENDPOINTS.VISA_APPLICATIONS.DOCUMENTS.COMMENT(documentId),
           {
             method: "DELETE",
             body: JSON.stringify({

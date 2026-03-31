@@ -5,10 +5,8 @@ import { useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { BadgeCheck, Bell, LogOut, Settings } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,17 +19,16 @@ import {
 import { useAuth } from "@/hooks/useAuth";
 import { useUserDetails } from "@/hooks/useUserDetails";
 import { formatRole, getAvatarUrl, getInitials } from "@/lib/utils";
+import { ROUTES } from "@/utils/routes";
 
 export function AccountSwitcher() {
   const { user, logout } = useAuth();
   const queryClient = useQueryClient();
-  const router = useRouter();
   const { data: profileData } = useUserDetails(user?._id ?? "");
 
   const handleLogout = useCallback(() => {
     logout(queryClient);
-    router.push("/auth/user/login");
-  }, [logout, queryClient, router]);
+  }, [logout, queryClient]);
 
   const name = user?.username ?? "";
   const role = user?.role ? formatRole(user.role) : "";
@@ -40,20 +37,11 @@ export function AccountSwitcher() {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-accent transition-colors outline-none"
-        >
-          <Avatar className="size-8 rounded-lg">
+      <DropdownMenuTrigger asChild>        
+          <Avatar className="size-8 rounded-full">
             <AvatarImage src={avatar || undefined} alt={name} />
             <AvatarFallback className="rounded-lg text-xs">{initials}</AvatarFallback>
           </Avatar>
-          <div className="grid text-left text-sm leading-tight">
-            <span className="truncate font-medium">{name}</span>
-            <span className="truncate text-xs text-muted-foreground">{role}</span>
-          </div>
-        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         className="min-w-56 space-y-1 rounded-lg"
@@ -87,12 +75,11 @@ export function AccountSwitcher() {
               Notifications
             </Link>
           </DropdownMenuItem>
-          <DropdownMenuItem disabled className="opacity-70">
-            <Settings />
-            Settings
-            <Badge variant="secondary" className="ml-auto text-[10px] font-normal">
-              Soon
-            </Badge>
+          <DropdownMenuItem asChild>
+            <Link href={ROUTES.PROFILE_SETTINGS} className="flex items-center gap-2">
+              <Settings />
+              Settings
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

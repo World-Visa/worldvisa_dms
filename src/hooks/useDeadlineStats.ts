@@ -37,6 +37,7 @@ export function useDeadlineStats(
     queryKey: ["deadline-stats", type, deadlineCategory, page, limit, country],
     queryFn: async () => {
       const res = await fetcher<{ data: DeadlineStatsData }>(url);
+      if (!res.data) throw new Error("No data returned from deadline-stats");
       return res.data;
     },
     enabled: !!enabled,

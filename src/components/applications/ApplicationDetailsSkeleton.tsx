@@ -1,5 +1,6 @@
 "use client";
 
+import { ApplicantDetailsLoadingPlaceholder } from "@/components/applications/ApplicantDetails";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +9,43 @@ type Variant = "admin" | "client";
 interface ApplicationDetailsSkeletonProps {
   variant?: Variant;
   showHeader?: boolean;
+}
+
+const LAYOUT_TAB_LABELS = [
+  "Skill Assessment",
+  "Outcome",
+  "EOI",
+  "Invitation",
+] as const;
+const CATEGORY_CARD_SKELETON_COUNT = 5;
+
+function FolderCategoryCardSkeleton({ isAction = false }: { isAction?: boolean }) {
+  if (isAction) {
+    return (
+      <div className="flex w-[190px] shrink-0 flex-col overflow-hidden rounded-2xl border border-dashed border-neutral-300">
+        <div className="m-1 flex h-[140px] items-center justify-center rounded-xl bg-neutral-50/80">
+          <Skeleton className="h-11 w-11 rounded-full" />
+        </div>
+        <div className="flex h-[60px] flex-col items-center justify-center gap-1 bg-white px-3">
+          <Skeleton className="h-4 w-36 rounded-md" />
+          <Skeleton className="h-3 w-20 rounded-md" />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex w-[190px] shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-200/70">
+      <div className="relative m-1 flex h-[140px] items-center justify-center rounded-xl bg-neutral-100/80">
+        <Skeleton className="absolute left-3 top-3 h-[9px] w-[9px] rounded-sm" />
+        <Skeleton className="h-24 w-24 rounded-xl" />
+      </div>
+      <div className="flex h-[60px] flex-col items-center justify-center gap-1 bg-white px-3">
+        <Skeleton className="h-4 w-32 rounded-md" />
+        <Skeleton className="h-3 w-16 rounded-md" />
+      </div>
+    </div>
+  );
 }
 
 export function ApplicationDetailsSkeleton({
@@ -41,9 +79,7 @@ export function ApplicationDetailsSkeleton({
                     isAdmin ? "w-64 sm:w-80" : "w-40 sm:w-48",
                   )}
                 />
-                {!isAdmin && (
-                  <Skeleton className="h-4 w-32" />
-                )}
+                {!isAdmin && <Skeleton className="h-4 w-32" />}
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
@@ -60,58 +96,45 @@ export function ApplicationDetailsSkeleton({
           </div>
         )}
 
-        {/* ApplicantDetails block */}
-        <div className="flex gap-6 items-stretch">
-          <div className="flex-7 min-w-0 rounded-2xl overflow-hidden border border-gray-200 bg-white">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-6 w-24 rounded-full" />
-            </div>
-            <div className="p-6 grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="space-y-3">
-                  <Skeleton className="h-3 w-20" />
-                  <div className="space-y-2">
-                    {[1, 2, 3].map((j) => (
-                      <div key={j} className="space-y-1">
-                        <Skeleton className="h-3 w-14" />
-                        <Skeleton className="h-4 w-full" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex-3 min-w-0">
-            <Skeleton className="h-48 w-full rounded-2xl" />
-          </div>
-        </div>
+        <ApplicantDetailsLoadingPlaceholder isSpouseApplication={false} />
 
-        {/* LayoutChips row */}
-        <div className="flex items-end justify-between border-b border-gray-200">
-          <div className="flex -mb-px">
-            {[1, 2, 3, 4].map((i) => (
-              <Skeleton
-                key={i}
-                className="h-9 w-24 sm:w-28 mx-0.5 first:ml-0 rounded-none border-b-2 border-transparent"
-              />
+        <div className="flex flex-wrap md:flex-nowrap md:items-end md:justify-between justify-start border-b border-gray-200 gap-2">
+          <div className="flex -mb-px" role="tablist" aria-hidden>
+            {LAYOUT_TAB_LABELS.map((label, i) => (
+              <div
+                key={label}
+                className={cn(
+                  "relative inline-flex items-center gap-2 px-4 py-2.5 text-sm font-medium whitespace-nowrap -mb-px border-b-2 pointer-events-none",
+                  i === 0
+                    ? "border-gray-900 text-gray-900 font-semibold"
+                    : "border-transparent text-gray-500",
+                )}
+              >
+                {label}
+              </div>
             ))}
           </div>
         </div>
 
-        {/* DocumentsSummary pills */}
-        <div className="flex flex-wrap gap-2">
-          {[80, 96, 80, 96, 80].map((w, i) => (
-            <Skeleton
-              key={i}
-              className="h-8 rounded-md"
-              style={{ width: w }}
-            />
-          ))}
+        <div className="space-y-3">
+          <div className="hidden md:block">
+            <div className="flex items-end gap-3 overflow-x-auto pb-3 pt-4 pr-1 scrollbar-hide">
+              {Array.from({ length: CATEGORY_CARD_SKELETON_COUNT }).map((_, i) => (
+                <FolderCategoryCardSkeleton key={i} />
+              ))}
+              <FolderCategoryCardSkeleton isAction />
+            </div>
+          </div>
+
+          <div className="space-y-2 md:hidden">
+            <Skeleton className="h-11 w-full rounded-md" />
+            <div className="flex flex-wrap gap-2">
+              <Skeleton className="h-8 w-36 rounded-md" />
+              <Skeleton className="h-8 w-28 rounded-md" />
+            </div>
+          </div>
         </div>
 
-        {/* Main content (documents table area) */}
         <Skeleton className="h-96 w-full rounded-xl" />
       </div>
     </Wrapper>

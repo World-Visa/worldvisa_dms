@@ -10,10 +10,7 @@ export function ProfilePageClient() {
     return null;
   }
 
-  const showChangePassword =
-    user.role === "master_admin" || user.role === "supervisor";
-
   return (
-    <UserDetailsClient id={user._id} showChangePassword={showChangePassword} />
+    <UserDetailsClient id={user._id} />
   );
 }

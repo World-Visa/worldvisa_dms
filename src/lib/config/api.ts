@@ -1,19 +1,19 @@
-const getEnvVar = (key: string, defaultValue: string): string => {
-  return process.env[key] || defaultValue;
-};
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_BASE_URL ||
+  (process.env.NODE_ENV === "production"
+    ? "https://backend.worldvisa-api.cloud"
+    : "http://localhost:3000");
 
-// Base URLs from environment
-export const API_BASE_URL = getEnvVar(
-  "NEXT_PUBLIC_API_BASE_URL",
-  "https://backend.worldvisa-api.cloud",
-);
+export const ZOHO_BASE_URL = "/api/zoho_dms";
 
-export const ZOHO_BASE_URL = getEnvVar(
-  "NEXT_PUBLIC_ZOHO_BASE_URL",
-  "https://backend.worldvisa-api.cloud/api/zoho_dms",
-);
+export const BACKEND_HOST =
+  process.env.BACKEND_URL ??
+  (process.env.NODE_ENV === "production"
+    ? "https://backend.worldvisa-api.cloud"
+    : "http://localhost:3000");
 
-// Keep existing API_CONFIG for backward compatibility
+export const BACKEND_ZOHO_URL = `${BACKEND_HOST}/api/zoho_dms`;
+
 export const API_CONFIG = {
   BASE_URL: ZOHO_BASE_URL,
 
@@ -84,30 +84,6 @@ export const API_CONFIG = {
   },
 } as const;
 
-/**
- * Get headers for JSON requests
- */
-export function getJsonHeaders(token?: string): Record<string, string> {
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  return headers;
-}
-
-/**
- * Get headers for FormData requests (file uploads)
- * IMPORTANT: Do NOT set Content-Type - browser sets it automatically with boundary
- */
-export function getFormDataHeaders(token?: string): Record<string, string> {
-  const headers: Record<string, string> = {};
-  if (token) {
-    headers["Authorization"] = `Bearer ${token}`;
-  }
-  return headers;
-}
 
 export function buildQueryString(
   params: Record<string, string | number | boolean | undefined>,
@@ -132,3 +108,103 @@ export function getFullUrl(
   const queryString = buildQueryString(params);
   return queryString ? `${endpoint}?${queryString}` : endpoint;
 }
+
+export const API_ENDPOINTS = {
+  VISA_APPLICATIONS: {
+    LIST: (params?: string) =>
+      `${ZOHO_BASE_URL}/visa_applications${params ? `?${params}` : ""}`,
+    BY_ID: (id: string) => `${ZOHO_BASE_URL}/visa_applications/${id}`,
+    SEARCH: (params: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/search?${params}`,
+    UPDATE_FIELDS: `${ZOHO_BASE_URL}/visa_applications/update_fields`,
+    QUALITY_CHECK: `${ZOHO_BASE_URL}/visa_applications/quality_check`,
+    DEADLINE_STATS: (params: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/deadline-stats?${params}`,
+    ACTIVITY: (id: string, params: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/${id}/activity?${params}`,
+    ACTIVITY_DOWNLOAD: (leadId: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/${leadId}/activity/download`,
+    NOTES: (id: string) => `${ZOHO_BASE_URL}/visa_applications/${id}/notes`,
+    CHECKLIST_STATUS: (leadId: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/${leadId}/checklist-status`,
+    CHECKLIST_REQUESTED: {
+      LIST: `${ZOHO_BASE_URL}/visa_applications/checklist/requested`,
+      BY_ID: (leadId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/checklist/requested/${leadId}`,
+    },
+    DOCUMENTS: {
+      BY_APP: (appId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/${appId}/documents`,
+      COMMENT: (docId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/comment`,
+      STATUS: (docId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/status`,
+      TIMELINE: (docId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/timeline`,
+      MOVE: (docId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/move`,
+      MOVED_ALL: (docId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/move/all`,
+      LINKS: (docId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/links`,
+      REUPLOAD: (docId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/reupload`,
+      REVIEW_REQUESTS: (docId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/requested_reviews`,
+      REVIEW_STATUS: (docId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/requested_reviews/status`,
+      REVIEW_MESSAGES: (docId: string, reviewId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/requested_reviews/${reviewId}/messages`,
+      REQUESTED_ALL: `${ZOHO_BASE_URL}/visa_applications/documents/requested_reviews/all`,
+      REQUESTED_ALL_TO: `${ZOHO_BASE_URL}/visa_applications/documents/requested_reviews/all_to`,
+      REQUESTED_ALL_ME: `${ZOHO_BASE_URL}/visa_applications/documents/requested_reviews/all_me`,
+      REQUESTED_SEARCH: `${ZOHO_BASE_URL}/visa_applications/documents/requested_reviews/search`,
+    },
+    STAGE2_DOCS: (appId: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/${appId}/aus-stage2-documents`,
+    SAMPLE_DOCS: (appId: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/${appId}/sample`,
+    SPOUSE: {
+      LIST: (params: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/spouse/applications?${params}`,
+      SEARCH: (params: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/spouse/applications/search?${params}`,
+      BY_ID: (id: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/spouse/applications/${id}`,
+      NOTES: (id: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/spouse/applications/${id}/notes`,
+    },
+  },
+  CLIENTS: {
+    LIST: (params: string) => `${ZOHO_BASE_URL}/clients/all?${params}`,
+    BY_ID: (id: string) => `${ZOHO_BASE_URL}/clients/${id}`,
+    DOCUMENTS: (params: string) =>
+      `${ZOHO_BASE_URL}/clients/documents?${params}`,
+    DOCUMENT_MOVE: (docId: string) =>
+      `${ZOHO_BASE_URL}/clients/documents/${docId}/move`,
+    APPLICATION: `${ZOHO_BASE_URL}/clients/application`,
+    SIGNUP: `${ZOHO_BASE_URL}/clients/signup`,
+    ADMIN_CHECK: (leadId: string) =>
+      `${ZOHO_BASE_URL}/clients/admin/check/${leadId}`,
+    ADMIN_UPDATE: (leadId: string) =>
+      `${ZOHO_BASE_URL}/clients/admin/update/${leadId}`,
+    CHECKLIST: {
+      LIST: `${ZOHO_BASE_URL}/clients/checklist/requested`,
+      BY_ID: (leadId: string) =>
+        `${ZOHO_BASE_URL}/clients/checklist/requested/${leadId}`,
+    },
+    INVITE: `${ZOHO_BASE_URL}/clients/invite`,
+  },
+  USERS: {
+    ALL: (params: string) => `${ZOHO_BASE_URL}/users/all?${params}`,
+    BY_ID: (id: string) => `${ZOHO_BASE_URL}/users/${id}`,
+    CREATE: `${ZOHO_BASE_URL}/users/signup`, // Deprecated
+    UPDATE_ROLE: `${ZOHO_BASE_URL}/users/update_role`,
+    INVITE: `${ZOHO_BASE_URL}/users/invite`,
+    REMOVE: `${ZOHO_BASE_URL}/users/remove`, // Soft delete
+    RESET_PASSWORD: `${ZOHO_BASE_URL}/users/reset`, // Deprecated
+    CLIENT_RESET_PASSWORD: `${ZOHO_BASE_URL}/users/clients/reset-password`, // Deprecated
+    PROFILE_IMAGE: `${ZOHO_BASE_URL}/users/profile-image`,
+    CHECK_AVAILABILITY: "/api/users/check-availability",
+  },
+} as const;

@@ -197,11 +197,9 @@ export function useReuploadDocument() {
       ])
         .then(async () => {
           await revalidateDocumentsCache(variables.applicationId);
-          toast.success("Document reuploaded successfully!");
         })
         .catch((error) => {
           console.error("Error invalidating queries after reupload:", error);
-          toast.success("Document reuploaded successfully!");
         });
     },
     onError: (error) => {

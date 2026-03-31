@@ -1,5 +1,5 @@
 import { ZOHO_BASE_URL } from "@/lib/config/api";
-import { getStoredToken } from "@/lib/auth";
+import { getClerkToken } from "@/lib/getToken";
 import { fetcher } from "@/lib/fetcher";
 
 /** Response from POST create job (202) */
@@ -31,24 +31,13 @@ interface ErrorResponse {
   status?: string;
 }
 
-function getAuthHeaders(): Record<string, string> {
-  const token = getStoredToken();
+async function getAuthHeaders(): Promise<Record<string, string>> {
+  const token = await getClerkToken();
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
-    if (typeof window !== "undefined") {
-      try {
-        const userData = localStorage.getItem("user_data");
-        if (userData) {
-          const user = JSON.parse(userData) as { role?: string };
-          if (user.role) headers["X-User-Role"] = user.role;
-        }
-      } catch {
-        // ignore
-      }
-    }
   }
   return headers;
 }
@@ -79,7 +68,7 @@ export async function getZipExportJobStatus(
   jobId: string,
 ): Promise<ZipExportStatusResponse> {
   const url = `${ZOHO_BASE_URL}/visa_applications/${recordId}/documents/download/all/status/${jobId}`;
-  const headers = getAuthHeaders();
+  const headers = await getAuthHeaders();
   const response = await fetch(url, { method: "GET", headers });
 
   if (response.status === 410) {

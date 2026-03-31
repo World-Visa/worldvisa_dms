@@ -302,3 +302,116 @@ export const DOCUMENT_TYPES_WITH_SAMPLE_IN_MODALS: Array<{
     category: "Other Documents",
   },
 ];
+
+export interface ChecklistDocumentConfig {
+  category: string;
+  documentType: string;
+  allowedDocument?: number;
+  instruction?: string;
+  sampleDocument?: string;
+  importantNote?: string;
+}
+
+const ALL_CHECKLIST_DOCUMENTS: ChecklistDocumentConfig[] = [
+  ...IDENTITY_DOCUMENTS,
+  ...EDUCATION_DOCUMENTS,
+  ...OTHER_DOCUMENTS,
+  ...COMPANY_DOCUMENTS,
+  ...SELF_EMPLOYMENT_DOCUMENTS,
+];
+
+const normalizeText = (value: string): string =>
+  value.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+const normalizeChecklistCategory = (category: string): string => {
+  const trimmed = category?.trim() ?? "";
+  const lowered = trimmed.toLowerCase();
+
+  if (!trimmed) return "";
+  if (lowered === "identity" || lowered === "identity documents") {
+    return "Identity Documents";
+  }
+  if (lowered === "education" || lowered === "education documents") {
+    return "Education Documents";
+  }
+  if (lowered === "other" || lowered === "other documents") {
+    return "Other Documents";
+  }
+  if (
+    lowered === "self employment" ||
+    lowered === "self employment/freelance"
+  ) {
+    return "Self Employment/Freelance";
+  }
+  if (
+    lowered === "company" ||
+    lowered === "company documents" ||
+    lowered.includes("company documents")
+  ) {
+    return "Company";
+  }
+
+  return trimmed;
+};
+
+const buildDocumentKey = (category: string, documentType: string): string =>
+  `${normalizeText(normalizeChecklistCategory(category))}:${normalizeText(documentType)}`;
+
+const CHECKLIST_DOCUMENT_LOOKUP = new Map<string, ChecklistDocumentConfig>();
+
+for (const doc of ALL_CHECKLIST_DOCUMENTS) {
+  CHECKLIST_DOCUMENT_LOOKUP.set(
+    buildDocumentKey(doc.category, doc.documentType),
+    doc,
+  );
+}
+
+export function getChecklistDocumentConfig(
+  category: string,
+  documentType: string,
+): ChecklistDocumentConfig | undefined {
+  if (!documentType?.trim()) return undefined;
+
+  const byCategory = CHECKLIST_DOCUMENT_LOOKUP.get(
+    buildDocumentKey(category, documentType),
+  );
+  if (byCategory) return byCategory;
+
+  const normalizedType = normalizeText(documentType);
+  return ALL_CHECKLIST_DOCUMENTS.find(
+    (doc) => normalizeText(doc.documentType) === normalizedType,
+  );
+}
+
+export function getAllowedDocumentLimit(
+  category: string,
+  documentType: string,
+): number | undefined {
+  return getChecklistDocumentConfig(category, documentType)?.allowedDocument;
+}
+
+export function getAllowedDocumentLimitMessage(
+  documentType: string,
+  allowedDocument: number,
+): string {
+  return `Maximum ${allowedDocument} file${allowedDocument === 1 ? "" : "s"} allowed for "${documentType}".`;
+}
+
+export function isNewUploadBlockedByAllowedDocumentLimit(
+  category: string,
+  documentType: string,
+  currentDocumentCount: number,
+): {
+  blocked: boolean;
+  allowedDocument?: number;
+} {
+  const allowedDocument = getAllowedDocumentLimit(category, documentType);
+  if (allowedDocument === undefined) {
+    return { blocked: false };
+  }
+
+  return {
+    blocked: currentDocumentCount >= allowedDocument,
+    allowedDocument,
+  };
+}

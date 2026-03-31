@@ -6,6 +6,38 @@ import type { Company } from "@/types/documents";
 import type { Document } from "@/types/applications";
 import { useChecklistURLState } from "@/lib/urlState";
 
+const DEFAULT_CATEGORY: DocumentCategory = "submitted";
+const INVALID_STORED_CATEGORY_VALUES = new Set(["", "null", "undefined"]);
+
+function normalizeSelectedCategory(
+  category: DocumentCategory | null | undefined,
+  urlCategory: DocumentCategory | undefined,
+): DocumentCategory {
+  if (urlCategory) {
+    return urlCategory;
+  }
+
+  if (typeof category !== "string") {
+    return DEFAULT_CATEGORY;
+  }
+
+  const normalizedCategory = category.trim();
+  if (
+    !normalizedCategory ||
+    INVALID_STORED_CATEGORY_VALUES.has(normalizedCategory.toLowerCase())
+  ) {
+    return DEFAULT_CATEGORY;
+  }
+
+  // "all" was previously used as a legacy default and can incorrectly open
+  // checklist tables for old applications. Default to submitted instead.
+  if (normalizedCategory === "all") {
+    return DEFAULT_CATEGORY;
+  }
+
+  return normalizedCategory as DocumentCategory;
+}
+
 interface UseApplicationStateProps {
   applicationId: string;
   urlCategory: DocumentCategory | undefined;
@@ -20,14 +52,8 @@ export function useApplicationState({
   const { setCategory: setURLCategory } = useChecklistURLState(applicationId);
 
   // Document category state
-  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(
-    () => {
-      const savedCategory = localStorageUtils.loadCategory(
-        applicationId,
-        urlCategory || ("all" as DocumentCategory),
-      ) as DocumentCategory;
-      return savedCategory;
-    },
+  const [selectedCategory, setSelectedCategory] = useState<DocumentCategory>(() =>
+    urlCategory ?? DEFAULT_CATEGORY,
   );
 
   // Companies state
@@ -43,6 +69,27 @@ export function useApplicationState({
       localStorageUtils.saveCategory(applicationId, urlCategory);
     }
   }, [urlCategory, selectedCategory, applicationId]);
+
+  // Hydrate category from localStorage after mount to avoid SSR/client mismatch
+  useEffect(() => {
+    if (urlCategory) {
+      return;
+    }
+
+    const savedCategory = localStorageUtils.loadCategory(
+      applicationId,
+      DEFAULT_CATEGORY,
+    ) as DocumentCategory;
+    const normalizedCategory = normalizeSelectedCategory(savedCategory, undefined);
+
+    setSelectedCategory((prevCategory) =>
+      prevCategory === normalizedCategory ? prevCategory : normalizedCategory,
+    );
+
+    if (normalizedCategory !== savedCategory) {
+      localStorageUtils.saveCategory(applicationId, normalizedCategory);
+    }
+  }, [applicationId, urlCategory]);
 
   useEffect(() => {
     if (allDocuments && allDocuments.length > 0) {

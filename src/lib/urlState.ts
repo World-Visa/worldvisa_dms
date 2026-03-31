@@ -1,17 +1,17 @@
-/**
- * URL State Management Utilities
- *
- * This module provides utilities for managing application state through URL parameters.
- * It allows for deep linking, browser back/forward navigation, and state persistence.
- */
-
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { parseAsBoolean, parseAsString } from "nuqs";
 
 export interface URLStateConfig {
   defaultValues?: Record<string, string>;
   persistKeys?: string[];
 }
+
+export const checklistUrlParsers = {
+  category: parseAsString,
+  checklistState: parseAsString.withDefault("none"),
+  sample: parseAsBoolean.withDefault(false),
+} as const;
 
 /**
  * Hook for managing URL state parameters
@@ -167,6 +167,7 @@ export function useChecklistURLState(applicationId: string) {
 
   const category = urlState.category || "submitted";
   const checklistState = urlState.checklistState || "none";
+  const sample = urlState.sample === "true";
 
   const setCategory = useCallback(
     (newCategory: string) => {
@@ -182,16 +183,26 @@ export function useChecklistURLState(applicationId: string) {
     [setParam],
   );
 
+  const setSample = useCallback(
+    (isSampleMode: boolean) => {
+      setParam("sample", isSampleMode ? "true" : null);
+    },
+    [setParam],
+  );
+
   const resetToDefault = useCallback(() => {
     setParam("category", "submitted");
     setParam("checklistState", "none");
+    setParam("sample", null);
   }, [setParam]);
 
   return {
     category,
     checklistState,
+    sample,
     setCategory,
     setChecklistState,
+    setSample,
     resetToDefault,
     urlState,
   };

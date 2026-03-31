@@ -1,46 +1,19 @@
 import { NextRequest } from "next/server";
-import { parseToken, isTokenExpired, getUserRole } from "@/lib/auth";
+import { auth } from "@clerk/nextjs/server";
 import * as Sentry from "@sentry/nextjs";
+
+const ADMIN_ROLES = ["admin", "team_leader", "master_admin", "supervisor"];
 
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const token = searchParams.get("token");
-    const role = searchParams.get("role");
+    const { userId, sessionClaims } = await auth();
 
-    if (!token) {
+    if (!userId) {
       return new Response("Unauthorized", { status: 401 });
     }
 
-    // Validate token
-    const payload = parseToken(token);
-    if (!payload) {
-      return new Response("Invalid token", { status: 401 });
-    }
-
-    if (isTokenExpired(token)) {
-      return new Response("Token expired", { status: 401 });
-    }
-
-    // Verify user role - ONLY admin, team_leader, master_admin, and supervisor
-    const jwtRole = getUserRole(token);
-    const headerRole = request.headers.get("x-user-role");
-
-    const isAuthorized =
-      jwtRole === "admin" ||
-      jwtRole === "team_leader" ||
-      jwtRole === "master_admin" ||
-      jwtRole === "supervisor" ||
-      role === "admin" ||
-      role === "team_leader" ||
-      role === "master_admin" ||
-      role === "supervisor" ||
-      headerRole === "admin" ||
-      headerRole === "team_leader" ||
-      headerRole === "master_admin" ||
-      headerRole === "supervisor";
-
-    if (!isAuthorized) {
+    const role = (sessionClaims?.publicMetadata as { role?: string } | undefined)?.role;
+    if (!role || !ADMIN_ROLES.includes(role)) {
       return new Response("Forbidden - Clients cannot access messages", {
         status: 403,
       });

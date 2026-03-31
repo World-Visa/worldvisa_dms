@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
+import { PresenceDot } from "@/components/ui/presence-dot";
 import { useAuth } from "@/hooks/useAuth";
 import {
   useMessages,
@@ -197,6 +198,9 @@ export function ChatThread({
           getDefaultAvatarSrc(otherParticipant.id ?? conversation?._id ?? ""))
         : getDefaultAvatarSrc(conversation?._id ?? conversationId)
       : conversation?.imageUrl;
+  const safeHeaderAvatarSrc = headerAvatarSrc?.trim()
+    ? headerAvatarSrc
+    : undefined;
 
   const groupMemberIds =
     conversation?.type === "group"
@@ -249,7 +253,7 @@ export function ChatThread({
           </Button>
         )}
 
-        {conversation?.type === "group" && !headerAvatarSrc ? (
+        {conversation?.type === "group" && !safeHeaderAvatarSrc ? (
           <GroupAvatar
             memberIds={groupMemberIds}
             fallbackId={conversation?._id}
@@ -269,7 +273,7 @@ export function ChatThread({
           <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0 bg-muted">
             <Image
               src={
-                headerAvatarSrc ??
+                safeHeaderAvatarSrc ??
                 getDefaultAvatarSrc(conversation?._id ?? conversationId)
               }
               alt={conversationName}
@@ -298,12 +302,7 @@ export function ChatThread({
               const isOnline = dmOther?.online_status ?? false;
               return (
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
-                  <span
-                    className={cn(
-                      "h-1.5 w-1.5 rounded-full shrink-0",
-                      isOnline ? "bg-green-500" : "bg-muted-foreground/40",
-                    )}
-                  />
+                  <PresenceDot online={isOnline} className="h-1.5 w-1.5 shrink-0" />
                   <span>{isOnline ? "Online" : "Offline"}</span>
                 </p>
               );

@@ -5,13 +5,7 @@ import { useApplications } from "@/hooks/useApplications";
 import { useSearchApplications } from "@/hooks/useSearchApplications";
 import { ApplicationsListPage } from "@/components/applications/ApplicationsListPage";
 
-interface ApplicationsClientProps {
-  initialRecentActivity?: boolean;
-}
-
-export const ApplicationsClient = memo(function ApplicationsClient({
-  initialRecentActivity = false,
-}: ApplicationsClientProps) {
+export const ApplicationsClient = memo(function ApplicationsClient() {
   return (
     <ApplicationsListPage
       useApplicationsHook={useApplications}
@@ -22,8 +16,8 @@ export const ApplicationsClient = memo(function ApplicationsClient({
         handledBy: true,
         applicationStage: true,
         applicationState: true,
+        deadline: true,
       }}
-      initialRecentActivity={initialRecentActivity}
     />
   );
 });

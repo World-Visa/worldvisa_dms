@@ -1,29 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { IconFolderCode } from "@tabler/icons-react";
-import { Trash2 } from "lucide-react";
+import { ArrowLeft, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { motion } from "motion/react";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -42,10 +23,20 @@ import type { SampleDocument } from "@/types/sampleDocuments";
 import { SampleDocumentsModal } from "./SampleDocumentsModal";
 import { SampleDocumentsUploadModal } from "./SampleDocumentsUploadModal";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import { StageDocumentsEmptyState } from "@/components/applications/layouts/StageDocumentsEmptyState";
+
+const FADE_ANIMATION = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  exit: { opacity: 0 },
+  transition: { duration: 0.15 },
+} as const;
 
 interface SampleDocumentsTableProps {
   applicationId: string;
   isClientView?: boolean;
+  onBack?: () => void;
 }
 
 interface SampleDocumentGroup {
@@ -59,6 +50,7 @@ interface SampleDocumentGroup {
 export function SampleDocumentsTable({
   applicationId,
   isClientView = false,
+  onBack,
 }: SampleDocumentsTableProps) {
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [activeGroup, setActiveGroup] = useState<SampleDocumentGroup | null>(
@@ -148,14 +140,26 @@ export function SampleDocumentsTable({
   };
 
   return (
-    <>
-      <div className="space-y-8">
+    <div className="pb-6">
+      <motion.div {...FADE_ANIMATION} className="space-y-8">
         <div className="flex flex-row items-center justify-between">
-          <p className="text-lg font-medium">Sample Documents</p>
+          <div className="flex flex-row items-center gap-2">
+            <Button
+              variant="secondary"
+              size="sm"
+              className="cursor-pointer rounded-full"
+              onClick={onBack}
+              disabled={!onBack}
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <p className="text-lg font-medium">Sample Documents</p>
+          </div>
           {!isClientView && (
             <Button
               variant="default"
               size="sm"
+              className="bg-primary-blue"
               onClick={() => setIsUploadOpen(true)}
             >
               Upload Sample Document
@@ -171,27 +175,14 @@ export function SampleDocumentsTable({
         ) : error ? (
           <ErrorState title="Failed to load sample documents" message="Please try again later." />
         ) : groupedDocuments.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon" className="bg-gray-200">
-                <IconFolderCode />
-              </EmptyMedia>
-              <EmptyTitle>No Sample Documents</EmptyTitle>
-              <EmptyDescription>
-                No sample documents have been uploaded for this application.
-              </EmptyDescription>
-            </EmptyHeader>
-            {!isClientView && (
-              <EmptyContent>
-                <Button
-                  className="cursor-pointer"
-                  onClick={() => setIsUploadOpen(true)}
-                >
-                  Upload Sample Document
-                </Button>
-              </EmptyContent>
-            )}
-          </Empty>
+          <StageDocumentsEmptyState
+            title="No Sample Documents"
+            description="No sample documents have been uploaded for this application."
+            isClientView={isClientView}
+            createButtonLabel="Upload Sample Document"
+            onCreate={() => setIsUploadOpen(true)}
+            actionButtonClassName="cursor-pointer"
+          />
         ) : (
           <div className="rounded-md border">
             <Table>
@@ -254,7 +245,7 @@ export function SampleDocumentsTable({
             </Table>
           </div>
         )}
-      </div>
+      </motion.div>
 
       <SampleDocumentsUploadModal
         applicationId={applicationId}
@@ -274,29 +265,25 @@ export function SampleDocumentsTable({
         }}
       />
 
-      <AlertDialog
+      <ConfirmationModal
         open={!!documentToDelete}
-        onOpenChange={() => setDocumentToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete Sample Document</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently delete the document "
-              {documentToDelete?.document_name}". This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        onOpenChange={(open) => {
+          if (!open) setDocumentToDelete(null);
+        }}
+        onConfirm={handleDeleteConfirm}
+        variant="destructive"
+        confirmText="Delete"
+        isLoading={deleteMutation.isPending}
+        disabled={!documentToDelete}
+        title="Delete Sample Document"
+        description={
+          <>
+            This will permanently delete the document &quot;
+            {documentToDelete?.document_name}
+            &quot;. This action cannot be undone.
+          </>
+        }
+      />
+    </div>
   );
 }

@@ -76,6 +76,7 @@ export function ConversationRow({
            getDefaultAvatarSrc(otherParticipant.id ?? conversation._id))
         : getDefaultAvatarSrc(conversation._id))
     : conversation.imageUrl;
+  const safeAvatarSrc = avatarSrc?.trim() ? avatarSrc : undefined;
 
   // Enrich group member profiles from lookup when available
   const memberProfiles =
@@ -125,15 +126,19 @@ export function ConversationRow({
       )}
     >
       {/* Avatar */}
-      {isDm || avatarSrc ? (
+      {isDm || safeAvatarSrc ? (
         <div className="relative h-10 w-10 rounded-full overflow-hidden shrink-0">
-          <Image
-            src={avatarSrc!}
-            alt={displayName}
-            fill
-            className="object-cover"
-            unoptimized
-          />
+          {safeAvatarSrc ? (
+            <Image
+              src={safeAvatarSrc}
+              alt={displayName}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          ) : (
+            <div className="h-full w-full bg-muted" aria-hidden="true" />
+          )}
         </div>
       ) : (
         <GroupAvatar

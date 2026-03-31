@@ -33,13 +33,7 @@ import {
 } from "@/components/ui/table";
 import { useClientDetails, type ClientDocument } from "@/hooks/useClientDetails";
 import type { ClientRecord } from "@/hooks/useClients";
-
-const AVATAR_INDICES = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12];
-
-function getAvatar(name: string): string {
-  const idx = name.charCodeAt(0) % AVATAR_INDICES.length;
-  return `/avatars/${AVATAR_INDICES[idx]}.png`;
-}
+import { getProfileAvatarSrc } from "@/lib/utils";
 
 function getInitials(name: string): string {
   return name
@@ -103,9 +97,15 @@ function ProfileCard({
   return (
     <Card className="flex flex-col gap-0 overflow-hidden">
       {/* Avatar section */}
-      <div className="flex flex-col items-center gap-3 bg-gradient-to-b from-muted/60 to-card px-6 pb-6 pt-8">
+      <div className="flex flex-col items-center gap-3 bg-linear-to-b from-muted/60 to-card px-6 pb-6 pt-8">
         <Avatar className="size-24 ring-4 ring-background shadow-md">
-          <AvatarImage src={getAvatar(client.name)} alt={client.name} />
+          <AvatarImage
+            src={getProfileAvatarSrc({
+              profileImageUrl: client.profile_image_url,
+              seed: client._id,
+            })}
+            alt={client.name}
+          />
           <AvatarFallback className="text-2xl font-semibold">{getInitials(client.name)}</AvatarFallback>
         </Avatar>
         <div className="flex flex-col items-center gap-2 text-center">

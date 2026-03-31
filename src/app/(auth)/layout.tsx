@@ -15,7 +15,7 @@ export default function Layout({ children }: Readonly<{ children: ReactNode }>) 
   return (
     <main className="overflow-hidden min-h-0 bg-[url('/auth/background.svg')] bg-cover bg-center bg-no-repeat">
       <div className="grid h-dvh justify-center lg:grid-cols-2">
-        <div className="relative order-2 hidden h-full rounded-3xl bg-primary lg:flex m-0 md:m-2">
+        <div className="relative order-2 hidden h-full rounded-3xl bg-blue-500 lg:flex m-0 md:m-2">
           <div className="absolute top-10 space-y-1 px-10 text-primary-foreground">
             <Image src="/logos/worldvisa-profile.png" alt="WorldVisa Logo" width={40} height={40} className="object-contain" />
             <h1 className="font-medium text-2xl">WorldVisa DMS</h1>

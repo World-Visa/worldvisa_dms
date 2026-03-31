@@ -1,22 +1,29 @@
 "use client";
 
-import { ActivateAccountSheet } from "@/components/applications/ActivateAccountSheet";
 import ViewDocumentSheet from "@/components/applications/ViewDocumentSheet";
 import { AddNoteModal } from "@/components/applications/AddNoteModal";
 import { NotesBanner } from "@/components/applications/NotesBanner";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
-import { ApplicationDetailsSkeleton } from "@/components/applications/ApplicationDetailsSkeleton";
 import { ApplicantDetails } from "@/components/applications/ApplicantDetails";
 import { ApplicationDetailsHeader } from "@/components/applications/ApplicationDetailsHeader";
 import { DownloadAllDocumentsModal } from "@/components/applications/DownloadAllDocumentsModal";
+import { EmailHistoryModal } from "@/components/applications/EmailHistoryModal";
 import { QualityCheckModal } from "@/components/applications/QualityCheckModal";
 import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
-import { ResetPasswordModal } from "@/components/applications/ResetPasswordModal";
 import { LayoutChips } from "@/components/applications/layouts/LayoutChips";
 import { SkillAssessmentLayout } from "@/components/applications/layouts/SkillAssessmentLayout";
 import { ErrorState } from "@/components/ui/ErrorState";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/primitives/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { useSpouseApplicationDetails } from "@/hooks/useSpouseApplicationDetails";
 import {
   useAllApplicationDocuments,
@@ -27,9 +34,11 @@ import { useChecklistState } from "@/hooks/useChecklistState";
 import { useApplicationState } from "@/hooks/useApplicationState";
 import { useApplicationModals } from "@/hooks/useApplicationModals";
 import { useLayoutState } from "@/hooks/useLayoutState";
-import { useChecklistURLState } from "@/lib/urlState";
-import { ApplicationDetailsResponse } from "@/types/applications";
-import { ArrowLeft } from "lucide-react";
+import { checklistUrlParsers } from "@/lib/urlState";
+import {
+  ApplicationDetailsResponse,
+  type ApplicationOnboarding,
+} from "@/types/applications";
 import { useRouter } from "next/navigation";
 import { useDeepLinkDocument } from "@/hooks/useDeepLinkDocument";
 import {
@@ -40,7 +49,9 @@ import {
   Suspense,
   useState,
 } from "react";
+import { motion } from "motion/react";
 import { useApplicationDetails } from "@/hooks/useApplicationDetails";
+import { useOnboardingSteps } from "@/hooks/use-onboarding-steps";
 import type { DocumentCategory } from "@/types/documents";
 import {
   areAllMandatoryDocumentsReviewed,
@@ -50,6 +61,16 @@ import { useApplicationNotes, useDeleteNote } from "@/hooks/useApplicationNotes"
 import { useRemoveCompany } from "@/hooks/useRemoveCompany";
 import type { ApplicationNote } from "@/lib/api/applicationNotes";
 import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
+import { ClientOnboardingModal } from "@/components/applications/onboarding/ClientOnboardingModal";
+import { InlineToast } from "../ui/primitives/inline-toast";
+import type { ApplicationLayout } from "@/components/applications/layouts/LayoutChips";
+import { useQueryStates } from "nuqs";
+
+const FADE_ANIMATION = {
+  initial: { opacity: 0 },
+  animate: { opacity: 1 },
+  transition: { duration: 0.15 },
+} as const;
 
 const OutcomeLayout = lazy(() =>
   import("@/components/applications/layouts/OutcomeLayout").then((mod) => ({
@@ -66,6 +87,14 @@ const InvitationLayout = lazy(() =>
     default: mod.InvitationLayout,
   })),
 );
+
+const DEFAULT_APPLICATION_ONBOARDING: ApplicationOnboarding = {
+  client_record_exists: false,
+  clerk_id: null,
+  clerk_invitation_id: null,
+  account_status: null,
+  email_verified: false,
+};
 
 interface UnifiedApplicationDetailsPageProps {
   applicationId: string;
@@ -85,13 +114,27 @@ export default function UnifiedApplicationDetailsPage({
   isSpouseApplication = false,
 }: UnifiedApplicationDetailsPageProps) {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading: isAuthLoading } = useAuth();
-  const { category: urlCategory } = useChecklistURLState(applicationId);
+  const { user } = useAuth();
+  const [{ category: urlCategoryParam, sample: isSampleQuery }, setChecklistUrlState] =
+    useQueryStates(
+      {
+        category: checklistUrlParsers.category,
+        sample: checklistUrlParsers.sample,
+      },
+      { history: "replace" },
+    );
+  const urlCategory = isSampleQuery
+    ? undefined
+    : ((urlCategoryParam as DocumentCategory | null) ?? undefined);
 
   const layoutState = useLayoutState();
   const modals = useApplicationModals();
 
-  const spouseApplicationQuery = useSpouseApplicationDetails(applicationId);
+  const spouseApplicationQuery = useSpouseApplicationDetails(
+    applicationId,
+    undefined,
+    { enabled: isSpouseApplication },
+  );
   const regularApplicationQuery = useApplicationDetails(applicationId);
   const applicationData = isSpouseApplication
     ? spouseApplicationQuery.data
@@ -164,6 +207,49 @@ export default function UnifiedApplicationDetailsPage({
   const documents = documentsData?.data;
   const allDocuments = allDocumentsData?.data;
 
+  const onboardingData =
+    application?.application_onboarding ?? DEFAULT_APPLICATION_ONBOARDING;
+  const { isFullyOnboarded } = useOnboardingSteps(onboardingData);
+  const [isClientOnboardingOpen, setIsClientOnboardingOpen] = useState(false);
+  const [hasDismissedAutoOnboardingModal, setHasDismissedAutoOnboardingModal] =
+    useState(false);
+  const hasLoadedApplicationData = !isApplicationLoading && Boolean(application);
+
+  useEffect(() => {
+    setHasDismissedAutoOnboardingModal(false);
+    setIsClientOnboardingOpen(false);
+  }, [applicationId]);
+
+  useEffect(() => {
+    if (!hasLoadedApplicationData) {
+      return;
+    }
+
+    if (isFullyOnboarded) {
+      setIsClientOnboardingOpen(false);
+      return;
+    }
+
+    if (hasDismissedAutoOnboardingModal) {
+      return;
+    }
+
+    setIsClientOnboardingOpen(true);
+  }, [hasDismissedAutoOnboardingModal, hasLoadedApplicationData, isFullyOnboarded]);
+
+  const handleOnboardingModalOpenChange = useCallback((open: boolean) => {
+    setIsClientOnboardingOpen(open);
+
+    if (!open) {
+      setHasDismissedAutoOnboardingModal(true);
+    }
+  }, []);
+
+  const handleActivateAccount = useCallback(() => {
+    setHasDismissedAutoOnboardingModal(false);
+    setIsClientOnboardingOpen(true);
+  }, []);
+
   const appState = useApplicationState({
     applicationId,
     urlCategory,
@@ -194,7 +280,9 @@ export default function UnifiedApplicationDetailsPage({
   }, [allDocuments, checklistState.checklistData]);
 
   const [documentsPage, setDocumentsPage] = useState(1);
-  const [showSampleDocuments, setShowSampleDocuments] = useState(false);
+  const showSampleDocuments = isSampleQuery;
+  const [previousCategoryBeforeSample, setPreviousCategoryBeforeSample] =
+    useState<DocumentCategory | null>(null);
   const maxCompanies = 10;
 
   const {
@@ -227,6 +315,12 @@ export default function UnifiedApplicationDetailsPage({
     setDocumentsPage(1);
   }, [appState.selectedCategory]);
 
+  useEffect(() => {
+    if (isSampleQuery && urlCategoryParam) {
+      void setChecklistUrlState({ category: null });
+    }
+  }, [isSampleQuery, setChecklistUrlState, urlCategoryParam]);
+
   const handlePushForQualityCheck = useCallback(() => {
     if (!user?.username || !application?.id) {
       return;
@@ -254,10 +348,36 @@ export default function UnifiedApplicationDetailsPage({
 
   const handleCategoryChangeWithChecklist = useCallback(
     (category: DocumentCategory) => {
+      if (showSampleDocuments) {
+        void setChecklistUrlState({ sample: null });
+      }
       appState.handleCategoryChange(category);
     },
-    [appState],
+    [appState, setChecklistUrlState, showSampleDocuments],
   );
+
+  const handleShowSampleDocuments = useCallback(() => {
+    setPreviousCategoryBeforeSample(appState.selectedCategory);
+    void setChecklistUrlState({
+      category: null,
+      sample: true,
+    });
+  }, [appState.selectedCategory, setChecklistUrlState]);
+
+  const handleHideSampleDocuments = useCallback(() => {
+    const categoryToRestore =
+      previousCategoryBeforeSample ?? appState.selectedCategory ?? "submitted";
+    void setChecklistUrlState({
+      sample: null,
+      category: categoryToRestore,
+    });
+    appState.handleCategoryChange(categoryToRestore);
+    setPreviousCategoryBeforeSample(null);
+  }, [
+    appState,
+    previousCategoryBeforeSample,
+    setChecklistUrlState,
+  ]);
 
   const handleStartCreatingChecklist = useCallback(() => {
     checklistState.startCreatingChecklist();
@@ -295,69 +415,64 @@ export default function UnifiedApplicationDetailsPage({
     [isSpouseApplication],
   );
 
-  const isAuthorized = useMemo(
-    () =>
-      !isAuthLoading &&
-      isAuthenticated &&
-      (user?.role === "admin" ||
-        user?.role === "team_leader" ||
-        user?.role === "master_admin" ||
-        user?.role === "supervisor"),
-    [isAuthLoading, isAuthenticated, user?.role],
-  );
+  const combinedError =
+    applicationError ?? documentsError ?? allDocumentsError;
 
-  if (applicationError || documentsError) {
+  if (combinedError) {
+    const message =
+      combinedError instanceof Error
+        ? combinedError.message
+        : String(combinedError);
     return (
       <div className="container mx-auto p-6 space-y-6">
         <Button variant="outline" size="sm" onClick={() => router.back()}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back
         </Button>
         <ErrorState
           title="Failed to load application details"
-          message="Please try again later."
+          message={message}
         />
       </div>
     );
   }
 
   return (
-    <main className="max-w-6xl mx-auto">
+    <main className="max-w-[1200px] mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <Button
-            variant="secondary"
-            className="rounded-full w-9 h-9 cursor-pointer"
-            size="sm"
-            onClick={() => router.push(backPath)}
-          >
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <div>
-            <h1 className="text-xl flex md:flex-row flex-col items-start md:items-center gap-4 sm:text-2xl font-medium">
-              {application?.Name} {pageTitle}
-
-            </h1>
-          </div>
+      <div className="flex items-start justify-between gap-6">
+        <div className="flex min-w-0 flex-col gap-3">
+          <Breadcrumb>
+            <BreadcrumbList>
+              <BreadcrumbItem>
+                <BreadcrumbLink href={backPath}>Applications</BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage className="truncate capitalize">
+                  {isApplicationLoading ? "Loading…" : application?.Name ?? "Application"}
+                </BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
         <ApplicationDetailsHeader
           areAllDocumentsApproved={areAllDocumentsApproved}
           validationDetails={mandatoryDocValidationDetails}
           onPushForQualityCheck={handlePushForQualityCheck}
           onDownloadAll={modals.openDownloadAllModal}
-          onResetPassword={modals.openResetPasswordModal}
-          onActivateAccount={modals.openActivateAccountSheet}
+          onActivateAccount={handleActivateAccount}
           applicationId={applicationId}
           onAddNote={() => {
             setEditingNote(null);
             setIsNoteModalOpen(true);
           }}
+          onEmailHistory={modals.openEmailHistoryModal}
           userRole={user?.role}
           qcRequested={application?.qc_requested}
         />
       </div>
 
-      {notes && notes.length > 0 && (
+      {notes && notes.length > 0 ? (
         <NotesBanner
           notes={notes as ApplicationNote[]}
           isAdmin={user?.role !== "client"}
@@ -367,7 +482,88 @@ export default function UnifiedApplicationDetailsPage({
           }}
           onDelete={(noteId) => deleteNoteMutation.mutate(noteId)}
         />
-      )}
+      ) : null}
+
+      <div className="space-y-6 mt-6">
+        <ApplicantDetails
+          application={application}
+          isLoading={isApplicationLoading}
+          error={null}
+          suppressErrorUI
+          isSpouseApplication={isSpouseApplication}
+          user={user}
+        />
+
+        <Tabs
+          value={layoutState.selectedLayout}
+          onValueChange={(value) =>
+            layoutState.handleLayoutChange(value as ApplicationLayout)
+          }
+        >
+          <LayoutChips
+            selectedLayout={layoutState.selectedLayout}
+          />
+
+          <TabsContent value="skill-assessment" className="mt-4">
+            <motion.div {...FADE_ANIMATION}>
+              <SkillAssessmentLayout
+                allDocuments={allDocuments}
+                isApplicationDocumentsLoading={isDocumentsLoading}
+                isAllDocumentsLoading={isAllDocumentsLoading}
+                allDocumentsError={allDocumentsError}
+                selectedCategory={appState.selectedCategory}
+                onCategoryChange={handleCategoryChangeWithChecklist}
+                companies={appState.companies}
+                onAddCompany={modals.openAddCompanyDialog}
+                onRemoveCompany={appState.handleRemoveCompany}
+                onRemoveCompanyWithCheck={handleRemoveCompanyWithDocuments}
+                maxCompanies={maxCompanies}
+                checklistState={checklistState}
+                onStartCreatingChecklist={handleStartCreatingChecklist}
+                onStartEditingChecklist={handleStartEditingChecklist}
+                onSaveChecklist={checklistState.saveChecklist}
+                onCancelChecklist={handleCancelChecklist}
+                applicationId={applicationId}
+                onReuploadDocument={handleReuploadDocument}
+                showSampleDocuments={showSampleDocuments}
+                onShowSampleDocuments={handleShowSampleDocuments}
+                onHideSampleDocuments={handleHideSampleDocuments}
+              />
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="outcome" className="mt-4">
+            <motion.div {...FADE_ANIMATION}>
+              <Suspense
+                fallback={<Skeleton className="h-96 w-full rounded-xl" />}
+              >
+                <OutcomeLayout applicationId={applicationId} />
+              </Suspense>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="eoi" className="mt-4">
+            <motion.div {...FADE_ANIMATION}>
+              <Suspense
+                fallback={<Skeleton className="h-96 w-full rounded-xl" />}
+              >
+                <EOILayout applicationId={applicationId} />
+              </Suspense>
+            </motion.div>
+          </TabsContent>
+
+          <TabsContent value="invitation" className="mt-4">
+            <motion.div {...FADE_ANIMATION}>
+              <Suspense
+                fallback={<Skeleton className="h-96 w-full rounded-xl" />}
+              >
+                <InvitationLayout applicationId={applicationId} />
+              </Suspense>
+            </motion.div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
       <AddNoteModal
         isOpen={isNoteModalOpen}
         onClose={() => {
@@ -378,81 +574,6 @@ export default function UnifiedApplicationDetailsPage({
         isSpouseApplication={isSpouseApplication}
         editNote={editingNote}
       />
-
-      {isAuthLoading || isApplicationLoading || isDocumentsLoading ? (
-        <ApplicationDetailsSkeleton variant="admin" showHeader={false} />
-      ) : isAuthorized ? (
-        <div className="space-y-6 mt-6">
-          <ApplicantDetails
-            application={application}
-            isLoading={isApplicationLoading}
-            error={applicationError}
-            user={user}
-          />
-
-          <LayoutChips
-            selectedLayout={layoutState.selectedLayout}
-            onLayoutChange={layoutState.handleLayoutChange}
-            showSampleDocuments={showSampleDocuments}
-            onToggleSampleDocuments={() =>
-              setShowSampleDocuments(!showSampleDocuments)
-            }
-          />
-
-          {layoutState.selectedLayout === "skill-assessment" ? (
-            <SkillAssessmentLayout
-              allDocuments={allDocuments}
-              isAllDocumentsLoading={isAllDocumentsLoading}
-              allDocumentsError={allDocumentsError}
-              selectedCategory={appState.selectedCategory}
-              onCategoryChange={handleCategoryChangeWithChecklist}
-              companies={appState.companies}
-              onAddCompany={modals.openAddCompanyDialog}
-              onRemoveCompany={appState.handleRemoveCompany}
-              onRemoveCompanyWithCheck={handleRemoveCompanyWithDocuments}
-              maxCompanies={maxCompanies}
-              checklistState={checklistState}
-              onStartCreatingChecklist={handleStartCreatingChecklist}
-              onStartEditingChecklist={handleStartEditingChecklist}
-              onSaveChecklist={checklistState.saveChecklist}
-              onCancelChecklist={handleCancelChecklist}
-              applicationId={applicationId}
-              onReuploadDocument={handleReuploadDocument}
-              showSampleDocuments={showSampleDocuments}
-              onToggleSampleDocuments={() =>
-                setShowSampleDocuments(!showSampleDocuments)
-              }
-            />
-          ) : layoutState.selectedLayout === "outcome" ? (
-            <Suspense
-              fallback={<Skeleton className="h-96 w-full rounded-xl" />}
-            >
-              <OutcomeLayout applicationId={applicationId} />
-            </Suspense>
-          ) : layoutState.selectedLayout === "eoi" ? (
-            <Suspense
-              fallback={<Skeleton className="h-96 w-full rounded-xl" />}
-            >
-              <EOILayout applicationId={applicationId} />
-            </Suspense>
-          ) : layoutState.selectedLayout === "invitation" ? (
-            <Suspense
-              fallback={<Skeleton className="h-96 w-full rounded-xl" />}
-            >
-              <InvitationLayout applicationId={applicationId} />
-            </Suspense>
-          ) : null}
-        </div>
-      ) : (
-        <div className="text-center py-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            Access Denied
-          </h2>
-          <p className="text-gray-600">
-            You don&apos;t have permission to access this page.
-          </p>
-        </div>
-      )}
 
       <AddCompanyDialog
         isOpen={modals.isAddCompanyDialogOpen}
@@ -496,28 +617,19 @@ export default function UnifiedApplicationDetailsPage({
       />
 
       {user?.role !== "client" && (
-        <>
-          <ResetPasswordModal
-            isOpen={modals.isResetPasswordModalOpen}
-            onOpenChange={modals.setResetPasswordModalOpen}
-            leadId={application?.id || ""}
-            onSuccess={() => {}}
-          />
-
-          <DownloadAllDocumentsModal
-            isOpen={modals.isDownloadAllModalOpen}
-            onOpenChange={modals.setDownloadAllModalOpen}
-            leadId={application?.id || ""}
-          />
-
-          <ActivateAccountSheet
-            open={modals.isActivateAccountSheetOpen}
-            onOpenChange={modals.setActivateAccountSheetOpen}
-            leadId={application?.id || ""}
-            application={application}
-          />
-        </>
+        <DownloadAllDocumentsModal
+          isOpen={modals.isDownloadAllModalOpen}
+          onOpenChange={modals.setDownloadAllModalOpen}
+          leadId={application?.id || ""}
+        />
       )}
+
+      <EmailHistoryModal
+        isOpen={modals.isEmailHistoryModalOpen}
+        onOpenChange={modals.setEmailHistoryModalOpen}
+        clientEmail={application?.Email ?? ""}
+        clientName={application?.Name ?? ""}
+      />
 
       {deepLinkDoc && (
         <ViewDocumentSheet
@@ -528,6 +640,14 @@ export default function UnifiedApplicationDetailsPage({
           onClose={clearDeepLinkDoc}
         />
       )}
+
+      <ClientOnboardingModal
+        applicationId={applicationId}
+        application={application}
+        onboarding={onboardingData}
+        open={isClientOnboardingOpen}
+        onOpenChange={handleOnboardingModalOpenChange}
+      />
     </main>
   );
 }

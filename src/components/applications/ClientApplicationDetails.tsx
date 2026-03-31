@@ -3,7 +3,6 @@
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientApplicationResponse, ClientDocument } from "@/types/client";
-import { ClientDocumentsSummary } from "./ClientDocumentsSummary";
 import { ApplicationDeadlineCard } from "./ApplicationDeadlineCard";
 import { Calendar, User } from "lucide-react";
 import { formatDate } from "@/utils/format";
@@ -63,11 +62,6 @@ export function ClientApplicationDetails({
             <Skeleton className="h-48 w-full rounded-2xl" />
           </div>
         </div>
-        <ClientDocumentsSummary
-          documents={documents}
-          isLoading={isDocumentsLoading ?? false}
-          error={documentsError ?? null}
-        />
       </div>
     );
   }
@@ -86,11 +80,6 @@ export function ClientApplicationDetails({
             <Skeleton className="h-48 w-full rounded-2xl" />
           </div>
         </div>
-        <ClientDocumentsSummary
-          documents={documents}
-          isLoading={isDocumentsLoading ?? false}
-          error={documentsError ?? null}
-        />
       </div>
     );
   }
@@ -108,11 +97,6 @@ export function ClientApplicationDetails({
             <Skeleton className="h-48 w-full rounded-2xl" />
           </div>
         </div>
-        <ClientDocumentsSummary
-          documents={documents}
-          isLoading={isDocumentsLoading ?? false}
-          error={documentsError ?? null}
-        />
       </div>
     );
   }
@@ -597,13 +581,6 @@ export function ClientApplicationDetails({
           />
         </div>
       </div>
-
-      {/* Documents Summary */}
-      <ClientDocumentsSummary
-        documents={documents}
-        isLoading={isDocumentsLoading ?? false}
-        error={documentsError ?? null}
-      />
     </div>
   );
 }

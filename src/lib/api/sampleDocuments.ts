@@ -1,4 +1,4 @@
-import { getStoredToken } from "@/lib/auth";
+import { getClerkToken } from "@/lib/getToken";
 import type {
   SampleDocumentsResponse,
   UploadSampleDocumentRequest,
@@ -33,7 +33,7 @@ export async function fetchSampleDocuments(
     throw new Error("Invalid application ID");
   }
 
-  const token = getStoredToken();
+  const token = await getClerkToken();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -69,7 +69,7 @@ export async function uploadSampleDocument(
   formData.append("document_name", request.document_name);
   formData.append("type", request.type ?? "skill-assessment");
 
-  const token = getStoredToken();
+  const token = await getClerkToken();
 
   const headers: Record<string, string> = {};
   if (token) {
@@ -90,7 +90,7 @@ export async function uploadSampleDocument(
 export async function updateSampleDocument(
   request: UpdateSampleDocumentRequest,
 ): Promise<UploadSampleDocumentResponse> {
-  const token = getStoredToken();
+  const token = await getClerkToken();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
@@ -115,7 +115,7 @@ export async function deleteSampleDocument(
   applicationId: string,
   documentId: string,
 ): Promise<DeleteSampleDocumentResponse> {
-  const token = getStoredToken();
+  const token = await getClerkToken();
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

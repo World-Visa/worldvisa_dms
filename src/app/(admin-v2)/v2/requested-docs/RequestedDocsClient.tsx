@@ -1,9 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Search } from "lucide-react";
 import {
   useRequestedDocumentsToMePaginated,
   useMyRequestedDocumentsPaginated,
@@ -14,11 +13,12 @@ import {
   useRequestedDocumentsSearch,
 } from "@/hooks/useRequestedDocuments";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { RequestedDocumentsDataTable } from "@/components/requested-documents/RequestedDocumentsDataTable";
-import {
-  RequestedDocumentsFilters,
-  RequestedDocumentsFilters as FiltersType,
-} from "@/components/requested-documents/RequestedDocumentsFilters";
+import type { RequestedDocumentsFilters as FiltersType } from "@/components/requested-documents/RequestedDocumentsFilters";
+import { FacetedFormFilter } from "@/components/ui/faceted-filter/facated-form-filter";
+import { Button } from "@/components/ui/primitives/button";
+import { REQUESTED_DOCUMENT_STATUS_OPTIONS } from "@/lib/constants/requestedDocuments";
 import { ApplicationsPagination } from "@/components/applications/ApplicationsPagination";
 import { RequestedDocumentViewSheet } from "@/components/requested-documents/RequestedDocumentViewSheet";
 import { useAuth } from "@/hooks/useAuth";
@@ -50,6 +50,12 @@ export default function RequestedDocsClient() {
   const [selectedDocument, setSelectedDocument] =
     useState<RequestedDocument | null>(null);
   const [searchInput, setSearchInput] = useState("");
+
+  const { data: adminUsers = [], isLoading: isLoadingAdmins } = useAdminUsers();
+  const adminOptions = useMemo(
+    () => adminUsers.map((u) => ({ value: u.username ?? "", label: u.username ?? "" })).filter((o) => o.value),
+    [adminUsers],
+  );
 
   const debouncedSearch = useDebounce(searchInput.trim(), 350);
   const isSearchMode = debouncedSearch.length > 0;
@@ -152,37 +158,29 @@ export default function RequestedDocsClient() {
           documents: requestedToMeData?.data || [],
           pagination: requestedToMeData?.pagination,
           isLoading: isLoadingRequestedToMe,
-          statsData: allRequestedToMeStats?.data || [],
-          isLoadingStats: isLoadingRequestedToMeCount,
         };
       case "my-requests":
         return {
           documents: myRequestsData?.data || [],
           pagination: myRequestsData?.pagination,
           isLoading: isLoadingMyRequests,
-          statsData: allMyRequestsStats?.data || [],
-          isLoadingStats: isLoadingMyRequestsCount,
         };
       case "all-requests":
         return {
           documents: allRequestsData?.data || [],
           pagination: allRequestsData?.pagination,
           isLoading: isLoadingAllRequests,
-          statsData: allRequestsStatsData?.data || [],
-          isLoadingStats: isLoadingAllRequestsCount,
         };
       default:
         return {
           documents: [],
           pagination: undefined,
           isLoading: false,
-          statsData: [],
-          isLoadingStats: false,
         };
     }
   };
 
-  const { documents, pagination, isLoading, statsData, isLoadingStats } =
+  const { documents, pagination, isLoading } =
     getCurrentTabData();
 
   const displayDocuments = isSearchMode
@@ -191,42 +189,7 @@ export default function RequestedDocsClient() {
   const displayPagination = isSearchMode ? searchData?.pagination : pagination;
   const displayLoading = isSearchMode ? isSearchLoading : isLoading;
 
-  // Calculate stats from current tab's full dataset
-  const calculateStats = (docs: RequestedDocument[]) => {
-    return docs.reduce(
-      (acc, doc) => {
-        if (doc.requested_review?.status === "pending") acc.pendingRequests++;
-        if (doc.requested_review?.status === "reviewed") acc.reviewedRequests++;
-        if (doc.isOverdue) acc.overdue++;
-        return acc;
-      },
-      { pendingRequests: 0, reviewedRequests: 0, overdue: 0 },
-    );
-  };
-
-  const stats = calculateStats(statsData);
-
-  // Event handlers
-  const handleRefresh = async () => {
-    try {
-      switch (activeTab) {
-        case "requested-to-me":
-          await refetchRequestedToMe();
-          break;
-        case "my-requests":
-          await refetchMyRequests();
-          break;
-        case "all-requests":
-          if (isMasterAdmin) {
-            await refetchAllRequests();
-          }
-          break;
-      }
-    } catch (error) {
-      console.error("Error refreshing data:", error);
-    }
-  };
-
+  
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
@@ -234,13 +197,6 @@ export default function RequestedDocsClient() {
   const handleFiltersChange = (newFilters: FiltersType) => {
     setFilters(newFilters);
     setCurrentPage(1);
-  };
-
-  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      setSearchInput((prev) => prev.trim());
-      setCurrentPage(1);
-    }
   };
 
   const handleTabChange = (value: string) => {
@@ -254,6 +210,18 @@ export default function RequestedDocsClient() {
 
   const handleCloseSheet = () => {
     setSelectedDocument(null);
+  };
+
+  const hasActiveFilters =
+    searchInput.trim() !== "" ||
+    filters.status !== "all" ||
+    Boolean(filters.requestedBy) ||
+    Boolean(filters.requestedTo);
+
+  const clearFilters = () => {
+    setSearchInput("");
+    setFilters({ search: "", status: "all", priority: "", requestedBy: "", requestedTo: "" });
+    setCurrentPage(1);
   };
 
   // Get counts for tab labels
@@ -277,44 +245,15 @@ export default function RequestedDocsClient() {
   };
 
   return (
-    <main className="">
-      <div className="mb-8">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-          <div>
-            <h1 className="text-2xl font-medium text-foreground mb-2 flex items-center gap-2">
-              Requested Documents
-            </h1>
-          </div>
-          <div className="flex w-full max-w-[320px] items-center overflow-hidden rounded-md border-0 bg-[rgb(240,240,243)] shadow-none">
-            <span className="flex shrink-0 pl-4 pr-1 text-[#8E8E93]" aria-hidden>
-              <Search className="h-4 w-4" />
-            </span>
-            <input
-              type="search"
-              value={searchInput}
-              onChange={(e) => setSearchInput(e.target.value)}
-              onKeyDown={handleSearchKeyDown}
-              placeholder="Search"
-              className="h-10 min-w-0 flex-1 border-0 bg-transparent px-3 text-sm text-neutral-900 placeholder:text-[#8E8E93] focus:outline-none focus:ring-0"
-              aria-label="Search requested documents"
-            />
-          </div>
-        </div>
+    <main className="max-w-[1200px] mx-auto">
+      {/* Page title */}
+      <div className="mb-6">
+        <h1 className="text-2xl font-medium text-foreground">Requested Documents</h1>
       </div>
 
-      {/* <RequestedDocsStats
-        pendingRequests={stats.pendingRequests}
-        reviewedRequests={stats.reviewedRequests}
-        overdue={stats.overdue}
-      /> */}
-
-      {/* Tabs + Filters row (same alignment) */}
-      <div className="mb-4 flex items-end justify-between border-b border-gray-200">
-        <div
-          className="flex"
-          role="tablist"
-          aria-label="Requested documents tabs"
-        >
+      {/* Tabs row */}
+      <div className="mb-4 flex items-end border-b border-gray-200">
+        <div className="flex" role="tablist" aria-label="Requested documents tabs">
           {isMasterAdmin && (
             <button
               type="button"
@@ -332,14 +271,7 @@ export default function RequestedDocsClient() {
               )}
             >
               All Requests
-              <span
-                className={cn(
-                  "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150",
-                  activeTab === "all-requests"
-                    ? "bg-gray-900 text-white"
-                    : "bg-gray-100 text-gray-400",
-                )}
-              >
+              <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150", activeTab === "all-requests" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-400")}>
                 {getTabCount("all-requests")}
               </span>
             </button>
@@ -360,14 +292,7 @@ export default function RequestedDocsClient() {
             )}
           >
             Requested to Me
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150",
-                activeTab === "requested-to-me"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-400",
-              )}
-            >
+            <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150", activeTab === "requested-to-me" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-400")}>
               {getTabCount("requested-to-me")}
             </span>
           </button>
@@ -387,55 +312,57 @@ export default function RequestedDocsClient() {
             )}
           >
             My Requests
-            <span
-              className={cn(
-                "inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150",
-                activeTab === "my-requests"
-                  ? "bg-gray-900 text-white"
-                  : "bg-gray-100 text-gray-400",
-              )}
-            >
+            <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150", activeTab === "my-requests" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-400")}>
               {getTabCount("my-requests")}
             </span>
           </button>
         </div>
-        <div className="pb-2">
-          <RequestedDocumentsFilters
-            filters={filters}
-            onFiltersChange={handleFiltersChange}
-            onRefresh={handleRefresh}
-            isRefreshing={displayLoading}
-            totalCount={displayPagination?.totalItems ?? 0}
-            filteredCount={displayDocuments.length}
-          />
-        </div>
       </div>
 
-      {isSearchMode && (
-        <div className="mb-4 flex items-center justify-between">
-          <p className="text-sm text-neutral-600">
-            Search results for &quot;{debouncedSearch}&quot;
-            {displayPagination != null && (
-              <span className="ml-1 font-medium">
-                ({displayPagination.totalItems} result
-                {displayPagination.totalItems !== 1 ? "s" : ""})
-              </span>
-            )}
-          </p>
-          <button
-            type="button"
-            onClick={() => {
-              setSearchInput("");
-              setCurrentPage(1);
-            }}
-            className="text-sm font-medium text-neutral-600 underline-offset-2 hover:underline"
-          >
-            Clear search
-          </button>
-        </div>
-      )}
+      {/* Filter pills */}
+      <div className="flex flex-wrap items-center gap-2 py-2.5">
+        <FacetedFormFilter
+          type="text"
+          size="small"
+          title="Search"
+          value={searchInput}
+          onChange={(v) => { setSearchInput(v); setCurrentPage(1); }}
+          placeholder="Search by name…"
+        />
+        <FacetedFormFilter
+          type="single"
+          size="small"
+          title="Status"
+          options={REQUESTED_DOCUMENT_STATUS_OPTIONS}
+          selected={filters.status !== "all" ? [filters.status] : []}
+          onSelect={(vals) => { handleFiltersChange({ ...filters, status: vals[0] ?? "all" }); }}
+        />
+        <FacetedFormFilter
+          type="single"
+          size="small"
+          title="Requested By"
+          options={adminOptions}
+          selected={filters.requestedBy ? [filters.requestedBy] : []}
+          onSelect={(vals) => { handleFiltersChange({ ...filters, requestedBy: vals[0] ?? "" }); }}
+          isLoading={isLoadingAdmins}
+        />
+        <FacetedFormFilter
+          type="single"
+          size="small"
+          title="Requested To"
+          options={adminOptions}
+          selected={filters.requestedTo ? [filters.requestedTo] : []}
+          onSelect={(vals) => { handleFiltersChange({ ...filters, requestedTo: vals[0] ?? "" }); }}
+          isLoading={isLoadingAdmins}
+        />
+        {hasActiveFilters && (
+          <Button variant="secondary" mode="ghost" size="2xs" className="text-xs! font-normal! text-neutral-700" onClick={clearFilters}>
+            Reset
+          </Button>
+        )}
+      </div>
 
-      <div className="space-y-4">
+      <div className="space-y-4 mt-2">
         <RequestedDocumentsDataTable
           documents={displayDocuments}
           isLoading={displayLoading}

@@ -30,6 +30,9 @@ export interface ClientRecord {
   total_documents: number;
   documents_by_status: Record<string, number>;
   application_data: ClientApplicationData | null;
+  clerk_id?: string;
+  clerk_invitation_id?: string;
+  profile_image_url?: string;
 }
 
 interface ClientsPaginationInfo {
@@ -53,6 +56,7 @@ interface UseClientsParams {
   limit: number;
   search?: string;
   lead_owner?: string;
+  invited?: boolean;
 }
 
 const fetchClients = async (params: UseClientsParams): Promise<ClientsResponse> => {
@@ -61,6 +65,7 @@ const fetchClients = async (params: UseClientsParams): Promise<ClientsResponse> 
     limit: params.limit,
     search: params.search || undefined,
     lead_owner: params.lead_owner || undefined,
+    invited: params.invited || undefined,
   });
 
   const url = queryString

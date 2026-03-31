@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { formatDistanceToNow } from "date-fns";
 import { Bell, ClipboardList, FileUp, MessageCircle, ShieldCheck } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, getProfileAvatarSrc } from "@/lib/utils";
 import type { Notification, NotificationSource } from "@/types/notifications";
 
 // ─── Source meta ─────────────────────────────────────────────────────────────
@@ -66,7 +66,10 @@ function SourceIcon({ source, isAdminMessage, senderProfileImageUrl }: SourceIco
     return (
       <div className="relative size-10 shrink-0">
         <Image
-          src={senderProfileImageUrl ?? "/avatars/1.png"}
+          src={getProfileAvatarSrc({
+            profileImageUrl: senderProfileImageUrl,
+            seed: "admin",
+          })}
           alt="Admin"
           width={40}
           height={40}

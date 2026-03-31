@@ -25,6 +25,17 @@ import {
 } from "lucide-react";
 import { Button } from "../ui/button";
 import { TimelineContainer, TimelineStep } from "@/components/ui/timeline";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { ButtonRoot } from "@/components/ui/primitives/button";
+import { API_ENDPOINTS } from "@/lib/config/api";
+import { getClerkToken } from "@/lib/getToken";
+import { toast } from "sonner";
+import { RiDownload2Line } from "react-icons/ri";
 
 // ─── Filter groups ────────────────────────────────────────────────────────────
 
@@ -165,6 +176,53 @@ function formatSmartDate(iso: string): string {
   return `${dateStr} · ${timeStr}`;
 }
 
+const FALLBACK_FILENAME_MAX_LENGTH = 200;
+const SAFE_FILENAME_REGEX = /^[a-zA-Z0-9._-]+$/;
+
+function sanitizePdfFilename(
+  filename: string | null | undefined,
+  leadId: string,
+): string {
+  if (!filename || typeof filename !== "string") return `activity-${leadId}.pdf`;
+  const basename = filename.replace(/^.*[/\\]/, "").trim();
+  if (!basename) return `activity-${leadId}.pdf`;
+  const truncated =
+    basename.length > FALLBACK_FILENAME_MAX_LENGTH
+      ? basename.slice(0, FALLBACK_FILENAME_MAX_LENGTH)
+      : basename;
+  if (!SAFE_FILENAME_REGEX.test(truncated)) return `activity-${leadId}.pdf`;
+  return truncated.toLowerCase().endsWith(".pdf")
+    ? truncated
+    : `${truncated}.pdf`;
+}
+
+function parseContentDispositionFilename(
+  headerValue: string | null,
+): string | null {
+  if (!headerValue) return null;
+  const match = headerValue.match(
+    /filename\\*=UTF-8''([^;]+)|filename=\"?([^\";]+)\"?/i,
+  );
+  const raw = (match?.[1] ?? match?.[2] ?? "").trim();
+  if (!raw) return null;
+  try {
+    return decodeURIComponent(raw);
+  } catch {
+    return raw;
+  }
+}
+
+function triggerBlobDownload(blob: Blob, filename: string): void {
+  const objectUrl = window.URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  window.URL.revokeObjectURL(objectUrl);
+}
+
 
 function getCompanyLabel(category: string | null | undefined): string | null {
   if (!category) return null;
@@ -297,7 +355,7 @@ function ActivityGroupItem({ group, index }: { group: ActivityGroup; index: numb
   const oldestLog = group.logs[count - 1];
 
   return (
-    <TimelineStep index={index}  title={`${count} ${style.label}s`}>
+    <TimelineStep index={index} title={`${count} ${style.label}s`}>
       <div className="mt-2 space-y-2">
         {/* Group header card */}
         <button
@@ -367,12 +425,14 @@ export function ApplicationActivitySheet({
 }: ApplicationActivitySheetProps) {
   const [activeFilter, setActiveFilter] = useState<ActivityFilterGroup>("all");
   const [showFilters, setShowFilters] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!open) {
       setActiveFilter("all");
       setShowFilters(false);
+      setIsDownloading(false);
     }
   }, [open]);
 
@@ -417,6 +477,52 @@ export function ApplicationActivitySheet({
 
   const totalRecords = data?.pages[0]?.data.pagination.totalRecords;
 
+  async function handleDownloadPdf() {
+    if (isDownloading) return;
+    setIsDownloading(true);
+    try {
+      const token = await getClerkToken();
+
+      const headers: Record<string, string> = {};
+      if (token) headers.Authorization = `Bearer ${token}`;
+
+      const response = await fetch(
+        API_ENDPOINTS.VISA_APPLICATIONS.ACTIVITY_DOWNLOAD(applicationId),
+        { method: "GET", headers },
+      );
+
+      if (!response.ok) {
+        let message = "Download failed. Please try again.";
+        const contentType = response.headers.get("content-type") ?? "";
+        if (contentType.includes("application/json")) {
+          try {
+            const json = (await response.json()) as { message?: string };
+            if (typeof json.message === "string" && json.message.trim()) {
+              message = json.message.trim();
+            }
+          } catch {
+            /* use default message */
+          }
+        }
+        throw new Error(message);
+      }
+
+      const blob = await response.blob();
+      const contentDisposition = response.headers.get("content-disposition");
+      const headerFilename = parseContentDispositionFilename(contentDisposition);
+      const filename = sanitizePdfFilename(headerFilename, applicationId);
+      triggerBlobDownload(blob, filename);
+    } catch (err) {
+      const message =
+        err instanceof Error && err.message.trim()
+          ? err.message.trim()
+          : "Failed to download PDF. Please try again.";
+      toast.error(message);
+    } finally {
+      setIsDownloading(false);
+    }
+  }
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
@@ -435,7 +541,7 @@ export function ApplicationActivitySheet({
 
           {/* Filter toggle + underline tabs */}
           <div className="pt-3">
-            <div className="flex justify-end">
+            <div className="flex justify-end gap-2">
               <Button
                 type="button"
                 variant="secondary"
@@ -447,6 +553,28 @@ export function ApplicationActivitySheet({
                 <Filter className="w-4 h-4 mr-1" />
                 {showFilters ? "Hide filters" : "Filters"}
               </Button>
+              <TooltipProvider>
+                <Tooltip delayDuration={150}>
+                  <TooltipTrigger asChild>
+                    <ButtonRoot
+                      type="button"
+                      aria-label="Download Activity Log PDF"
+                      onClick={handleDownloadPdf}
+                      variant="secondary"
+                      mode="outline"
+                      size="xs"
+                      isLoading={isDownloading}
+                      className="w-9 px-0"
+                    >
+                      <span className="sr-only">Download Activity Log PDF</span>
+                      {!isDownloading && <RiDownload2Line className="size-4" />}
+                    </ButtonRoot>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" variant="default">
+                    Download Activity Log PDF
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
 
             <div

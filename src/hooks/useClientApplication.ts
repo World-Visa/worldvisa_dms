@@ -3,9 +3,12 @@ import { fetcher } from "@/lib/fetcher";
 import { ClientApplicationResponse } from "@/types/client";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 
-export function useClientApplication() {
+export function useClientApplication(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true;
+
   return useQuery({
     queryKey: ["client-application"],
+    enabled,
     queryFn: async (): Promise<ClientApplicationResponse> => {
       try {
         // Try the client-specific endpoint first
@@ -23,7 +26,7 @@ export function useClientApplication() {
                 return {
                   data: {
                     id: user.lead_id,
-                    Name: user.username || user.Name || "Client Application",
+                    Name: user.Name || user.full_name || "Client Application",
                     Email: user.email,
                     Phone: "",
                     Created_Time: new Date().toISOString(),

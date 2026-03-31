@@ -13,11 +13,8 @@ export function useApplicationModals() {
     setSelectedReuploadDocumentCategory,
   ] = useState<string>("");
   const [isQualityCheckModalOpen, setIsQualityCheckModalOpen] = useState(false);
-  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] =
-    useState(false);
   const [isDownloadAllModalOpen, setIsDownloadAllModalOpen] = useState(false);
-  const [isActivateAccountSheetOpen, setIsActivateAccountSheetOpen] =
-    useState(false);
+  const [isEmailHistoryModalOpen, setIsEmailHistoryModalOpen] = useState(false);
 
   // Memoized handlers
   const openAddCompanyDialog = useCallback(() => {
@@ -53,14 +50,6 @@ export function useApplicationModals() {
     setIsQualityCheckModalOpen(false);
   }, []);
 
-  const openResetPasswordModal = useCallback(() => {
-    setIsResetPasswordModalOpen(true);
-  }, []);
-
-  const closeResetPasswordModal = useCallback(() => {
-    setIsResetPasswordModalOpen(false);
-  }, []);
-
   const openDownloadAllModal = useCallback(() => {
     setIsDownloadAllModalOpen(true);
   }, []);
@@ -69,29 +58,21 @@ export function useApplicationModals() {
     setIsDownloadAllModalOpen(false);
   }, []);
 
-  const openActivateAccountSheet = useCallback(() => {
-    setIsActivateAccountSheetOpen(true);
-  }, []);
-
-  const closeActivateAccountSheet = useCallback(() => {
-    setIsActivateAccountSheetOpen(false);
-  }, []);
-
   // Handlers for onOpenChange pattern (accept boolean)
   const setQualityCheckModalOpen = useCallback((open: boolean) => {
     setIsQualityCheckModalOpen(open);
-  }, []);
-
-  const setResetPasswordModalOpen = useCallback((open: boolean) => {
-    setIsResetPasswordModalOpen(open);
   }, []);
 
   const setDownloadAllModalOpen = useCallback((open: boolean) => {
     setIsDownloadAllModalOpen(open);
   }, []);
 
-  const setActivateAccountSheetOpen = useCallback((open: boolean) => {
-    setIsActivateAccountSheetOpen(open);
+  const openEmailHistoryModal = useCallback(() => {
+    setIsEmailHistoryModalOpen(true);
+  }, []);
+
+  const setEmailHistoryModalOpen = useCallback((open: boolean) => {
+    setIsEmailHistoryModalOpen(open);
   }, []);
 
   return {
@@ -102,9 +83,7 @@ export function useApplicationModals() {
     selectedReuploadDocumentType,
     selectedReuploadDocumentCategory,
     isQualityCheckModalOpen,
-    isResetPasswordModalOpen,
     isDownloadAllModalOpen,
-    isActivateAccountSheetOpen,
 
     // Handlers
     openAddCompanyDialog,
@@ -113,17 +92,16 @@ export function useApplicationModals() {
     closeReuploadModal,
     openQualityCheckModal,
     closeQualityCheckModal,
-    openResetPasswordModal,
-    closeResetPasswordModal,
     openDownloadAllModal,
     closeDownloadAllModal,
-    openActivateAccountSheet,
-    closeActivateAccountSheet,
 
     // Setters for onOpenChange pattern
     setQualityCheckModalOpen,
-    setResetPasswordModalOpen,
     setDownloadAllModalOpen,
-    setActivateAccountSheetOpen,
+
+    // Email history modal
+    isEmailHistoryModalOpen,
+    openEmailHistoryModal,
+    setEmailHistoryModalOpen,
   };
 }

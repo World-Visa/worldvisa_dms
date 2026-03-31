@@ -4,7 +4,6 @@ import {
   MessageEvent,
   RealtimeConnectionState,
 } from "@/types/comments";
-import { getStoredToken } from "./auth";
 import * as Sentry from "@sentry/nextjs";
 
 export interface RequestedDocumentEvent {
@@ -107,34 +106,11 @@ export class RealtimeManager {
     this.isConnecting = true;
     this.updateConnectionState({ isConnecting: true, error: null });
 
-    const token = getStoredToken();
-    if (!token) {
-      this.handleConnectionError("No authentication token available");
-      return;
-    }
-
     try {
-      // Get user role from localStorage to include in the URL
-      let roleParam = "";
-      if (typeof window !== "undefined") {
-        const userData = sessionStorage.getItem("user_data") ?? localStorage.getItem("user_data");
-        if (userData) {
-          try {
-            const user = JSON.parse(userData);
-            if (user.role) {
-              roleParam = `&role=${encodeURIComponent(user.role)}`;
-            }
-          } catch (error) {
-            console.warn("Failed to parse user data for SSE:", error);
-          }
-        }
-      }
-
-      // Create SSE connection to our API endpoint (same origin — Next.js API route)
-      const baseUrl =
-        typeof window !== "undefined" ? window.location.origin : "";
+      // Create SSE connection — Clerk session cookie authenticates via withCredentials
+      const baseUrl = window.location.origin;
       const eventSource = new EventSource(
-        `${baseUrl}/api/realtime/comments?token=${encodeURIComponent(token)}${roleParam}`,
+        `${baseUrl}/api/realtime/comments`,
         {
           withCredentials: true,
         },

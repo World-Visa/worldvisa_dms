@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
+import { ROUTES } from "@/utils/routes";
 
 export default function Home() {
-  redirect("/auth/user/login");
+  redirect(ROUTES.SIGN_IN);
 }

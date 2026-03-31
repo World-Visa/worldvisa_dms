@@ -36,22 +36,6 @@ const DocumentStatusDisplay: React.FC<DocumentStatusDisplayProps> = ({
           </div>
         )}
       </div>
-
-      {document.status === "rejected" && document.reject_message && (
-        <div className="p-3 bg-destructive/5 border border-destructive/15 rounded-xl">
-          <div className="flex items-start gap-2">
-            <MessageSquare className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
-            <div className="flex-1">
-              <div className="text-sm font-medium text-destructive mb-1">
-                Reason for rejection:
-              </div>
-              <div className="text-sm text-destructive/80">
-                {document.reject_message}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

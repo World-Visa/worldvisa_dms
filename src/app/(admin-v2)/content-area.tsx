@@ -9,7 +9,7 @@ export function ContentArea({ children }: { children: ReactNode }) {
 
   return (
     <div
-      className={isMailPage ? "h-full min-h-0" : "h-full p-4 md:p-6"}
+      className={isMailPage ? "h-full min-h-0" : "h-full p-4 md:p-4"}
     >
       {children}
     </div>

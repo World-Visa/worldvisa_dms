@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
-import { AuthGuard } from "@/components/auth/AuthGuard";
 import { ClientHeader } from "@/components/auth/ClientHeader";
+import { ClientQueryClearOnSignOut } from "@/components/client/clear-query-on-sign-out";
 import { NotificationPrompt } from "@/components/NotificationPrompt";
 
 export const metadata: Metadata = {
@@ -14,10 +14,11 @@ export default function ClientLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <AuthGuard requiredRole="client" redirectTo="/auth/user/login">
+    <>
+      <ClientQueryClearOnSignOut />
       <ClientHeader />
       <NotificationPrompt />
       {children}
-    </AuthGuard>
+    </>
   );
 }

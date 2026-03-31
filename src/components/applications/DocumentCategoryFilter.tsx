@@ -4,10 +4,11 @@ import React, { useMemo, memo, useCallback } from "react";
 import { DocumentCategoryFilterProps, Company } from "@/types/documents";
 import { ChecklistState, ChecklistCategory } from "@/types/checklist";
 import { generateCategories } from "./filter/CategoryGenerator";
-import { CategoryChips } from "./filter/CategoryChips";
+import { FolderCategoryRail } from "./filter/FolderCategoryRail";
 import { CategoryDropdown } from "./filter/CategoryDropdown";
 import type { Document } from "@/types/applications";
 import type { DocumentCategoryInfo } from "@/types/documents";
+import { Button } from "@/components/ui/button";
 
 function computeCategoryCounts(
   categories: DocumentCategoryInfo[],
@@ -81,7 +82,6 @@ function computeCategoryCounts(
 interface ExtendedDocumentCategoryFilterProps
   extends DocumentCategoryFilterProps {
   companies?: Company[];
-  onAddCompany?: () => void;
   onRemoveCompany?: (companyName: string) => void;
   onRemoveCompanyWithCheck?: (
     companyName: string,
@@ -95,23 +95,16 @@ interface ExtendedDocumentCategoryFilterProps
   checklistState?: ChecklistState;
   checklistCategories?: ChecklistCategory[];
   hasCompanyDocuments?: boolean;
-  onStartCreatingChecklist?: () => void;
-  onStartEditingChecklist?: () => void;
-  onSaveChecklist?: () => void;
-  onCancelChecklist?: () => void;
-  isSavingChecklist?: boolean;
-  /** When 'link', show Create/Edit checklist links to /checklist instead of inline actions */
-  checklistActions?: "inline" | "link";
-  applicationId?: string;
+  showSampleDocuments?: boolean;
+  onToggleSampleDocuments?: () => void;
+  sampleDocumentsCount?: number;
+  onAddCompany?: () => void;
 }
 
 export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
   selectedCategory,
   onCategoryChange,
   companies = [],
-  onAddCompany,
-  onRemoveCompany,
-  onRemoveCompanyWithCheck,
   documents,
   maxCompanies = 5,
   // Client privilege props
@@ -121,13 +114,10 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
   checklistState = "none",
   checklistCategories = [],
   hasCompanyDocuments = false,
-  onStartCreatingChecklist,
-  onStartEditingChecklist,
-  onSaveChecklist,
-  onCancelChecklist,
-  isSavingChecklist = false,
-  checklistActions = "inline",
-  applicationId,
+  showSampleDocuments = false,
+  onToggleSampleDocuments,
+  sampleDocumentsCount = 0,
+  onAddCompany,
 }: ExtendedDocumentCategoryFilterProps) {
   const categories = useMemo(
     () =>
@@ -158,12 +148,12 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
     [onCategoryChange],
   );
 
-  // Memoize company removal handler
-  const handleRemoveCompany = useCallback(
-    (companyName: string) => {
-      onRemoveCompany?.(companyName);
-    },
-    [onRemoveCompany],
+  const canShowAddCompanyAction = useMemo(
+    () =>
+      (checklistState === "saved" || isClientView) &&
+      hasCompanyDocuments &&
+      companies.length < maxCompanies,
+    [checklistState, isClientView, hasCompanyDocuments, companies.length, maxCompanies],
   );
 
   // Show "No checklist" message when there are no categories and it's client view
@@ -174,52 +164,44 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
   return (
     <div className="mb-6">
       {/* Desktop View - Show all buttons */}
-      <div className="relative">
-        <CategoryChips
+      <div className="relative hidden md:block">
+        <FolderCategoryRail
           categories={categories}
           selectedCategory={selectedCategory}
           onCategoryChange={handleCategoryChange}
-          onRemoveCompany={handleRemoveCompany}
-          onRemoveCompanyWithCheck={onRemoveCompanyWithCheck}
-          documents={documents}
           categoryCounts={categoryCounts}
-          disabled={false}
-          companies={companies}
-          maxCompanies={maxCompanies}
+          showAddCompanyAction={canShowAddCompanyAction}
+          showSampleDocumentsAction={Boolean(onToggleSampleDocuments)}
+          showSampleDocuments={showSampleDocuments}
+          sampleDocumentsCount={sampleDocumentsCount}
           onAddCompany={onAddCompany}
-          checklistState={checklistState}
-          isClientView={isClientView}
-          hasCompanyDocuments={hasCompanyDocuments}
-          onStartCreatingChecklist={onStartCreatingChecklist}
-          onStartEditingChecklist={onStartEditingChecklist}
-          onSaveChecklist={onSaveChecklist}
-          onCancelChecklist={onCancelChecklist}
-          isSavingChecklist={isSavingChecklist}
-          checklistActions={checklistActions}
-          applicationId={applicationId}
+          onToggleSampleDocuments={onToggleSampleDocuments}
         />
       </div>
 
       {/* Mobile/Tablet View - Show dropdown */}
-      <CategoryDropdown
-        categories={categories}
-        selectedCategory={selectedCategory}
-        onCategoryChange={handleCategoryChange}
-        disabled={false}
-        companies={companies}
-        maxCompanies={maxCompanies}
-        onAddCompany={onAddCompany}
-        checklistState={checklistState}
-        isClientView={isClientView}
-        hasCompanyDocuments={hasCompanyDocuments}
-        onStartCreatingChecklist={onStartCreatingChecklist}
-        onStartEditingChecklist={onStartEditingChecklist}
-        onSaveChecklist={onSaveChecklist}
-        onCancelChecklist={onCancelChecklist}
-        isSavingChecklist={isSavingChecklist}
-        checklistActions={checklistActions}
-        applicationId={applicationId}
-      />
+      <div className="md:hidden space-y-2">
+        <CategoryDropdown
+          categories={categories}
+          selectedCategory={selectedCategory}
+          onCategoryChange={handleCategoryChange}
+          disabled={false}
+          companies={companies}
+          maxCompanies={maxCompanies}
+        />
+        <div className="flex flex-wrap items-center gap-2">
+          {onToggleSampleDocuments ? (
+            <Button size="sm" variant="secondary" onClick={onToggleSampleDocuments}>
+              {showSampleDocuments ? "Back to checklist" : "Sample documents"}
+            </Button>
+          ) : null}
+          {canShowAddCompanyAction ? (
+            <Button size="sm" onClick={onAddCompany}>
+              Add Company
+            </Button>
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 });

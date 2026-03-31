@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, ClipboardList, FileUp, MessageCircle, ShieldCheck, UserCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { cn } from "@/lib/utils";
+import { cn, getAvatarUrl } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -39,7 +39,7 @@ function DropdownIcon({
   if (isAdminMessage || source === "requested_reviews") {
     return (
       <Image
-        src="/avatars/1.png"
+        src={getAvatarUrl("admin")}
         alt="Admin"
         width={36}
         height={36}

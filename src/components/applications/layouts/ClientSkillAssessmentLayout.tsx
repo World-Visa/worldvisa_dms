@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useCallback } from "react";
+import { useMemo, useCallback, useState } from "react";
 
 import { DocumentCategoryFilter } from "@/components/applications/DocumentCategoryFilter";
 import { DocumentChecklistTable } from "@/components/applications/DocumentChecklistTable";
@@ -8,11 +8,15 @@ import { DocumentsTable } from "@/components/applications/DocumentsTable";
 import { ChecklistRequestSuccessCard } from "@/components/applications/ChecklistRequestSuccessCard";
 import { RequestChecklistCard } from "@/components/applications/RequestChecklistCard";
 import { SampleDocumentsTable } from "@/components/applications/sample-documents/SampleDocumentsTable";
+import { FacetedFormFilter } from "@/components/ui/faceted-filter/facated-form-filter";
+import { Button as ButtonV2 } from "@/components/ui/primitives/button";
 import type { Document } from "@/types/applications";
 import type { ClientDocumentsResponse } from "@/types/client";
 import type { Company, DocumentCategory } from "@/types/documents";
 import type { ChecklistResponse } from "@/types/checklist";
+import { DocumentStatus } from "@/lib/enums";
 import { generateChecklistCategories } from "@/lib/checklist/categoryUtils";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface ClientSkillAssessmentLayoutProps {
   applicationId: string;
@@ -26,7 +30,6 @@ interface ClientSkillAssessmentLayoutProps {
     companyName: string,
     companyCategory: string,
   ) => void;
-  documentsResponse?: ClientDocumentsResponse;
   isDocumentsLoading: boolean;
   documentsError: Error | null;
   allDocumentsResponse?: ClientDocumentsResponse;
@@ -59,8 +62,7 @@ export function ClientSkillAssessmentLayout({
   companies,
   onAddCompany,
   onRemoveCompany,
-  onRemoveCompanyWithCheck,
-  documentsResponse,
+  onRemoveCompanyWithCheck: _onRemoveCompanyWithCheck,
   isDocumentsLoading,
   documentsError,
   allDocumentsResponse,
@@ -83,8 +85,8 @@ export function ClientSkillAssessmentLayout({
   const allDocuments = useMemo(
     () =>
       allDocumentsResponse?.data?.documents as unknown as
-        | Document[]
-        | undefined,
+      | Document[]
+      | undefined,
     [allDocumentsResponse],
   );
 
@@ -117,6 +119,34 @@ export function ClientSkillAssessmentLayout({
 
   const checklistState = hasChecklist ? "saved" : "none";
 
+  const [documentStatusFilter, setDocumentStatusFilter] = useState<DocumentStatus | null>(null);
+
+  const documentStatusOptions = useMemo(() => {
+    const docs = (allDocuments ?? []) as Document[];
+    return [
+      { label: `Pending (${docs.filter((d) => d.status === DocumentStatus.Pending).length})`, value: DocumentStatus.Pending },
+      { label: `Approved (${docs.filter((d) => d.status === DocumentStatus.Approved).length})`, value: DocumentStatus.Approved },
+      { label: `Reviewed (${docs.filter((d) => d.status === DocumentStatus.Reviewed).length})`, value: DocumentStatus.Reviewed },
+      { label: `Requested (${docs.filter((d) => d.status === DocumentStatus.RequestReview).length})`, value: DocumentStatus.RequestReview },
+      { label: `Rejected (${docs.filter((d) => d.status === DocumentStatus.Rejected).length})`, value: DocumentStatus.Rejected },
+    ] satisfies { label: string; value: DocumentStatus }[];
+  }, [allDocuments]);
+
+  const filteredDocumentsResponse = useMemo(() => {
+    if (!documentStatusFilter || !allDocumentsResponse?.data) {
+      return allDocumentsResponse;
+    }
+    return {
+      ...allDocumentsResponse,
+      data: {
+        ...allDocumentsResponse.data,
+        documents: allDocumentsResponse.data.documents?.filter(
+          (d) => d.status === documentStatusFilter,
+        ) ?? [],
+      },
+    };
+  }, [allDocumentsResponse, documentStatusFilter]);
+
   const handleChecklistRefresh = useCallback(() => {
     onChecklistRefresh?.();
   }, [onChecklistRefresh]);
@@ -133,16 +163,17 @@ export function ClientSkillAssessmentLayout({
   return (
     <div className="space-y-6">
       {showSampleDocuments ? (
-        <SampleDocumentsTable applicationId={applicationId} isClientView />
+        <SampleDocumentsTable
+          applicationId={applicationId}
+          isClientView
+          onBack={onToggleSampleDocuments}
+        />
       ) : (
         <div className="space-y-6">
           <DocumentCategoryFilter
             selectedCategory={selectedCategory as string}
             onCategoryChange={onCategoryChange}
             companies={companies}
-            onAddCompany={onAddCompany}
-            onRemoveCompany={onRemoveCompany}
-            onRemoveCompanyWithCheck={onRemoveCompanyWithCheck}
             documents={allDocuments}
             maxCompanies={maxCompanies}
             isClientView
@@ -150,78 +181,157 @@ export function ClientSkillAssessmentLayout({
             checklistState={checklistState}
             checklistCategories={checklistCategories}
             hasCompanyDocuments={hasCompanyDocuments}
+            onAddCompany={onAddCompany}
+            showSampleDocuments={showSampleDocuments}
+            onToggleSampleDocuments={onToggleSampleDocuments}
+            sampleDocumentsCount={submittedDocumentsCount}
           />
 
-          {(() => {
-            if (checklistRequested && !hasChecklist) {
-              return (
-                <ChecklistRequestSuccessCard
-                  onRefresh={handleChecklistRefresh}
-                  requestedAt={checklistRequestedAt}
-                />
-              );
-            }
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.div
+              key={selectedCategory}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              {(() => {
+                if (checklistRequested && !hasChecklist) {
+                  return (
+                    <ChecklistRequestSuccessCard
+                      onRefresh={handleChecklistRefresh}
+                      requestedAt={checklistRequestedAt}
+                    />
+                  );
+                }
 
-            if (
-              !hasChecklist &&
-              !hasSubmittedDocuments &&
-              !checklistRequested &&
-              leadId
-            ) {
-              return (
-                <RequestChecklistCard
-                  leadId={leadId}
-                  onRequestSuccess={handleChecklistRequestSuccess}
-                />
-              );
-            }
+                if (
+                  !hasChecklist &&
+                  !hasSubmittedDocuments &&
+                  !checklistRequested &&
+                  leadId
+                ) {
+                  return (
+                    <RequestChecklistCard
+                      leadId={leadId}
+                      onRequestSuccess={handleChecklistRequestSuccess}
+                    />
+                  );
+                }
 
-            if (!hasChecklist && hasSubmittedDocuments) {
-              return (
-                <DocumentsTable
-                  applicationId={applicationId}
-                  isClientView
-                  clientDocumentsData={documentsResponse}
-                  clientIsLoading={isDocumentsLoading}
-                  clientError={documentsError}
-                  onClientDeleteSuccess={onClientDeleteSuccess}
-                  onReuploadDocument={onReuploadDocument}
-                  onUploadSuccess={onUploadSuccess}
-                />
-              );
-            }
+                if (!hasChecklist && hasSubmittedDocuments) {
+                  return (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-base text-neutral-900"> Your Submitted Documents</h2>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <FacetedFormFilter
+                            type="single"
+                            size="small"
+                            title="Status"
+                            placeholder="Filter by status…"
+                            options={documentStatusOptions}
+                            selected={documentStatusFilter ? [documentStatusFilter] : []}
+                            onSelect={(vals) =>
+                              setDocumentStatusFilter(
+                                (vals[0] as DocumentStatus | undefined) ?? null,
+                              )
+                            }
+                          />
+                          {documentStatusFilter && (
+                            <ButtonV2
+                              variant="secondary"
+                              mode="ghost"
+                              size="2xs"
+                              className="text-xs! font-normal! text-neutral-700"
+                              onClick={() => setDocumentStatusFilter(null)}
+                            >
+                              Reset
+                            </ButtonV2>
+                          )}
+                        </div>
+                      </div>
+                      <DocumentsTable
+                        applicationId={applicationId}
+                        clientLeadId={leadId}
+                        isClientView
+                        clientDocumentsData={filteredDocumentsResponse}
+                        clientIsLoading={isDocumentsLoading}
+                        clientError={documentsError}
+                        onClientDeleteSuccess={onClientDeleteSuccess}
+                        onReuploadDocument={onReuploadDocument}
+                        onUploadSuccess={onUploadSuccess}
+                      />
+                    </div>
+                  );
+                }
 
-            if (selectedCategory === "submitted") {
-              return (
-                <DocumentsTable
-                  applicationId={applicationId}
-                  isClientView
-                  clientDocumentsData={documentsResponse}
-                  clientIsLoading={isDocumentsLoading}
-                  clientError={documentsError}
-                  onClientDeleteSuccess={onClientDeleteSuccess}
-                  onReuploadDocument={onReuploadDocument}
-                  onUploadSuccess={onUploadSuccess}
-                />
-              );
-            }
+                if (selectedCategory === "submitted") {
+                  return (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h2 className="text-base text-neutral-900"> Your Submitted Documents</h2>
+                        <div className="flex flex-wrap items-center gap-2">
+                        <FacetedFormFilter
+                          type="single"
+                          size="small"
+                          title="Status"
+                          placeholder="Filter by status…"
+                          options={documentStatusOptions}
+                          selected={documentStatusFilter ? [documentStatusFilter] : []}
+                          onSelect={(vals) =>
+                            setDocumentStatusFilter(
+                              (vals[0] as DocumentStatus | undefined) ?? null,
+                            )
+                          }
+                        />
+                        {documentStatusFilter && (
+                          <ButtonV2
+                            variant="secondary"
+                            mode="ghost"
+                            size="2xs"
+                            className="text-xs! font-normal! text-neutral-700"
+                            onClick={() => setDocumentStatusFilter(null)}
+                          >
+                              Reset
+                            </ButtonV2>
+                          )}
+                        </div>
+                      </div>
+                      <DocumentsTable
+                        applicationId={applicationId}
+                        clientLeadId={leadId}
+                        isClientView
+                        clientDocumentsData={filteredDocumentsResponse}
+                        clientIsLoading={isDocumentsLoading}
+                        clientError={documentsError}
+                        onClientDeleteSuccess={onClientDeleteSuccess}
+                        onReuploadDocument={onReuploadDocument}
+                        onUploadSuccess={onUploadSuccess}
+                      />
+                    </div>
+                  );
+                }
 
-            return (
-              <DocumentChecklistTable
-                documents={allDocuments}
-                isLoading={isChecklistLoading}
-                error={checklistError}
-                applicationId={applicationId}
-                selectedCategory={selectedCategory as DocumentCategory}
-                companies={companies}
-                isClientView
-                checklistData={checklistData}
-                checklistState={checklistState}
-                onAddCompany={onAddCompany}
-                onRemoveCompany={onRemoveCompany}
-              />
-            );
-          })()}
+                return (
+                  <DocumentChecklistTable
+                    documents={allDocuments}
+                    isLoading={isChecklistLoading}
+                    error={checklistError}
+                    applicationId={applicationId}
+                    clientLeadId={leadId}
+                    selectedCategory={selectedCategory as DocumentCategory}
+                    companies={companies}
+                    isClientView
+                    checklistData={checklistData}
+                    checklistState={checklistState}
+                    onAddCompany={onAddCompany}
+                    onRemoveCompany={onRemoveCompany}
+                  />
+                );
+              })()}
+            </motion.div>
+          </AnimatePresence>
         </div>
       )}
     </div>

@@ -1,15 +1,10 @@
 "use client";
 
 import { memo, useRef, useState, useEffect } from "react";
-import Link from "next/link";
 import { DocumentCategoryInfo } from "@/types/documents";
 import { CategoryButton } from "./CategoryButton";
-import { AddCompanyButton } from "./AddCompanyButton";
-import { ActionButtons } from "./ActionButtons";
 import { Company } from "@/types/documents";
-import { ChecklistState } from "@/types/checklist";
 import { ChevronRight, ChevronLeft } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import type { Document } from "@/types/applications";
 
 interface CategoryChipsProps {
@@ -24,20 +19,8 @@ interface CategoryChipsProps {
   documents?: Document[];
   categoryCounts?: Record<string, number>;
   disabled: boolean;
-  // Company and action props
   companies: Company[];
   maxCompanies: number;
-  onAddCompany?: () => void;
-  checklistState: ChecklistState;
-  isClientView: boolean;
-  hasCompanyDocuments: boolean;
-  onStartCreatingChecklist?: () => void;
-  onStartEditingChecklist?: () => void;
-  onSaveChecklist?: () => void;
-  onCancelChecklist?: () => void;
-  isSavingChecklist: boolean;
-  checklistActions?: "inline" | "link";
-  applicationId?: string;
 }
 
 export const CategoryChips = memo(function CategoryChips({
@@ -51,17 +34,6 @@ export const CategoryChips = memo(function CategoryChips({
   disabled,
   companies,
   maxCompanies,
-  onAddCompany,
-  checklistState,
-  isClientView,
-  hasCompanyDocuments,
-  onStartCreatingChecklist,
-  onStartEditingChecklist,
-  onSaveChecklist,
-  onCancelChecklist,
-  isSavingChecklist,
-  checklistActions = "inline",
-  applicationId,
 }: CategoryChipsProps) {
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [showLeftArrow, setShowLeftArrow] = useState(false);
@@ -121,42 +93,8 @@ export const CategoryChips = memo(function CategoryChips({
     }
   };
 
-  const useLinkMode =
-    checklistActions === "link" && applicationId && !isClientView;
-  const hasChecklist = checklistState === "saved";
-
   return (
     <div className="hidden md:block">
-      {/* Action Buttons Row */}
-      <div className="flex items-center justify-end gap-2 mb-3">
-        {useLinkMode && (
-          <Button variant="secondary" size="sm" asChild>
-            <Link href={`/v2/applications/${applicationId}/checklist`}>
-              {hasChecklist ? "Edit checklist" : "Create checklist"}
-            </Link>
-          </Button>
-        )}
-        {!useLinkMode && (
-          <ActionButtons
-            isClientView={isClientView}
-            checklistState={checklistState}
-            onStartCreatingChecklist={onStartCreatingChecklist}
-            onStartEditingChecklist={onStartEditingChecklist}
-            onSaveChecklist={onSaveChecklist}
-            onCancelChecklist={onCancelChecklist}
-            isSavingChecklist={isSavingChecklist}
-          />
-        )}
-        <AddCompanyButton
-          checklistState={checklistState}
-          isClientView={isClientView}
-          hasCompanyDocuments={hasCompanyDocuments}
-          companies={companies}
-          maxCompanies={maxCompanies}
-          onAddCompany={onAddCompany}
-        />
-      </div>
-
       {/* Scrollable underline tabs row */}
       <div className="relative border-b border-gray-200">
         <div
