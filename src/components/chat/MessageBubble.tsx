@@ -64,6 +64,9 @@ export function MessageBubble({
 }: MessageBubbleProps) {
   const isDeleted = !!message.deletedAt;
   const hasActions = !isDeleted && (onDelete || onForward);
+  const safeSenderProfileImage = senderProfileImage?.trim()
+    ? senderProfileImage
+    : undefined;
 
   const attachments = message.attachments ?? [];
   const imageAttachments = attachments.filter((a) =>
@@ -122,7 +125,7 @@ export function MessageBubble({
           {showAvatar && (
             <div className="relative h-7 w-7 rounded-full overflow-hidden mt-5">
               <Image
-                src={senderProfileImage ?? getDefaultAvatarSrc(senderId)}
+                src={safeSenderProfileImage ?? getDefaultAvatarSrc(senderId)}
                 alt={senderName}
                 fill
                 className="object-cover"

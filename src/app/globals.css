@@ -69,6 +69,7 @@
   --color-neutral-900: var(--neutral-900);
   --color-neutral-950: var(--neutral-950);
 
+  --color-neutral-1000: var(--neutral-1000);
   --color-neutral-alpha-24: var(--neutral-alpha-24);
   --color-neutral-alpha-16: var(--neutral-alpha-16);
   --color-neutral-alpha-10: var(--neutral-alpha-10);
@@ -83,8 +84,14 @@
   --color-neutral-alpha-800: var(--neutral-alpha-800);
   --color-neutral-alpha-900: var(--neutral-alpha-900);
   --color-neutral-alpha-950: var(--neutral-alpha-950);
+  --color-neutral-alpha-1000: var(--neutral-alpha-1000);
+  --color-overlay: var(--overlay);
 
   --color-blue-950: var(--blue-950);
+  --color-blue-900: var(--blue-900);
+  --color-blue-800: var(--blue-800);
+  --color-blue-700: var(--blue-700);
+  --color-blue-600: var(--blue-600);
   --color-blue-500: var(--blue-500);
   --color-blue-400: var(--blue-400);
   --color-blue-300: var(--blue-300);
@@ -363,19 +370,73 @@
   --color-error: var(--error-base);
 
   /* Custom radius */
+  --radius-4: .25rem;
+  --radius-6: .375rem;
+  --radius-8: .5rem;
   --radius-10: 0.625rem;
+  --radius-12: .75rem;
+  --radius-16: 1rem;
+  --radius-20: 1.25rem;
+  --radius-24: 1.5rem;
+  --radius-full: 999px;
+
+  /* Shadows */
+  --shadow-xs: 0px 1px 2px 0px rgba(10, 13, 20, 0.03);
+  --shadow-sm: 0px 1px 2px 0px #1018280F, 0px 1px 3px 0px #1018281A;
+  --shadow-md: 0px 16px 32px -12px rgba(14, 18, 27, 0.10);
+  --shadow-popover: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-box-xs: 0 0 0 1px rgba(25, 28, 33, 0.04), 0 1px 2px 0 rgba(25, 28, 33, 0.06);
+  --shadow: 0px 16px 32px -12px #0E121B1A;
 
   /* Focus ring shadows */
-  --shadow-button-primary-focus: 0 0 0 3px var(--primary-alpha-24);
-  --shadow-button-error-focus: 0 0 0 3px var(--red-alpha-24);
-  --shadow-button-important-focus: 0 0 0 3px var(--neutral-alpha-24);
+  --shadow-button-primary-focus: 0 0 0 2px var(--color-bg-white), 0 0 0 4px hsl(var(--primary-alpha-10));
+  --shadow-button-important-focus: 0 0 0 2px var(--color-bg-white), 0 0 0 4px hsl(var(--neutral-alpha-16));
+  --shadow-button-error-focus: 0 0 0 2px var(--color-bg-white), 0 0 0 4px hsl(var(--red-alpha-10));
+
+  /* Switch shadows */
+  --shadow-switch-track: 0px 1px 1px 0px hsl(var(--neutral-950) / 0.04) inset, 0px 2px 4px 0px hsl(var(--neutral-950) / 0.04) inset, 0px 0px 0px 0.75px hsl(var(--neutral-950) / 0.06) inset, 0px 0px 8px 0px hsl(var(--neutral-950) / 0.02) inset, 0px 2px 4px 0px hsl(var(--neutral-950) / 0.04);
+  --shadow-switch-track-focus: 0px 0px 0px 1px hsl(var(--neutral-0)), 0px 0px 0px 3px hsl(var(--primary) / 0.6), 0px 1px 1px 0px hsl(var(--neutral-950) / 0.04) inset, 0px 2px 4px 0px hsl(var(--neutral-950) / 0.04) inset, 0px 0px 0px 0.75px hsl(var(--neutral-950) / 0.06) inset, 0px 0px 8px 0px hsl(var(--neutral-950) / 0.02) inset, 0px 2px 4px 0px hsl(var(--neutral-950) / 0.04);
+  --shadow-switch-handle: 0px 0px 2px 1px hsl(var(--neutral-0)) inset, 0px 1px 0px 0px hsl(var(--neutral-0)) inset, 0px 0px 0px 0.5px hsl(var(--neutral-950) / 0.02), 0px 5px 4px 0px hsl(var(--neutral-950) / 0.02), 0px 3px 3px 0px hsl(var(--neutral-950) / 0.04), 0px 1px 2px 0px hsl(var(--neutral-950) / 0.12), 0px 0px 1px 0px hsl(var(--neutral-950) / 0.08);
+  --shadow-switch-track-disabled: 0px 1px 1px 0px hsl(var(--neutral-950) / 0.03) inset, 0px 0px 0px 0.5px hsl(var(--neutral-950) / 0.04) inset;
+  --shadow-switch-handle-disabled: 0px 0px 0px 0.5px hsl(var(--neutral-950) / 0.04), 0px 1px 2px 0px hsl(var(--neutral-950) / 0.06);
 
   /* Typography scale */
+  --text-title-h1: 3.5rem / 4rem;
+  --text-title-h2: 3rem / 3.5rem;
+  --text-title-h3: 2.5rem / 3rem;
+  --text-title-h4: 2rem / 2.5rem;
+  --text-title-h5: 1.5rem / 2rem;
+  --text-title-h6: 1.25rem / 1.75rem;
+
+  --text-label-xl: 1.5rem / 2rem;
+  --text-label-lg: 1.125rem / 1.5rem;
+  --text-label-md: 1rem / 1.5rem;
   --text-label-sm: 0.875rem / 1.25rem;
   --text-label-xs: 0.75rem / 1rem;
-  --text-subheading-2xs: 0.6875rem / 1rem;
-  --text-paragraph-sm: 0.875rem / 1.5rem;
-  --text-paragraph-xs: 0.75rem / 1.25rem;
+  --text-label-2xs: .625rem / 0.875rem;
+
+  --text-paragraph-xl: 1.5rem / 2rem;
+  --text-paragraph-lg: 1.125rem / 1.5rem;
+  --text-paragraph-md: 1rem / 1.5rem;
+  --text-paragraph-sm: 0.875rem / 1.25rem;
+  --text-paragraph-xs: 0.75rem / 1rem;
+  --text-paragraph-2xs: 0.625rem / 0.875rem;
+
+  --text-subheading-md: 1rem / 1.5rem;
+  --text-subheading-sm: .875rem / 1.25rem;
+  --text-subheading-xs: .75rem / 1rem;
+  --text-subheading-2xs: 0.6875rem / .75rem;
+
+  --text-code-xs: 0.75rem / 1rem;
+  --text-code-2xs: 0.625rem / 0.9375rem;
+
+  /* Animations */
+  --animate-pulse-subtle: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-spin-slow: spin-slow 3s linear infinite;
+  --animate-swing: swing 3s ease-in-out;
+  --animate-jingle: jingle 3s ease-in-out;
+  --animate-gradient: gradient 5s ease infinite;
+  --animate-pulse-shadow: pulse-shadow 2s ease-in-out infinite;
 }
 
 :root {
@@ -614,8 +675,14 @@
     --neutral-alpha-800: hsl(0 0% 0% / 0.8);
     --neutral-alpha-900: hsl(231 100% 3% / 0.9);
     --neutral-alpha-950: hsl(219 88% 3% / 0.95);
+    --neutral-1000: hsl(222 32% 4%);
+    --neutral-alpha-1000: hsl(222 32% 4% / 1);
 
     --blue-950: hsl(228 70% 24%);
+    --blue-900: hsl(228 70% 32%);
+    --blue-800: hsl(228 70% 40%);
+    --blue-700: hsl(228 80% 48%);
+    --blue-600: hsl(228 90% 54%);
     --blue-500: hsl(227.94 100% 60%);
     --blue-400: hsl(222.12 100% 70.39%);
     --blue-300: hsl(219.81 100% 79.61%);
@@ -856,6 +923,8 @@
 
     --alert: var(--yellow-500);
 
+    --overlay: hsl(222 32% 8% / 0.6);
+
     --input: var(--neutral-200);
     --ring: var(--novu-500);
 
@@ -864,6 +933,53 @@
     --font-code: "JetBrains Mono";
     --font-code-fallback: monospace;
   }
+
+@keyframes pulse-shadow {
+  0% { box-shadow: 0 0 0 0 hsl(var(--pulse-color)); }
+  70% { box-shadow: 0 0 0 var(--pulse-size, 6px) rgba(255, 82, 82, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+}
+
+@keyframes spin-slow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes gradient {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+@keyframes swing {
+  0%, 9.9%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(3deg); }
+  20% { transform: rotate(-3deg); }
+  30% { transform: rotate(2.25deg); }
+  40% { transform: rotate(-2.25deg); }
+  50% { transform: rotate(1.5deg); }
+  60% { transform: rotate(-1.5deg); }
+  70% { transform: rotate(0.75deg); }
+  80% { transform: rotate(-0.75deg); }
+  90% { transform: rotate(0.3deg); }
+}
+
+@keyframes jingle {
+  0%, 100% { transform: rotate(0deg); }
+  10% { transform: rotate(15deg); }
+  20% { transform: rotate(-15deg); }
+  30% { transform: rotate(11.25deg); }
+  40% { transform: rotate(-11.25deg); }
+  50% { transform: rotate(7.5deg); }
+  60% { transform: rotate(-7.5deg); }
+  70% { transform: rotate(3.75deg); }
+  80% { transform: rotate(-3.75deg); }
+  90% { transform: rotate(1.5deg); }
+}
 
 /* Premium 3D button utility: blue primary */
 .bg-primary-blue {

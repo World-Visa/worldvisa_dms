@@ -1,56 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { IconFolderCode } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Eye, Trash2, Pencil, MoreHorizontal, AlertCircle } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+import { StageDocumentsEmptyState } from "@/components/applications/layouts/StageDocumentsEmptyState";
+import { StageDocumentsHeaderAction } from "@/components/applications/layouts/StageDocumentsHeaderAction";
+import { Stage2DocumentsTable } from "@/components/applications/Stage2DocumentsTable";
 import { toast } from "sonner";
 import {
   useStage2Documents,
   useDeleteStage2Document,
 } from "@/hooks/useStage2Documents";
 import { OutcomeModal } from "@/components/applications/modals/OutcomeModal";
-import { formatDate } from "@/utils/format";
 import type {
   OutcomeLayoutProps,
   Stage2Document,
 } from "@/types/stage2Documents";
-import { getAnzscoCodeByCode } from "@/lib/constants/australianData";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { ErrorState } from "@/components/ui/ErrorState";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
 interface OutcomeLayoutComponentProps extends OutcomeLayoutProps {
   isClientView?: boolean;
@@ -125,144 +90,37 @@ export function OutcomeLayout({
   return (
     <>
       <div className="space-y-4">
-        {isLoading ? (
-          <div className="space-y-3">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-20 w-full" />
-          </div>
-        ) : error ? (
+        {error ? (
           <ErrorState title="Failed to load outcome documents" message="Please try again later." />
-        ) : documents.length === 0 ? (
-          <Empty>
-            <EmptyHeader>
-              <EmptyMedia variant="icon" className="bg-gray-200">
-                <IconFolderCode />
-              </EmptyMedia>
-              <EmptyTitle>No Outcome Yet</EmptyTitle>
-              <EmptyDescription>
-                No outcome documents have been uploaded for this application.
-              </EmptyDescription>
-            </EmptyHeader>
-            {!isClientView && (
-              <EmptyContent>
-                <div className="flex gap-2">
-                  <Button
-                    className="cursor-pointer"
-                    onClick={() => setIsModalOpen(true)}
-                  >
-                    Create Outcome
-                  </Button>
-                </div>
-              </EmptyContent>
-            )}
-          </Empty>
+        ) : !isLoading && documents.length === 0 ? (
+          <StageDocumentsEmptyState
+            title="No Outcome Yet"
+            description="No outcome documents have been uploaded for this application."
+            isClientView={isClientView}
+            createButtonLabel="Create Outcome"
+            onCreate={() => setIsModalOpen(true)}
+            actionButtonClassName="bg-primary-blue"
+          />
         ) : (
           <div>
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-medium">Outcome Documents</h2>
-              {!isClientView && (
-                <div className="flex justify-end">
-                  <Button onClick={() => setIsModalOpen(true)}>
-                    Add Outcome Document
-                  </Button>
-                </div>
-              )}
+              <StageDocumentsHeaderAction
+                isClientView={isClientView}
+                label="Add Outcome Document"
+                onClick={() => setIsModalOpen(true)}
+                buttonClassName="bg-primary-blue"
+              />
             </div>
-            <div className="rounded-md border overflow-x-auto max-h-[60vh] overflow-y-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="sticky top-0 z-10 bg-background shadow-sm">
-                    <TableHead>Document Name</TableHead>
-                    <TableHead>Uploaded By</TableHead>
-                    <TableHead>Uploaded At</TableHead>
-                    <TableHead>Outcome</TableHead>
-                    <TableHead>Outcome Date</TableHead>
-                    <TableHead>Skill Assessing Body</TableHead>
-                    <TableHead className="text-right w-[80px]">
-                      Actions
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {documents.map((document) => (
-                    <TableRow key={document._id}>
-                      <TableCell className="font-medium">
-                        {document.document_name || document.file_name}
-                      </TableCell>
-                      <TableCell>{document.uploaded_by}</TableCell>
-                      <TableCell>
-                        {formatDate(document.uploaded_at, "short")}
-                      </TableCell>
-                      <TableCell>{document.outcome || "N/A"}</TableCell>
-                      <TableCell>
-                        {document.outcome_date
-                          ? formatDate(document.outcome_date, "short")
-                          : "N/A"}
-                      </TableCell>
-                      <TableCell>
-                        {(() => {
-                          const anzscoCode = document.skill_assessing_body;
-                          if (!anzscoCode) return "N/A";
-                          const codeData = getAnzscoCodeByCode(anzscoCode);
-                          if (codeData) {
-                            return `${codeData.anzsco_code} - ${codeData.name} (${codeData.assessing_authority})`;
-                          }
-                          return anzscoCode;
-                        })()}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end">
-                          {isClientView ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleView(document)}
-                              title="View document"
-                            >
-                              View
-                            </Button>
-                          ) : (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  title="Actions"
-                                >
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  onClick={() => handleView(document)}
-                                >
-                                  <Eye className="h-4 w-4 mr-2" />
-                                  View
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleEditClick(document)}
-                                >
-                                  <Pencil className="h-4 w-4 mr-2" />
-                                  Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                  onClick={() => handleDeleteClick(document)}
-                                  variant="destructive"
-                                >
-                                  <Trash2 className="h-4 w-4 mr-2" />
-                                  Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+            <Stage2DocumentsTable
+              type="outcome"
+              documents={documents}
+              isLoading={isLoading}
+              isClientView={isClientView}
+              onView={handleView}
+              onEdit={handleEditClick}
+              onDelete={handleDeleteClick}
+            />
           </div>
         )}
       </div>
@@ -277,31 +135,25 @@ export function OutcomeLayout({
             mode={editingDocument ? "edit" : "create"}
           />
 
-          <AlertDialog
+          <ConfirmationModal
             open={!!documentToDelete}
-            onOpenChange={() => setDocumentToDelete(null)}
-          >
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete the document &quot;
-                  {documentToDelete?.document_name ||
-                    documentToDelete?.file_name}
-                  &quot;. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={handleDeleteConfirm}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+            onOpenChange={(open) => {
+              if (!open) setDocumentToDelete(null);
+            }}
+            onConfirm={handleDeleteConfirm}
+            variant="destructive"
+            confirmText="Delete"
+            isLoading={deleteMutation.isPending}
+            disabled={!documentToDelete}
+            title="Are you sure?"
+            description={
+              <>
+                This will permanently delete the document &quot;
+                {documentToDelete?.document_name || documentToDelete?.file_name}
+                &quot;. This action cannot be undone.
+              </>
+            }
+          />
         </>
       )}
     </>

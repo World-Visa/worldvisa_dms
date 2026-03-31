@@ -8,11 +8,8 @@ import {
   useApplicationsListState,
 } from "@/hooks/useApplicationsListState";
 import { ApplicationsFilterBar } from "@/components/applications/ApplicationsFilters";
-import { ApplicationsPagination } from "@/components/applications/ApplicationsPagination";
-import {
-  ApplicationsTableSkeleton,
-  SearchResultsSkeleton,
-} from "@/components/applications/ApplicationsTableSkeleton";
+import { ApplicationsTableLoadingState } from "@/components/applications/ApplicationsTableLoadingState";
+import { ListNoResults } from "@/components/applications/list-no-results";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
@@ -26,18 +23,17 @@ import type {
   VisaApplication,
 } from "@/types/applications";
 
-/** Minimal shape required from any search hook — only `.data` is consumed. */
-interface SearchableResponse {
-  data: VisaApplication[];
-}
-
 const LazyApplicationsTable = lazy(() =>
   import("@/components/applications/ApplicationsTable").then((module) => ({
     default: module.ApplicationsTable,
   })),
 );
 
-// ─── CountryTabNav (internal) ────────────────────────────────────────────────
+
+interface SearchableResponse {
+  data: VisaApplication[];
+}
+
 
 interface CountryTabNavProps {
   selectedCountry: Country;
@@ -100,7 +96,6 @@ function CountryTabNav({
   );
 }
 
-// ─── ApplicationsListPage ────────────────────────────────────────────────────
 
 interface ApplicationsListPageProps {
   useApplicationsHook: (
@@ -219,6 +214,14 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
       ? isDeadlineLoading
       : isFetching;
 
+  const isEmptySearchResults =
+    isSearchMode &&
+    !isSearchQueryLoading &&
+    (searchData?.data?.length ?? 0) === 0;
+
+  const isEmptyNonSearchResults =
+    !isSearchMode && !displayLoading && (displayData?.data?.length ?? 0) === 0;
+
   return (
     <>
       <CountryTabNav
@@ -270,61 +273,40 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
         />
       )}
 
-      {/* Search results header */}
-      {isSearchMode && (
-        <div className="mb-4">
-          <h3 className="text-lg font-medium text-foreground">
-            Search Results ({searchData?.data?.length ?? 0} results)
-          </h3>
-          <p className="text-sm text-gray-600">
-            Searching for &quot;{searchQuery}&quot; in {searchType}
-          </p>
-          {!isSearchQueryLoading && searchData?.data?.length === 0 && (
-            <div className="mt-4 rounded-lg border border-yellow-200 bg-yellow-50 p-4">
-              <p className="text-sm text-yellow-800">
-                No{type === "spouse" ? " spouse" : ""} applications found
-                matching your search criteria. Try adjusting your search term.
-              </p>
-            </div>
-          )}
+      {isEmptySearchResults ? (
+        <div className="py-16">
+          <ListNoResults
+            title="No matching applications found"
+            description="We couldn't find any applications that match your search criteria. Try adjusting your filters or assign a new application."
+            onClearFilters={handleClearFilters}
+          />
+        </div>
+      ) : isEmptyNonSearchResults ? (
+        <div className="py-16">
+          <ListNoResults
+            title="No applications assigned to you yet"
+            description="Once applications are assigned to you, they'll show up here."
+          />
+        </div>
+      ) : (
+        /* Applications table */
+        <div className="mb-6">
+          <Suspense fallback={<ApplicationsTableLoadingState />}>
+            <LazyApplicationsTable
+              applications={displayData?.data ?? []}
+              currentPage={page}
+              limit={20}
+              isLoading={displayLoading}
+              isSearchMode={isSearchMode}
+              searchResults={searchData?.data ?? []}
+              isSearchLoading={isSearchQueryLoading}
+              isSpouseApplication={isSpouseApplication}
+              totalCount={displayData?.pagination.totalRecords}
+              onPageChange={handlePageChange}
+            />
+          </Suspense>
         </div>
       )}
-
-      {/* Applications table */}
-      <div className="mb-6">
-        <Suspense
-          fallback={
-            isSearchMode ? (
-              <SearchResultsSkeleton />
-            ) : (
-              <ApplicationsTableSkeleton />
-            )
-          }
-        >
-          <LazyApplicationsTable
-            applications={displayData?.data ?? []}
-            currentPage={page}
-            limit={20}
-            isLoading={displayLoading}
-            isSearchMode={isSearchMode}
-            searchResults={searchData?.data ?? []}
-            isSearchLoading={isSearchQueryLoading}
-            isSpouseApplication={isSpouseApplication}
-          />
-        </Suspense>
-      </div>
-
-      {/* Pagination */}
-      {!isSearchMode &&
-        displayData &&
-        displayData.pagination.totalPages > 1 && (
-          <ApplicationsPagination
-            currentPage={page}
-            totalRecords={displayData.pagination.totalRecords}
-            limit={20}
-            onPageChange={handlePageChange}
-          />
-        )}
     </>
   );
 });

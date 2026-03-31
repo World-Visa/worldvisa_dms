@@ -7,12 +7,13 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "../ui/button";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { InlineToast } from "@/components/ui/primitives/inline-toast";
 import DocumentComments from "./DocumentComments";
 import CommentErrorBoundary from "./CommentErrorBoundary";
 import DocumentPreview from "./DocumentPreview";
 import DocumentStatusButtons from "./DocumentStatusButtons";
 import DocumentStatusDisplay from "./DocumentStatusDisplay";
+import { ReuploadDocumentModal } from "./ReuploadDocumentModal";
 import { SendDocumentModal } from "./SendDocumentModal";
 import {
   User,
@@ -20,7 +21,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Upload,
-  AlertCircle,
 } from "lucide-react";
 import { Document } from "@/types/applications";
 import { useDocumentData } from "@/hooks/useDocumentData";
@@ -34,11 +34,7 @@ interface ViewDocumentSheetProps {
   isOpen?: boolean;
   onClose?: () => void;
   isClientView?: boolean;
-  onReuploadDocument?: (
-    documentId: string,
-    documentType: string,
-    category: string,
-  ) => void;
+  hideTrigger?: boolean;
   documentType?: string;
   category?: string;
 }
@@ -50,10 +46,11 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   isOpen,
   onClose,
   isClientView = false,
-  onReuploadDocument,
+  hideTrigger = false,
   documentType,
   category,
 }) => {
+  const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
   const finalDocumentType =
     documentType || document.document_type || "Document";
   const finalCategory =
@@ -142,6 +139,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   }, [isOpen, documents.length]);
 
   if (!displayDoc || documents.length === 0) {
+    if (hideTrigger) return null;
     return (
       <Button variant="link" size="sm" className="cursor-pointer" disabled>
         view
@@ -150,13 +148,15 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   }
 
   return (
-    <div className="w-full">
+    <>
       <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetTrigger asChild>
-          <Button variant="link" size="sm" className="cursor-pointer">
-            view
-          </Button>
-        </SheetTrigger>
+        {!hideTrigger && (
+          <SheetTrigger asChild>
+            <Button variant="link" size="sm" className="cursor-pointer">
+              view
+            </Button>
+          </SheetTrigger>
+        )}
         <SheetContent className="inset-3! sm:inset-5! lg:inset-7! h-auto! w-auto! max-w-[1140px]! translate-x-0! translate-y-0! mx-auto rounded-2xl border border-border/50 shadow-2xl p-0">
           <div className="flex flex-col h-full overflow-hidden rounded-2xl">
             {/* Header */}
@@ -226,17 +226,15 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
               <div className="flex-1 flex flex-col min-h-0 order-1">
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
                   {checklistMeta?.importantNote && (
-                    <Alert className="bg-destructive/5 border-destructive/20 text-destructive rounded-xl">
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription className="space-y-1">
-                        <p className="text-xs font-semibold uppercase tracking-wide">
-                          Important
-                        </p>
-                        <p className="text-xs font-medium whitespace-pre-line">
+                    <InlineToast
+                      variant="warning"
+                      title="Important"
+                      description={
+                        <span className="whitespace-pre-line">
                           {checklistMeta.importantNote}
-                        </p>
-                      </AlertDescription>
-                    </Alert>
+                        </span>
+                      }
+                    />
                   )}
 
                   <DocumentPreview document={displayDoc} />
@@ -246,34 +244,29 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                     isClientView={isClientView}
                   />
 
-                  {displayDoc.status === "rejected" && onReuploadDocument && (
-                    <div>
+                </div>
+
+                {/* Fixed bottom action bar */}
+                {(!isClientView || displayDoc.status === "rejected") && (
+                  <div className="border-t border-border/40 px-6 py-3 shrink-0 flex items-center justify-between gap-4">
+                    <div className="flex-1">
+                      {!isClientView && (
+                        <DocumentStatusButtons
+                          document={displayDoc}
+                          applicationId={applicationId}
+                        />
+                      )}
+                    </div>
+                    {displayDoc.status === "rejected" && (
                       <Button
-                        onClick={() =>
-                          onReuploadDocument(
-                            displayDoc._id,
-                            finalDocumentType,
-                            finalCategory,
-                          )
-                        }
-                        variant="outline"
+                        onClick={() => setIsReuploadModalOpen(true)}
                         size="sm"
-                        className="gap-2 text-orange-600 border-orange-200 hover:bg-orange-50 cursor-pointer"
+                        className="gap-2 shrink-0 cursor-pointer"
                       >
                         <Upload className="h-4 w-4" />
                         Reupload Document
                       </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* Fixed bottom action bar */}
-                {!isClientView && (
-                  <div className="border-t border-border/40 px-6 py-3 shrink-0">
-                    <DocumentStatusButtons
-                      document={displayDoc}
-                      applicationId={applicationId}
-                    />
+                    )}
                   </div>
                 )}
               </div>
@@ -294,7 +287,17 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
           </div>
         </SheetContent>
       </Sheet>
-    </div>
+
+      <ReuploadDocumentModal
+        isOpen={isReuploadModalOpen}
+        onClose={() => setIsReuploadModalOpen(false)}
+        applicationId={applicationId}
+        document={displayDoc}
+        documentType={finalDocumentType}
+        category={finalCategory}
+        isClientView={isClientView}
+      />
+    </>
   );
 };
 

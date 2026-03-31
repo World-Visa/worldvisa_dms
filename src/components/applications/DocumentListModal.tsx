@@ -309,7 +309,6 @@ export function DocumentListModal({
           applicationId={applicationId}
           isOpen={viewSheetOpen}
           onClose={handleCloseViewSheet}
-          onReuploadDocument={onReuploadDocument}
           documentType={documentType}
           category={category}
           isClientView={isClientView}

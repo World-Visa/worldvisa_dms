@@ -1,44 +1,46 @@
 "use client";
 
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { HighlightText } from "@/components/ui/HighlightText";
-import { TableCell, TableRow } from "@/components/ui/table";
-import { useChecklistMutations } from "@/hooks/useChecklist";
-import { cn } from "@/lib/utils";
-import { Document } from "@/types/applications";
-import type {
-  ChecklistDocument,
-  ChecklistState,
-  DocumentRequirement,
-} from "@/types/checklist";
-import {
-  Check,
-  Eye,
-  FileText,
-  MessageCircle,
-  Plus,
-  Upload,
-  FileCheck,
-} from "lucide-react";
 import { memo, useState } from "react";
-import { CommentIcon } from "../CommentIcon";
-import { RejectionMessageDisplay } from "../RejectionMessageDisplay";
-import { DescriptionModal } from "./DescriptionModal";
-import { DescriptionDialog } from "./DescriptionDialog";
-import { RequirementSelector } from "./RequirementSelector";
-import { SampleDocumentModal } from "../SampleDocumentModal";
+import Image from "next/image";
+import { AnimatePresence, motion } from "motion/react";
 import {
-  useHasSampleDocument,
-  useDownloadSampleDocument,
-} from "@/hooks/useSampleDocuments";
+  RiArrowRightSLine,
+  RiCloseCircleLine,
+  RiFileTextLine,
+  RiMore2Fill,
+  RiTimeLine,
+  RiUploadLine,
+} from "react-icons/ri";
+import { TableCell, TableRow } from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/primitives/dropdown-menu";
+import { CompactButton } from "@/components/ui/primitives/button-compact";
+import {
+  StatusBadge,
+  StatusBadgeIcon,
+} from "@/components/ui/primitives/status-badge";
+import { Badge } from "@/components/ui/primitives/badge";
+import { HighlightText } from "@/components/ui/HighlightText";
+import { CommentIcon } from "@/components/applications/CommentIcon";
+import { DocumentRejectedPopover } from "@/components/ui/primitives/document-rejected-popover";
+import TruncatedText from "@/components/ui/truncated-text";
+import { DescriptionDialog } from "./DescriptionDialog";
+import { ChecklistTableSubRow } from "./ChecklistTableSubRow";
+import { Document } from "@/types/applications";
+import type { DocumentRequirement } from "@/types/checklist";
+import { cn } from "@/lib/utils";
+import { DOCUMENT_STATUS_BADGE } from "@/lib/constants/documents";
 
 interface ChecklistTableItem {
   category: string;
   documentType: string;
   isUploaded: boolean;
-  uploadedDocument?: unknown;
-
+  uploadedDocument?: Document | unknown;
   requirement?: DocumentRequirement;
   isSelected?: boolean;
   company_name?: string;
@@ -59,672 +61,330 @@ interface ChecklistTableRowProps {
   item: ChecklistTableItem;
   index: number;
   startIndex: number;
-  searchQuery: string;
-  checklistState: ChecklistState;
-  activeTab: "current" | "available";
-  selectedCategory: string;
-  applicationId: string;
+  searchQuery?: string;
   isClientView?: boolean;
-  onUpdateDocumentRequirement?: (
-    category: string,
-    documentType: string,
-    requirement: DocumentRequirement,
-  ) => void;
-  onAddToPendingChanges?: (document: ChecklistDocument) => void;
-  onAddToPendingDeletions?: (checklistId: string) => void;
-  onRemoveFromPendingChanges?: (document: ChecklistDocument) => void;
-  onRemoveFromPendingDeletions?: (checklistId: string) => void;
-  onSavePendingChanges?: () => Promise<void>;
-  onClearPendingChanges?: () => void;
-  pendingDeletions: string[];
-  handleViewDocuments: (documentType: string, companyCategory?: string) => void;
-  handleUploadClick: (documentType: string, category: string) => void;
-  handleReuploadClick: (
-    documentId: string,
-    documentType: string,
-    category: string,
-  ) => void;
-  handleViewRejectionDetails: (
-    document: Document,
-    documentType: string,
-    category: string,
-  ) => void;
-  getCategoryBadgeStyle: (category: string) => string;
-  // Loading states
-  isAddingDocument?: boolean;
-  addingDocumentId?: string;
-  isBatchDeleting?: boolean;
-  // Success states
-  isDocumentAdded?: boolean;
-  addedDocumentId?: string;
-  // Comment counts
+  applicationId: string;
+  onViewDocuments: (documentType: string, companyCategory?: string) => void;
+  onUpload: (documentType: string, category: string) => void;
+  onReupload: (documentId: string, documentType: string, category: string) => void;
+  onViewRejection?: (document: Document, documentType: string, category: string) => void;
   commentCounts?: Record<string, number>;
-  // Document counts
   documentCounts?: Record<string, number>;
+  uploadedDocuments?: Document[];
+  allowedDocumentCount?: number;
 }
 
 export const ChecklistTableRow = memo(function ChecklistTableRow({
   item,
-  index,
-  startIndex,
   searchQuery,
-  checklistState,
-  activeTab,
-  onUpdateDocumentRequirement,
-  onAddToPendingChanges,
-  onAddToPendingDeletions,
-  pendingDeletions,
-  handleViewDocuments,
-  handleUploadClick,
-  handleReuploadClick,
-  handleViewRejectionDetails,
-  getCategoryBadgeStyle,
-  // Loading states
-  isAddingDocument = false,
-  addingDocumentId,
-  isBatchDeleting = false,
-  // Success states
-  isDocumentAdded = false,
-  addedDocumentId,
-  // Comment counts
-  commentCounts = {},
-  // Document counts
-  documentCounts = {},
+  isClientView,
   applicationId,
-  isClientView = false,
+  onViewDocuments,
+  onUpload,
+  onReupload,
+  commentCounts = {},
+  documentCounts = {},
+  uploadedDocuments = [],
+  allowedDocumentCount,
 }: ChecklistTableRowProps) {
-  const { updateItemDescription } = useChecklistMutations(applicationId);
-  const [showCommentModal, setShowCommentModal] = useState(false);
-  const [currentChecklistId, setCurrentChecklistId] = useState("");
-  const [mode, setMode] = useState<"view" | "edit">("edit");
   const [showDescriptionDialog, setShowDescriptionDialog] = useState(false);
-  const [showSampleModal, setShowSampleModal] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleUpdateDescription = async (description: string) => {
-    if (!currentChecklistId) {
-      throw new Error("No checklist ID available");
-    }
+  const uploadedDoc = item.uploadedDocument as Document | undefined;
+  const isRejected = item.documentStatus === "rejected";
+  const docCount = documentCounts[`${item.documentType}_${item.category || "default"}`] ?? 0;
+  const isOverLimit = allowedDocumentCount !== undefined && docCount > allowedDocumentCount;
+  const isExpandable = uploadedDocuments.length > 0;
 
-    await updateItemDescription.mutateAsync({
-      checklist_id: currentChecklistId,
-      description,
-    });
+  const documentType = item.documentType || uploadedDoc?.document_type || "Document";
+  const category = item.category || uploadedDoc?.document_category || "Other Documents";
+
+  const handleViewDocuments = () => onViewDocuments(documentType, category);
+  const handleUpload = () => onUpload(item.documentType, item.category);
+  const handleReupload = () => {
+    if (uploadedDoc?._id) onReupload(uploadedDoc._id, documentType, category);
   };
 
-  const handleOpenModal = () => {
-    setCurrentChecklistId(item.checklist_id!);
-    setMode("edit");
-    setShowCommentModal(true);
-  };
-
-  const truncateText = (text: string, length = 40) => {
-    if (text.length <= length) return text;
-    return text.slice(0, length) + "...";
-  };
-
-  const getStatusBadgeStyle = (status: string): string => {
-    switch (status) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800 hover:bg-yellow-200";
-      case "reviewed":
-        return "bg-blue-100 text-blue-800 hover:bg-blue-200";
-      case "approved":
-        return "bg-green-600 text-white hover:bg-green-700";
-      case "rejected":
-        return "bg-red-100 text-red-800 hover:bg-red-200";
-      default:
-        return "bg-gray-100 text-gray-800 hover:bg-gray-200";
-    }
-  };
-
-  const capitalize = (text: string): string => {
-    return text.charAt(0).toUpperCase() + text.slice(1);
-  };
-
-  // Check if this document type has a sample document available
-  const { data: hasSampleDocument = false } = useHasSampleDocument({
-    documentType: item.documentType,
-    category: item.category,
-    enabled: true,
-  });
-
-  const { downloadSample } = useDownloadSampleDocument();
-
-  const handleViewSample = () => {
-    setShowSampleModal(true);
+  const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
+  const toggleExpand = () => {
+    if (isExpandable) setIsExpanded((v) => !v);
   };
 
   return (
     <>
       <TableRow
-        key={`${item.category}-${item.documentType}-${item.checklist_id || "new"}-${index}`}
+        className={cn(
+          "transition-colors duration-200",
+          isExpanded && isExpandable && "[&>td]:border-b-0",
+          isExpanded && "bg-neutral-50/40",
+        )}
+        onClick={toggleExpand}
+        style={{ cursor: isExpandable ? "pointer" : "default" }}
       >
-        <TableCell className="font-medium w-16">
-          {startIndex + index + 1}
-        </TableCell>
-        <TableCell className="hidden sm:table-cell">
-          <Badge
-            variant="default"
-            className={cn(
-              "text-xs py-1 text-white ",
-              getCategoryBadgeStyle(item.category),
-            )}
-          >
-            {item.category}
-          </Badge>
-        </TableCell>
+        {/* Document Name */}
         <TableCell>
-          <div className="flex flex-col space-y-1">
-            <div className="flex items-center space-x-2">
-              <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-              <div className="" title={item.documentType}>
+          <div className="flex items-center gap-2">
+            {/* Animated chevron */}
+            {isExpandable ? (
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); toggleExpand(); }}
+                className="text-neutral-400 hover:text-neutral-600 shrink-0"
+                aria-label={isExpanded ? "Collapse documents" : "Expand documents"}
+              >
+                <motion.span
+                  animate={{ rotate: isExpanded ? 90 : 0 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 28 }}
+                  className="flex"
+                >
+                  <RiArrowRightSLine size={16} />
+                </motion.span>
+              </button>
+            ) : (
+              <span className="w-4 shrink-0" />
+            )}
+
+            {/* Folder icon — always shown for expandable rows */}
+            {isExpandable ? (
+              <AnimatePresence mode="wait" initial={false}>
+                <motion.span
+                  key={isExpanded ? "open" : "closed"}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.08, ease: "easeOut" }}
+                  className="shrink-0"
+                >
+                  {isExpanded ? (
+                    <Image
+                      src="/icons/document-tree/folder-open-icon.png"
+                      width={34}
+                      height={40}
+                      alt=""
+                    />
+                  ) : (
+                    <div className="relative">
+                      <Image
+                        src="/icons/document-tree/folder-close-icon.png"
+                        width={34}
+                        height={40}
+                        alt=""
+                      />
+                      <span className="absolute -bottom-0.5 -right-1 min-w-[14px] h-[14px] flex items-center justify-center rounded-full bg-neutral-600 text-white text-[9px] font-semibold leading-none px-0.5 tabular-nums">
+                        {uploadedDocuments.length}
+                      </span>
+                    </div>
+                  )}
+                </motion.span>
+              </AnimatePresence>
+            ) : (
+              <div className="shrink-0 flex items-center justify-center" style={{ width: 34, height: 40 }}>
+                <Image
+                  src="/icons/document-tree/folder-empty-icon.png"
+                  width={46}
+                  height={56}
+                  alt=""
+                  className="object-contain"
+                />
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1 min-w-0">
+              <div className="flex items-center gap-2 flex-wrap">
                 <HighlightText
                   text={item.documentType}
                   query={searchQuery}
-                  className="text-sm"
+                  className="text-sm font-medium"
                 />
-              </div>
-            </div>
-
-            {/* Description section */}
-            {item.description && item.description.trim() && (
-              <div className="ml-6">
-                {checklistState === "editing" ? (
-                  <Button
-                    onClick={handleOpenModal}
-                    className="flex items-center gap-1 px-2 py-1 h-6 text-xs bg-gray-100 hover:bg-gray-200 cursor-pointer text-black border-gray-500"
-                  >
-                    Edit Description
-                  </Button>
-                ) : (
-                  <div className="text-xs text-muted-foreground">
-                    <p className="inline">
-                      {truncateText(item.description, 50)}
-                      {item.description.trim().length > 50 && "..."}
-                    </p>
-                    {item.description.trim().length > 50 && (
-                      <button
-                        onClick={() => setShowDescriptionDialog(true)}
-                        className="ml-1 text-blue-600 text-xs underline hover:text-blue-800"
-                      >
-                        Read more
-                      </button>
+                {/* Count pill — only shown when no folder icon (non-expandable rows) */}
+                {!isExpandable && (docCount > 0 || allowedDocumentCount !== undefined) && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center text-xs px-1.5 py-0.5 rounded-md font-medium tabular-nums",
+                      isOverLimit
+                        ? "bg-error-lighter text-error-base"
+                        : "bg-neutral-100 text-neutral-600",
                     )}
-                  </div>
+                  >
+                    {docCount}
+                    {allowedDocumentCount !== undefined ? `/${allowedDocumentCount}` : ""}
+                  </span>
                 )}
               </div>
-            )}
 
-            {checklistState === "editing" &&
-              (!item.description || !item.description.trim()) && (
-                <div className="ml-6">
-                  <Button
-                    onClick={handleOpenModal}
-                    className="flex items-center gap-1 px-2 py-1 h-6 text-xs bg-gray-100 hover:bg-gray-200 cursor-pointer text-black border-gray-500"
-                  >
-                    Add Description
-                  </Button>
+              {/* Description — read-only */}
+              {item.description?.trim() && (
+                <div className="text-xs text-text-sub">
+                  <span>
+                    {item.description.length > 50
+                      ? `${item.description.slice(0, 50)}…`
+                      : item.description}
+                  </span>
+                  {item.description.trim().length > 50 && (
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setShowDescriptionDialog(true); }}
+                      className="ml-1 text-xs text-primary underline hover:text-primary/80"
+                    >
+                      Read more
+                    </button>
+                  )}
                 </div>
               )}
-            {/* Show category on mobile */}
-            <div className="sm:hidden">
-              <Badge
-                variant="default"
-                className={cn(
-                  "text-xs py-0.5 text-white",
-                  getCategoryBadgeStyle(item.category),
+
+              {/* Mobile-only status */}
+              <div className="md:hidden flex flex-wrap gap-1 mt-0.5">
+                <Badge variant="lighter" color="purple" size="md">
+                  <TruncatedText className="max-w-[20ch]">{item.category}</TruncatedText>
+                </Badge>
+                {!isExpanded && (
+                  item.isUploaded ? (
+                    isRejected ? (
+                      <DocumentRejectedPopover rejectMessage={item.rejectedRemark ?? "No reason provided"}>
+                        <StatusBadge variant="light" status="failed">
+                          <StatusBadgeIcon as={RiCloseCircleLine} />
+                          Rejected
+                        </StatusBadge>
+                      </DocumentRejectedPopover>
+                    ) : (
+                      <StatusBadge variant="light" status="completed">
+                        <StatusBadgeIcon as={DOCUMENT_STATUS_BADGE.uploaded.icon} />
+                        Uploaded
+                      </StatusBadge>
+                    )
+                  ) : (
+                    <StatusBadge variant="light" status="disabled">
+                      <StatusBadgeIcon as={RiTimeLine} />
+                      Not Uploaded
+                    </StatusBadge>
+                  )
                 )}
-              >
-                {item.category}
-              </Badge>
-            </div>
-            {/* Show status on mobile */}
-            <div className="md:hidden flex flex-wrap gap-1">
-              {item.isUploaded ? (
-                <Badge
-                  variant="default"
-                  className={cn(
-                    "text-xs px-1.5 py-0.5 w-fit",
-                    item.documentStatus === "rejected"
-                      ? "bg-red-100 text-red-800 hover:bg-red-200"
-                      : "bg-green-100 text-green-800 hover:bg-green-200",
-                  )}
-                >
-                  {item.documentStatus === "rejected" ? "Rejected" : "Uploaded"}
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="text-muted-foreground text-xs px-1.5 py-0.5 w-fit"
-                >
-                  Not Uploaded
-                </Badge>
-              )}
-              {/* Show requirement status */}
-              {item.requirement && item.requirement !== "not_required" && (
-                <Badge
-                  variant="default"
-                  className={cn(
-                    "text-xs px-1.5 py-0.5 w-fit",
-                    item.requirement === "mandatory"
-                      ? "bg-red-100 text-red-800 hover:bg-red-200"
-                      : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
-                  )}
-                >
-                  {item.requirement === "mandatory" ? "Mandatory" : "Optional"}
-                </Badge>
-              )}
-              {/* Show document status when count equals 1 */}
-              {(() => {
-                const documentCount =
-                  documentCounts[
-                    `${item.documentType}_${item.category || "default"}`
-                  ] || 0;
-                const shouldShowStatus =
-                  documentCount === 1 && item.isUploaded && item.documentStatus;
-
-                return shouldShowStatus &&
-                  item.documentStatus &&
-                  item.documentStatus !== "rejected" ? (
-                  <Badge
-                    variant="default"
-                    className={cn(
-                      "text-xs px-1.5 py-0.5 w-fit",
-                      getStatusBadgeStyle(item.documentStatus),
-                    )}
-                  >
-                    {capitalize(item.documentStatus)}
-                  </Badge>
-                ) : null;
-              })()}
-            </div>
-          </div>
-        </TableCell>
-        <TableCell className="hidden md:table-cell">
-          <div className="flex flex-col gap-2">
-            <div className="flex flex-wrap gap-1">
-              {item.isUploaded ? (
-                <Badge
-                  variant="default"
-                  className={cn(
-                    "text-xs px-1.5 py-0.5 w-fit",
-                    item.documentStatus === "rejected"
-                      ? "bg-red-100 text-red-800 hover:bg-red-200"
-                      : "bg-green-100 text-green-800 hover:bg-green-200",
-                  )}
-                >
-                  {item.documentStatus === "rejected" ? "Rejected" : "Uploaded"}
-                </Badge>
-              ) : (
-                <Badge
-                  variant="outline"
-                  className="text-muted-foreground text-xs px-1.5 py-0.5 w-fit"
-                >
-                  Not Uploaded
-                </Badge>
-              )}
-              {/* Show requirement status */}
-              {item.requirement && item.requirement !== "not_required" && (
-                <Badge
-                  variant="default"
-                  className={cn(
-                    "text-xs px-1.5 py-0.5 w-fit",
-                    item.requirement === "mandatory"
-                      ? "bg-red-100 text-red-800 hover:bg-red-200"
-                      : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200",
-                  )}
-                >
-                  {item.requirement === "mandatory" ? "Mandatory" : "Optional"}
-                </Badge>
-              )}
-              {/* Show document status when count equals 1 */}
-              {(() => {
-                const documentCount =
-                  documentCounts[
-                    `${item.documentType}_${item.category || "default"}`
-                  ] || 0;
-                const shouldShowStatus =
-                  documentCount === 1 && item.isUploaded && item.documentStatus;
-
-                return shouldShowStatus &&
-                  item.documentStatus &&
-                  item.documentStatus !== "rejected" ? (
-                  <Badge
-                    variant="default"
-                    className={cn(
-                      "text-xs px-1.5 py-0.5 w-fit",
-                      getStatusBadgeStyle(item.documentStatus),
-                    )}
-                  >
-                    {capitalize(item.documentStatus)}
-                  </Badge>
-                ) : null;
-              })()}
-            </div>
-            {/* Show rejected remark on desktop */}
-            {item.documentStatus === "rejected" && item.rejectedRemark && (
-              <div className="max-w-xs">
-                <RejectionMessageDisplay
-                  message={item.rejectedRemark}
-                  maxLength={80}
-                  onReadMore={() => {
-                    const uploadedDoc = item.uploadedDocument as Document;
-                    if (uploadedDoc) {
-                      const documentType =
-                        item.documentType ||
-                        uploadedDoc.document_type ||
-                        "Document";
-                      const category =
-                        item.category ||
-                        uploadedDoc.document_category ||
-                        "Other Documents";
-                      handleViewRejectionDetails(
-                        uploadedDoc,
-                        documentType,
-                        category,
-                      );
-                    }
-                  }}
-                  showReadMoreButton={item.rejectedRemark.length > 80}
-                />
               </div>
-            )}
+            </div>
           </div>
         </TableCell>
+
+        {/* Status — hidden when expanded */}
+        <TableCell className="hidden md:table-cell">
+          {isExpanded ? (
+            <span className="text-text-soft text-sm">—</span>
+          ) : item.isUploaded ? (
+            isRejected ? (
+              <DocumentRejectedPopover rejectMessage={item.rejectedRemark ?? "No reason provided"}>
+                <StatusBadge variant="light" status="failed">
+                  <StatusBadgeIcon as={RiCloseCircleLine} />
+                  Rejected
+                </StatusBadge>
+              </DocumentRejectedPopover>
+            ) : (
+              <StatusBadge variant="light" status="completed">
+                <StatusBadgeIcon as={DOCUMENT_STATUS_BADGE.uploaded.icon} />
+                Uploaded
+              </StatusBadge>
+            )
+          ) : (
+            <StatusBadge variant="light" status="disabled">
+              <StatusBadgeIcon as={RiTimeLine} />
+              Not Uploaded
+            </StatusBadge>
+          )}
+        </TableCell>
+
+        {/* Requirement — hidden when expanded */}
+        <TableCell className="hidden md:table-cell">
+          {isExpanded ? (
+            <span className="text-text-soft text-sm">—</span>
+          ) : item.requirement === "mandatory" ? (
+            <Badge variant="lighter" color="red" size="md">Mandatory</Badge>
+          ) : item.requirement === "optional" ? (
+            <Badge variant="lighter" color="yellow" size="md">Optional</Badge>
+          ) : (
+            <span className="text-text-soft text-sm">—</span>
+          )}
+        </TableCell>
+
+        {/* Comments — hidden when expanded */}
         <TableCell className="w-20">
-          {item.isUploaded && item.uploadedDocument ? (
+          {isExpanded ? (
+            <span className="text-xs text-text-soft">—</span>
+          ) : item.isUploaded && uploadedDoc ? (
             <CommentIcon
-              documentId={(item.uploadedDocument as Document)._id}
-              commentCount={
-                commentCounts[(item.uploadedDocument as Document)._id] || 0
-              }
+              documentId={uploadedDoc._id}
+              commentCount={commentCounts[uploadedDoc._id] ?? 0}
               size="sm"
             />
           ) : (
-            <div className="flex items-center gap-1">
-              <MessageCircle className="h-3 w-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">0</span>
-            </div>
+            <span className="text-xs text-text-soft">0</span>
           )}
         </TableCell>
-        <TableCell className="w-20 text-center">
-          {hasSampleDocument ? (
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleViewSample}
-              className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
-              title="View Sample Document"
-            >
-              <FileCheck className="h-3 w-3" />
-              <span className="hidden sm:inline">Sample</span>
-            </Button>
-          ) : (
-            <div className="flex items-center justify-center">
-              <span className="text-xs text-muted-foreground">-</span>
-            </div>
-          )}
-        </TableCell>
-        <TableCell className="text-right w-24">
-          <div className="flex items-center justify-end gap-1">
-            {/* Show different actions based on checklist state */}
-            {checklistState === "creating" ? (
-              // Creating mode: Show requirement selector
-              <div className="w-32">
-                <RequirementSelector
-                  value={item.requirement || "not_required"}
-                  onChange={(requirement) =>
-                    onUpdateDocumentRequirement?.(
-                      item.category,
-                      item.documentType,
-                      requirement,
-                    )
-                  }
-                />
-              </div>
-            ) : checklistState === "editing" ? (
-              // Editing mode: Show different actions based on tab
-              activeTab === "current" ? (
-                // Current checklist tab: Show delete button
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    // Add to pending deletions
-                    if (item.checklist_id && onAddToPendingDeletions) {
-                      onAddToPendingDeletions(item.checklist_id);
-                    }
-                  }}
-                  disabled={isBatchDeleting}
-                  className={cn(
-                    "flex items-center gap-1 px-2 py-1 h-7 text-xs disabled:opacity-50",
-                    pendingDeletions.includes(item.checklist_id || "")
-                      ? "bg-red-50 border-red-300 text-red-700 hover:bg-red-100"
-                      : "text-red-600 hover:text-red-700",
-                  )}
-                >
-                  {isBatchDeleting ? (
-                    <>
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-red-600"></div>
-                      <span className="hidden sm:inline">Deleting...</span>
-                    </>
-                  ) : pendingDeletions.includes(item.checklist_id || "") ? (
-                    <>
-                      <div className="animate-pulse rounded-full h-3 w-3 bg-red-600"></div>
-                      <span className="hidden sm:inline">Pending</span>
-                    </>
-                  ) : (
-                    <span>Delete</span>
-                  )}
-                </Button>
-              ) : (
-                // Available documents tab: Show requirement selector and add button
-                <div className="flex items-center gap-2">
-                  <div className="w-24">
-                    <RequirementSelector
-                      value={item.requirement || "not_required"}
-                      onChange={(requirement) =>
-                        onUpdateDocumentRequirement?.(
-                          item.category,
-                          item.documentType,
-                          requirement,
-                        )
-                      }
-                    />
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => onAddToPendingChanges?.(item)}
-                    className={cn(
-                      "flex items-center gap-1 px-2 py-1 h-7 text-xs",
-                      isDocumentAdded &&
-                        addedDocumentId ===
-                          `${item.category}-${item.documentType}` &&
-                        "bg-green-50 border-green-200 text-green-700 hover:bg-green-100",
-                    )}
-                    disabled={
-                      item.requirement === "not_required" ||
-                      isAddingDocument ||
-                      (isDocumentAdded &&
-                        addedDocumentId ===
-                          `${item.category}-${item.documentType}`)
-                    }
+
+        {/* Actions */}
+        <TableCell className="text-right w-20" onClick={stopPropagation}>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <CompactButton icon={RiMore2Fill} variant="ghost" />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-46">
+              <DropdownMenuGroup>
+                {item.isUploaded && !isExpandable && (
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={handleViewDocuments}
                   >
-                    {isAddingDocument &&
-                    addingDocumentId ===
-                      `${item.category}-${item.documentType}` ? (
-                      <>
-                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
-                        <span className="hidden sm:inline">Adding...</span>
-                      </>
-                    ) : isDocumentAdded &&
-                      addedDocumentId ===
-                        `${item.category}-${item.documentType}` ? (
-                      <>
-                        <Check className="h-3 w-3" />
-                        <span className="hidden sm:inline">Added</span>
-                      </>
-                    ) : (
-                      <>
-                        <Plus className="h-3 w-3" />
-                        <span className="hidden sm:inline">Add</span>
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )
-            ) : (
-              // Default mode: Show upload/view/reupload buttons
-              <>
-                {item.isUploaded && item.documentStatus !== "rejected" && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const uploadedDoc = item.uploadedDocument as Document;
-                        const documentType =
-                          item.documentType ||
-                          uploadedDoc?.document_type ||
-                          "Document";
-                        const category =
-                          item.category ||
-                          uploadedDoc?.document_category ||
-                          "Other Documents";
-                        handleViewDocuments(documentType, category);
-                      }}
-                      className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
-                    >
-                      <Eye className="h-3 w-3" />
-                      <span className="hidden sm:inline">
-                        View
-                        {documentCounts[
-                          `${item.documentType}_${item.category || "default"}`
-                        ] > 0
-                          ? ` (${documentCounts[`${item.documentType}_${item.category || "default"}`]})`
-                          : ""}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        handleUploadClick(item.documentType, item.category)
-                      }
-                      className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
-                    >
-                      <Upload className="h-3 w-3" />
-                      <span className="hidden sm:inline">Upload</span>
-                    </Button>
-                  </div>
+                    <RiFileTextLine />
+                    View Document{docCount > 0 ? ` (${docCount})` : ""}
+                  </DropdownMenuItem>
                 )}
-                {item.isUploaded && item.documentStatus === "rejected" && (
-                  <div className="flex items-center gap-1">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const uploadedDoc = item.uploadedDocument as Document;
-                        const documentType =
-                          item.documentType ||
-                          uploadedDoc?.document_type ||
-                          "Document";
-                        const category =
-                          item.category ||
-                          uploadedDoc?.document_category ||
-                          "Other Documents";
-                        handleViewDocuments(documentType, category);
-                      }}
-                      className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
-                    >
-                      <Eye className="h-3 w-3" />
-                      <span className="hidden sm:inline">
-                        View
-                        {documentCounts[
-                          `${item.documentType}_${item.category || "default"}`
-                        ] > 0
-                          ? ` (${documentCounts[`${item.documentType}_${item.category || "default"}`]})`
-                          : ""}
-                      </span>
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const uploadedDoc = item.uploadedDocument as Document;
-                        if (uploadedDoc?._id) {
-                          const documentType =
-                            item.documentType ||
-                            uploadedDoc.document_type ||
-                            "Document";
-                          const category =
-                            item.category ||
-                            uploadedDoc.document_category ||
-                            "Other Documents";
-                          handleReuploadClick(
-                            uploadedDoc._id,
-                            documentType,
-                            category,
-                          );
-                        }
-                      }}
-                      className="flex items-center gap-1 px-2 py-1 h-7 text-xs text-orange-600 hover:text-orange-700 border-orange-200 hover:border-orange-300"
-                    >
-                      <Upload className="h-3 w-3" />
-                      <span className="hidden sm:inline">Reupload</span>
-                    </Button>
-                  </div>
-                )}
-                {!item.isUploaded && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      handleUploadClick(item.documentType, item.category)
-                    }
-                    className="flex items-center gap-1 px-2 py-1 h-7 text-xs"
+                {(!item.isUploaded || !isRejected) && (
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={handleUpload}
                   >
-                    <Upload className="h-3 w-3" />
-                    <span className="hidden sm:inline">Upload</span>
-                  </Button>
+                    <RiUploadLine />
+                    Upload Document
+                  </DropdownMenuItem>
                 )}
-              </>
-            )}
-          </div>
+                {item.isUploaded && isRejected && (
+                  <DropdownMenuItem
+                    className="cursor-pointer"
+                    onClick={handleReupload}
+                  >
+                    <RiUploadLine />
+                    Reupload Document
+                  </DropdownMenuItem>
+                )}
+              </DropdownMenuGroup>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </TableCell>
       </TableRow>
 
-      {showCommentModal && item.checklist_id === currentChecklistId && (
-        <DescriptionModal
-          open={showCommentModal}
-          onOpenChange={setShowCommentModal}
-          existingDescription={item.description || ""}
-          onSave={handleUpdateDescription}
-          mode={mode}
-          isLoading={updateItemDescription.isPending}
-        />
-      )}
+      {/* Sub-rows rendered directly in outer tbody for pixel-perfect column alignment */}
+      <AnimatePresence>
+        {isExpanded && uploadedDocuments.map((doc, idx) => (
+          <ChecklistTableSubRow
+            key={doc._id}
+            doc={doc}
+            allDocs={uploadedDocuments}
+            isLast={idx === uploadedDocuments.length - 1}
+            idx={idx}
+            total={uploadedDocuments.length}
+            documentType={documentType}
+            category={category}
+            applicationId={applicationId}
+            isClientView={isClientView}
+            commentCounts={commentCounts}
+            onReupload={onReupload}
+          />
+        ))}
+      </AnimatePresence>
 
-      {/* Description Dialog */}
       <DescriptionDialog
         isOpen={showDescriptionDialog}
         onClose={() => setShowDescriptionDialog(false)}
         documentType={item.documentType}
-        description={item.description || ""}
+        description={item.description ?? ""}
       />
-
-      {/* Sample Document Modal */}
-      {hasSampleDocument && (
-        <SampleDocumentModal
-          isOpen={showSampleModal}
-          onClose={() => setShowSampleModal(false)}
-          documentType={item.documentType}
-          category={item.category}
-          samplePath={""} // Will be resolved in the modal
-          companyName={item.company_name || item.company?.name}
-        />
-      )}
     </>
   );
 });

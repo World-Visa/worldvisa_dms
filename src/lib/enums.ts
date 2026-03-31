@@ -28,3 +28,11 @@ export enum DeadlineCategoryEnum {
   Future = "future",
   NoDeadline = "noDeadline",
 }
+
+export enum DocumentStatus {
+  Pending = "pending",
+  Approved = "approved",
+  Reviewed = "reviewed",
+  RequestReview = "request_review",
+  Rejected = "rejected",
+}

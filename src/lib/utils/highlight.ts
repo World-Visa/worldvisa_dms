@@ -3,13 +3,14 @@ export interface HighlightSegment {
   isMatch: boolean;
 }
 
-export function highlightText(text: string, query: string): HighlightSegment[] {
-  if (!query.trim()) {
+export function highlightText(text: string, query: string | undefined): HighlightSegment[] {
+  if (!query?.trim()) {
     return [{ text, isMatch: false }];
   }
 
+  const q = query;
   const normalizedText = text.toLowerCase();
-  const normalizedQuery = query.toLowerCase();
+  const normalizedQuery = q.toLowerCase();
   const segments: HighlightSegment[] = [];
   let lastIndex = 0;
 
@@ -26,11 +27,11 @@ export function highlightText(text: string, query: string): HighlightSegment[] {
 
     // Add the matching text
     segments.push({
-      text: text.slice(index, index + query.length),
+      text: text.slice(index, index + q.length),
       isMatch: true,
     });
 
-    lastIndex = index + query.length;
+    lastIndex = index + q.length;
     index = normalizedText.indexOf(normalizedQuery, lastIndex);
   }
 

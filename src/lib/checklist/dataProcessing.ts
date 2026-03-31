@@ -4,6 +4,7 @@ import {
   OTHER_DOCUMENTS,
   COMPANY_DOCUMENTS,
   SELF_EMPLOYMENT_DOCUMENTS,
+  getAllowedDocumentLimit,
 } from "@/lib/documents/checklist";
 import { Document } from "@/types/applications";
 import { Company } from "@/types/documents";
@@ -39,32 +40,11 @@ interface ChecklistTableItem {
   instruction?: string;
 }
 
-function getAllowedDocumentCount(
+export function getAllowedDocumentCount(
   category: string,
   documentType: string,
 ): number | undefined {
-  const allBaseDocuments = [
-    ...IDENTITY_DOCUMENTS,
-    ...EDUCATION_DOCUMENTS,
-    ...OTHER_DOCUMENTS,
-    ...SELF_EMPLOYMENT_DOCUMENTS,
-    ...COMPANY_DOCUMENTS,
-  ];
-
-  const foundDoc = allBaseDocuments.find(
-    (doc) => doc.category === category && doc.documentType === documentType,
-  );
-
-  // Return undefined if allowedDocument is not specified (allows multiple uploads)
-  // Return the specific number if allowedDocument is specified (limits uploads)
-  if (
-    foundDoc &&
-    "allowedDocument" in foundDoc &&
-    typeof foundDoc.allowedDocument === "number"
-  ) {
-    return foundDoc.allowedDocument;
-  }
-  return undefined;
+  return getAllowedDocumentLimit(category, documentType);
 }
 
 /**

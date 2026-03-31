@@ -198,6 +198,9 @@ export function ChatThread({
           getDefaultAvatarSrc(otherParticipant.id ?? conversation?._id ?? ""))
         : getDefaultAvatarSrc(conversation?._id ?? conversationId)
       : conversation?.imageUrl;
+  const safeHeaderAvatarSrc = headerAvatarSrc?.trim()
+    ? headerAvatarSrc
+    : undefined;
 
   const groupMemberIds =
     conversation?.type === "group"
@@ -250,7 +253,7 @@ export function ChatThread({
           </Button>
         )}
 
-        {conversation?.type === "group" && !headerAvatarSrc ? (
+        {conversation?.type === "group" && !safeHeaderAvatarSrc ? (
           <GroupAvatar
             memberIds={groupMemberIds}
             fallbackId={conversation?._id}
@@ -270,7 +273,7 @@ export function ChatThread({
           <div className="relative h-9 w-9 rounded-full overflow-hidden shrink-0 bg-muted">
             <Image
               src={
-                headerAvatarSrc ??
+                safeHeaderAvatarSrc ??
                 getDefaultAvatarSrc(conversation?._id ?? conversationId)
               }
               alt={conversationName}

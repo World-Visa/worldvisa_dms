@@ -122,6 +122,8 @@ export const API_ENDPOINTS = {
       `${ZOHO_BASE_URL}/visa_applications/deadline-stats?${params}`,
     ACTIVITY: (id: string, params: string) =>
       `${ZOHO_BASE_URL}/visa_applications/${id}/activity?${params}`,
+    ACTIVITY_DOWNLOAD: (leadId: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/${leadId}/activity/download`,
     NOTES: (id: string) => `${ZOHO_BASE_URL}/visa_applications/${id}/notes`,
     CHECKLIST_STATUS: (leadId: string) =>
       `${ZOHO_BASE_URL}/visa_applications/${leadId}/checklist-status`,

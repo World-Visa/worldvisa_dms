@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -103,6 +104,7 @@ export function ApplicationDetailsHeader({
   qcRequested,
   applicationId,
 }: ApplicationDetailsHeaderProps) {
+  const router = useRouter();
   const isAdmin = userRole !== "client";
   const [isActivitySheetOpen, setIsActivitySheetOpen] = useState(false);
 
@@ -215,6 +217,12 @@ export function ApplicationDetailsHeader({
             <DropdownMenuGroup>
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold py-1">Documents</DropdownMenuLabel>
+              <DropdownMenuItem
+                onClick={() => router.push(`/v2/applications/${applicationId}/checklist`)}
+                className="cursor-pointer hover:bg-gray-100"
+              >
+                Edit checklist
+              </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={onDownloadAll}
                 disabled={!areAllDocumentsApproved}

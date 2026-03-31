@@ -30,10 +30,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, RefreshCw, MessageCircle } from "lucide-react";
+import { ArrowLeft, MessageCircle } from "lucide-react";
 import { ClientChatSheet } from "@/components/chat/ClientChatSheet";
 import { useTotalUnreadCount } from "@/hooks/useChat";
 import { Button } from "@/components/ui/button";
+import { Tabs } from "@/components/ui/tabs";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
 import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
 import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
@@ -46,7 +47,9 @@ import {
 } from "@/utils/companyDocuments";
 import { toast } from "sonner";
 import { Badge } from "../ui/badge";
-import { isValidApplicationId } from "@/lib/applications/validateApplicationId";
+import { motion } from "framer-motion";
+import { FADE_ANIMATION } from "../v2/users/Settings";
+
 
 interface ClientApplicationDetailsPageContentProps {
   applicationId?: string;
@@ -386,11 +389,6 @@ export default function ClientApplicationDetailsPageContent({
         }
 
         try {
-          console.log(
-            "[RemoveCompany] Deleting document:",
-            doc._id,
-            doc.file_name,
-          );
           await clientDeleteDocumentMutation.mutateAsync({
             documentId: doc._id,
           });
@@ -403,10 +401,6 @@ export default function ClientApplicationDetailsPageContent({
           // Log but continue with other documents
           const errorMessage =
             error instanceof Error ? error.message : "Unknown error";
-          console.error(
-            `[RemoveCompany] Failed to delete document ${doc._id} (${doc.file_name}):`,
-            errorMessage,
-          );
           deletionResults.push({
             success: false,
             documentId: doc._id,
@@ -589,18 +583,6 @@ export default function ClientApplicationDetailsPageContent({
               </Button>
             </div>
           )}
-          {/* <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-            className="flex items-center gap-2 cursor-pointer"
-          >
-            <RefreshCw
-              className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`}
-            />
-            <span className="hidden sm:inline">Refresh</span>
-          </Button> */}
         </div>
       </div>
       {/* Loading State */}
@@ -622,69 +604,81 @@ export default function ClientApplicationDetailsPageContent({
             error={applicationError}
             user={user}
           />
-          <LayoutChips
-            selectedLayout={selectedLayout}
-            onLayoutChange={handleLayoutChange}
-            availableLayouts={availableLayouts}
-            showSampleDocuments={showSampleDocuments}
-            onToggleSampleDocuments={onToggleSampleDocuments}
-          />
-
-          {selectedLayout === "skill-assessment" ? (
-            <ClientSkillAssessmentLayout
-              applicationId={applicationId}
-              selectedCategory={selectedCategory}
-              onCategoryChange={handleCategoryChange}
-              maxCompanies={10}
-              companies={finalCompanies}
-              onAddCompany={() => setIsAddCompanyDialogOpen(true)}
-              onRemoveCompany={handleRemoveCompany}
-              onRemoveCompanyWithCheck={handleRemoveCompanyWithDocuments}
-              documentsResponse={documentsData}
-              isDocumentsLoading={isDocumentsLoading}
-              documentsError={documentsError}
-              allDocumentsResponse={allDocumentsData}
-              isAllDocumentsLoading={isAllDocumentsLoading}
-              allDocumentsError={allDocumentsError}
-              checklistData={checklistData}
-              isChecklistLoading={isChecklistLoading}
-              checklistError={checklistError}
-              onClientDeleteSuccess={handleDeleteSuccess}
-              onReuploadDocument={handleReuploadDocument}
-              onUploadSuccess={handleUploadSuccess}
-              checklistRequested={checklistRequested}
-              checklistRequestedAt={checklistRequestedAt}
-              leadId={leadId}
-              onChecklistRefresh={handleRefresh}
-              onChecklistRequestSuccess={handleRefresh}
-              showSampleDocuments={showSampleDocuments}
-              onToggleSampleDocuments={onToggleSampleDocuments}
+          <Tabs
+            value={selectedLayout}
+            onValueChange={(value) => handleLayoutChange(value as ApplicationLayout)}
+          >
+            <LayoutChips
+              selectedLayout={selectedLayout}
+              onLayoutChange={handleLayoutChange}
+              availableLayouts={availableLayouts}
             />
-          ) : selectedLayout === "outcome" ? (
-            hasOutcomeDocuments ? (
-              <Suspense
-                fallback={<Skeleton className="h-96 w-full rounded-xl" />}
-              >
-                <OutcomeLayout applicationId={applicationId} isClientView />
-              </Suspense>
-            ) : null
-          ) : selectedLayout === "eoi" ? (
-            hasEOIDocuments ? (
-              <Suspense
-                fallback={<Skeleton className="h-96 w-full rounded-xl" />}
-              >
-                <EOILayout applicationId={applicationId} isClientView />
-              </Suspense>
-            ) : null
-          ) : selectedLayout === "invitation" ? (
-            hasInvitationDocuments ? (
-              <Suspense
-                fallback={<Skeleton className="h-96 w-full rounded-xl" />}
-              >
-                <InvitationLayout applicationId={applicationId} isClientView />
-              </Suspense>
-            ) : null
-          ) : null}
+
+            {selectedLayout === "skill-assessment" ? (
+              <motion.div {...FADE_ANIMATION} className="mt-4">
+                
+                <ClientSkillAssessmentLayout
+                  applicationId={applicationId}
+                  selectedCategory={selectedCategory}
+                  onCategoryChange={handleCategoryChange}
+                  maxCompanies={10}
+                  companies={finalCompanies}
+                  onAddCompany={() => setIsAddCompanyDialogOpen(true)}
+                  onRemoveCompany={handleRemoveCompany}
+                  onRemoveCompanyWithCheck={handleRemoveCompanyWithDocuments}
+                  documentsResponse={documentsData}
+                  isDocumentsLoading={isDocumentsLoading}
+                  documentsError={documentsError}
+                  allDocumentsResponse={allDocumentsData}
+                  isAllDocumentsLoading={isAllDocumentsLoading}
+                  allDocumentsError={allDocumentsError}
+                  checklistData={checklistData}
+                  isChecklistLoading={isChecklistLoading}
+                  checklistError={checklistError}
+                  onClientDeleteSuccess={handleDeleteSuccess}
+                  onReuploadDocument={handleReuploadDocument}
+                  onUploadSuccess={handleUploadSuccess}
+                  checklistRequested={checklistRequested}
+                  checklistRequestedAt={checklistRequestedAt}
+                  leadId={leadId}
+                  onChecklistRefresh={handleRefresh}
+                  onChecklistRequestSuccess={handleRefresh}
+                  showSampleDocuments={showSampleDocuments}
+                  onToggleSampleDocuments={onToggleSampleDocuments}
+                />
+              </motion.div>
+            ) : selectedLayout === "outcome" ? (
+              hasOutcomeDocuments ? (
+                <Suspense
+                  fallback={<Skeleton className="h-96 w-full rounded-xl" />}
+                >
+                  <motion.div {...FADE_ANIMATION} className="mt-4">
+                    <OutcomeLayout applicationId={applicationId} isClientView />
+                  </motion.div>
+                </Suspense>
+              ) : null
+            ) : selectedLayout === "eoi" ? (
+              hasEOIDocuments ? (
+                <Suspense
+                  fallback={<Skeleton className="h-96 w-full rounded-xl" />}
+                >
+                  <motion.div {...FADE_ANIMATION} className="mt-4">
+                    <EOILayout applicationId={applicationId} isClientView />
+                  </motion.div>
+                </Suspense>
+              ) : null
+            ) : selectedLayout === "invitation" ? (
+              hasInvitationDocuments ? (
+                <Suspense
+                  fallback={<Skeleton className="h-96 w-full rounded-xl" />}
+                >
+                  <motion.div {...FADE_ANIMATION} className="mt-4">
+                    <InvitationLayout applicationId={applicationId} isClientView />
+                  </motion.div>
+                </Suspense>
+              ) : null
+            ) : null}
+          </Tabs>
         </div>
       ) : (
         <div className="text-center py-8">

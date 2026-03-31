@@ -1,20 +1,21 @@
 "use client";
 
-import React, { useMemo, useCallback, memo } from "react";
+import { memo, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import {
   Table,
   TableBody,
   TableCell,
+  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { VisaApplication } from "@/types/applications";
-import { formatDate } from "@/utils/format";
-import { Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
+import type { VisaApplication } from "@/types/applications";
+import { APPLICATIONS_TABLE_COLUMNS } from "@/lib/constants/applicationsTable";
+import { ApplicationTableRow } from "@/components/applications/applications-list/ApplicationTableRow";
 
 interface ApplicationsTableProps {
   applications: VisaApplication[];
@@ -25,88 +26,21 @@ interface ApplicationsTableProps {
   searchResults?: VisaApplication[];
   isSearchLoading?: boolean;
   isSpouseApplication?: boolean;
+  totalCount?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: number) => void;
 }
 
-const LoadingState = memo(function LoadingState() {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Applications</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col items-center justify-center py-12 space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          <p className="text-sm text-muted-foreground font-medium">
-            Fetching data...
-          </p>
-        </div>
-      </CardContent>
-    </Card>
-  );
-});
+const COLUMN_COUNT = APPLICATIONS_TABLE_COLUMNS.length;
 
-const EmptyState = memo(function EmptyState({
-  isSearchMode,
-}: {
-  isSearchMode: boolean;
-}) {
+const TableLoadingRow = memo(function TableLoadingRow() {
   return (
     <TableRow>
-      <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-        {isSearchMode ? "No search results found" : "No applications found"}
-      </TableCell>
-    </TableRow>
-  );
-});
-
-const TableRowComponent = memo(function TableRowComponent({
-  application,
-  index,
-  isSearchMode,
-  getSerialNumber,
-  handleRowClick,
-}: {
-  application: VisaApplication;
-  index: number;
-  isSearchMode: boolean;
-  getSerialNumber: (index: number) => number;
-  handleRowClick: (id: string) => void;
-}) {
-  const hasAttachments = application.AttachmentCount > 0;
-
-  return (
-    <TableRow
-      className="cursor-pointer hover:bg-muted/50 transition-colors"
-      onClick={() => handleRowClick(application.id)}
-    >
-      <TableCell className="font-medium">
-        {isSearchMode ? index + 1 : getSerialNumber(index)}
-      </TableCell>
-      <TableCell className="font-medium">{application.Name}</TableCell>
-      <TableCell>{application.Email}</TableCell>
-      <TableCell>{application.Phone || "N/A"}</TableCell>
-      <TableCell>
-        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-          {application.Application_Handled_By || "N/A"}
-        </span>
-      </TableCell>
-      <TableCell>
-        {application.Created_Time
-          ? formatDate(application.Created_Time, "time")
-          : "N/A"}
-      </TableCell>
-      <TableCell className="text-center">
-        <Badge
-          variant="secondary"
-          className={
-            hasAttachments
-              ? "bg-green-600 hover:bg-green-400 text-white"
-              : "bg-gray-400 hover:bg-gray-300 text-white"
-          }
-        >
-          {application.AttachmentCount}
-        </Badge>
-      </TableCell>
+      {APPLICATIONS_TABLE_COLUMNS.map((col) => (
+        <TableCell key={col.label} className={col.cellClassName}>
+          <Skeleton className={col.skeletonClassName} />
+        </TableCell>
+      ))}
     </TableRow>
   );
 });
@@ -120,26 +54,18 @@ export const ApplicationsTable = memo(function ApplicationsTable({
   searchResults = [],
   isSearchLoading = false,
   isSpouseApplication = false,
+  totalCount,
+  onPageChange,
+  onPageSizeChange,
 }: ApplicationsTableProps) {
   const router = useRouter();
 
-  // Memoize data calculations to prevent unnecessary re-renders
-  const displayData = useMemo(
-    () => (isSearchMode ? searchResults : applications),
-    [isSearchMode, searchResults, applications],
-  );
-
-  const displayLoading = useMemo(
-    () => (isSearchMode ? isSearchLoading : isLoading),
-    [isSearchMode, isSearchLoading, isLoading],
-  );
-
-  const getSerialNumber = useCallback(
-    (index: number) => {
-      return (currentPage - 1) * limit + index + 1;
-    },
-    [currentPage, limit],
-  );
+  const displayData = isSearchMode ? searchResults : applications;
+  const displayLoading = isSearchMode ? isSearchLoading : isLoading;
+  const totalPages =
+    totalCount !== undefined ? Math.ceil(totalCount / limit) : 0;
+  const showPagination =
+    !isSearchMode && totalCount !== undefined && !!onPageChange;
 
   const handleRowClick = useCallback(
     (applicationId: string) => {
@@ -151,50 +77,54 @@ export const ApplicationsTable = memo(function ApplicationsTable({
     [router, isSpouseApplication],
   );
 
-  const resultCount = useMemo(
-    () => searchResults.length,
-    [searchResults.length],
-  );
-
-  if (displayLoading) {
-    return <LoadingState />;
-  }
-
   return (
-    <div className="space-y-4">
-      <>
-        <div className="rounded-md border">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-[80px]">S.No</TableHead>
-                <TableHead>Applicant Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Phone</TableHead>
-                <TableHead>Handled By</TableHead>
-                <TableHead>Submitted At</TableHead>
-                <TableHead className="text-center">Attachments</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {displayData.length === 0 ? (
-                <EmptyState isSearchMode={isSearchMode} />
-              ) : (
-                displayData.map((application, index) => (
-                  <TableRowComponent
-                    key={application.id}
-                    application={application}
-                    index={index}
-                    isSearchMode={isSearchMode}
-                    getSerialNumber={getSerialNumber}
-                    handleRowClick={handleRowClick}
-                  />
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </div>
-      </>
-    </div>
+    <Table
+      isLoading={displayLoading}
+      loadingRowsCount={9}
+      loadingRow={<TableLoadingRow />}
+    >
+      <TableHeader>
+        <TableRow>
+          {APPLICATIONS_TABLE_COLUMNS.map((col) => (
+            <TableHead key={col.label} className={col.headerClassName}>
+              {col.label}
+            </TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      {!displayLoading && (
+        <TableBody>
+          {displayData.map((application) => (
+            <ApplicationTableRow
+              key={application.id}
+              application={application}
+              onClick={handleRowClick}
+            />
+          ))}
+        </TableBody>
+      )}
+      {showPagination && (
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={COLUMN_COUNT} className="p-0">
+              <TablePaginationFooter
+                pageSize={limit}
+                currentPageItemsCount={displayData.length}
+                totalCount={totalCount}
+                hasPreviousPage={currentPage > 1}
+                hasNextPage={currentPage < totalPages}
+                onPreviousPage={() =>
+                  onPageChange(Math.max(1, currentPage - 1))
+                }
+                onNextPage={() =>
+                  onPageChange(Math.min(totalPages, currentPage + 1))
+                }
+                onPageSizeChange={onPageSizeChange ?? (() => {})}
+              />
+            </TableCell>
+          </TableRow>
+        </TableFooter>
+      )}
+    </Table>
   );
 });
