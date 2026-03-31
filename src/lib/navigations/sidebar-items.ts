@@ -112,7 +112,7 @@ export const sidebarItems: NavGroup[] = [
                 icon: Mail,
                 comingSoon: false,
                 isNew: false,
-                allowedRoles: [ROLES.MASTER_ADMIN],
+                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
             },
             {
                 title: "Chat",
@@ -120,6 +120,7 @@ export const sidebarItems: NavGroup[] = [
                 icon: MessageSquare,
                 comingSoon: false,
                 isNew: false,
+                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
             },
             // {
             //   title: "Calendar",
