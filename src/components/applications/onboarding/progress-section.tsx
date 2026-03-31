@@ -10,7 +10,7 @@ import {
   RiUserAddLine,
 } from "react-icons/ri";
 import { useQueryClient } from "@tanstack/react-query";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PointingArrow } from "@/components/icons/pointing-arrows";
 import { useInviteClient, useRevokeClientInvitation } from "@/hooks/useUserMutations";
@@ -18,6 +18,7 @@ import { useCreateClientAccount } from "@/hooks/useActivateAccount";
 import { useOnboardingSteps, type StepStatus } from "@/hooks/use-onboarding-steps";
 import type { Application, ApplicationOnboarding } from "@/types/applications";
 import { cn } from "@/lib/utils";
+import { InlineToast } from "@/components/ui/primitives/inline-toast";
 
 interface ProgressSectionProps {
   applicationId: string;
@@ -245,72 +246,109 @@ export function ProgressSection({ applicationId, application, onboarding }: Prog
     <Card className="relative flex items-stretch rounded-xl border-neutral-100 shadow-none w-full flex-col md:flex-row overflow-hidden">
       <WelcomeHeader />
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
-        className="flex flex-1 flex-col gap-5 p-5 md:p-8"
-      >
-        {steps.map((step, index) => {
-          const isCreateLoading = step.id === "account-creation" && createAccount.isPending;
-          const isInviteLoading = step.id === "portal-invite" && inviteClient.isPending;
-          const isRevokeLoading = step.id === "portal-invite" && revokeInvitation.isPending;
+      <div className="p-0">
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
+          className="flex flex-1 flex-col gap-5 p-2 "
+        >
+          {steps.map((step, index) => {
+            const isCreateLoading = step.id === "account-creation" && createAccount.isPending;
+            const isInviteLoading = step.id === "portal-invite" && inviteClient.isPending;
+            const isRevokeLoading = step.id === "portal-invite" && revokeInvitation.isPending;
 
-          return (
-            <motion.div
-              key={`${step.id}-${step.status}`}
-              className="flex w-full items-center gap-1.5 md:max-w-[370px]"
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.4, delay: 0.25 + index * 0.08, ease: "easeOut" }}
-            >
-              <StepIndicator
-                key={`indicator-${step.id}-${step.status}`}
-                status={step.status}
-                isLoading={isCreateLoading || isInviteLoading || isRevokeLoading}
-              />
-
-              <Card
-                className={cn(
-                  "shadow-xs w-full p-1",
-                  step.status !== "completed" && "transition-all duration-200 hover:translate-x-px hover:shadow-md",
-                )}
+            return (
+              <motion.div
+                key={`${step.id}-${step.status}`}
+                className="flex w-full items-center gap-1.5 md:max-w-[370px]"
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.4, delay: 0.25 + index * 0.08, ease: "easeOut" }}
               >
-                <CardContent className="flex flex-col rounded-[6px] bg-[#FBFBFB] px-3 py-3">
-                  <div className="flex items-center justify-between">
-                    <span
-                      className={cn(
-                        "text-xs",
-                        step.status === "completed"
-                          ? "text-muted-foreground line-through"
-                          : "text-foreground",
-                      )}
-                    >
-                      {step.title}
-                    </span>
-                    <RiArrowRightDoubleFill className="h-4 w-4 text-muted-foreground shrink-0" />
-                  </div>
-                  <p className="text-xs leading-[16px] text-muted-foreground mt-1">
-                    {step.description}
-                  </p>
-                  <StepAction
-                    stepId={step.id}
-                    status={step.status}
-                    accountComplete={accountComplete}
-                    isCreateLoading={isCreateLoading}
-                    isInviteLoading={isInviteLoading}
-                    isRevokeLoading={isRevokeLoading}
-                    invitationId={onboarding.clerk_invitation_id}
-                    onActivate={handleCreate}
-                    onInvite={handleInvite}
-                    onRevoke={handleRevoke}
-                  />
-                </CardContent>
-              </Card>
-            </motion.div>
-          );
-        })}
-      </motion.div>
+                <StepIndicator
+                  key={`indicator-${step.id}-${step.status}`}
+                  status={step.status}
+                  isLoading={isCreateLoading || isInviteLoading || isRevokeLoading}
+                />
+
+                <Card
+                  className={cn(
+                    "shadow-xs w-full p-1",
+                    step.status !== "completed" && "transition-all duration-200 hover:translate-x-px hover:shadow-md",
+                  )}
+                >
+                  <CardContent className="flex flex-col rounded-[6px] bg-[#FBFBFB] px-3 py-3">
+                    <div className="flex items-center justify-between">
+                      <span
+                        className={cn(
+                          "text-xs",
+                          step.status === "completed"
+                            ? "text-muted-foreground line-through"
+                            : "text-foreground",
+                        )}
+                      >
+                        {step.title}
+                      </span>
+                      <RiArrowRightDoubleFill className="h-4 w-4 text-muted-foreground shrink-0" />
+                    </div>
+                    <p className="text-xs leading-[16px] text-muted-foreground mt-1">
+                      {step.description}
+                    </p>
+                    <StepAction
+                      stepId={step.id}
+                      status={step.status}
+                      accountComplete={accountComplete}
+                      isCreateLoading={isCreateLoading}
+                      isInviteLoading={isInviteLoading}
+                      isRevokeLoading={isRevokeLoading}
+                      invitationId={onboarding.clerk_invitation_id}
+                      onActivate={handleCreate}
+                      onInvite={handleInvite}
+                      onRevoke={handleRevoke}
+                    />
+                  </CardContent>
+                </Card>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
+          className="px-4 mt-6 flex justify-center max-w-[400px]">
+          <InlineToast
+            title="Note"
+            description={
+              <span className="space-y-1.5 block">
+                <span className="block">
+                  After sending the invitation, the client will receive an email
+                  shortly.
+                </span>
+                <span className="block">
+                  If they do not see it, ask them to check Promotions/Spam or
+                  search for{" "}
+                  <span className="font-medium">
+                    invitations@dms.worldvisagroup.com
+                  </span>
+                  .
+                </span>
+                <span className="block">
+                  Make sure they sign in with the same email address that was
+                  invited.
+                </span>
+                <span className="block">
+                  For Yahoo Mail, ask them to sign up with password instead of
+                  Google login.
+                </span>
+              </span>
+            }
+            variant="tip"
+            className="border-neutral-200 border"
+          />
+        </motion.div>
+      </div>
     </Card>
   );
 }
