@@ -18,6 +18,7 @@ import {
   Library,
 } from "lucide-react";
 import { Application } from "@/types/applications";
+import { RiFileUserLine } from "react-icons/ri";
 
 interface ApplicationDetailsAccordionProps {
   application: Application | undefined;
@@ -53,10 +54,10 @@ export function ApplicationDetailsAccordion({
       onValueChange={() => onToggle()}
       className="mb-4 cursor-pointer"
     >
-      <AccordionItem value="application-details" className="border rounded-lg">
+      <AccordionItem value="application-details" className="border rounded-lg bg-background shadow-none">
         <AccordionTrigger className="px-4 ">
-          <div className="flex items-center gap-2 text-sm font-medium">
-            <User className="h-4 w-4" />
+          <div className="flex items-center gap-2 text-sm font-normal">
+            <RiFileUserLine className="size-4" />
             Application Details
           </div>
         </AccordionTrigger>
@@ -124,7 +125,7 @@ export function ApplicationDetailsAccordion({
                     variant={getServiceBadgeVariant(
                       application.Service_Finalized || "",
                     )}
-                    className="text-xs"
+                    className="rounded-md text-xs bg-foreground/10 hover:bg-foreground/20 text-foreground"
                   >
                     {application.Service_Finalized || ""}
                   </Badge>

@@ -21,7 +21,7 @@ export function ClientNameCell({ recordId, clientName, searchQuery }: ClientName
     return (
       <div className="flex items-center gap-2">
         <span
-          className="text-sm font-medium text-gray-900 truncate max-w-[180px]"
+          className="text-sm font-normal text-gray-900 truncate "
           title={clientName}
         >
           {hasQuery ? (

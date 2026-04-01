@@ -1,29 +1,21 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import {
-  getCoreRowModel,
-  getFacetedRowModel,
-  getFacetedUniqueValues,
-  getSortedRowModel,
-  type PaginationState,
-  type SortingState,
-  type VisibilityState,
-  useReactTable,
-} from "@tanstack/react-table";
-import { AlertCircle, Users } from "lucide-react";
+import { memo, useEffect, useMemo, useState } from "react";
+import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import {
-  Empty,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "@/components/ui/empty";
 import { Skeleton } from "@/components/ui/skeleton";
-import { DataTable } from "@/components/v2/datatable/data-table";
-import { DataTablePagination } from "@/components/v2/datatable/data-table-pagination";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
+import { ListNoResults } from "@/components/applications/list-no-results";
 import {
   useAdminUsersV2,
   type AdminUserV2,
@@ -34,9 +26,11 @@ import { Button as PrimitiveButton } from "@/components/ui/primitives/button";
 import { ROLE_OPTIONS } from "@/lib/constants/users";
 import { useAuth } from "@/hooks/useAuth";
 
-import { userColumns } from "./columns.users";
+import { UserTableRow } from "@/components/v2/users/UserTableRow";
+import { USERS_TABLE_COLUMNS } from "@/lib/constants/usersTable";
 
 const ROLE_FILTER_OPTIONS = ROLE_OPTIONS.map((r) => ({ value: r.value, label: r.label }));
+const COLUMN_COUNT = USERS_TABLE_COLUMNS.length;
 
 export function TableSkeleton() {
   return (
@@ -55,21 +49,17 @@ export function TableSkeleton() {
   );
 }
 
-function EmptyState() {
+const TableLoadingRow = memo(function TableLoadingRow() {
   return (
-    <Empty>
-      <EmptyHeader>
-        <EmptyMedia variant="icon">
-          <Users />
-        </EmptyMedia>
-        <EmptyTitle>No Users Found</EmptyTitle>
-        <EmptyDescription>
-          Try adjusting your search or filter criteria.
-        </EmptyDescription>
-      </EmptyHeader>
-    </Empty>
+    <TableRow>
+      {USERS_TABLE_COLUMNS.map((col) => (
+        <TableCell key={col.label} className={col.cellClassName}>
+          <Skeleton className={col.skeletonClassName} />
+        </TableCell>
+      ))}
+    </TableRow>
   );
-}
+});
 
 interface UsersManageClientProps {
   initialData?: AdminUsersV2Response;
@@ -81,24 +71,20 @@ export function UsersManageClient({ initialData }: UsersManageClientProps) {
   const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string[]>([]);
 
-  const [pagination, setPagination] = useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 10,
-  });
-  const [sorting, setSorting] = useState<SortingState>([]);
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchInput);
-      setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+      setCurrentPage(1);
     }, 300);
     return () => clearTimeout(timer);
   }, [searchInput]);
 
   const queryParams = {
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
+    page: currentPage,
+    limit: pageSize,
     search: debouncedSearch || undefined,
     role: roleFilter[0] || undefined,
   };
@@ -107,6 +93,7 @@ export function UsersManageClient({ initialData }: UsersManageClientProps) {
 
   const isDefaultParams = queryParams.page === 1 && !queryParams.search && !queryParams.role;
   const resolvedData = data ?? (isDefaultParams ? initialData : undefined);
+  const showLoading = isLoading && !resolvedData;
 
   const users: AdminUserV2[] = useMemo(() => {
     const raw = resolvedData?.data?.users ?? [];
@@ -116,35 +103,15 @@ export function UsersManageClient({ initialData }: UsersManageClientProps) {
     );
   }, [resolvedData?.data?.users, currentUser?._id]);
   
-  const totalPages = resolvedData?.pagination?.totalPages ?? 1;
+  const totalPages = Math.max(1, resolvedData?.pagination?.totalPages ?? 1);
   const totalRecords = resolvedData?.pagination?.totalRecords ?? 0;
-
-  const table = useReactTable({
-    data: users,
-    columns: userColumns,
-    state: {
-      sorting,
-      columnVisibility,
-      pagination,
-    },
-    manualPagination: true,
-    pageCount: totalPages,
-    getRowId: (row) => row._id,
-    onSortingChange: setSorting,
-    onColumnVisibilityChange: setColumnVisibility,
-    onPaginationChange: setPagination,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFacetedRowModel: getFacetedRowModel(),
-    getFacetedUniqueValues: getFacetedUniqueValues(),
-  });
 
   const hasActiveFilters = searchInput.trim() !== "" || roleFilter.length > 0;
 
   const clearFilters = () => {
     setSearchInput("");
     setRoleFilter([]);
-    setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+    setCurrentPage(1);
   };
 
   return (
@@ -167,7 +134,7 @@ export function UsersManageClient({ initialData }: UsersManageClientProps) {
           selected={roleFilter}
           onSelect={(vals) => {
             setRoleFilter(vals);
-            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+            setCurrentPage(1);
           }}
         />
         {hasActiveFilters && (
@@ -200,28 +167,60 @@ export function UsersManageClient({ initialData }: UsersManageClientProps) {
         </Alert>
       )}
 
-      {/* Table */}
-      <div className="overflow-hidden rounded-md border">
-        {isLoading && !resolvedData ? (
-          <div className="py-4">
-            <TableSkeleton />
-          </div>
-        ) : users.length === 0 && !isError ? (
-          <EmptyState />
-        ) : (
-          <DataTable table={table} columns={userColumns} />
-        )}
-      </div>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <p className="text-muted-foreground text-sm">
-          Total {totalRecords} row(s).
-        </p>
-        <div className="[&>div>div:first-child]:hidden!">
-          <DataTablePagination table={table} />
+      {/* Empty */}
+      {!showLoading && !isError && users.length === 0 && (
+        <div className="py-16 h-[calc(60vh-200px)] flex items-center justify-center">
+          <ListNoResults
+            title="No Users Found"
+            description="Try adjusting your search or filter criteria."
+            onClearFilters={hasActiveFilters ? clearFilters : undefined}
+          />
         </div>
-      </div>
+      )}
+
+      {/* Table */}
+      {(showLoading || users.length > 0) && (
+        <Table isLoading={showLoading} loadingRowsCount={8} loadingRow={<TableLoadingRow />}>
+          <TableHeader>
+            <TableRow>
+              {USERS_TABLE_COLUMNS.map((col) => (
+                <TableHead key={col.label} className={col.headerClassName}>
+                  {col.label}
+                </TableHead>
+              ))}
+            </TableRow>
+          </TableHeader>
+
+          {!showLoading && (
+            <TableBody>
+              {users.map((user) => (
+                <UserTableRow key={user._id} user={user} />
+              ))}
+            </TableBody>
+          )}
+
+          <TableFooter>
+            <TableRow>
+              <TableCell colSpan={COLUMN_COUNT} className="p-0">
+                <TablePaginationFooter
+                  pageSize={pageSize}
+                  currentPageItemsCount={users.length}
+                  totalCount={totalRecords}
+                  hasPreviousPage={currentPage > 1}
+                  hasNextPage={currentPage < totalPages}
+                  onPreviousPage={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  onNextPage={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  onPageSizeChange={(size) => {
+                    setPageSize(size);
+                    setCurrentPage(1);
+                  }}
+                  pageSizeOptions={[10, 20, 50]}
+                />
+              </TableCell>
+            </TableRow>
+          </TableFooter>
+        </Table>
+      )}
     </div>
   );
 }

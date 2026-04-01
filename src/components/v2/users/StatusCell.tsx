@@ -1,55 +1,52 @@
 "use client";
 
 import * as React from "react";
-import { Ban, Check, ChevronDown, CirclePause, CircleX } from "lucide-react";
+import { Ban, Check, ChevronDown, CirclePause, CircleX, Mail } from "lucide-react";
 
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { StatusBadge, StatusBadgeIcon } from "@/components/ui/primitives/status-badge";
 import { useUpdateUserStatus } from "@/hooks/useUserMutations";
 import type { AdminUserV2, AccountStatus } from "@/hooks/useAdminUsersV2";
 import { cn } from "@/lib/utils";
-import { CheckIcon } from "@radix-ui/react-icons";
 
 type StatusOption = {
   value: AccountStatus;
   label: string;
-  badgeClass: string;
-  iconChipClass: string;
-  icon: React.ReactNode;
+  badgeStatus: "completed" | "pending" | "failed" | "disabled";
+  icon: React.ElementType;
 };
 
 const STATUS_OPTIONS: StatusOption[] = [
   {
     value: "active",
     label: "Active",
-    badgeClass:
-      "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-400",
-    iconChipClass: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900 dark:text-emerald-300",
-    icon: <CheckIcon className="size-3.5 text-emerald-700" />,
+    badgeStatus: "completed",
+    icon: Check,
   },
   {
     value: "inactive",
     label: "Inactive",
-    badgeClass:
-      "border-neutral-200 bg-neutral-50 text-neutral-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400",
-    iconChipClass: "bg-neutral-200 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-300",
-    icon: <CircleX className="size-3.5" />,
+    badgeStatus: "disabled",
+    icon: CircleX,
   },
   {
     value: "suspended",
     label: "Suspend",
-    badgeClass:
-      "border-orange-200 bg-orange-50 text-orange-700 dark:border-orange-800 dark:bg-orange-950 dark:text-orange-400",
-    iconChipClass: "bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300",
-    icon: <CirclePause className="size-3.5" />,
+    badgeStatus: "failed",
+    icon: CirclePause,
   },
   {
     value: "deleted",
     label: "Ban",
-    badgeClass:
-      "border-red-200 bg-red-50 text-red-700 dark:border-red-800 dark:bg-red-950 dark:text-red-400",
-    iconChipClass: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300",
-    icon: <Ban className="size-3.5" />,
+    badgeStatus: "failed",
+    icon: Ban,
+  },
+  {
+    value: "invited",
+    label: "Invited",
+    badgeStatus: "pending",
+    icon: Mail,
   },
 ];
 
@@ -69,24 +66,12 @@ function getConfirmDescription(user: AdminUserV2, status: AccountStatus): string
   }
 }
 
-function StatusBadge({ option }: { option: StatusOption }) {
+function AccountStatusBadge({ option }: { option: StatusOption }) {
   return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-md border px-2 py-0.5 text-xs font-medium",
-        option.badgeClass,
-      )}
-    >
-      <span
-        className={cn(
-          "inline-flex size-5 items-center justify-center rounded-full",
-          option.iconChipClass,
-        )}
-      >
-        {option.icon}
-      </span>
+    <StatusBadge variant="light" status={option.badgeStatus}>
+      <StatusBadgeIcon as={option.icon} />
       {option.label}
-    </span>
+    </StatusBadge>
   );
 }
 
@@ -134,7 +119,7 @@ export function StatusCell({ user }: { user: AdminUserV2 }) {
               isPending && "cursor-not-allowed opacity-60",
             )}
           >
-            <StatusBadge option={current} />
+            <AccountStatusBadge option={current} />
             <ChevronDown className="size-3.5 shrink-0 opacity-50" />
           </button>
         </PopoverTrigger>
@@ -151,7 +136,7 @@ export function StatusCell({ user }: { user: AdminUserV2 }) {
                   (user.account_status ?? "active") === option.value && "font-semibold",
                 )}
               >
-                <StatusBadge option={option} />
+                <AccountStatusBadge option={option} />
                 {(user.account_status ?? "active") === option.value && (
                   <Check className="ml-auto size-3.5 shrink-0" />
                 )}

@@ -20,7 +20,7 @@ import {
   FileText,
 } from "lucide-react";
 import { RequestedDocument } from "@/lib/api/requestedDocuments";
-import { StatusBadge } from "./StatusBadge";
+import { StatusBadge } from "./RequestDocStatusBadge";
 import { RequestedDocumentViewSheet } from "./RequestedDocumentViewSheet";
 import { RequestedDocumentType } from "@/types/common";
 import { ClientNameCell } from "./ClientNameCell";

@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 import { fetcher } from "@/lib/fetcher";
+import { isAdminRole } from "@/lib/roles";
 
 export interface AdminUser {
   _id: string;
@@ -10,44 +11,122 @@ export interface AdminUser {
   __v: number;
 }
 
+type AdminUsersPagination = {
+  currentPage: number;
+  totalPages: number;
+  totalRecords: number;
+  limit: number;
+};
+
+function normalizeAdminUsersResponse(
+  raw: unknown,
+  fallbackLimit: number,
+): {
+  users: AdminUser[];
+  pagination: AdminUsersPagination;
+  hasPagination: boolean;
+} {
+  if (!raw || typeof raw !== "object") {
+    return {
+      users: [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        totalRecords: 0,
+        limit: fallbackLimit,
+      },
+      hasPagination: false,
+    };
+  }
+
+  const r = raw as Record<string, unknown>;
+
+  let users: AdminUser[] = [];
+  const dataBlock = r.data;
+  if (Array.isArray(raw)) {
+    users = raw as AdminUser[];
+  } else if (Array.isArray(dataBlock)) {
+    users = dataBlock as AdminUser[];
+  } else if (dataBlock && typeof dataBlock === "object") {
+    const d = dataBlock as Record<string, unknown>;
+    if (Array.isArray(d.users)) users = d.users as AdminUser[];
+  }
+  if (users.length === 0 && Array.isArray(r.users)) users = r.users as AdminUser[];
+
+  const pag = r.pagination;
+  let resolvedLimit = fallbackLimit;
+  let currentPage = 1;
+  let totalRecords = users.length;
+  let totalPages = 1;
+  let hasPagination = false;
+
+  if (pag && typeof pag === "object") {
+    hasPagination = true;
+    const p = pag as Record<string, unknown>;
+    currentPage = Math.max(1, Number(p.currentPage ?? p.current_page ?? 1) || 1);
+    totalRecords = Math.max(0, Number(p.totalRecords ?? p.total_records ?? 0) || 0);
+    resolvedLimit = Number(p.limit ?? fallbackLimit) || fallbackLimit;
+    totalPages = Math.max(0, Number(p.totalPages ?? p.total_pages ?? 0) || 0);
+    if (totalPages < 1 && totalRecords > 0 && resolvedLimit > 0) {
+      totalPages = Math.ceil(totalRecords / resolvedLimit);
+    }
+    if (users.length > 0 && totalPages < 1) totalPages = 1;
+    if (totalPages < 1) totalPages = 1;
+    if (totalRecords < users.length) totalRecords = users.length;
+  } else if (users.length > 0) {
+    totalRecords = users.length;
+    totalPages = 1;
+  }
+
+  return {
+    users,
+    pagination: {
+      currentPage,
+      totalPages,
+      totalRecords,
+      limit: resolvedLimit,
+    },
+    hasPagination,
+  };
+}
+
 const fetchAdminUsers = async (): Promise<AdminUser[]> => {
   try {
-    const result = await fetcher<unknown>(
-      `${ZOHO_BASE_URL}/users/all?page=1&limit=100`,
-    );
+    const limit = 100;
+    const maxPagesSafety = 200;
 
-    const list: AdminUser[] =
-      Array.isArray(result)
-        ? result
-        : Array.isArray((result as { data?: AdminUser[] }).data)
-          ? (result as { data: AdminUser[] }).data
-          : Array.isArray((result as { users?: AdminUser[] }).users)
-            ? (result as { users: AdminUser[] }).users
-            : Array.isArray(
-                (result as { data?: { users?: AdminUser[] } }).data?.users,
-              )
-              ? (result as { data: { users: AdminUser[] } }).data.users
-              : [];
+    const byId = new Map<string, AdminUser>();
+    let page = 1;
+    let totalPages: number | null = null;
+    let paginationKnown = false;
 
-    if (list.length === 0 && result !== null && typeof result === "object" && !Array.isArray(result)) {
-      const hasData = "data" in result && (result as { data?: unknown }).data !== undefined;
-      const hasUsers = "users" in result && (result as { users?: unknown }).users !== undefined;
-      const hasDataUsers = Array.isArray(
-        (result as { data?: { users?: unknown } }).data?.users,
+    while (page <= maxPagesSafety) {
+      const raw = await fetcher<unknown>(
+        `${ZOHO_BASE_URL}/users/all?page=${page}&limit=${limit}`,
       );
-      if (!hasData && !hasUsers && !hasDataUsers) {
-        console.warn(
-          "Admin users API response:",
-          result,
-          "— Check that the request is authenticated and the backend returns an array (e.g. under `data`, `users`, or `data.users`).",
-        );
-        throw new Error(
-          "Invalid response format from admin users API. Check that the request is authenticated and the backend returns an array (e.g. under `data`, `users`, or `data.users`).",
-        );
+
+      const { users, pagination, hasPagination } = normalizeAdminUsersResponse(
+        raw,
+        limit,
+      );
+      if (hasPagination && !paginationKnown) {
+        totalPages = pagination.totalPages;
+        paginationKnown = true;
       }
+
+      for (const u of users) {
+        if (!u?._id) continue;
+        byId.set(u._id, u);
+      }
+
+      const reachedLastPage = paginationKnown && page >= (totalPages ?? 1);
+      const likelyNoMorePages = users.length < limit;
+      if (reachedLastPage || (!paginationKnown && likelyNoMorePages)) break;
+
+      page += 1;
     }
 
-    return list;
+    return Array.from(byId.values());
   } catch (error) {
     console.error("Error fetching admin users:", error);
     throw error;
@@ -67,11 +146,7 @@ export function useAdminUsers() {
     select: (data) => {
       // Filter and sort admin users
       return data
-        .filter((user) =>
-          ["admin", "team_leader", "master_admin", "supervisor"].includes(
-            user.role,
-          ),
-        )
+        .filter((user) => isAdminRole(user.role))
         .map((user) => ({
           ...user,
           username: user.username === "admin" ? "mohsin" : user.username,

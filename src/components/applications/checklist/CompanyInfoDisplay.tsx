@@ -1,6 +1,6 @@
 "use client";
 
-import React, { memo, useMemo } from "react";
+import React, { memo, useEffect, useMemo, useState } from "react";
 import { Building2 } from "lucide-react";
 import { Company } from "@/types/documents";
 import { generateCompanyDescription } from "@/utils/dateCalculations";
@@ -14,6 +14,11 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
   selectedCategory,
   extractedCompanies,
 }: CompanyInfoDisplayProps) {
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const displayCompany = useMemo(() => {
     // Check if this is a company documents category (either with underscores or spaces)
     if (
@@ -100,7 +105,7 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
     return foundCompany;
   }, [selectedCategory, extractedCompanies]);
 
-  if (!displayCompany) {
+  if (!isMounted || !displayCompany) {
     // Keep a stable DOM node between server and client to avoid hydration mismatches
     // when company data becomes available during the first client render.
     return <div className="h-0 w-0 overflow-hidden" aria-hidden="true" />;

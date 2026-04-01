@@ -193,11 +193,11 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
               <div className="flex items-center gap-2 flex-wrap">
                 <HighlightText
                   text={item.documentType}
-                  query={searchQuery}
+                  query={searchQuery ?? ""}
                   className="text-sm font-medium"
                 />
                 {/* Count pill — only shown when no folder icon (non-expandable rows) */}
-                {!isExpandable && (docCount > 0 || allowedDocumentCount !== undefined) && (
+                {/* {!isExpandable && (docCount > 0 || allowedDocumentCount !== undefined) && (
                   <span
                     className={cn(
                       "inline-flex items-center text-xs px-1.5 py-0.5 rounded-md font-medium tabular-nums",
@@ -209,7 +209,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                     {docCount}
                     {allowedDocumentCount !== undefined ? `/${allowedDocumentCount}` : ""}
                   </span>
-                )}
+                )} */}
               </div>
 
               {/* Description — read-only */}

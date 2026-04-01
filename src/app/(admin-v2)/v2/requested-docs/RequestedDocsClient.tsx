@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { memo, useState, useEffect, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -14,21 +14,47 @@ import {
 } from "@/hooks/useRequestedDocuments";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
-import { RequestedDocumentsDataTable } from "@/components/requested-documents/RequestedDocumentsDataTable";
+import { ListNoResults } from "@/components/applications/list-no-results";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { RequestedDocumentsFilters as FiltersType } from "@/components/requested-documents/RequestedDocumentsFilters";
 import { FacetedFormFilter } from "@/components/ui/faceted-filter/facated-form-filter";
 import { Button } from "@/components/ui/primitives/button";
 import { REQUESTED_DOCUMENT_STATUS_OPTIONS } from "@/lib/constants/requestedDocuments";
-import { ApplicationsPagination } from "@/components/applications/ApplicationsPagination";
 import { RequestedDocumentViewSheet } from "@/components/requested-documents/RequestedDocumentViewSheet";
 import { useAuth } from "@/hooks/useAuth";
 import { RequestedDocument } from "@/lib/api/requestedDocuments";
+import { REQUESTED_DOCS_TABLE_COLUMNS } from "@/lib/constants/requestedDocsTable";
+import { RequestedDocTableRow } from "@/components/requested-documents/RequestedDocTableRow";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ROLES } from "@/lib/roles";
 
 type ActiveTab = "requested-to-me" | "my-requests" | "all-requests";
 
+const TableLoadingRow = memo(function TableLoadingRow() {
+  return (
+    <TableRow>
+      {REQUESTED_DOCS_TABLE_COLUMNS.map((col) => (
+        <TableCell key={col.label} className={col.cellClassName}>
+          <Skeleton className={col.skeletonClassName} />
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+});
+
 export default function RequestedDocsClient() {
   const { user } = useAuth();
-  const isMasterAdmin = user?.role === "master_admin";
+  const isMasterAdmin = user?.role === ROLES.MASTER_ADMIN;
   const router = useRouter();
   const searchParams = useSearchParams();
   const rawDocId = searchParams.get("documentId");
@@ -39,7 +65,7 @@ export default function RequestedDocsClient() {
     isMasterAdmin ? "all-requests" : "requested-to-me",
   );
   const [currentPage, setCurrentPage] = useState(1);
-  const [limit] = useState(10);
+  const [limit, setLimit] = useState(10);
   const [filters, setFilters] = useState<FiltersType>({
     search: "",
     status: "all",
@@ -53,7 +79,13 @@ export default function RequestedDocsClient() {
 
   const { data: adminUsers = [], isLoading: isLoadingAdmins } = useAdminUsers();
   const adminOptions = useMemo(
-    () => adminUsers.map((u) => ({ value: u.username ?? "", label: u.username ?? "" })).filter((o) => o.value),
+    () =>
+      adminUsers
+        .map((u) => {
+          const username = u.username ?? "";
+          return { value: username, label: username };
+        })
+        .filter((o) => o.value),
     [adminUsers],
   );
 
@@ -245,78 +277,50 @@ export default function RequestedDocsClient() {
   };
 
   return (
-    <main className="max-w-[1200px] mx-auto">
+    <main className="w-full">
       {/* Page title */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-medium text-foreground">Requested Documents</h1>
+      <div className="mb-3">
+        <h1 className="text-xl  text-foreground">Requested Documents</h1>
       </div>
 
       {/* Tabs row */}
-      <div className="mb-4 flex items-end border-b border-gray-200">
-        <div className="flex" role="tablist" aria-label="Requested documents tabs">
-          {isMasterAdmin && (
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === "all-requests"}
-              onClick={() => handleTabChange("all-requests")}
-              className={cn(
-                "relative flex items-center gap-2.5 px-5 pb-3 pt-2 text-sm font-medium tracking-wide",
-                "focus:outline-none transition-colors duration-150",
-                "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full",
-                "after:transition-all after:duration-200",
-                activeTab === "all-requests"
-                  ? "text-gray-900 after:bg-gray-900"
-                  : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
-              )}
-            >
-              All Requests
-              <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150", activeTab === "all-requests" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-400")}>
-                {getTabCount("all-requests")}
+      <div className="mb-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList variant="regular" className="border-t-0 px-0">
+            {isMasterAdmin && (
+              <TabsTrigger value="all-requests" variant="regular" size="lg" className="gap-2">
+                All Requests
+                <span className={cn(
+                  "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums transition-colors duration-200",
+                  "bg-neutral-alpha-100 text-muted-foreground",
+                  "group-data-[state=active]:bg-foreground group-data-[state=active]:text-background",
+                )}>
+                  {getTabCount("all-requests")}
+                </span>
+              </TabsTrigger>
+            )}
+            <TabsTrigger value="requested-to-me" variant="regular" size="lg" className="gap-2">
+              Requested to Me
+              <span className={cn(
+                "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums transition-colors duration-200",
+                "bg-neutral-alpha-100 text-muted-foreground",
+                "group-data-[state=active]:bg-foreground group-data-[state=active]:text-background",
+              )}>
+                {getTabCount("requested-to-me")}
               </span>
-            </button>
-          )}
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "requested-to-me"}
-            onClick={() => handleTabChange("requested-to-me")}
-            className={cn(
-              "relative flex items-center gap-2.5 px-5 pb-3 pt-2 text-sm font-medium tracking-wide",
-              "focus:outline-none transition-colors duration-150",
-              "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full",
-              "after:transition-all after:duration-200",
-              activeTab === "requested-to-me"
-                ? "text-gray-900 after:bg-gray-900"
-                : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
-            )}
-          >
-            Requested to Me
-            <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150", activeTab === "requested-to-me" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-400")}>
-              {getTabCount("requested-to-me")}
-            </span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "my-requests"}
-            onClick={() => handleTabChange("my-requests")}
-            className={cn(
-              "relative flex items-center gap-2.5 px-5 pb-3 pt-2 text-sm font-medium tracking-wide",
-              "focus:outline-none transition-colors duration-150",
-              "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:rounded-full",
-              "after:transition-all after:duration-200",
-              activeTab === "my-requests"
-                ? "text-gray-900 after:bg-gray-900"
-                : "text-gray-400 hover:text-gray-600 after:bg-transparent hover:after:bg-gray-200",
-            )}
-          >
-            My Requests
-            <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums transition-all duration-150", activeTab === "my-requests" ? "bg-gray-900 text-white" : "bg-gray-100 text-gray-400")}>
-              {getTabCount("my-requests")}
-            </span>
-          </button>
-        </div>
+            </TabsTrigger>
+            <TabsTrigger value="my-requests" variant="regular" size="lg" className="gap-2">
+              My Requests
+              <span className={cn(
+                "inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums transition-colors duration-200",
+                "bg-neutral-alpha-100 text-muted-foreground",
+                "group-data-[state=active]:bg-foreground group-data-[state=active]:text-background",
+              )}>
+                {getTabCount("my-requests")}
+              </span>
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Filter pills */}
@@ -363,22 +367,76 @@ export default function RequestedDocsClient() {
       </div>
 
       <div className="space-y-4 mt-2">
-        <RequestedDocumentsDataTable
-          documents={displayDocuments}
-          isLoading={displayLoading}
-          type={activeTab}
-          totalItems={displayPagination?.totalItems ?? 0}
-          onViewDocument={handleViewDocument}
-          searchQuery={isSearchMode ? debouncedSearch : ""}
-        />
-
-        {displayPagination && (
-          <ApplicationsPagination
-            currentPage={displayPagination.currentPage}
-            totalRecords={displayPagination.totalItems}
-            limit={limit}
-            onPageChange={handlePageChange}
-          />
+        {!displayLoading && displayDocuments.length === 0 ? (
+          <div className="py-16 h-[calc(60vh-200px)] flex items-center justify-center">
+            <ListNoResults
+              title="No requested documents"
+              description="Requested documents will appear here."
+              onClearFilters={hasActiveFilters ? clearFilters : undefined}
+            />
+          </div>
+        ) : (
+          <div className="w-full">
+            <Table
+              isLoading={displayLoading}
+              loadingRowsCount={8}
+              loadingRow={<TableLoadingRow />}
+            >
+              <TableHeader>
+                <TableRow>
+                  {REQUESTED_DOCS_TABLE_COLUMNS.map((col) => (
+                    <TableHead key={col.label} className={col.headerClassName}>
+                      {col.label}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
+              {!displayLoading && (
+                <TableBody>
+                  {displayDocuments.map((doc) => (
+                    <RequestedDocTableRow
+                      key={doc._id}
+                      document={doc}
+                      searchQuery={isSearchMode ? debouncedSearch : ""}
+                      onView={handleViewDocument}
+                    />
+                  ))}
+                </TableBody>
+              )}
+              {displayPagination && (
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={REQUESTED_DOCS_TABLE_COLUMNS.length} className="p-0">
+                      <TablePaginationFooter
+                        pageSize={limit}
+                        currentPageItemsCount={displayDocuments.length}
+                        totalCount={displayPagination.totalItems}
+                        hasPreviousPage={displayPagination.currentPage > 1}
+                        hasNextPage={
+                          displayPagination.currentPage <
+                          Math.max(1, Math.ceil(displayPagination.totalItems / limit))
+                        }
+                        onPreviousPage={() => handlePageChange(Math.max(1, displayPagination.currentPage - 1))}
+                        onNextPage={() =>
+                          handlePageChange(
+                            Math.min(
+                              Math.max(1, Math.ceil(displayPagination.totalItems / limit)),
+                              displayPagination.currentPage + 1,
+                            ),
+                          )
+                        }
+                        onPageSizeChange={(size) => {
+                          setLimit(size);
+                          setCurrentPage(1);
+                        }}
+                        pageSizeOptions={[10, 20, 50]}
+                      />
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              )}
+            </Table>
+          </div>
         )}
       </div>
 
