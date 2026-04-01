@@ -17,6 +17,10 @@ export const BACKEND_ZOHO_URL = `${BACKEND_HOST}/api/zoho_dms`;
 export const API_CONFIG = {
   BASE_URL: ZOHO_BASE_URL,
 
+  DEFAULT_HEADERS: {
+    "Content-Type": "application/json",
+  },
+
   ENDPOINTS: {
     // Document review requests
     REVIEW_REQUESTS: (documentId: string) =>
