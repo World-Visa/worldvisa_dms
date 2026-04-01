@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Send, Trash2, MessageSquare, Loader2, MoreVertical, Share2 } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -103,6 +104,14 @@ export function RequestedDocumentMessages({
     }
   };
 
+  const getInitials = (name: string | null | undefined) => {
+    const v = (name ?? "").trim();
+    if (!v) return "?";
+    const parts = v.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) return `${parts[0]![0]}${parts[1]![0]}`.toUpperCase();
+    return v.slice(0, 2).toUpperCase();
+  };
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Header - fixed */}
@@ -189,9 +198,16 @@ export function RequestedDocumentMessages({
               </p>
             </div>
           ) : (
-            messages.map((message) => {
+            messages.map((message, idx) => {
               const isCurrentUser = message.username === user?.username;
               const canDelete = isCurrentUser;
+              const messageKey = [
+                message._id ?? "missing-id",
+                message.added_at ?? "missing-date",
+                message.username ?? "missing-user",
+                (message.message ?? "").slice(0, 32) || "missing-message",
+                idx, // final safeguard for uniqueness
+              ].join(":");
 
               const timeAgo = (() => {
                 try {
@@ -205,7 +221,7 @@ export function RequestedDocumentMessages({
 
               return (
                 <div
-                  key={message._id}
+                  key={messageKey}
                   className={cn(
                     "group flex gap-2.5",
                     isCurrentUser
@@ -215,11 +231,15 @@ export function RequestedDocumentMessages({
                 >
                   {/* Avatar for others */}
                   {!isCurrentUser && (
-                    <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted mt-5">
-                      <span className="text-[11px] font-medium uppercase text-muted-foreground">
-                        {(message.username ?? "?").charAt(0)}
-                      </span>
-                    </div>
+                    <Avatar size="sm" className="mt-5">
+                      <AvatarImage
+                        src={message.profile_image_url ?? undefined}
+                        alt={message.username ?? "User"}
+                      />
+                      <AvatarFallback className="text-[11px] font-medium">
+                        {getInitials(message.username)}
+                      </AvatarFallback>
+                    </Avatar>
                   )}
 
                   <div className="space-y-1 min-w-0">

@@ -62,6 +62,7 @@ export interface RequestedDocumentMessage {
   message: string;
   username: string;
   added_at: string;
+  profile_image_url?: string | null;
 }
 
 export interface MessageEvent {

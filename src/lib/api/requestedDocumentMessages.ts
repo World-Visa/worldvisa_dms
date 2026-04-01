@@ -6,6 +6,7 @@ export interface RequestedDocumentMessage {
   message: string;
   username: string;
   added_at: string;
+  profile_image_url?: string | null;
 }
 
 export interface RequestedDocumentMessagesResponse {
@@ -25,6 +26,7 @@ export interface SendMessageResponse {
     message: string;
     username: string;
     added_at: string;
+    profile_image_url?: string | null;
   };
   message?: string;
 }
@@ -62,7 +64,6 @@ export async function sendRequestedDocumentMessage(
     API_CONFIG.ENDPOINTS.REVIEW_REQUEST_MESSAGES(documentId, reviewId),
     {
       method: "POST",
-      headers: API_CONFIG.DEFAULT_HEADERS,
       body: JSON.stringify(data),
     },
   );
