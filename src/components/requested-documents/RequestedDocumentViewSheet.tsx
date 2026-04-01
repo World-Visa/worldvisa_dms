@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useAddComment } from "@/hooks/useCommentMutations";
-import { StatusBadge } from "./StatusBadge";
+import { RequestDocStatusBadge } from "./RequestDocStatusBadge";
 import {
   useUpdateDocumentStatus,
   useDeleteRequestedDocument,
@@ -46,6 +46,7 @@ import { useApplicationDetails } from "@/hooks/useApplicationDetails";
 import { useSpouseApplicationDetails } from "@/hooks/useSpouseApplicationDetails";
 import { ApplicationDetailsAccordion } from "./ApplicationDetailsAccordion";
 import { ApplicationDetailsResponse } from "@/types/applications";
+import { RiExternalLinkLine } from "react-icons/ri";
 
 interface RequestedDocumentViewSheetProps {
   document: RequestedDocument | null;
@@ -299,15 +300,15 @@ export function RequestedDocumentViewSheet({
                 {displayDoc?.record_id && (
                   <Button
                     onClick={handleViewApplication}
-                    variant="outline"
+                    variant="secondary"
                     size="sm"
                     className="cursor-pointer shrink-0"
                   >
-                    <ExternalLink className="h-4 w-4 mr-2" />
+                    <RiExternalLinkLine className="size-4" />
                     View Application
                   </Button>
                 )}
-                <StatusBadge status={displayDoc.requested_review.status} />
+                <RequestDocStatusBadge status={displayDoc.requested_review.status} />
               </div>
             </div>
           </SheetHeader>
@@ -349,8 +350,8 @@ export function RequestedDocumentViewSheet({
                 </div>
               )}
 
-              <div className="border-t border-border/40 px-6 py-3 shrink-0">
-                <div className="flex flex-row gap-2 flex-wrap">
+              <div className="border-t border-border/40 px-6 py-4 shrink-0">
+                <div className="flex flex-row gap-2 flex-wrap justify-end">
                   {canReview && !isReviewing && (
                     <Button
                       onClick={() => {
@@ -359,6 +360,7 @@ export function RequestedDocumentViewSheet({
                       }}
                       variant="default"
                       size="sm"
+                      className="bg-primary-blue"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Mark as Reviewed

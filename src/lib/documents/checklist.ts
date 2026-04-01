@@ -235,6 +235,11 @@ export const COMPANY_DOCUMENTS = [
   },
   {
     category: "Company",
+    documentType: "Denial Email For Reference Letter",
+    allowedDocument: 2,
+  },
+  {
+    category: "Company",
     documentType: "Employer Linked Insurance",
     allowedDocument: 2,
   },

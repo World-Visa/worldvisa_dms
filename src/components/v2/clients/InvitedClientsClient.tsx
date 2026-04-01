@@ -1,190 +1,129 @@
 "use client";
 
-import * as React from "react";
-import {
-  getCoreRowModel,
-  getSortedRowModel,
-  type PaginationState,
-  type SortingState,
-  useReactTable,
-  type ColumnDef,
-} from "@tanstack/react-table";
-import { Clock, Mail } from "lucide-react";
+import { memo, useCallback, useState } from "react";
+import { AlertCircle } from "lucide-react";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { InvitationsTableClient } from "@/components/v2/invitations/InvitationsTableClient";
-import { RevokeInvitationAction } from "@/components/v2/invitations/RevokeInvitationAction";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
+import { ListNoResults } from "@/components/applications/list-no-results";
+import { InvitedClientTableRow } from "@/components/v2/invitations/InvitedClientTableRow";
 import { useClients, type ClientRecord } from "@/hooks/useClients";
-import { useRevokeClientInvitation } from "@/hooks/useUserMutations";
-import { getInitials } from "@/lib/constants/users";
-import { getProfileAvatarSrc } from "@/lib/utils";
+import { INVITED_CLIENTS_TABLE_COLUMNS } from "@/lib/constants/invitedClientsTable";
 
-function RevokeClientCell({ client }: { client: ClientRecord }) {
-  const { mutate: revokeInvitation, isPending } = useRevokeClientInvitation();
+const COLUMN_COUNT = INVITED_CLIENTS_TABLE_COLUMNS.length;
 
+const TableLoadingRow = memo(function TableLoadingRow() {
   return (
-    <RevokeInvitationAction
-      invitationId={client.clerk_invitation_id}
-      subject={client.email}
-      isLoading={isPending}
-      onConfirm={(invitationId) => revokeInvitation({ invitationId })}
-    />
-  );
-}
-
-const invitedClientColumns: ColumnDef<ClientRecord>[] = [
-  {
-    accessorKey: "name",
-    header: "Invited Client",
-    cell: ({ row }) => {
-      const name = row.original.name ?? "—";
-      return (
-        <div className="flex items-center gap-3">
-          <Avatar className="size-9 shrink-0">
-            <AvatarImage
-              src={getProfileAvatarSrc({
-                profileImageUrl: row.original.profile_image_url,
-                seed: row.original._id,
-              })}
-              alt={name}
-            />
-            <AvatarFallback className="text-xs font-medium">
-              {getInitials(name ?? "")}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex flex-col">
-            <span className="font-medium">{name}</span>
-            <span className="text-muted-foreground text-xs">
-              {row.original.email}
-            </span>
-          </div>
-        </div>
-      );
-    },
-  },
-  {
-    accessorKey: "lead_owner",
-    header: "Lead Owner",
-    cell: ({ row }) => {
-      const owner = row.original.lead_owner;
-      return owner ? (
-        <Badge variant="secondary" className="capitalize">
-          {owner}
-        </Badge>
-      ) : (
-        <span className="text-muted-foreground text-sm">—</span>
-      );
-    },
-  },
-  {
-    accessorKey: "record_type",
-    header: "Type",
-    cell: ({ row }) => (
-      <Badge variant="outline" className="text-xs">
-        {row.original.record_type === "spouse_skill_assessment"
-          ? "Skill Assessment"
-          : "Visa"}
-      </Badge>
-    ),
-  },
-  {
-    id: "invitation_status",
-    header: "Invitation",
-    cell: () => (
-      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-        <Mail className="size-3.5 shrink-0" />
-        <span>Awaiting acceptance</span>
-      </div>
-    ),
-  },
-  {
-    id: "status",
-    header: "Status",
-    cell: () => (
-      <Badge
-        variant="outline"
-        className="gap-1.5 border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-400"
-      >
-        <Clock className="size-3" />
-        Pending
-      </Badge>
-    ),
-    enableSorting: false,
-  },
-  {
-    id: "actions",
-    header: "",
-    cell: ({ row }) => <RevokeClientCell client={row.original} />,
-    enableSorting: false,
-    enableHiding: false,
-  },
-];
-
-function TableSkeleton() {
-  return (
-    <div className="space-y-3 py-4">
-      {Array.from({ length: 8 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-4 px-4">
-          <Skeleton className="size-9 shrink-0 rounded-full" />
-          <div className="flex flex-col gap-1.5">
-            <Skeleton className="h-4 w-36" />
-            <Skeleton className="h-3 w-28" />
-          </div>
-          <Skeleton className="ml-auto h-6 w-20 rounded-full" />
-          <Skeleton className="h-8 w-16 rounded-md" />
-        </div>
+    <TableRow>
+      {INVITED_CLIENTS_TABLE_COLUMNS.map((col) => (
+        <TableCell key={col.label} className={col.cellClassName}>
+          <Skeleton className={col.skeletonClassName} />
+        </TableCell>
       ))}
-    </div>
+    </TableRow>
   );
-}
+});
 
 export function InvitedClientsClient() {
-  const [sorting, setSorting] = React.useState<SortingState>([]);
-  const [pagination, setPagination] = React.useState<PaginationState>({
-    pageIndex: 0,
-    pageSize: 20,
-  });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   const { data, isLoading, isError, error, refetch } = useClients({
-    page: pagination.pageIndex + 1,
-    limit: pagination.pageSize,
+    page: currentPage,
+    limit: pageSize,
     invited: true,
   });
 
   const clients: ClientRecord[] = data?.data?.clients ?? [];
-  const totalPages = data?.pagination?.totalPages ?? 1;
+  const totalRecords = data?.pagination?.totalRecords ?? 0;
+  const totalPages = Math.max(1, data?.pagination?.totalPages ?? 1);
 
-  const table = useReactTable({
-    data: clients,
-    columns: invitedClientColumns,
-    state: { sorting, pagination },
-    onSortingChange: setSorting,
-    onPaginationChange: setPagination,
-    manualPagination: true,
-    pageCount: totalPages,
-    getCoreRowModel: getCoreRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getRowId: (row) => row._id,
-  });
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  }, []);
+
+  if (isError) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Alert variant="destructive">
+          <AlertCircle className="size-4" />
+          <AlertDescription>
+            {error instanceof Error ? error.message : "Failed to load invitations."}{" "}
+            <Button
+              variant="link"
+              className="h-auto p-0 text-destructive"
+              onClick={() => refetch()}
+            >
+              Try again
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    );
+  }
+
+  if (!isLoading && clients.length === 0) {
+    return (
+      <div className="py-16 h-[calc(60vh-200px)] flex items-center justify-center">
+        <ListNoResults
+          title="No Pending Invitations"
+          description="Invited clients will appear here until they accept and complete registration."
+        />
+      </div>
+    );
+  }
 
   return (
-    <InvitationsTableClient
-      table={table}
-      columns={invitedClientColumns}
+    <Table
       isLoading={isLoading}
-      isError={isError}
-      error={error}
-      onRetry={refetch}
-      skeleton={<TableSkeleton />}
-      emptyState={{
-        icon: <Mail />,
-        title: "No Pending Invitations",
-        description:
-          "Invited clients will appear here until they accept and complete registration.",
-      }}
-    />
+      loadingRowsCount={8}
+      loadingRow={<TableLoadingRow />}
+    >
+      <TableHeader>
+        <TableRow>
+          {INVITED_CLIENTS_TABLE_COLUMNS.map((col) => (
+            <TableHead key={col.label} className={col.headerClassName}>
+              {col.label}
+            </TableHead>
+          ))}
+        </TableRow>
+      </TableHeader>
+      {!isLoading && (
+        <TableBody>
+          {clients.map((client) => (
+            <InvitedClientTableRow key={client._id} client={client} />
+          ))}
+        </TableBody>
+      )}
+      <TableFooter>
+        <TableRow>
+          <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <TablePaginationFooter
+              pageSize={pageSize}
+              currentPageItemsCount={clients.length}
+              totalCount={totalRecords}
+              hasPreviousPage={currentPage > 1}
+              hasNextPage={currentPage < totalPages}
+              onPreviousPage={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              onNextPage={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              onPageSizeChange={handlePageSizeChange}
+              pageSizeOptions={[10, 20, 50]}
+            />
+          </TableCell>
+        </TableRow>
+      </TableFooter>
+    </Table>
   );
 }
-

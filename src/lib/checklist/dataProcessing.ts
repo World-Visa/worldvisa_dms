@@ -351,44 +351,6 @@ export function generateDefaultItems(
           return true;
         }
 
-        // Partial match - check if the document name contains the expected type
-        if (
-          normalizedDocName.includes(normalizedExpectedType) ||
-          normalizedExpectedType.includes(normalizedDocName)
-        ) {
-          const docCategory = doc.document_category;
-          if (docCategory) {
-            // For company documents, use more flexible matching
-            if (
-              docType.category.includes("Documents") &&
-              ![
-                "Identity Documents",
-                "Education Documents",
-                "Other Documents",
-              ].includes(docType.category)
-            ) {
-              // Direct match
-              if (doc.document_category === docType.category) {
-                return true;
-              }
-              // Check if both are company documents (exact match only)
-              if (
-                doc.document_category?.includes("Company Documents") &&
-                docType.category.includes("Company Documents")
-              ) {
-                // Only match if it's the exact same company category
-                return doc.document_category === docType.category;
-              }
-              // Check mapped category
-              const mappedCategory = mapCategoryLabel(docCategory);
-              if (mappedCategory === docType.category) {
-                return true;
-              }
-            }
-            const mappedCategory = mapCategoryLabel(docCategory);
-            return mappedCategory === docType.category;
-          }
-        }
       }
 
       // Fallback: try to match by document_type field

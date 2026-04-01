@@ -42,7 +42,7 @@ interface ClientsPaginationInfo {
   limit: number;
 }
 
-interface ClientsResponse {
+export interface ClientsResponse {
   status: string;
   results: number;
   pagination: ClientsPaginationInfo;
@@ -59,6 +59,80 @@ interface UseClientsParams {
   invited?: boolean;
 }
 
+/** Normalizes `/clients/all` JSON whether the list is under `data.clients`, `data` as array, or top-level `clients`. */
+function normalizeClientsResponse(raw: unknown, fallbackLimit: number): ClientsResponse {
+  if (!raw || typeof raw !== "object") {
+    return {
+      status: "",
+      results: 0,
+      pagination: {
+        currentPage: 1,
+        totalPages: 1,
+        totalRecords: 0,
+        limit: fallbackLimit,
+      },
+      data: { clients: [] },
+    };
+  }
+
+  const r = raw as Record<string, unknown>;
+
+  let clients: ClientRecord[] = [];
+  const dataBlock = r.data;
+  if (Array.isArray(dataBlock)) {
+    clients = dataBlock as ClientRecord[];
+  } else if (dataBlock && typeof dataBlock === "object") {
+    const d = dataBlock as Record<string, unknown>;
+    if (Array.isArray(d.clients)) {
+      clients = d.clients as ClientRecord[];
+    }
+  }
+  if (clients.length === 0 && Array.isArray(r.clients)) {
+    clients = r.clients as ClientRecord[];
+  }
+
+  const pag = r.pagination;
+  let resolvedLimit = fallbackLimit;
+  let currentPage = 1;
+  let totalRecords = clients.length;
+  let totalPages = 1;
+
+  if (pag && typeof pag === "object") {
+    const p = pag as Record<string, unknown>;
+    currentPage = Math.max(1, Number(p.currentPage ?? p.current_page ?? 1) || 1);
+    totalRecords = Math.max(0, Number(p.totalRecords ?? p.total_records ?? 0) || 0);
+    resolvedLimit = Number(p.limit ?? fallbackLimit) || fallbackLimit;
+    totalPages = Math.max(0, Number(p.totalPages ?? p.total_pages ?? 0) || 0);
+    if (totalPages < 1 && totalRecords > 0 && resolvedLimit > 0) {
+      totalPages = Math.ceil(totalRecords / resolvedLimit);
+    }
+    if (clients.length > 0 && totalPages < 1) {
+      totalPages = 1;
+    }
+    if (totalPages < 1) {
+      totalPages = 1;
+    }
+    if (totalRecords < clients.length) {
+      totalRecords = clients.length;
+    }
+  } else if (clients.length > 0) {
+    totalRecords = clients.length;
+    totalPages = 1;
+  }
+
+  return {
+    status: String(r.status ?? ""),
+    results: Number(r.results ?? clients.length) || clients.length,
+    pagination: {
+      currentPage,
+      totalPages,
+      totalRecords,
+      limit: resolvedLimit,
+    },
+    data: { clients },
+  };
+}
+
 const fetchClients = async (params: UseClientsParams): Promise<ClientsResponse> => {
   const queryString = buildQueryString({
     page: params.page,
@@ -72,7 +146,8 @@ const fetchClients = async (params: UseClientsParams): Promise<ClientsResponse> 
     ? `${ZOHO_BASE_URL}/clients/all?${queryString}`
     : `${ZOHO_BASE_URL}/clients/all`;
 
-  return fetcher<ClientsResponse>(url);
+  const raw = await fetcher<unknown>(url);
+  return normalizeClientsResponse(raw, params.limit);
 };
 
 export function useClients(params: UseClientsParams) {

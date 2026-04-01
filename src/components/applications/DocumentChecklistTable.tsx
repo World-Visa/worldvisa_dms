@@ -220,10 +220,7 @@ const DocumentChecklistTableComponent = ({
         if (docTypeFromName) {
           const normalizedDocName = docTypeFromName.toLowerCase().replace(/\s+/g, "_");
           const normalizedExpected = expectedDocType.toLowerCase();
-          typeMatches =
-            normalizedDocName === normalizedExpected ||
-            normalizedDocName.includes(normalizedExpected) ||
-            normalizedExpected.includes(normalizedDocName);
+          typeMatches = normalizedDocName === normalizedExpected;
         }
 
         if (!typeMatches && doc.document_type) {
