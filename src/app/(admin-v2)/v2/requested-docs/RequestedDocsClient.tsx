@@ -215,9 +215,10 @@ export default function RequestedDocsClient() {
   const { documents, pagination, isLoading } =
     getCurrentTabData();
 
-  const displayDocuments = isSearchMode
-    ? searchData?.data ?? []
-    : documents;
+  const rawDocuments = isSearchMode ? searchData?.data ?? [] : documents;
+  const displayDocuments = rawDocuments.filter(
+    (doc, index, arr) => arr.findIndex((d) => d._id === doc._id) === index,
+  );
   const displayPagination = isSearchMode ? searchData?.pagination : pagination;
   const displayLoading = isSearchMode ? isSearchLoading : isLoading;
 
