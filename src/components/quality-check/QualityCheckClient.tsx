@@ -1,50 +1,66 @@
 "use client";
 
-import React, { useState, useCallback } from "react";
-import { Search, SlidersHorizontal, X } from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
+import { memo, useState } from "react";
+import { useMemo } from "react";
+
+import { ListNoResults } from "@/components/applications/list-no-results";
+import { FacetedFormFilter } from "@/components/ui/faceted-filter/facated-form-filter";
+import { Button } from "@/components/ui/primitives/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { QualityCheckDataTable } from "./QualityCheckDataTable";
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 import { QualityCheckViewSheet } from "./QualityCheckViewSheet";
 import { useQualityCheckList } from "@/hooks/useQualityCheckList";
 import { useDebounce } from "@/hooks/useDebounce";
 import type { QualityCheckListItem } from "@/lib/api/qualityCheck";
+import { QUALITY_CHECK_STATUS_OPTIONS, QUALITY_CHECK_RECORD_TYPE_OPTIONS } from "@/lib/constants/qualityCheck";
+import { QUALITY_CHECK_TABLE_COLUMNS } from "@/lib/constants/qualityCheckTable";
+import { QualityCheckTableRow } from "@/components/quality-check/QualityCheckTableRow";
 
 interface Filters {
-  status: string;
-  recordType: string;
+  status: "all" | "pending" | "reviewed" | "removed";
+  recordType: "all" | "Visa_Applications" | "Spouse_Skill_Assessment";
 }
 
 const DEFAULT_FILTERS: Filters = { status: "all", recordType: "all" };
-const LIMIT = 10;
+
+const DEFAULT_LIMIT = 10;
+
+const TableLoadingRow = memo(function TableLoadingRow() {
+  return (
+    <TableRow>
+      {QUALITY_CHECK_TABLE_COLUMNS.map((col) => (
+        <TableCell key={col.label} className={col.cellClassName}>
+          <Skeleton className={col.skeletonClassName} />
+        </TableCell>
+      ))}
+    </TableRow>
+  );
+});
 
 export function QualityCheckClient() {
-  const [page, setPage] = useState(1);
-  const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [limit, setLimit] = useState(DEFAULT_LIMIT);
+  const [searchInput, setSearchInput] = useState("");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
   const [selectedItem, setSelectedItem] = useState<QualityCheckListItem | null>(
     null,
   );
-  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  const debouncedSearch = useDebounce(search.trim(), 350);
+  const debouncedSearch = useDebounce(searchInput.trim(), 350);
+  const isSearchMode = debouncedSearch.length > 0;
 
   const params = {
-    page,
-    limit: LIMIT,
+    page: currentPage,
+    limit,
     search: debouncedSearch || undefined,
     status: filters.status !== "all" ? filters.status : undefined,
     recordType: filters.recordType !== "all" ? filters.recordType : undefined,
@@ -55,191 +71,161 @@ export function QualityCheckClient() {
   const items = data?.data ?? [];
   const totalItems = data?.pagination?.totalRecords ?? data?.totalCount ?? 0;
 
-  const activeFilterCount = [
-    filters.status !== "all",
-    filters.recordType !== "all",
-  ].filter(Boolean).length;
+  const hasActiveFilters =
+    searchInput.trim() !== "" ||
+    filters.status !== "all" ||
+    filters.recordType !== "all";
 
-  const handleRowClick = useCallback((item: QualityCheckListItem) => {
-    setSelectedItem(item);
-    setIsSheetOpen(true);
-  }, []);
+  const clearFilters = () => {
+    setSearchInput("");
+    setFilters(DEFAULT_FILTERS);
+    setCurrentPage(1);
+  };
 
-  const handleSheetClose = useCallback(() => {
-    setIsSheetOpen(false);
-    setSelectedItem(null);
-  }, []);
-
-  const handlePageChange = useCallback((newPage: number) => {
-    setPage(newPage);
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  }, []);
-
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      setSearch(e.target.value);
-      setPage(1);
-    },
+  const statusOptions = useMemo(
+    () => [{ label: "All", value: "all" }, ...QUALITY_CHECK_STATUS_OPTIONS],
     [],
   );
 
-  const handleClearFilters = useCallback(() => {
-    setFilters(DEFAULT_FILTERS);
-    setPage(1);
-  }, []);
-
-  const handleFilterChange = useCallback(
-    <K extends keyof Filters>(key: K, value: Filters[K]) => {
-      setFilters((prev) => ({ ...prev, [key]: value }));
-      setPage(1);
-    },
+  const recordTypeOptions = useMemo(
+    () => [{ label: "All", value: "all" }, ...QUALITY_CHECK_RECORD_TYPE_OPTIONS],
     [],
   );
 
   return (
-    <main>
-      {/* Page header */}
-      <div className="mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-baseline sm:justify-between gap-2 sm:gap-4">
-          <div>
-            <h1 className="text-2xl font-medium text-foreground">
-              Quality Check
-            </h1>
-            <p className="mt-0.5 text-sm text-muted-foreground">
-              Review and manage quality check applications.
-            </p>
-          </div>
-          <div className="text-sm text-muted-foreground tabular-nums">
-            {isLoading ? (
-              <span className="animate-pulse">—</span>
-            ) : (
-              <>
-                <span className="font-medium text-foreground">
-                  {totalItems.toLocaleString()}
-                </span>
-                <span className="ml-1">applications</span>
-              </>
-            )}
-          </div>
-        </div>
+    <main className="w-full">
+      <div className="mb-3">
+        <h1 className="text-xl text-foreground">Quality Check</h1>
       </div>
 
-      {/* Search + Filter bar */}
-      <div className="flex items-center justify-between gap-2 mb-4">
-        <div className="relative flex-1 max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none" />
-          <Input
-            value={search}
-            onChange={handleSearchChange}
-            placeholder="Search by name..."
-            className="pl-9 h-9"
-          />
-          {search && (
-            <button
-              type="button"
-              onClick={() => {
-                setSearch("");
-                setPage(1);
-              }}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+      <div className="flex flex-wrap items-center gap-2 py-2.5">
+        <FacetedFormFilter
+          type="text"
+          size="small"
+          title="Search"
+          value={searchInput}
+          onChange={(v) => {
+            setSearchInput(v);
+            setCurrentPage(1);
+          }}
+          placeholder="Search by name/email…"
+        />
+        <FacetedFormFilter
+          type="single"
+          size="small"
+          title="Status"
+          options={statusOptions}
+          selected={filters.status !== "all" ? [filters.status] : []}
+          onSelect={(vals) => {
+            setFilters((prev) => ({ ...prev, status: (vals[0] as Filters["status"]) ?? "all" }));
+            setCurrentPage(1);
+          }}
+        />
+        <FacetedFormFilter
+          type="single"
+          size="small"
+          title="Record Type"
+          options={recordTypeOptions}
+          selected={filters.recordType !== "all" ? [filters.recordType] : []}
+          onSelect={(vals) => {
+            setFilters((prev) => ({
+              ...prev,
+              recordType: (vals[0] as Filters["recordType"]) ?? "all",
+            }));
+            setCurrentPage(1);
+          }}
+        />
+        {hasActiveFilters && (
+          <Button
+            variant="secondary"
+            mode="ghost"
+            size="2xs"
+            className="text-xs! font-normal! text-neutral-700"
+            onClick={clearFilters}
+          >
+            Reset
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-4 mt-2">
+        {!isLoading && items.length === 0 ? (
+          <div className="py-16 h-[calc(60vh-200px)] flex items-center justify-center">
+            <ListNoResults
+              title={isSearchMode ? "No results" : "No quality check applications"}
+              description={
+                isSearchMode
+                  ? "No quality check applications match your search."
+                  : "Quality check applications will appear here."
+              }
+              onClearFilters={hasActiveFilters ? clearFilters : undefined}
+            />
+          </div>
+        ) : (
+          <div className="w-full">
+            <Table
+              isLoading={isLoading}
+              loadingRowsCount={8}
+              loadingRow={<TableLoadingRow />}
             >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
-        </div>
+              <TableHeader>
+                <TableRow>
+                  {QUALITY_CHECK_TABLE_COLUMNS.map((col) => (
+                    <TableHead key={col.label} className={col.headerClassName}>
+                      {col.label}
+                    </TableHead>
+                  ))}
+                </TableRow>
+              </TableHeader>
 
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button variant="outline" size="sm" className="h-9 gap-2 shrink-0">
-              <SlidersHorizontal className="h-4 w-4" />
-              Filters
-              {activeFilterCount > 0 && (
-                <span className="ml-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-foreground text-background text-[11px] font-medium">
-                  {activeFilterCount}
-                </span>
+              {!isLoading && (
+                <TableBody>
+                  {items.map((item) => (
+                    <QualityCheckTableRow
+                      key={`${item.qcId}-${item.id}`}
+                      item={item}
+                      searchQuery={isSearchMode ? debouncedSearch : ""}
+                      onView={setSelectedItem}
+                    />
+                  ))}
+                </TableBody>
               )}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-64 p-4" align="end">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h4 className="text-sm font-medium">Filters</h4>
-                {activeFilterCount > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="h-auto px-2 py-1 text-xs text-muted-foreground hover:text-foreground"
-                    onClick={handleClearFilters}
-                  >
-                    Clear all
-                  </Button>
-                )}
-              </div>
 
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Status
-                </Label>
-                <Select
-                  value={filters.status}
-                  onValueChange={(v) => handleFilterChange("status", v)}
-                >
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All statuses</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                    <SelectItem value="reviewed">Reviewed</SelectItem>
-                    <SelectItem value="removed">Removed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-xs text-muted-foreground uppercase tracking-wide">
-                  Record Type
-                </Label>
-                <Select
-                  value={filters.recordType}
-                  onValueChange={(v) => handleFilterChange("recordType", v)}
-                >
-                  <SelectTrigger className="h-8 text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All types</SelectItem>
-                    <SelectItem value="Visa_Applications">
-                      Visa Applications
-                    </SelectItem>
-                    <SelectItem value="Spouse_Skill_Assessment">
-                      Spouse Skill Assessment
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </PopoverContent>
-        </Popover>
+              {totalItems > 0 && (
+                <TableFooter>
+                  <TableRow>
+                    <TableCell colSpan={QUALITY_CHECK_TABLE_COLUMNS.length} className="p-0">
+                      <TablePaginationFooter
+                        pageSize={limit}
+                        currentPageItemsCount={items.length}
+                        totalCount={totalItems}
+                        hasPreviousPage={currentPage > 1}
+                        hasNextPage={currentPage < Math.max(1, Math.ceil(totalItems / limit))}
+                        onPreviousPage={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        onNextPage={() =>
+                          setCurrentPage((p) =>
+                            Math.min(Math.max(1, Math.ceil(totalItems / limit)), p + 1),
+                          )
+                        }
+                        onPageSizeChange={(size) => {
+                          setLimit(size);
+                          setCurrentPage(1);
+                        }}
+                        pageSizeOptions={[10, 20, 50]}
+                      />
+                    </TableCell>
+                  </TableRow>
+                </TableFooter>
+              )}
+            </Table>
+          </div>
+        )}
       </div>
 
-      {/* Data table */}
-      <QualityCheckDataTable
-        items={items}
-        isLoading={isLoading}
-        totalItems={totalItems}
-        currentPage={page}
-        limit={LIMIT}
-        searchQuery={debouncedSearch}
-        onPageChange={handlePageChange}
-        onRowClick={handleRowClick}
-      />
-
-      {/* Sheet */}
       <QualityCheckViewSheet
         item={selectedItem}
-        isOpen={isSheetOpen}
-        onClose={handleSheetClose}
+        isOpen={!!selectedItem}
+        onClose={() => setSelectedItem(null)}
       />
     </main>
   );

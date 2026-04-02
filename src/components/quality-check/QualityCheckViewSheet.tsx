@@ -8,7 +8,10 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import {
+  StatusBadge,
+  StatusBadgeIcon,
+} from "@/components/ui/primitives/status-badge";
 import {
   CheckCircle,
   Trash2,
@@ -23,6 +26,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
+import { ROUTES } from "@/utils/routes";
 import { QualityCheckMessages } from "./QualityCheckMessages";
 import {
   useUpdateQualityCheckStatus,
@@ -30,6 +34,11 @@ import {
   useQualityCheckDetails,
 } from "@/hooks/useQualityCheckList";
 import type { QualityCheckListItem } from "@/lib/api/qualityCheck";
+import {
+  QUALITY_CHECK_REMOVE_ROLE_SET,
+  QUALITY_CHECK_REVIEW_ANY_ROLE_SET,
+} from "@/lib/constants/qualityCheck";
+import { isAdminRole } from "@/lib/roles";
 
 interface QualityCheckViewSheetProps {
   item: QualityCheckListItem | null;
@@ -37,28 +46,32 @@ interface QualityCheckViewSheetProps {
   onClose: () => void;
 }
 
-function QCStatusBadge({ status }: { status: string }) {
+function QCStatusBadge({
+  status,
+}: {
+  status: QualityCheckListItem["qcStatus"];
+}) {
   if (status === "reviewed") {
     return (
-      <Badge className="bg-emerald-50 text-emerald-800 border border-emerald-200/90 font-medium text-xs px-2 py-1 flex items-center gap-1 w-fit">
-        <Eye className="h-3 w-3" />
+      <StatusBadge variant="light" status="completed" className="w-fit">
+        <StatusBadgeIcon as={Eye} />
         Reviewed
-      </Badge>
+      </StatusBadge>
     );
   }
   if (status === "removed") {
     return (
-      <Badge className="bg-red-50 text-red-700 border border-red-200/90 font-medium text-xs px-2 py-1 flex items-center gap-1 w-fit">
-        <AlertCircle className="h-3 w-3" />
+      <StatusBadge variant="light" status="failed" className="w-fit">
+        <StatusBadgeIcon as={AlertCircle} />
         Removed
-      </Badge>
+      </StatusBadge>
     );
   }
   return (
-    <Badge className="bg-slate-100 text-slate-700 border border-slate-200 font-medium text-xs px-2 py-1 flex items-center gap-1 w-fit">
-      <Clock className="h-3 w-3" />
+    <StatusBadge variant="light" status="pending" className="w-fit">
+      <StatusBadgeIcon as={Clock} />
       Pending
-    </Badge>
+    </StatusBadge>
   );
 }
 
@@ -95,30 +108,27 @@ export function QualityCheckViewSheet({
 
   const handleViewApplication = () => {
     const rt = details?.recordType ?? item.Record_Type ?? "";
-    const route =
-      rt === "Spouse_Skill_Assessment" || rt === "spouse_skill_assessment"
-        ? `/v2/spouse-skill-assessment-applications/${item.id}`
-        : `/v2/applications/${item.id}`;
+    const route = (rt === "Spouse_Skill_Assessment" || rt === "spouse_skill_assessment")
+      ? ROUTES.SPOUSE_SKILL_ASSESSMENT_APPLICATION_DETAILS(item.id)
+      : ROUTES.APPLICATION_DETAILS(item.id);
     router.push(route);
     onClose();
   };
 
-  const canAccessMessages =
-    user?.role &&
-    ["admin", "team_leader", "master_admin", "supervisor"].includes(user.role);
-
+  const role = user?.role;
+  const canAccessMessages = isAdminRole(role);
   const isAssignedToMe =
     (item.qcRequestedTo ?? details?.requested_to) === user?.username;
-  const canReviewAnyAsRole =
-    user?.role === "master_admin" || user?.role === "supervisor";
+  const canReviewAny =
+    role != null && QUALITY_CHECK_REVIEW_ANY_ROLE_SET.has(role);
   const canMarkReviewed =
-    item.qcStatus === "pending" && (isAssignedToMe || !!canReviewAnyAsRole);
+    item.qcStatus === "pending" && (isAssignedToMe || canReviewAny);
+  const requestedBySelf =
+    (item.qcRequestedBy ?? details?.requested_by) === user?.username;
   const canRemove =
     item.qcStatus !== "removed" &&
-    (user?.role === "master_admin" ||
-      user?.role === "admin" ||
-      user?.role === "supervisor" ||
-      (item.qcRequestedBy ?? details?.requested_by) === user?.username);
+    ((role != null && QUALITY_CHECK_REMOVE_ROLE_SET.has(role)) ||
+      requestedBySelf);
 
   const handleMarkReviewed = async () => {
     if (!qcId) return;

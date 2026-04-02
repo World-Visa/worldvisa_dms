@@ -4,6 +4,11 @@ export const ROUTES = {
   VERIFYING: '/verifying',
   ADMIN_HOME: '/v2/applications',
   CLIENT_HOME: '/client/applications',
+  APPLICATION_DETAILS: (id: string) => `/v2/applications/${id}`,
+  SPOUSE_SKILL_ASSESSMENT_APPLICATION_DETAILS: (id: string) =>
+    `/v2/spouse-skill-assessment-applications/${id}`,
+  CHECKLIST_REQUESTS: '/v2/checklist-requests',
+  CHECKLIST_DOCS: '/v2/checklist-docs',
   USERS: '/v2/users',
   USER_INVITATIONS: '/v2/users/invitations',
   CLIENTS: '/v2/clients',
