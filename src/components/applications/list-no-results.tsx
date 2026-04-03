@@ -1,4 +1,4 @@
-import { ReactEventHandler } from 'react';
+import { ReactEventHandler, ReactNode } from 'react';
 import { RiSearchLine } from 'react-icons/ri';
 import { Button } from '@/components/ui/primitives/button';
 
@@ -6,10 +6,12 @@ export const ListNoResults = ({
   title,
   description,
   onClearFilters,
+  action,
 }: {
   title: string;
   description: string;
   onClearFilters?: ReactEventHandler<HTMLButtonElement>;
+  action?: ReactNode;
 }) => {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4">
@@ -22,10 +24,15 @@ export const ListNoResults = ({
           <p className="text-foreground-400 max-w-[60ch] text-sm">{description}</p>
         </div>
       </div>
-      {onClearFilters && (
-        <Button variant="secondary" size="xs" mode="outline" className="text-xs" onClick={onClearFilters}>
-          Clear filters
-        </Button>
+      {(action ?? onClearFilters) && (
+        <div className="flex items-center gap-2">
+          {action}
+          {onClearFilters && (
+            <Button variant="secondary" size="xs" mode="outline" className="text-xs" onClick={onClearFilters}>
+              Clear filters
+            </Button>
+          )}
+        </div>
       )}
     </div>
   );

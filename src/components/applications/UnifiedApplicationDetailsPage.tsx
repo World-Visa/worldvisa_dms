@@ -341,11 +341,6 @@ export default function UnifiedApplicationDetailsPage({
     [documents, modals],
   );
 
-  const handleCancelChecklist = useCallback(() => {
-    checklistState.cancelChecklistOperation();
-    appState.handleCategoryChange("submitted");
-  }, [appState, checklistState]);
-
   const handleCategoryChangeWithChecklist = useCallback(
     (category: DocumentCategory) => {
       if (showSampleDocuments) {
@@ -378,26 +373,6 @@ export default function UnifiedApplicationDetailsPage({
     previousCategoryBeforeSample,
     setChecklistUrlState,
   ]);
-
-  const handleStartCreatingChecklist = useCallback(() => {
-    checklistState.startCreatingChecklist();
-    appState.handleCategoryChange("all");
-  }, [appState, checklistState]);
-
-  const handleStartEditingChecklist = useCallback(() => {
-    checklistState.startEditingChecklist();
-    let targetCategory: DocumentCategory = "checklist";
-    if (appState.selectedCategory.includes("_company_documents")) {
-      targetCategory = appState.selectedCategory as DocumentCategory;
-    } else if (appState.selectedCategory === "submitted") {
-      const firstCategory = checklistState.checklistCategories[0];
-      if (firstCategory) {
-        targetCategory = firstCategory.id as DocumentCategory;
-      }
-    }
-    appState.handleCategoryChange(targetCategory);
-  }, [appState, checklistState]);
-
 
   const backPath = useMemo(
     () =>
@@ -519,10 +494,6 @@ export default function UnifiedApplicationDetailsPage({
                 onRemoveCompanyWithCheck={handleRemoveCompanyWithDocuments}
                 maxCompanies={maxCompanies}
                 checklistState={checklistState}
-                onStartCreatingChecklist={handleStartCreatingChecklist}
-                onStartEditingChecklist={handleStartEditingChecklist}
-                onSaveChecklist={checklistState.saveChecklist}
-                onCancelChecklist={handleCancelChecklist}
                 applicationId={applicationId}
                 onReuploadDocument={handleReuploadDocument}
                 showSampleDocuments={showSampleDocuments}

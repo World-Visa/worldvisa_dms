@@ -5,6 +5,7 @@ export const ROUTES = {
   ADMIN_HOME: '/v2/applications',
   CLIENT_HOME: '/client/applications',
   APPLICATION_DETAILS: (id: string) => `/v2/applications/${id}`,
+  APPLICATION_CHECKLIST: (id: string) => `/v2/applications/${id}/checklist`,
   SPOUSE_SKILL_ASSESSMENT_APPLICATION_DETAILS: (id: string) =>
     `/v2/spouse-skill-assessment-applications/${id}`,
   CHECKLIST_REQUESTS: '/v2/checklist-requests',
