@@ -553,7 +553,8 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
       return;
     }
 
-    if (!user?.username) {
+    const uploadedBy = user?.username ?? user?.email;
+    if (!uploadedBy) {
       toast.error("User information not available. Please login again.");
       return;
     }
@@ -597,7 +598,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             files: uploadedFiles.map((uf) => uf.file),
             document_name: effectiveDocumentType,
             document_category: finalCategory,
-            uploaded_by: user.username,
+            uploaded_by: uploadedBy,
             description: finalDescription,
             document_type: effectiveDocumentType
               .toLowerCase()
@@ -608,7 +609,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             files: uploadedFiles.map((uf) => uf.file),
             document_name: effectiveDocumentType,
             document_category: finalCategory,
-            uploaded_by: user.username,
+            uploaded_by: uploadedBy,
             description: finalDescription,
             document_type: effectiveDocumentType
               .toLowerCase()
@@ -635,7 +636,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
               workdrive_file_id: doc.id,
               workdrive_parent_id: "",
               file_name: doc.name,
-              uploaded_by: user.username,
+              uploaded_by: uploadedBy,
               status: "pending" as const,
               history: [],
               uploaded_at: doc.uploaded_at,
@@ -721,7 +722,8 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
   };
 
   const handleReupload = async () => {
-    if (!uploadedFile || !displayDocument || !user?.username) {
+    const uploadedBy = user?.username ?? user?.email;
+    if (!uploadedFile || !displayDocument || !uploadedBy) {
       toast.error(
         "Please select a file and ensure user information is available.",
       );
@@ -751,7 +753,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             file: uploadedFile.file,
             document_name: effectiveDocumentType,
             document_category: effectiveCategory,
-            uploaded_by: user.username,
+            uploaded_by: uploadedBy,
             description: displayDocument.description,
           });
         } else {
@@ -761,7 +763,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             file: uploadedFile.file,
             document_name: effectiveDocumentType,
             document_category: effectiveCategory,
-            uploaded_by: user.username,
+            uploaded_by: uploadedBy,
             description: displayDocument.description,
           });
         }
