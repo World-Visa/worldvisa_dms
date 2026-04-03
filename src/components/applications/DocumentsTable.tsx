@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState, type ReactNode } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   Table,
@@ -46,6 +46,7 @@ interface DocumentsTableProps {
     category: string,
   ) => void;
   onUploadSuccess?: () => void;
+  emptyStateAction?: ReactNode;
 }
 
 const COLUMN_COUNT = DOCUMENTS_TABLE_COLUMNS.length;
@@ -75,6 +76,7 @@ export function DocumentsTable({
   onClientDeleteSuccess,
   onReuploadDocument,
   onUploadSuccess,
+  emptyStateAction,
 }: DocumentsTableProps) {
   const { isAdmin } = useHasPermission();
 
@@ -207,6 +209,7 @@ export function DocumentsTable({
         <ListNoResults
           title="No documents uploaded"
           description="Documents uploaded for this application will appear here."
+          action={emptyStateAction}
         />
       </div>
     );

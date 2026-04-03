@@ -1,10 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { DocumentCategoryFilter } from "@/components/applications/DocumentCategoryFilter";
 import { DocumentChecklistTable } from "@/components/applications/DocumentChecklistTable";
 import { DocumentsTable } from "@/components/applications/DocumentsTable";
 import { SampleDocumentsTable } from "@/components/applications/sample-documents/SampleDocumentsTable";
+import { CreateChecklistButton } from "@/components/applications/checklist/CreateChecklistButton";
 import { ListNoResults } from "@/components/applications/list-no-results";
 import { Button as ButtonV2 } from "@/components/ui/primitives/button";
 import { FacetedFormFilter } from "@/components/ui/faceted-filter/facated-form-filter";
@@ -13,6 +15,7 @@ import { Company, DocumentCategory } from "@/types/documents";
 import { DocumentStatus } from "@/lib/enums";
 import { AnimatePresence, motion } from "framer-motion";
 import { FADE_ANIMATION } from "@/components/v2/users/Settings";
+import { ROUTES } from "@/utils/routes";
 
 interface SkillAssessmentLayoutProps {
   allDocuments: Document[] | undefined;
@@ -30,10 +33,6 @@ interface SkillAssessmentLayoutProps {
   ) => void;
   maxCompanies: number;
   checklistState: any;
-  onStartCreatingChecklist: () => void;
-  onStartEditingChecklist: () => void;
-  onSaveChecklist: () => Promise<void>;
-  onCancelChecklist: () => void;
   applicationId: string;
   onReuploadDocument: (
     documentId: string,
@@ -59,10 +58,6 @@ export function SkillAssessmentLayout({
   onRemoveCompanyWithCheck: _onRemoveCompanyWithCheck,
   maxCompanies,
   checklistState,
-  onStartCreatingChecklist,
-  onStartEditingChecklist,
-  onSaveChecklist,
-  onCancelChecklist,
   applicationId,
   onReuploadDocument,
   isClientView = false,
@@ -70,9 +65,17 @@ export function SkillAssessmentLayout({
   onShowSampleDocuments,
   onHideSampleDocuments,
 }: SkillAssessmentLayoutProps) {
+  const router = useRouter();
   const [documentStatusFilter, setDocumentStatusFilter] = useState<
     DocumentStatus | null
   >(null);
+
+  const createChecklistAction =
+    !isClientView && checklistState.state === "none" ? (
+      <CreateChecklistButton
+        onClick={() => router.push(ROUTES.APPLICATION_CHECKLIST(applicationId))}
+      />
+    ) : undefined;
 
   const documentsListLoading =
     isApplicationDocumentsLoading || isAllDocumentsLoading;
@@ -190,6 +193,7 @@ export function SkillAssessmentLayout({
                       error={allDocumentsError}
                       onReuploadDocument={onReuploadDocument}
                       isClientView={isClientView}
+                      emptyStateAction={createChecklistAction}
                     />
                   )}
                 </div>

@@ -21,6 +21,7 @@ import {
     Users,
 } from "lucide-react";
 import { ROLES } from "@/lib/roles";
+import { ROUTES } from "@/utils/routes";
 
 export interface NavSubItem {
     title: string;
@@ -89,13 +90,6 @@ export const sidebarItems: NavGroup[] = [
                 allowedRoles: [ROLES.MASTER_ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
             },
             {
-                title: "Checklist Requests",
-                url: "/v2/checklist-requests",
-                icon: ClipboardList,
-                comingSoon: false,
-                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER],
-            },
-            {
                 title: "Users",
                 url: "/v2/users",
                 icon: Users,
@@ -105,22 +99,6 @@ export const sidebarItems: NavGroup[] = [
                 ],
                 comingSoon: false,
                 allowedRoles: [ROLES.MASTER_ADMIN],
-            },
-            {
-                title: "Email",
-                url: "/v2/mail",
-                icon: Mail,
-                comingSoon: false,
-                isNew: false,
-                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
-            },
-            {
-                title: "Chat",
-                url: "/v2/messages",
-                icon: MessageSquare,
-                comingSoon: false,
-                isNew: false,
-                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
             },
             // {
             //   title: "Calendar",
@@ -149,34 +127,95 @@ export const sidebarItems: NavGroup[] = [
 
         ],
     },
-    // {
-    //   id: 3,
-    //   label: "Misc",
-    //   items: [
-    //     {
-    //       title: "Others",
-    //       url: "/dashboard/coming-soon",
-    //       icon: SquareArrowUpRight,
-    //       comingSoon: true,
-    //     },
-    //   ],
-    // },
+    {
+        id: 3,
+        label: "Communication",
+        items: [
+            {
+                title: "Email",
+                url: "/v2/mail",
+                icon: Mail,
+                comingSoon: false,
+                isNew: false,
+                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
+            },
+            {
+                title: "Chat",
+                url: "/v2/messages",
+                icon: MessageSquare,
+                comingSoon: false,
+                isNew: false,
+                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
+            },
+        ],
+    },
 ];
 
-/**
- * Returns sidebar groups filtered by the given user role.
- * Items without `allowedRoles` are visible to all roles.
- * Groups with no remaining items after filtering are removed.
- */
+const CHECKLIST_ITEM_TITLES = new Set(["Checklist", "Checklist Requests"]);
+
+function buildChecklistNavItemsForRole(role?: string): NavMainItem[] {
+    if (role === ROLES.MASTER_ADMIN) {
+        return [
+            {
+                title: "Checklist",
+                url: ROUTES.CHECKLIST_REQUESTS,
+                icon: ClipboardList,
+                subItems: [
+                    { title: "Manage Checklist Docs", url: ROUTES.CHECKLIST_DOCS, newTab: false },
+                    { title: "Checklist Requests", url: ROUTES.CHECKLIST_REQUESTS, newTab: false },
+                ],
+                allowedRoles: [ROLES.MASTER_ADMIN],
+            },
+        ];
+    }
+
+    return [
+        {
+            title: "Checklist Requests",
+            url: ROUTES.CHECKLIST_REQUESTS,
+            icon: ClipboardList,
+            comingSoon: false,
+            allowedRoles: [ROLES.ADMIN, ROLES.TEAM_LEADER],
+        },
+    ];
+}
+
+
 export function getFilteredSidebarItems(role?: string): NavGroup[] {
     return sidebarItems
-        .map((group) => ({
-            ...group,
-            items: group.items.filter(
+        .map((group) => {
+            const filteredItems = group.items.filter(
                 (item) =>
                     !item.allowedRoles ||
                     (role !== undefined && item.allowedRoles.includes(role)),
-            ),
-        }))
+            );
+
+            if (group.id !== 2) {
+                return { ...group, items: filteredItems };
+            }
+
+            const withoutChecklist = filteredItems.filter(
+                (item) => !CHECKLIST_ITEM_TITLES.has(item.title),
+            );
+
+            const checklistIndex = filteredItems.findIndex((item) =>
+                CHECKLIST_ITEM_TITLES.has(item.title),
+            );
+            const insertAt = checklistIndex === -1 ? withoutChecklist.length : checklistIndex;
+
+            const checklistItems = buildChecklistNavItemsForRole(role).filter(
+                (item) =>
+                    !item.allowedRoles ||
+                    (role !== undefined && item.allowedRoles.includes(role)),
+            );
+
+            const items = [
+                ...withoutChecklist.slice(0, insertAt),
+                ...checklistItems,
+                ...withoutChecklist.slice(insertAt),
+            ];
+
+            return { ...group, items };
+        })
         .filter((group) => group.items.length > 0);
 }
