@@ -41,7 +41,7 @@ export const FolderCategoryCard = memo(function FolderCategoryCard({
       animate={{ y: isActive ? -3 : 0 }}
       transition={{ type: "spring", stiffness: 350, damping: 30 }}
       className={cn(
-        "group flex w-[190px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-2xl border outline-none transition-shadow duration-200 focus-visible:ring-2 focus-visible:ring-neutral-300",
+        "group flex w-[190px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-2xl border outline-none transition-shadow duration-200 focus-visible:ring-2 focus-visible:ring-neutral-300 hover:shadow-md hover:border-neutral-200",
         isActive
           ? "border-neutral-200 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.10),0_1px_4px_-2px_rgba(0,0,0,0.05)]"
           : "border-neutral-50/70",

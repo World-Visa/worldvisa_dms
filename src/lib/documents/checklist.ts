@@ -42,7 +42,7 @@ export const IDENTITY_DOCUMENTS = [
   {
     category: "Identity Documents",
     documentType: "Name Change Affidavit",
-    sampleDocument: "/sample_documents/Name_Change_Affidavit_sample.docx",
+    sampleDocument: "",
     allowedDocument: 2,
   },
 ];

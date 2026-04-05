@@ -38,6 +38,7 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     turbopackFileSystemCacheForDev: true,
+    viewTransition: true,
   },
 };
 

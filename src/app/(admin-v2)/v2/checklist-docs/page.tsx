@@ -1,23 +1,67 @@
-import { createMeta } from "@/lib/seo";
+import { Suspense } from 'react';
+import { cookies } from 'next/headers';
+import { HydrationBoundary, dehydrate } from '@tanstack/react-query';
+import { createServerQueryClient } from '@/lib/react-query/server';
+import { createMeta } from '@/lib/seo';
+import {
+  getChecklistSummaryServer,
+  getServerToken,
+  getVisaServiceTypesServer,
+} from '@/lib/api/server/checklistDocumentTemplates';
+import { CHECKLIST_TEMPLATE_KEYS } from '@/lib/constants/checklistDocTemplatesKeys';
+import { ChecklistDocsClient } from '@/components/checklist-docs/clients/ChecklistDocsClient';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const metadata = createMeta({
-  title: "Manage Checklist Docs",
-  description: "Manage checklist document templates and requirements.",
+  title: 'Checklist Library',
+  description: 'Manage checklist document templates by visa type.',
   noIndex: true,
 });
 
-export default function ChecklistDocsPage() {
+function GridSkeleton() {
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8">
-      <div className="space-y-2">
-        <h1 className="text-2xl font-medium text-foreground">
-          Manage Checklist Docs
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          This page is ready for the checklist docs management UI.
-        </p>
-      </div>
-    </main>
+    <div className="flex flex-wrap gap-4">
+      {Array.from({ length: 8 }).map((_, i) => (
+        <Skeleton key={i} className="h-[208px] w-[190px] rounded-2xl" />
+      ))}
+    </div>
   );
 }
 
+export default async function ChecklistDocsPage() {
+  await cookies();
+
+  const token = await getServerToken();
+  const queryClient = createServerQueryClient();
+
+  try {
+    await Promise.all([
+      queryClient.prefetchQuery({
+        queryKey: CHECKLIST_TEMPLATE_KEYS.visaTypes,
+        queryFn: () => getVisaServiceTypesServer(token),
+      }),
+      queryClient.prefetchQuery({
+        queryKey: CHECKLIST_TEMPLATE_KEYS.summary,
+        queryFn: () => getChecklistSummaryServer(token),
+      }),
+    ]);
+  } catch (error) {
+    console.error('Failed to prefetch checklist library data', error);
+  }
+
+  return (
+    <main className="w-full">
+      <div className="mb-6">
+        <h1 className="text-xl font-medium text-foreground">
+          Checklist Library
+        </h1>
+      </div>
+
+      <HydrationBoundary state={dehydrate(queryClient)}>
+        <Suspense fallback={<GridSkeleton />}>
+          <ChecklistDocsClient />
+        </Suspense>
+      </HydrationBoundary>
+    </main>
+  );
+}
