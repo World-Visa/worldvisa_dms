@@ -1,60 +1,75 @@
 "use client";
 
 import React, { memo } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft, Save } from "lucide-react";
+import { Button } from "@/components/ui/primitives/button";
+import { Save } from "lucide-react";
 import type { ChecklistPageMode } from "./types";
-import { useRouter } from "next/navigation";
-
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/primitives/breadcrumb";
 interface ChecklistLayoutProps {
-  applicationId: string;
+  applicationsListHref: string;
+  applicationDetailsHref: string;
+  applicationLabel: string;
   mode: ChecklistPageMode;
   isSaving: boolean;
-  onCancel: () => void;
+  hasChanges: boolean;
   onSave: () => void;
   children: React.ReactNode;
 }
 
 export const ChecklistLayout = memo(function ChecklistLayout({
-  applicationId,
+  applicationsListHref,
+  applicationDetailsHref,
+  applicationLabel,
   mode,
   isSaving,
-  onCancel,
+  hasChanges,
   onSave,
   children,
 }: ChecklistLayoutProps) {
-  const router = useRouter();
   return (
     <div className="space-y-6">
-      <div className="flex flex-row items-center justify-between gap-4">
-        <div className="flex items-center gap-2">
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => router.back()}
-            className="cursor-pointer rounded-full"
-          >
-            <ArrowLeft className="h-4 w-4" />
-          </Button>
-          <h1 className="text-2xl font-medium text-foreground">Manage Checklist</h1>
+      <div className="flex flex-row items-start justify-between gap-4">
+        <div className="flex min-w-0 flex-1 flex-col gap-1">
+          <Breadcrumb>
+            <BreadcrumbList className="flex-wrap">
+              <BreadcrumbItem>
+                <BreadcrumbLink href={applicationsListHref}>
+                  Applications
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbLink
+                  href={applicationDetailsHref}
+                  transitionTypes={["nav-back"]}
+                  className="max-w-[min(40vw,16rem)] truncate"
+                >
+                  {applicationLabel}
+                </BreadcrumbLink>
+              </BreadcrumbItem>
+              <BreadcrumbSeparator />
+              <BreadcrumbItem>
+                <BreadcrumbPage>Manage Checklist</BreadcrumbPage>
+              </BreadcrumbItem>
+            </BreadcrumbList>
+          </Breadcrumb>
         </div>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex shrink-0 items-center justify-end gap-2">
           <Button
-            variant="secondary"
-            size="sm"
-            onClick={onCancel}
-            disabled={isSaving}
-          >
-            Cancel
-          </Button>
-          <Button
-            size="sm"
+            size="xs"
             onClick={onSave}
-            disabled={isSaving}
-            className="gap-2 bg-primary-blue"
-            premium3D={true}
+            disabled={isSaving || !hasChanges}
+            className="gap-2 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+            variant="primary"
+            mode="gradient"
           >
             {isSaving ? (
               <>

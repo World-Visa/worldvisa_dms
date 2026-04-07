@@ -184,7 +184,6 @@ export function ClientSkillAssessmentLayout({
             onAddCompany={onAddCompany}
             showSampleDocuments={showSampleDocuments}
             onToggleSampleDocuments={onToggleSampleDocuments}
-            sampleDocumentsCount={submittedDocumentsCount}
           />
 
           <AnimatePresence mode="wait" initial={false}>

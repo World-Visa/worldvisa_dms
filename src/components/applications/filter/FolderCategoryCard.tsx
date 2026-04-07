@@ -15,9 +15,9 @@ interface FolderCategoryCardProps {
 
 function getFolderIconByCategory(categoryId: string) {
   if (categoryId.includes("company")) {
-    return { src: "/folders/company-folder.png", w: 100, h: 100, cls: "h-[100px] w-[100px] object-contain" };
+    return { src: "/folders/company-folder.png", w: 78, h: 78, cls: "h-[78px] w-[78px] object-contain" };
   }
-  return { src: "/folders/category-doc.png", w: 128, h: 128, cls: "h-[128px] w-[128px] object-contain" };
+  return { src: "/folders/category-doc.png", w: 100, h: 100, cls: "h-[100px] w-[100px] object-contain" };
 }
 
 export const FolderCategoryCard = memo(function FolderCategoryCard({
@@ -41,7 +41,7 @@ export const FolderCategoryCard = memo(function FolderCategoryCard({
       animate={{ y: isActive ? -3 : 0 }}
       transition={{ type: "spring", stiffness: 350, damping: 30 }}
       className={cn(
-        "group flex w-[190px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-2xl border outline-none transition-shadow duration-200 focus-visible:ring-2 focus-visible:ring-neutral-300 hover:shadow-md hover:border-neutral-200",
+        "group flex w-[155px] shrink-0 cursor-pointer flex-col overflow-hidden rounded-2xl border outline-none transition-shadow duration-200 focus-visible:ring-2 focus-visible:ring-neutral-300 hover:shadow-md hover:border-neutral-200",
         isActive
           ? "border-neutral-200 shadow-[0_4px_16px_-4px_rgba(0,0,0,0.10),0_1px_4px_-2px_rgba(0,0,0,0.05)]"
           : "border-neutral-50/70",
@@ -50,7 +50,7 @@ export const FolderCategoryCard = memo(function FolderCategoryCard({
       {/* Icon section — gray background, fixed height */}
       <div
         className={cn(
-          "relative flex h-[140px] m-1 rounded-xl items-center justify-center transition-colors duration-200",
+          "relative flex h-[108px] m-1 rounded-xl items-center justify-center transition-colors duration-200",
           isActive ? "bg-neutral-100" : "bg-neutral-100/70",
         )}
       >
@@ -70,7 +70,7 @@ export const FolderCategoryCard = memo(function FolderCategoryCard({
       </div>
 
       {/* Content section — white background, fixed height */}
-      <div className="flex h-[60px] flex-col items-center justify-center gap-0.5 bg-white px-3 text-center">
+      <div className="flex h-[48px] flex-col items-center justify-center gap-0.5 bg-white px-3 text-center">
         <span className="w-full truncate text-[13px] font-medium leading-5 tracking-[-0.01em] text-neutral-900">
           {category.label.replace(" Company Documents", "")}
         </span>

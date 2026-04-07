@@ -1,27 +1,32 @@
 "use client";
 
-import { memo, useCallback, useMemo, useState } from "react";
-import { type ColumnDef } from "@tanstack/react-table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/v2/datatable/data-table";
-import { DataTablePagination } from "@/components/v2/datatable/data-table-pagination";
-import { useDataTableInstance } from "@/hooks/use-data-table-instance";
-import { RequirementSelector } from "@/components/applications/checklist/RequirementSelector";
+import { memo, useCallback, useEffect, useMemo, useState } from "react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+  DirectionEnum,
+} from "@/components/ui/table";
+import { TablePaginationFooter } from "@/components/ui/table-pagination-footer";
 import { DescriptionModal } from "@/components/applications/checklist/DescriptionModal";
-import { getCategoryBadgeStyle } from "@/lib/checklist/dataProcessing";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { useChecklistMutations } from "@/hooks/useChecklist";
-import { Check, FileText, Loader2 } from "lucide-react";
+import {
+  CHECKLIST_EDITOR_TABLE_COLUMNS,
+  CHECKLIST_EDITOR_TABLE_COLUMN_COUNT,
+} from "@/lib/constants/checklistEditorTable";
 import type { DocumentRequirement } from "@/types/checklist";
+import {
+  ChecklistEditorTableRow,
+  getDisplayCategory,
+  type ChecklistTableItem,
+} from "./ChecklistEditorTableRow";
 
-interface ChecklistTableItem {
-  category: string;
-  documentType: string;
-  requirement?: DocumentRequirement;
-  checklist_id?: string;
-  isSelected?: boolean;
-  description?: string;
-}
+export type { ChecklistTableItem } from "./ChecklistEditorTableRow";
 
 interface ChecklistEditorTableProps {
   items: ChecklistTableItem[];
@@ -33,17 +38,6 @@ interface ChecklistEditorTableProps {
     documentType: string,
     requirement: DocumentRequirement,
   ) => void;
-  onAddToPending: (item: ChecklistTableItem) => void;
-}
-
-function getDisplayCategory(category: string): string {
-  if (category.includes("Company Documents")) return "Company Documents";
-  return category;
-}
-
-function truncateText(text: string, maxLength: number): string {
-  if (text.length <= maxLength) return text;
-  return `${text.slice(0, maxLength)}...`;
 }
 
 export const ChecklistEditorTable = memo(function ChecklistEditorTable({
@@ -53,214 +47,205 @@ export const ChecklistEditorTable = memo(function ChecklistEditorTable({
   applicationId,
   onUpdateRequirement,
 }: ChecklistEditorTableProps) {
-  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-  const [activeDescModal, setActiveDescModal] = useState<{
-    item: ChecklistTableItem;
-  } | null>(null);
+  const [descriptionEditItem, setDescriptionEditItem] =
+    useState<ChecklistTableItem | null>(null);
+  const [viewDescriptionItem, setViewDescriptionItem] =
+    useState<ChecklistTableItem | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ChecklistTableItem | null>(
+    null,
+  );
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [sortDirection, setSortDirection] = useState<DirectionEnum | false>(
+    false,
+  );
 
   const { deleteItem, updateItemDescription } =
     useChecklistMutations(applicationId);
 
   const handleDelete = useCallback(
     async (checklistId: string) => {
-      setDeletingIds((prev) => new Set([...prev, checklistId]));
-      try {
-        await deleteItem.mutateAsync({ checklist_id: checklistId });
-      } finally {
-        setDeletingIds((prev) => {
-          const next = new Set(prev);
-          next.delete(checklistId);
-          return next;
-        });
-      }
+      await deleteItem.mutateAsync({ checklist_id: checklistId });
     },
     [deleteItem],
   );
 
-  const columns = useMemo<ColumnDef<ChecklistTableItem>[]>(
-    () => [
-      {
-        id: "sno",
-        header: "S.No",
-        cell: ({ row }) => (
-          <span className="font-medium text-sm">{row.index + 1}</span>
-        ),
-        size: 60,
-      },
-      {
-        accessorKey: "category",
-        header: "Category",
-        cell: ({ row }) => {
-          const display = getDisplayCategory(row.original.category);
-          return (
-            <Badge
-              variant="default"
-              className={`text-xs py-1 text-white ${getCategoryBadgeStyle(row.original.category)}`}
-            >
-              {display}
-            </Badge>
-          );
-        },
-      },
-      {
-        accessorKey: "documentType",
-        header: "Document Name",
-        cell: ({ row }) => {
-          const item = row.original;
-          return (
-            <div>
-              <div className="flex items-center gap-2">
-                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="text-sm">{item.documentType}</span>
-              </div>
-              {item.checklist_id && (
-                <div className="ml-6 mt-1">
-                  {item.description?.trim() ? (
-                    <>
-                      <p className="text-xs text-muted-foreground">
-                        {truncateText(item.description, 50)}
-                      </p>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setActiveDescModal({ item })}
-                        className="mt-1 h-6 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-black"
-                      >
-                        Edit Description
-                      </Button>
-                    </>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setActiveDescModal({ item })}
-                      className="h-6 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-black"
-                    >
-                      Add Description
-                    </Button>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        },
-      },
-      {
-        accessorKey: "requirement",
-        header: "Requirement",
-        cell: ({ row }) => {
-          const req = row.original.requirement;
-          if (!req || req === "not_required") return null;
-          return (
-            <Badge
-              variant="default"
-              className={
-                req === "mandatory"
-                  ? "bg-red-100 text-red-800 hover:bg-red-200 text-xs"
-                  : "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 text-xs"
-              }
-            >
-              {req === "mandatory" ? "Mandatory" : "Optional"}
-            </Badge>
-          );
-        },
-      },
-      {
-        id: "action",
-        header: () => <div className="text-right">Action</div>,
-        cell: ({ row }) => {
-          const item = row.original;
-          const isCurrentTab = mode === "edit" && activeTab === "current";
+  const handleConfirmDelete = useCallback(async () => {
+    if (!deleteTarget?.checklist_id) return;
+    try {
+      await handleDelete(deleteTarget.checklist_id);
+      setDeleteTarget(null);
+    } catch {
+      // keep modal open on failure
+    }
+  }, [deleteTarget, handleDelete]);
 
-          if (isCurrentTab) {
-            const isDeleting = deletingIds.has(item.checklist_id ?? "");
-            return (
-              <div className="flex justify-end">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() =>
-                    item.checklist_id && handleDelete(item.checklist_id)
-                  }
-                  disabled={isDeleting}
-                  className="text-red-600 hover:text-red-700 text-xs"
-                >
-                  {isDeleting ? (
-                    <>
-                      <Loader2 className="h-3 w-3 animate-spin mr-1" />
-                      Deleting...
-                    </>
-                  ) : (
-                    "Delete"
-                  )}
-                </Button>
-              </div>
-            );
-          }
+  const sortedItems = useMemo(() => {
+    if (!sortDirection) return items;
+    return [...items].sort((a, b) => {
+      const catA = getDisplayCategory(a.category);
+      const catB = getDisplayCategory(b.category);
+      return sortDirection === DirectionEnum.ASC
+        ? catA.localeCompare(catB)
+        : catB.localeCompare(catA);
+    });
+  }, [items, sortDirection]);
 
-          const req = item.requirement;
-          const hasRequirement =
-            req === "mandatory" || req === "optional";
-          return (
-            <div className="flex items-center justify-end gap-2">
-              {hasRequirement && (
-                <Check className="h-4 w-4 text-green-600 shrink-0" />
-              )}
-              <div className="w-32">
-                <RequirementSelector
-                  value={req ?? "not_required"}
-                  onChange={(r) =>
-                    onUpdateRequirement(item.category, item.documentType, r)
-                  }
-                />
-              </div>
-            </div>
-          );
-        },
-      },
-    ],
-    [mode, activeTab, deletingIds, handleDelete, onUpdateRequirement],
+  const totalCount = sortedItems.length;
+  const totalPages = Math.max(1, Math.ceil(totalCount / pageSize));
+  const paginatedItems = sortedItems.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
   );
 
-  const table = useDataTableInstance({
-    data: items,
-    columns,
-    enableRowSelection: false,
-    defaultPageSize: 20,
-    getRowId: (row) =>
-      row.checklist_id ?? `${row.category}-${row.documentType}`,
-  });
+  useEffect(() => {
+    setCurrentPage((p) => Math.min(p, totalPages));
+  }, [totalPages]);
+
+  const handleSortToggle = useCallback(() => {
+    setSortDirection((prev) => {
+      if (prev === false) return DirectionEnum.ASC;
+      if (prev === DirectionEnum.ASC) return DirectionEnum.DESC;
+      return false;
+    });
+    setCurrentPage(1);
+  }, []);
+
+  const handlePageSizeChange = useCallback((size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  }, []);
 
   return (
     <>
-      <div className="overflow-hidden rounded-md border [&_td]:py-2">
-        <DataTable table={table} columns={columns} />
-      </div>
-      {table.getPageCount() > 1 && (
-        <div className="border rounded-md py-2">
-          <DataTablePagination table={table} />
-        </div>
-      )}
+      <Table>
+        <TableHeader>
+          <TableRow>
+            {CHECKLIST_EDITOR_TABLE_COLUMNS.map((colDef) =>
+              colDef.label === "Category" ? (
+                <TableHead
+                  key={colDef.label}
+                  className={colDef.headerClassName}
+                  sortable
+                  sortDirection={sortDirection}
+                  onSort={handleSortToggle}
+                >
+                  {colDef.label}
+                </TableHead>
+              ) : (
+                <TableHead key={colDef.label} className={colDef.headerClassName}>
+                  {colDef.label}
+                </TableHead>
+              ),
+            )}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {paginatedItems.map((item, idx) => {
+            const rowKey =
+              item.checklist_id ?? `${item.category}-${item.documentType}`;
+            const displayIndex = (currentPage - 1) * pageSize + idx + 1;
+            return (
+              <ChecklistEditorTableRow
+                key={rowKey}
+                item={item}
+                rowIndex={displayIndex}
+                mode={mode}
+                activeTab={activeTab}
+                onViewDescription={(row) => setViewDescriptionItem(row)}
+                onAddOrEditDescription={(row) =>
+                  setDescriptionEditItem(row)
+                }
+                onRequestDelete={(row) => setDeleteTarget(row)}
+                onUpdateRequirement={onUpdateRequirement}
+              />
+            );
+          })}
+        </TableBody>
+        <TableFooter>
+          <TableRow>
+            <TableCell colSpan={CHECKLIST_EDITOR_TABLE_COLUMN_COUNT} className="p-0">
+              <TablePaginationFooter
+                pageSize={pageSize}
+                currentPageItemsCount={paginatedItems.length}
+                totalCount={totalCount}
+                hasPreviousPage={currentPage > 1}
+                hasNextPage={currentPage < totalPages}
+                onPreviousPage={() =>
+                  setCurrentPage((p) => Math.max(1, p - 1))
+                }
+                onNextPage={() =>
+                  setCurrentPage((p) => Math.min(totalPages, p + 1))
+                }
+                onPageSizeChange={handlePageSizeChange}
+                pageSizeOptions={[10, 20, 25, 50]}
+              />
+            </TableCell>
+          </TableRow>
+        </TableFooter>
+      </Table>
 
-      {activeDescModal?.item.checklist_id && (
+      {descriptionEditItem?.checklist_id && (
         <DescriptionModal
           open
           onOpenChange={(open) => {
-            if (!open) setActiveDescModal(null);
+            if (!open) setDescriptionEditItem(null);
           }}
-          existingDescription={activeDescModal.item.description ?? ""}
+          existingDescription={descriptionEditItem.description ?? ""}
           onSave={async (description: string) => {
-            if (!activeDescModal.item.checklist_id) return;
+            if (!descriptionEditItem.checklist_id) return;
             await updateItemDescription.mutateAsync({
-              checklist_id: activeDescModal.item.checklist_id,
+              checklist_id: descriptionEditItem.checklist_id,
               description,
             });
-            setActiveDescModal(null);
+            setDescriptionEditItem(null);
           }}
           mode="edit"
           isLoading={updateItemDescription.isPending}
         />
       )}
+
+      <ConfirmationModal
+        open={!!viewDescriptionItem}
+        onOpenChange={(open) => {
+          if (!open) setViewDescriptionItem(null);
+        }}
+        onConfirm={() => setViewDescriptionItem(null)}
+        title="Description"
+        description={
+          viewDescriptionItem?.description?.trim() ? (
+            <span className="whitespace-pre-wrap text-left">
+              {viewDescriptionItem.description}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">No description.</span>
+          )
+        }
+        confirmText="Close"
+        hideCancelButton
+        variant="default"
+      />
+
+      <ConfirmationModal
+        open={!!deleteTarget}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null);
+        }}
+        onConfirm={handleConfirmDelete}
+        title="Delete checklist document"
+        description={
+          deleteTarget ? (
+            <>
+              Remove{" "}
+              <strong>{deleteTarget.documentType}</strong> from this
+              application checklist? This cannot be undone.
+            </>
+          ) : null
+        }
+        variant="destructive"
+        confirmText="Delete"
+        isLoading={deleteItem.isPending && !!deleteTarget}
+      />
     </>
   );
 });

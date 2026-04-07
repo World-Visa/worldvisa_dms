@@ -51,12 +51,6 @@ export default async function ChecklistDocsPage() {
 
   return (
     <main className="w-full">
-      <div className="mb-6">
-        <h1 className="text-xl font-medium text-foreground">
-          Checklist Library
-        </h1>
-      </div>
-
       <HydrationBoundary state={dehydrate(queryClient)}>
         <Suspense fallback={<GridSkeleton />}>
           <ChecklistDocsClient />

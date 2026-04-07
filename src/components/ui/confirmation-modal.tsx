@@ -22,6 +22,7 @@ interface ConfirmationModalProps {
   isLoading?: boolean;
   disabled?: boolean;
   variant?: "default" | "destructive";
+  hideCancelButton?: boolean;
 }
 
 export function ConfirmationModal({
@@ -34,6 +35,7 @@ export function ConfirmationModal({
   isLoading = false,
   disabled = false,
   variant = "default",
+  hideCancelButton = false,
 }: ConfirmationModalProps) {
   const isDestructive = variant === "destructive";
 
@@ -77,14 +79,16 @@ export function ConfirmationModal({
 
         {/* ── Footer: full-width gray bg + buttons ─────── */}
         <div className="-mx-5 -mb-5 flex flex-row items-center justify-end gap-2 border-t bg-muted/50 px-5 py-4">
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isLoading}
-            onClick={() => onOpenChange(false)}
-          >
-            Cancel
-          </Button>
+          {!hideCancelButton && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isLoading}
+              onClick={() => onOpenChange(false)}
+            >
+              Cancel
+            </Button>
+          )}
           <Button
             type="button"
             variant={isDestructive ? "destructive" : "default"}

@@ -1,13 +1,13 @@
 'use client';
 
-import { useRef } from 'react';
+import { useId, useRef } from 'react';
 import { Controller, useFormContext } from 'react-hook-form';
-import { RiDeleteBinLine, RiExternalLinkLine, RiInformationLine, RiUpload2Line } from 'react-icons/ri';
+import { RiDeleteBinLine, RiExternalLinkLine, RiFileLine, RiInformationLine, RiUpload2Line } from 'react-icons/ri';
 import { Separator } from '@/components/ui/separator';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
+import { PortableTextEditor } from '@/components/ui/PortableTextEditor';
 import { Label } from '@/components/ui/label';
-import { Button } from '@/components/ui/button';
+import * as CompactButton from '@/components/ui/primitives/button-compact';
 import { Switch } from '@/components/ui/switch';
 import {
   Tooltip,
@@ -15,12 +15,9 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+  RadioGroup,
+  RadioGroupItem,
+} from '@/components/ui/primitives/radio-group';
 import {
   FormControl,
   FormField,
@@ -28,16 +25,15 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { MultiSelect } from '@/components/ui/multi-select';
-import { FORMAT_OPTIONS, STATE_OPTIONS } from '@/lib/constants/checklistDocTemplatesTable';
+import { FormatBadgeToggle } from '@/components/checklist-docs/sheet/FormatBadgeToggle';
+import { STATE_OPTIONS } from '@/lib/constants/checklistDocTemplatesTable';
 import { cn } from '@/lib/utils';
 import type { ChecklistDocumentFormValues } from './ChecklistDocumentSheet';
+import { Button } from '@/components/ui/primitives/button';
 
 type FormValues = ChecklistDocumentFormValues;
 
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5 MB
-const ACCEPTED_TYPES = ['application/pdf', 'image/jpeg', 'image/png'];
-const ACCEPTED_EXT = '.pdf,.jpg,.jpeg,.png';
+const MAX_FILE_SIZE = 20 * 1024 * 1024; // 20 MB
 
 interface ChecklistDocumentFormProps {
   mode: 'create' | 'edit';
@@ -60,14 +56,12 @@ export function ChecklistDocumentForm({
   const applyToAll = form.watch('applyToAll');
   const documentType = form.watch('documentType');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const formatFieldLabelId = useId();
+  const stateFieldLabelId = useId();
 
   function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0] ?? null;
     if (!file) return;
-    if (!ACCEPTED_TYPES.includes(file.type)) {
-      onSampleFileChange(null);
-      return;
-    }
     if (file.size > MAX_FILE_SIZE) {
       onSampleFileChange(null);
       return;
@@ -139,7 +133,7 @@ export function ChecklistDocumentForm({
             render={({ field, fieldState }) => (
               <FormItem>
                 <FormLabel>
-                  Allowed <span className="text-destructive">*</span>
+                 Number of Files Allowed <span className="text-destructive">*</span>
                 </FormLabel>
                 <FormControl>
                   <Input
@@ -159,23 +153,43 @@ export function ChecklistDocumentForm({
           <FormField
             control={form.control}
             name="state"
-            render={({ field }) => (
+            render={({ field, fieldState }) => (
               <FormItem>
-                <FormLabel>State</FormLabel>
-                <Select value={field.value} onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select state" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {STATE_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormLabel id={stateFieldLabelId}>State</FormLabel>
+                <FormControl>
+                  <RadioGroup
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    aria-labelledby={stateFieldLabelId}
+                    className={cn(
+                      'flex flex-wrap gap-2',
+                    )}
+                  >
+                    {STATE_OPTIONS.map((opt) => {
+                      const selected = field.value === opt.value;
+                      return (
+                        <label
+                          key={opt.value}
+                          className={cn(
+                            'inline-flex cursor-pointer items-center gap-2 rounded-full border px-2 py-1 text-xs font-medium',
+                            selected
+                              ? 'border-foreground/35 bg-foreground/8 text-foreground shadow-sm ring-1 ring-foreground/15'
+                              : 'border-border bg-muted/35 text-muted-foreground hover:border-border hover:bg-muted/55 hover:text-foreground',
+                          )}
+                        >
+                          <RadioGroupItem
+                            value={opt.value}
+                            className={cn(
+                              'shrink-0 border-border',
+                              'data-[state=checked]:border-foreground data-[state=checked]:text-foreground',
+                            )}
+                          />
+                          <span>{opt.label}</span>
+                        </label>
+                      );
+                    })}
+                  </RadioGroup>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
@@ -188,20 +202,15 @@ export function ChecklistDocumentForm({
           name="format"
           render={({ field, fieldState }) => (
             <FormItem>
-              <FormLabel>
+              <FormLabel id={formatFieldLabelId}>
                 Format <span className="text-destructive">*</span>
               </FormLabel>
               <FormControl>
-                <MultiSelect
-                  options={FORMAT_OPTIONS.map((o) => ({
-                    value: o.value,
-                    label: o.label,
-                    icon: o.icon,
-                  }))}
+                <FormatBadgeToggle
+                  labelId={formatFieldLabelId}
                   value={field.value}
                   onChange={field.onChange}
-                  placeholder="Select formats"
-                  error={fieldState.error?.message}
+                  error={!!fieldState.error}
                 />
               </FormControl>
               <FormMessage />
@@ -211,98 +220,75 @@ export function ChecklistDocumentForm({
 
         <Separator />
 
-        {/* Sample Document upload — hidden when applyToAll */}
-        {!applyToAll && (
-          <div className="flex flex-col gap-1.5">
-            <Label>Sample Document</Label>
+        {/* Sample Document upload */}
+        <div className="flex flex-col gap-1.5">
+          <Label>Sample Document</Label>
 
-            {/* Existing file in edit mode */}
-            {mode === 'edit' && existingSampleUrl && !sampleFile && (
-              <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
-                <RiExternalLinkLine className="size-4 shrink-0 text-neutral-400" />
+          <div className="flex h-9 items-center gap-2 rounded-md border border-input bg-background px-3">
+            {sampleFile ? (
+              <>
+                <RiFileLine className="size-3.5 shrink-0 text-muted-foreground" />
+                <span className="flex-1 truncate text-sm">{sampleFile.name}</span>
+                <span className="shrink-0 text-xs text-muted-foreground">{formatBytes(sampleFile.size)}</span>
+                <CompactButton.Root
+                  variant="ghost"
+                  type="button"
+                  onClick={() => onSampleFileChange(null)}
+                  className="text-muted-foreground hover:text-destructive"
+                >
+                  <CompactButton.Icon as={RiDeleteBinLine} />
+                </CompactButton.Root>
+              </>
+            ) : mode === 'edit' && existingSampleUrl ? (
+              <>
+                <RiFileLine className="size-3.5 shrink-0 text-muted-foreground" />
                 <a
                   href={existingSampleUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 truncate text-xs text-blue-600 underline-offset-2 hover:underline"
+                  className="flex-1 truncate text-sm text-blue-600 underline-offset-2 hover:underline"
                 >
                   {existingSampleUrl.split('/').pop()}
                 </a>
+                <CompactButton.Root variant="ghost" type="button" asChild>
+                  <a href={existingSampleUrl} target="_blank" rel="noopener noreferrer">
+                    <CompactButton.Icon as={RiExternalLinkLine} />
+                  </a>
+                </CompactButton.Root>
+                <CompactButton.Root
+                  variant="ghost"
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <CompactButton.Icon as={RiUpload2Line} />
+                </CompactButton.Root>
+              </>
+            ) : (
+              <>
+                <span className="flex-1 text-sm text-muted-foreground">No file attached</span>
                 <Button
                   type="button"
-                  size="sm"
-                  variant="ghost"
                   onClick={() => fileInputRef.current?.click()}
-                  className="h-6 shrink-0 px-2 text-xs text-neutral-500"
+                  size="2xs"
+                  variant="primary"
+                  mode="lighter"
+                  leadingIcon={RiUpload2Line}
+                  className="text-xs"
                 >
-                  Replace
+                  Upload
                 </Button>
-              </div>
+              </>
             )}
-
-            {/* Selected new file */}
-            {sampleFile && (
-              <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2">
-                <RiUpload2Line className="size-4 shrink-0 text-neutral-400" />
-                <span className="flex-1 truncate text-xs text-neutral-700">
-                  {sampleFile.name}
-                </span>
-                <span className="shrink-0 text-xs text-neutral-400">
-                  {formatBytes(sampleFile.size)}
-                </span>
-                <button
-                  type="button"
-                  onClick={() => onSampleFileChange(null)}
-                  className="shrink-0 rounded p-0.5 text-neutral-400 hover:text-red-500"
-                >
-                  <RiDeleteBinLine className="size-3.5" />
-                </button>
-              </div>
-            )}
-
-            {/* Drop zone — shown when no file selected (or always in create mode) */}
-            {!sampleFile && !(mode === 'edit' && existingSampleUrl) && (
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                className={cn(
-                  'flex flex-col items-center gap-2 rounded-lg border-2 border-dashed border-neutral-200 px-4 py-6',
-                  'text-neutral-400 transition-colors hover:border-neutral-300 hover:bg-neutral-50',
-                )}
-              >
-                <RiUpload2Line className="size-6" />
-                <span className="text-xs">
-                  Click to upload PDF, JPG or PNG
-                </span>
-                <span className="text-xs text-neutral-300">Max 5 MB</span>
-              </button>
-            )}
-
-            {/* Upload another button when edit has existing URL */}
-            {mode === 'edit' && existingSampleUrl && !sampleFile && (
-              <p className="text-xs text-neutral-400">
-                Click <strong>Replace</strong> to upload a new file.
-              </p>
-            )}
-
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept={ACCEPTED_EXT}
-              className="hidden"
-              onChange={handleFileSelect}
-            />
           </div>
-        )}
 
-        {applyToAll && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-100 bg-amber-50 p-3">
-            <RiInformationLine className="mt-0.5 size-4 shrink-0 text-amber-500" />
-            <p className="text-xs leading-relaxed text-amber-700">
-              Sample document upload is not available for bulk operations.
-            </p>
-          </div>
-        )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
+        </div>
 
         {/* Important Note */}
         <FormField
@@ -312,12 +298,10 @@ export function ChecklistDocumentForm({
             <FormItem>
               <FormLabel>Important Note</FormLabel>
               <FormControl>
-                <Textarea
-                  {...field}
-                  value={field.value ?? ''}
+                <PortableTextEditor
+                  value={field.value ?? null}
+                  onChange={field.onChange}
                   placeholder="Any important instructions for the applicant…"
-                  className="resize-none"
-                  rows={3}
                 />
               </FormControl>
               <FormMessage />

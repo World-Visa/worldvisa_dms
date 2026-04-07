@@ -33,6 +33,11 @@ import {
 } from "@/types/documents";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import {
+  useMoveDocument,
+  useMoveDocumentAgent,
+} from "@/hooks/useDocumentMovedDocs";
 import { ChecklistTableRow } from "./checklist/ChecklistTableRow";
 import { ChecklistTableHeader } from "./checklist/ChecklistTableHeader";
 import { DocumentListModal } from "./DocumentListModal";
@@ -144,6 +149,17 @@ const DocumentChecklistTableComponent = ({
   const [pageSize, setPageSize] = useState(10);
 
   const reuploadMutation = useReuploadDocument();
+  const clientMoveDocumentMutation = useMoveDocument();
+  const agentMoveDocumentMutation = useMoveDocumentAgent();
+
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [documentToDelete, setDocumentToDelete] = useState<{
+    id: string;
+    name: string;
+    status: string;
+    documentType: string;
+    category: string;
+  } | null>(null);
 
   const [selectedDocumentTypes, setSelectedDocumentTypes] = useState<string[]>([]);
 
@@ -403,6 +419,35 @@ const DocumentChecklistTableComponent = ({
     [],
   );
 
+  const handleDeleteDocument = useCallback((documentId: string, fileName: string, status: string, documentType: string, category: string) => {
+    setDocumentToDelete({ id: documentId, name: fileName, status, documentType, category });
+    setDeleteDialogOpen(true);
+  }, []);
+
+  const confirmDelete = async () => {
+    if (!documentToDelete) return;
+    if (documentToDelete.status === "approved") {
+      setDeleteDialogOpen(false);
+      setDocumentToDelete(null);
+      return;
+    }
+    if (documentToDelete.status === "reviewed") {
+      setDeleteDialogOpen(false);
+      handleReuploadClick(documentToDelete.id, documentToDelete.documentType, documentToDelete.category);
+      setDocumentToDelete(null);
+      return;
+    }
+    try {
+      if (isClientView) {
+        await clientMoveDocumentMutation.mutateAsync(documentToDelete.id);
+      } else {
+        await agentMoveDocumentMutation.mutateAsync(documentToDelete.id);
+      }
+      setDeleteDialogOpen(false);
+      setDocumentToDelete(null);
+    } catch {}
+  };
+
   const handleRejectionDetailsClose = useCallback(() => {
     setIsRejectionDetailsOpen(false);
     setSelectedRejectedDocument(null);
@@ -580,6 +625,7 @@ const DocumentChecklistTableComponent = ({
                   onViewDocuments={handleViewDocuments}
                   onUpload={handleUploadClick}
                   onReupload={handleReuploadClick}
+                  onDelete={handleDeleteDocument}
                   onViewRejection={handleViewRejectionDetails}
                   commentCounts={commentCounts}
                   documentCounts={documentCounts}
@@ -658,6 +704,50 @@ const DocumentChecklistTableComponent = ({
         category={selectedRejectedDocumentCategory}
         onReupload={handleReuploadFromDetails}
         isReuploading={reuploadMutation.isPending}
+      />
+
+      <ConfirmationModal
+        open={deleteDialogOpen}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteDialogOpen(false);
+            setDocumentToDelete(null);
+          }
+        }}
+        onConfirm={confirmDelete}
+        title={
+          documentToDelete?.status === "approved"
+            ? "Delete Locked"
+            : documentToDelete?.status === "reviewed"
+              ? "Document Under Review"
+              : "Delete Document"
+        }
+        description={
+          documentToDelete?.status === "approved" ? (
+            <>
+              The delete option has been locked for <strong>{documentToDelete.name}</strong> as
+              it has gone through level 3 verification. If you need assistance, contact your
+              content advisor.
+            </>
+          ) : documentToDelete?.status === "reviewed" ? (
+            <>
+              <strong>{documentToDelete.name}</strong> is currently under review and cannot be
+              deleted. You can replace it by uploading a new version.
+            </>
+          ) : (
+            <>Delete <strong>{documentToDelete?.name}</strong>? This cannot be undone.</>
+          )
+        }
+        confirmText={
+          documentToDelete?.status === "approved"
+            ? "Got it"
+            : documentToDelete?.status === "reviewed"
+              ? "Replace Document"
+              : "Delete"
+        }
+        variant={documentToDelete?.status === "pending" || !documentToDelete?.status ? "destructive" : "default"}
+        hideCancelButton={documentToDelete?.status === "approved"}
+        isLoading={clientMoveDocumentMutation.isPending || agentMoveDocumentMutation.isPending}
       />
 
       <ReuploadDocumentModal

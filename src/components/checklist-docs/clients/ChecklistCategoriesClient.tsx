@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { ViewTransition } from 'react';
 import { RiFolderAddLine } from 'react-icons/ri';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/components/ui/primitives/button';
 import { FolderCategoryCard } from '@/components/applications/filter/FolderCategoryCard';
 import { ListNoResults } from '@/components/applications/list-no-results';
 import { useGroupedDocuments, useVisaServiceTypes } from '@/hooks/useChecklistDocumentTemplates';
@@ -51,7 +51,10 @@ export const ChecklistCategoriesClient = memo(function ChecklistCategoriesClient
           <ChecklistDocsBreadcrumb visaType={visaType} />
         </ViewTransition>
         <Button
-          size="sm"
+          size="xs"
+          variant="primary"
+          mode="gradient"
+          className='text-sm'
           onClick={() => setCategorySheetOpen(true)}
         >
           <RiFolderAddLine className="mr-1.5 size-4" />
@@ -64,7 +67,13 @@ export const ChecklistCategoriesClient = memo(function ChecklistCategoriesClient
           title="No categories yet"
           description={`No document categories found for ${decodeURIComponent(visaType)}. Create the first category by adding a document.`}
           action={
-            <Button size="sm" onClick={() => setCategorySheetOpen(true)}>
+            <Button 
+              size="sm"
+              variant="primary"
+              mode="gradient"
+              className='text-sm'
+              onClick={() => setCategorySheetOpen(true)}
+            >
               <RiFolderAddLine className="mr-1.5 size-4" />
               Add Category
             </Button>

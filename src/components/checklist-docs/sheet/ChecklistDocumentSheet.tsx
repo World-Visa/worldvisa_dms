@@ -127,14 +127,15 @@ export function ChecklistDocumentSheet({
 
     if (mode === 'create') {
       if (values.applyToAll) {
-        await bulkCreate.mutateAsync({
-          category: effectiveCategory,
-          documentType: values.documentType,
-          allowedDocument: values.allowedDocument,
-          format: values.format,
-          state: values.state,
-          importantNote: values.importantNote || null,
-        });
+        const fd = new FormData();
+        fd.append('category', effectiveCategory);
+        fd.append('documentType', values.documentType);
+        fd.append('allowedDocument', String(values.allowedDocument));
+        for (const f of values.format) fd.append('format', f);
+        fd.append('state', values.state);
+        if (values.importantNote) fd.append('importantNote', values.importantNote);
+        if (sampleFile) fd.append('sampleDocument', sampleFile);
+        await bulkCreate.mutateAsync(fd);
       } else {
         const fd = new FormData();
         fd.append('category', effectiveCategory);
@@ -152,17 +153,18 @@ export function ChecklistDocumentSheet({
       }
     } else if (document) {
       if (values.applyToAll) {
-        await bulkUpdate.mutateAsync({
-          category: effectiveCategory,
+        const fd = new FormData();
+        fd.append('category', effectiveCategory);
+        fd.append('documentType', values.documentType);
+        fd.append('updates', JSON.stringify({
           documentType: values.documentType,
-          updates: {
-            documentType: values.documentType,
-            allowedDocument: values.allowedDocument,
-            format: values.format,
-            state: values.state,
-            importantNote: values.importantNote || null,
-          },
-        });
+          allowedDocument: values.allowedDocument,
+          format: values.format,
+          state: values.state,
+          importantNote: values.importantNote || null,
+        }));
+        if (sampleFile) fd.append('sampleDocument', sampleFile);
+        await bulkUpdate.mutateAsync(fd);
       } else {
         const fd = new FormData();
         fd.append('documentType', values.documentType);

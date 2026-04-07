@@ -6,15 +6,14 @@ import { Search, X, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
+import { useDebounce } from "@/hooks/useDebounce";
 import { useCreateConversation, useStaffUsers, useChatClients } from "@/hooks/useChat";
 import type {
   ChatParticipantRef,
@@ -33,6 +32,7 @@ interface UserOption {
   displayName: string;
   role?: string;
   participantType: "staff" | "client";
+  profileImageUrl?: string;
 }
 
 function UserSelectItem({
@@ -55,7 +55,7 @@ function UserSelectItem({
     >
       <div className="relative h-8 w-8 rounded-full overflow-hidden shrink-0">
         <Image
-          src={getDefaultAvatarSrc(user._id)}
+          src={user.profileImageUrl?.trim() ? user.profileImageUrl : getDefaultAvatarSrc(user._id)}
           alt={user.displayName}
           fill
           className="object-cover"
@@ -81,6 +81,11 @@ function UserSelectItem({
 
 type UserFilter = "all" | "staff" | "clients";
 
+const TABS = [
+  { label: "Direct Message", value: "dm" },
+  { label: "Group", value: "group" },
+] as const;
+
 export function NewChatDialog({
   open,
   onOpenChange,
@@ -95,6 +100,8 @@ export function NewChatDialog({
   const [groupDesc, setGroupDesc] = useState("");
   const [selectedGroupUsers, setSelectedGroupUsers] = useState<UserOption[]>([]);
 
+  const debouncedSearch = useDebounce(search, 300);
+
   const { data: staffData, isLoading: staffLoading } = useStaffUsers();
   const {
     data: clientData,
@@ -103,7 +110,11 @@ export function NewChatDialog({
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
-  } = useChatClients({ permissionMode: "staff", currentUsername: currentUserId });
+  } = useChatClients({
+    permissionMode: "staff",
+    currentUsername: currentUserId,
+    search: userFilter !== "staff" ? debouncedSearch : undefined,
+  });
   const createConversation = useCreateConversation();
 
   const isLoading = staffLoading || clientLoading;
@@ -125,6 +136,7 @@ export function NewChatDialog({
         displayName: u.username,
         role: u.role,
         participantType: "staff" as const,
+        profileImageUrl: u.profile_image_url,
       }));
   }, [staffData, currentUserId]);
 
@@ -137,22 +149,21 @@ export function NewChatDialog({
         displayName: c.name,
         role: "client",
         participantType: "client" as const,
+        profileImageUrl: c.profile_image_url,
       }));
   }, [clientData]);
 
-  const filteredOptions = useMemo(() => {
-    const q = search.toLowerCase();
-    const matchesSearch = (u: UserOption) =>
-      !q || u.displayName.toLowerCase().includes(q);
+  // Staff is client-side filtered (small list); clients are server-side filtered via debouncedSearch
+  const filteredStaff = useMemo(() => {
+    const q = debouncedSearch.toLowerCase();
+    return !q ? staffOptions : staffOptions.filter((u) => u.displayName.toLowerCase().includes(q));
+  }, [staffOptions, debouncedSearch]);
 
-    if (userFilter === "staff") return staffOptions.filter(matchesSearch);
-    if (userFilter === "clients") return clientOptions.filter(matchesSearch);
-    // "all" — staff first, then clients
-    return [
-      ...staffOptions.filter(matchesSearch),
-      ...clientOptions.filter(matchesSearch),
-    ];
-  }, [staffOptions, clientOptions, search, userFilter]);
+  const filteredOptions = useMemo(() => {
+    if (userFilter === "staff") return filteredStaff;
+    if (userFilter === "clients") return clientOptions;
+    return [...filteredStaff, ...clientOptions];
+  }, [filteredStaff, clientOptions, userFilter]);
 
   const handleCreateDM = async () => {
     if (!selectedDmUser) return;
@@ -205,25 +216,53 @@ export function NewChatDialog({
     );
   };
 
+  const isActionDisabled =
+    activeTab === "dm"
+      ? !selectedDmUser || createConversation.isPending
+      : !groupName.trim() || selectedGroupUsers.length === 0 || createConversation.isPending;
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>New Chat</DialogTitle>
-        </DialogHeader>
+      <DialogContent showCloseButton={false} className="sm:max-w-[440px] gap-0 p-5">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <DialogTitle className="text-base font-semibold">New Chat</DialogTitle>
+          <button
+            type="button"
+            onClick={handleClose}
+            className="flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-accent hover:text-foreground"
+            aria-label="Close"
+          >
+            <X className="size-4" />
+          </button>
+        </div>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as "dm" | "group")}>
-          <TabsList className="w-full">
-            <TabsTrigger value="dm" className="flex-1">
-              Direct Message
-            </TabsTrigger>
-            <TabsTrigger value="group" className="flex-1">
-              Group
-            </TabsTrigger>
-          </TabsList>
+        {/* Tabs */}
+        <div className="flex gap-1 border-b mb-4">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              type="button"
+              onClick={() => {
+                setActiveTab(tab.value);
+                setSearch("");
+                setUserFilter("all");
+              }}
+              className={cn(
+                "px-4 py-2 text-sm font-medium transition-colors relative",
+                activeTab === tab.value
+                  ? "text-foreground after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-foreground"
+                  : "text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
 
-          {/* DM Tab */}
-          <TabsContent value="dm" className="space-y-3 mt-3">
+        {/* DM Content */}
+        {activeTab === "dm" && (
+          <div className="space-y-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground pointer-events-none" />
               <Input
@@ -234,7 +273,6 @@ export function NewChatDialog({
               />
             </div>
 
-            {/* Filter chips */}
             <div className="flex gap-1.5">
               {(["all", "staff", "clients"] as UserFilter[]).map((f) => (
                 <button
@@ -257,7 +295,10 @@ export function NewChatDialog({
               ))}
             </div>
 
-            <div className="max-h-60 overflow-y-auto space-y-0.5 rounded-xl border border-border/40 p-1" onScroll={handleClientListScroll}>
+            <div
+              className="max-h-60 overflow-y-auto space-y-0.5 rounded-xl border border-border/40 p-1"
+              onScroll={handleClientListScroll}
+            >
               {isLoading ? (
                 <UserListSkeleton />
               ) : filteredOptions.length === 0 ? (
@@ -267,16 +308,8 @@ export function NewChatDialog({
               ) : userFilter === "all" ? (
                 <>
                   <UserListWithSections
-                    staffOptions={staffOptions.filter(
-                      (u) =>
-                        !search ||
-                        u.displayName.toLowerCase().includes(search.toLowerCase()),
-                    )}
-                    clientOptions={clientOptions.filter(
-                      (u) =>
-                        !search ||
-                        u.displayName.toLowerCase().includes(search.toLowerCase()),
-                    )}
+                    staffOptions={filteredStaff}
+                    clientOptions={clientOptions}
                     selectedId={selectedDmUser?._id ?? null}
                     onSelect={(u) =>
                       setSelectedDmUser(selectedDmUser?._id === u._id ? null : u)
@@ -296,9 +329,7 @@ export function NewChatDialog({
                       user={user}
                       selected={selectedDmUser?._id === user._id}
                       onToggle={(u) =>
-                        setSelectedDmUser(
-                          selectedDmUser?._id === u._id ? null : u,
-                        )
+                        setSelectedDmUser(selectedDmUser?._id === u._id ? null : u)
                       }
                     />
                   ))}
@@ -310,25 +341,12 @@ export function NewChatDialog({
                 </>
               )}
             </div>
-            <div className="flex justify-end">
-              <Button
-                className="w-[40%] bg-primary-blue"
-                disabled={!selectedDmUser || createConversation.isPending}
-                onClick={handleCreateDM}
-                premium3D
-              >
-                {createConversation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                Start Chat
-              </Button>
-            </div>
+          </div>
+        )}
 
-
-          </TabsContent>
-
-          {/* Group Tab */}
-          <TabsContent value="group" className="space-y-3 mt-3">
+        {/* Group Content */}
+        {activeTab === "group" && (
+          <div className="space-y-3">
             <Input
               value={groupName}
               onChange={(e) => setGroupName(e.target.value)}
@@ -342,7 +360,6 @@ export function NewChatDialog({
               className="bg-muted/50 border-border/60 rounded-xl"
             />
 
-            {/* Selected users chips */}
             {selectedGroupUsers.length > 0 && (
               <div className="flex flex-wrap gap-1.5">
                 {selectedGroupUsers.map((u) => (
@@ -373,7 +390,6 @@ export function NewChatDialog({
               />
             </div>
 
-            {/* Filter chips */}
             <div className="flex gap-1.5">
               {(["all", "staff", "clients"] as UserFilter[]).map((f) => (
                 <button
@@ -392,7 +408,10 @@ export function NewChatDialog({
               ))}
             </div>
 
-            <div className="max-h-44 overflow-y-auto space-y-0.5 rounded-xl border border-border/40 p-1" onScroll={handleClientListScroll}>
+            <div
+              className="max-h-44 overflow-y-auto space-y-0.5 rounded-xl border border-border/40 p-1"
+              onScroll={handleClientListScroll}
+            >
               {isLoading ? (
                 <UserListSkeleton />
               ) : filteredOptions.length === 0 ? (
@@ -402,16 +421,8 @@ export function NewChatDialog({
               ) : userFilter === "all" ? (
                 <>
                   <UserListWithSections
-                    staffOptions={staffOptions.filter(
-                      (u) =>
-                        !search ||
-                        u.displayName.toLowerCase().includes(search.toLowerCase()),
-                    )}
-                    clientOptions={clientOptions.filter(
-                      (u) =>
-                        !search ||
-                        u.displayName.toLowerCase().includes(search.toLowerCase()),
-                    )}
+                    staffOptions={filteredStaff}
+                    clientOptions={clientOptions}
                     selectedId={null}
                     selectedIds={selectedGroupUsers.map((u) => u._id)}
                     onSelect={toggleGroupUser}
@@ -440,27 +451,27 @@ export function NewChatDialog({
                 </>
               )}
             </div>
+          </div>
+        )}
 
-            <div className="flex justify-end">
-              <Button
-                className="w-[40%] bg-primary-blue"
-                disabled={
-                  !groupName.trim() ||
-                  selectedGroupUsers.length === 0 ||
-                  createConversation.isPending
-                }
-                onClick={handleCreateGroup}
-                premium3D
-              >
-                {createConversation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : null}
-                Create Group
-              </Button>
-            </div>
-
-          </TabsContent>
-        </Tabs>
+        {/* Footer */}
+        <div className="-mx-5 -mb-5 flex items-center justify-end gap-2 border-t bg-muted/50 px-5 py-4 mt-4">
+          <Button type="button" variant="outline" onClick={handleClose}>
+            Cancel
+          </Button>
+          <Button
+            type="button"
+            className="bg-primary-blue"
+            disabled={isActionDisabled}
+            onClick={activeTab === "dm" ? handleCreateDM : handleCreateGroup}
+            premium3D
+          >
+            {createConversation.isPending ? (
+              <Loader2 className="h-4 w-4 animate-spin mr-2" />
+            ) : null}
+            {activeTab === "dm" ? "Start Chat" : "Create Group"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

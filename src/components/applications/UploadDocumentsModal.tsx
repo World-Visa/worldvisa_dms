@@ -704,7 +704,6 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
         throw error;
       }
 
-      toast.success("All documents uploaded successfully!");
       onClose();
       uploadProps?.onSuccess?.();
 
@@ -1042,9 +1041,10 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
                 variant="warning"
                 title="Important"
                 description={
-                  <span className="whitespace-pre-line">
-                    {documentMeta.importantNote}
-                  </span>
+                  <div
+                    className="prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_mark]:bg-yellow-200 [&_mark]:rounded-[2px] [&_mark]:px-0.5 [&_p]:my-0.5"
+                    dangerouslySetInnerHTML={{ __html: documentMeta.importantNote }}
+                  />
                 }
               />
             ) : null}

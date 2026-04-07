@@ -1,9 +1,7 @@
 import { fetcher } from '@/lib/fetcher';
 import { API_CONFIG, buildQueryString } from '@/lib/config/api';
 import type {
-  BulkCreateBody,
   BulkOperationResult,
-  BulkUpdateBody,
   CategoriesResponse,
   GroupedResponse,
   SingleDocumentResponse,
@@ -71,19 +69,19 @@ export function deleteDocument(id: string): Promise<{ status: string; message: s
 }
 
 export function bulkCreateDocuments(
-  body: BulkCreateBody,
+  formData: FormData,
 ): Promise<BulkOperationResult> {
   return fetcher(EP.BULK, {
     method: 'POST',
-    body: JSON.stringify(body),
+    body: formData,
   });
 }
 
 export function bulkUpdateDocuments(
-  body: BulkUpdateBody,
+  formData: FormData,
 ): Promise<BulkOperationResult> {
   return fetcher(EP.BULK, {
     method: 'PATCH',
-    body: JSON.stringify(body),
+    body: formData,
   });
 }

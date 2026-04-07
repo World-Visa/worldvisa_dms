@@ -1,19 +1,21 @@
 "use client";
 
-import * as React from "react";
+import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Bell, ClipboardList, FileUp, MessageCircle, ShieldCheck, UserCheck } from "lucide-react";
+import { Bell, ClipboardList, FileUp, MessageCircle, ShieldCheck } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { cn, getAvatarUrl } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Separator } from "@/components/ui/separator";
+import { HeaderButton } from "@/components/ui/primitives/header-button";
+import { useJiggle } from "@/hooks/useJiggle";
+import { InboxBellFilledDev } from "@/components/icons/inbox-bell-filled-dev";
 import { useNotifications, useNotificationMutations } from "@/hooks/useNotifications";
 import { getNotificationAction } from "@/components/v2/notifications/NotificationRow";
 import type { Notification, NotificationSource } from "@/types/notifications";
@@ -79,12 +81,12 @@ function DropdownRow({ notification, onMarkAsRead, onClose }: DropdownRowProps) 
   const badge = SOURCE_BADGE[notification.source] ?? "General";
   const timeAgo = formatDistanceToNow(new Date(notification.createdAt), { addSuffix: false });
 
-  const handleRowClick = React.useCallback(() => {
+  const handleRowClick = useCallback(() => {
     if (!notification.isRead) onMarkAsRead(notification._id);
   }, [notification._id, notification.isRead, onMarkAsRead]);
 
-  const handleAction = React.useCallback(
-    (e: React.MouseEvent) => {
+  const handleAction = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
       e.stopPropagation();
       if (!notification.isRead) onMarkAsRead(notification._id);
       onClose();
@@ -153,11 +155,12 @@ function DropdownRow({ notification, onMarkAsRead, onClose }: DropdownRowProps) 
 }
 
 export function NotificationDropdown() {
-  const [open, setOpen] = React.useState(false);
+  const [open, setOpen] = useState(false);
   const { notifications, isLoading, unreadCount } = useNotifications();
   const { updateReadStatus } = useNotificationMutations();
+  const jingle = useJiggle(unreadCount);
 
-  const handleMarkAsRead = React.useCallback(
+  const handleMarkAsRead = useCallback(
     async (notificationId: string) => {
       try {
         await updateReadStatus({ notificationId, isRead: true });
@@ -168,7 +171,7 @@ export function NotificationDropdown() {
     [updateReadStatus],
   );
 
-  const displayList = React.useMemo(
+  const displayList = useMemo(
     () => notifications.slice(0, DROPDOWN_LIST_SIZE),
     [notifications],
   );
@@ -176,21 +179,24 @@ export function NotificationDropdown() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="relative size-9 rounded-md"
+        <HeaderButton
+          label={`Notifications${unreadCount > 0 ? ` (${unreadCount})` : ""}`}
+          disableTooltip={open}
           aria-label="Notifications"
-          aria-expanded={open}
         >
-          <Bell className="size-5 text-muted-foreground" strokeWidth={1.6} />
-          {unreadCount > 0 && (
-            <span
-              className="absolute top-1 right-0.5 size-2 rounded-full bg-red-500"
-              aria-hidden
+          <div className="relative flex items-center justify-center">
+            <InboxBellFilledDev
+              className="text-foreground size-5 stroke-[0.5px]"
+              bellClassName={`origin-top ${jingle ? "animate-[swing_3s_ease-in-out]" : ""}`}
+              ringerClassName={`origin-top ${jingle ? "animate-[jingle_3s_ease-in-out]" : ""}`}
             />
-          )}
-        </Button>
+            {unreadCount > 0 && (
+              <div className="absolute right-[-4px] top-[-6px] flex h-3 w-3 items-center justify-center rounded-full border-[3px] border-background bg-background">
+                <span className="bg-destructive block h-1.5 w-1.5 animate-[pulse-shadow_1s_ease-in-out_infinite] rounded-full [--pulse-color:var(--destructive)] [--pulse-size:3px]" />
+              </div>
+            )}
+          </div>
+        </HeaderButton>
       </PopoverTrigger>
 
       <PopoverContent

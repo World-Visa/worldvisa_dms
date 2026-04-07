@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "motion/react";
 import {
   RiArrowRightSLine,
   RiCloseCircleLine,
+  RiDeleteBin2Line,
   RiFileTextLine,
   RiMore2Fill,
   RiTimeLine,
@@ -17,6 +18,7 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/primitives/dropdown-menu";
 import { CompactButton } from "@/components/ui/primitives/button-compact";
@@ -68,6 +70,7 @@ interface ChecklistTableRowProps {
   onUpload: (documentType: string, category: string) => void;
   onReupload: (documentId: string, documentType: string, category: string) => void;
   onViewRejection?: (document: Document, documentType: string, category: string) => void;
+  onDelete?: (documentId: string, fileName: string, status: string, documentType: string, category: string) => void;
   commentCounts?: Record<string, number>;
   documentCounts?: Record<string, number>;
   uploadedDocuments?: Document[];
@@ -82,6 +85,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
   onViewDocuments,
   onUpload,
   onReupload,
+  onDelete,
   commentCounts = {},
   documentCounts = {},
   uploadedDocuments = [],
@@ -354,6 +358,20 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
                   </DropdownMenuItem>
                 )}
               </DropdownMenuGroup>
+              {item.isUploaded && !isExpandable && uploadedDoc && (
+                <>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      className="cursor-pointer text-error-base focus:text-error-base"
+                      onClick={() => onDelete?.(uploadedDoc._id, uploadedDoc.file_name, uploadedDoc.status, documentType, category)}
+                    >
+                      <RiDeleteBin2Line />
+                      Delete Document
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </TableCell>
@@ -375,6 +393,7 @@ export const ChecklistTableRow = memo(function ChecklistTableRow({
             isClientView={isClientView}
             commentCounts={commentCounts}
             onReupload={onReupload}
+            onDelete={onDelete}
           />
         ))}
       </AnimatePresence>

@@ -75,22 +75,6 @@ export type SingleDocumentResponse = {
   };
 };
 
-export type BulkCreateBody = {
-  category: string;
-  documentType: string;
-  allowedDocument: number;
-  format: string[];
-  sampleDocumentUrl?: string | null;
-  importantNote?: string | null;
-  state?: 'active' | 'inactive';
-};
-
-export type BulkUpdateBody = {
-  category: string;
-  documentType: string;
-  updates: UpdateChecklistDocumentTemplateBody;
-};
-
 export type BulkOperationResult = {
   status: string;
   data: {

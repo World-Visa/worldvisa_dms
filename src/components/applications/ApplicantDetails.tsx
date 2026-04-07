@@ -5,7 +5,9 @@ import { cn } from "@/lib/utils";
 import { Application } from "@/types/applications";
 import { formatDate } from "@/utils/format";
 import { BadgeCheck, User } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
+import { RiMessage3Fill } from "react-icons/ri";
 import { useState } from "react";
 import { ApplicationDeadlineCard, shouldShowDeadlineCard } from "./ApplicationDeadlineCard";
 import { ApplicationDeadlineCardSkeleton } from "./ApplicationDeadlineCardSkeleton";
@@ -203,9 +205,16 @@ export function ApplicantDetails({
   };
   const showDeadlineCard = shouldShowDeadlineCard(application.Application_Stage);
 
+  const lastComm = (() => {
+    const raw = application.last_communication_activity;
+    if (!raw) return null;
+    if (typeof raw === "string") return { date: raw, provider: null as null };
+    return raw;
+  })();
+
   return (
     <>
-      <div className="flex gap-6 items-stretch">
+      <div className="flex gap-6 items-stretch w-full min-w-0 overflow-hidden">
         {/* Left — Application Information (70%) */}
         <div
           className={cn(
@@ -214,7 +223,7 @@ export function ApplicantDetails({
           )}
         >
           {/* Header */}
-          <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+          <div className="px-3 py-3 border-b border-gray-100 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <h3 className="text-base font-medium text-foreground-900">
                 Application Information
@@ -237,7 +246,7 @@ export function ApplicantDetails({
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="p-3">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
               {/* Column 1 — Personal Information */}
               <div className="space-y-4">
@@ -339,12 +348,18 @@ export function ApplicantDetails({
                     label="Assessing Authority"
                     value={formatValue(application.Assessing_Authority || "")}
                   />
-                  {application.last_communication_activity && (
+                  {lastComm && (
                     <div>
                       <p className="text-xs text-gray-400 mb-0.5">Last Communication</p>
                       <div className="flex items-center gap-1.5">
+                        {lastComm.provider === "email" && (
+                          <Image src="/gmail-icon.svg" alt="Email" width={14} height={14} />
+                        )}
+                        {lastComm.provider === "chat" && (
+                          <RiMessage3Fill className="w-3.5 h-3.5 text-blue-500" />
+                        )}
                         <p className="text-sm font-medium text-slate-800">
-                          {formatDate(application.last_communication_activity, "datetime")}
+                          {formatDate(lastComm.date, "datetime")}
                         </p>
                       </div>
                     </div>

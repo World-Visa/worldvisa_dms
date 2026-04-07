@@ -97,7 +97,6 @@ interface ExtendedDocumentCategoryFilterProps
   hasCompanyDocuments?: boolean;
   showSampleDocuments?: boolean;
   onToggleSampleDocuments?: () => void;
-  sampleDocumentsCount?: number;
   onAddCompany?: () => void;
 }
 
@@ -116,7 +115,6 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
   hasCompanyDocuments = false,
   showSampleDocuments = false,
   onToggleSampleDocuments,
-  sampleDocumentsCount = 0,
   onAddCompany,
 }: ExtendedDocumentCategoryFilterProps) {
   const categories = useMemo(
@@ -173,7 +171,6 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
           showAddCompanyAction={canShowAddCompanyAction}
           showSampleDocumentsAction={Boolean(onToggleSampleDocuments)}
           showSampleDocuments={showSampleDocuments}
-          sampleDocumentsCount={sampleDocumentsCount}
           onAddCompany={onAddCompany}
           onToggleSampleDocuments={onToggleSampleDocuments}
         />

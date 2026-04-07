@@ -39,7 +39,10 @@ export interface Application {
   Main_Applicant?: string;
   Spouse_Skill_Assessment?: string | null;
   Spouse_Name?: string | null;
-  last_communication_activity?: string | null;
+  last_communication_activity?:
+    | string
+    | { date: string; provider: "chat" | "email" }
+    | null;
   spouse_lead_id?: string | null;
   online_status?: boolean;
   Checklist_Requested?: boolean;

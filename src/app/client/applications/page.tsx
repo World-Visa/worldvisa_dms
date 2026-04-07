@@ -35,7 +35,7 @@ export default function ClientApplicationsPage() {
 
   return (
     <div className="flex min-h-[calc(100vh-4.5rem)] flex-col items-center justify-center bg-background px-4 py-10">
-      <Card className="w-full max-w-md border-border/80 shadow-sm">
+      <Card className="w-full max-w-md border-none shadow-none">
         <CardHeader className="pb-2">
           <CardTitle className="text-lg font-semibold tracking-tight text-foreground">
             {needsSignIn

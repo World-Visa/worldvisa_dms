@@ -1,0 +1,79 @@
+/* Directional nav: React <ViewTransition> class names + Link transitionTypes / addTransitionType */
+
+:root {
+  --vt-nav-duration: 420ms;
+  --vt-nav-ease-enter: cubic-bezier(0.22, 1, 0.36, 1);
+  --vt-nav-ease-exit: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* nav-forward: new screen from right, old exits left */
+@keyframes vt-nav-enter-from-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0.94;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes vt-nav-exit-to-left {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(-38%);
+    opacity: 0.94;
+  }
+}
+
+/* nav-back: new screen from left, old exits right */
+@keyframes vt-nav-enter-from-left {
+  from {
+    transform: translateX(-100%);
+    opacity: 0.94;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes vt-nav-exit-to-right {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(38%);
+    opacity: 0.94;
+  }
+}
+
+::view-transition-new(.slide-from-right),
+::view-transition-new(.vt-slide-from-right) {
+  animation: vt-nav-enter-from-right var(--vt-nav-duration) var(--vt-nav-ease-enter) both;
+}
+
+::view-transition-old(.slide-to-left) {
+  animation: vt-nav-exit-to-left var(--vt-nav-duration) var(--vt-nav-ease-exit) both;
+}
+
+::view-transition-new(.slide-from-left) {
+  animation: vt-nav-enter-from-left var(--vt-nav-duration) var(--vt-nav-ease-enter) both;
+}
+
+::view-transition-old(.slide-to-right) {
+  animation: vt-nav-exit-to-right var(--vt-nav-duration) var(--vt-nav-ease-exit) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-old(*),
+  ::view-transition-new(*),
+  ::view-transition-group(*) {
+    animation-duration: 0s !important;
+    animation-delay: 0s !important;
+  }
+}

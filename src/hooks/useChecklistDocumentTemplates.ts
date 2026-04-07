@@ -18,8 +18,6 @@ import {
   invalidateChecklistSummary,
 } from '@/lib/actions/checklistDocumentTemplates';
 import type {
-  BulkCreateBody,
-  BulkUpdateBody,
   ChecklistDocumentTemplate,
 } from '@/types/checklistDocumentTemplates';
 import {
@@ -175,7 +173,7 @@ export function useDeleteDocument() {
 export function useBulkCreate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: BulkCreateBody) => bulkCreateDocuments(body),
+    mutationFn: (formData: FormData) => bulkCreateDocuments(formData),
     onSuccess: async (data) => {
       const created = data?.data?.created ?? 0;
       const skipped = data?.data?.skipped ?? 0;
@@ -198,7 +196,7 @@ export function useBulkCreate() {
 export function useBulkUpdate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (body: BulkUpdateBody) => bulkUpdateDocuments(body),
+    mutationFn: (formData: FormData) => bulkUpdateDocuments(formData),
     onSuccess: async (data) => {
       const updated = data?.data?.updated ?? 0;
       const created = data?.data?.created ?? 0;
