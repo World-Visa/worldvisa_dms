@@ -55,7 +55,7 @@ export function ApplicationDetailsSkeleton({
   const isAdmin = variant === "admin";
 
   const containerClass = isAdmin
-    ? "max-w-full mx-auto"
+    ? "max-w-6xl mx-auto"
     : "max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8";
 
   const contentSpaceClass = isAdmin ? "space-y-6" : "space-y-4 sm:space-y-6";
