@@ -90,7 +90,7 @@ interface DocumentTableRowProps {
   isAdmin: boolean;
   isClientView: boolean;
   onView: (document: Document) => void;
-  onDelete: (documentId: string, fileName: string) => void;
+  onDelete: (documentId: string, fileName: string, status: string, documentType: string, category: string) => void;
   onReupload: (documentId: string, documentType: string, category: string) => void;
   isDeletePending: boolean;
 }
@@ -108,10 +108,8 @@ export const DocumentTableRow = memo(function DocumentTableRow({
   const isRejected = document.status === "rejected";
   const badgeCfg = DOCUMENT_STATUS_BADGE[document.status] ?? DOCUMENT_STATUS_FALLBACK;
 
-  const canDelete = isClientView
-    ? document.status !== "approved" && !isDeletePending
-    : !isDeletePending;
-  const canReupload = document.status === "reviewed";
+  const canDelete = !isDeletePending;
+  const canReupload = document.status === "rejected";
 
   const documentType = document.document_name ?? document.document_type ?? "Document";
   const category = inferCategory(document) ?? "Other Documents";
@@ -230,7 +228,7 @@ export const DocumentTableRow = memo(function DocumentTableRow({
               <DropdownMenuItem
                 className="cursor-pointer text-error-base focus:text-error-base"
                 disabled={!canDelete}
-                onClick={() => onDelete(document._id, document.file_name)}
+                onClick={() => onDelete(document._id, document.file_name, document.status, documentType, category)}
               >
                 <RiDeleteBin2Line />
                 Delete Document

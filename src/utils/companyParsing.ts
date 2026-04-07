@@ -1,10 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Company } from "@/types/documents";
 
-/**
- * Parse date string without timezone conversion to avoid day shifts
- * Converts "Sep 15, 2020" to "2020-09-15"
- */
+
 function parseDateString(dateStr: string): string {
   const date = new Date(dateStr);
   const year = date.getFullYear();
@@ -25,7 +21,6 @@ export function parseCompanyFromDescription(
     .replace(" Company Documents", "")
     .toLowerCase();
 
-  // Don't use default dates - return null if we can't parse dates from description
   let fromDate: string | null = null;
   let toDate: string | null = null;
   let isCurrentEmployment = false;
@@ -95,9 +90,7 @@ export function parseCompanyFromDescription(
   return null;
 }
 
-/**
- * Parse multiple companies from documents array
- */
+
 export function parseCompaniesFromDocuments(documents: any[]): Company[] {
   if (!documents || documents.length === 0) return [];
 

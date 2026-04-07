@@ -1,35 +1,75 @@
-"use client"
+import * as SwitchPrimitives from '@radix-ui/react-switch';
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 
-import * as React from "react"
-import { Switch as SwitchPrimitive } from "radix-ui"
+const Switch = React.forwardRef<
+  React.ComponentRef<typeof SwitchPrimitives.Root>,
+  React.ComponentPropsWithoutRef<typeof SwitchPrimitives.Root>
+>(({ className, disabled, ...rest }, forwardedRef) => {
+  const [showDisabledCursor, setShowDisabledCursor] = React.useState(false);
+  React.useEffect(() => {
+    if (!disabled) {
+      setShowDisabledCursor(false);
+      return;
+    }
+    const t = setTimeout(() => setShowDisabledCursor(true), 150);
+    return () => clearTimeout(t);
+  }, [disabled]);
 
-import { cn } from "@/lib/utils"
-
-function Switch({
-  className,
-  size = "default",
-  ...props
-}: React.ComponentProps<typeof SwitchPrimitive.Root> & {
-  size?: "sm" | "default"
-}) {
   return (
-    <SwitchPrimitive.Root
-      data-slot="switch"
-      data-size={size}
+    <SwitchPrimitives.Root
+      ref={forwardedRef}
+      disabled={disabled}
       className={cn(
-        "peer group/switch inline-flex shrink-0 items-center rounded-full border border-transparent shadow-xs transition-all outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50 data-[size=default]:h-[1.15rem] data-[size=default]:w-8 data-[size=sm]:h-3.5 data-[size=sm]:w-6 data-[state=checked]:bg-primary data-[state=unchecked]:bg-input dark:data-[state=unchecked]:bg-input/80",
+        // base
+        'group/switch relative inline-flex h-[16px] w-[28px] shrink-0 cursor-pointer items-center rounded-full outline-none transition-all',
+        'bg-bg-soft',
+        'before:absolute before:inset-0 before:rounded-full before:content-[""] before:shadow-switch-track',
+        'after:absolute after:inset-0 after:rounded-full after:content-[""] after:bg-linear-to-b after:from-black/5 after:to-transparent after:opacity-0 after:transition-opacity',
+        !disabled && [
+          // hover
+          'hover:bg-bg-sub data-[state=unchecked]:hover:after:opacity-100',
+          // focus
+          'focus-visible:shadow-switch-track-focus',
+          // pressed
+          'active:bg-bg-soft',
+          // checked
+          'data-[state=checked]:bg-primary-base',
+          // checked hover
+          'data-[state=checked]:hover:bg-primary-darker',
+          // checked pressed
+          'data-[state=checked]:active:bg-primary-base',
+          // focus
+          'focus:outline-none',
+        ],
+        // disabled
+        disabled && [
+          showDisabledCursor && 'cursor-not-allowed',
+          'bg-bg-soft!',
+          'before:shadow-switch-track-disabled after:opacity-0',
+        ],
         className
       )}
-      {...props}
+      {...rest}
     >
-      <SwitchPrimitive.Thumb
-        data-slot="switch-thumb"
+      <SwitchPrimitives.Thumb
         className={cn(
-          "pointer-events-none block rounded-full bg-background ring-0 transition-transform group-data-[size=default]/switch:size-4 group-data-[size=sm]/switch:size-3 data-[state=checked]:translate-x-[calc(100%-2px)] data-[state=unchecked]:translate-x-0 dark:data-[state=checked]:bg-primary-foreground dark:data-[state=unchecked]:bg-foreground"
+          // base
+          'pointer-events-none block h-[12px] w-[12px] shrink-0 rounded-full transition-transform',
+          'translate-x-0.5 data-[state=checked]:translate-x-[14px]',
+          !disabled && [
+            // default
+            'bg-static-white shadow-switch-handle',
+            // pressed
+            'group-active/switch:scale-90',
+          ],
+          // disabled
+          disabled && 'bg-static-white! shadow-switch-handle-disabled!'
         )}
       />
-    </SwitchPrimitive.Root>
-  )
-}
+    </SwitchPrimitives.Root>
+  );
+});
+Switch.displayName = SwitchPrimitives.Root.displayName;
 
-export { Switch }
+export { Switch };

@@ -40,6 +40,8 @@ import {
   type ApplicationOnboarding,
 } from "@/types/applications";
 import { useRouter } from "next/navigation";
+import { useLayoutStore } from "@/store/layoutStore";
+import { useTotalUnreadCount } from "@/hooks/useChat";
 import { useDeepLinkDocument } from "@/hooks/useDeepLinkDocument";
 import {
   useEffect,
@@ -62,7 +64,6 @@ import { useRemoveCompany } from "@/hooks/useRemoveCompany";
 import type { ApplicationNote } from "@/lib/api/applicationNotes";
 import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
 import { ClientOnboardingModal } from "@/components/applications/onboarding/ClientOnboardingModal";
-import { InlineToast } from "../ui/primitives/inline-toast";
 import type { ApplicationLayout } from "@/components/applications/layouts/LayoutChips";
 import { useQueryStates } from "nuqs";
 
@@ -321,6 +322,19 @@ export default function UnifiedApplicationDetailsPage({
     }
   }, [isSampleQuery, setChecklistUrlState, urlCategoryParam]);
 
+  const openChatPanel = useLayoutStore((s) => s.openChatPanel);
+  const unreadChatCount = useTotalUnreadCount();
+
+  const handleStartChat = useCallback(() => {
+    if (!application) return;
+    openChatPanel({
+      applicationId,
+      applicationHandledBy: application.Application_Handled_By,
+      leadId: application.id,
+      clientName: application.Name,
+    });
+  }, [application, applicationId, openChatPanel]);
+
   const handlePushForQualityCheck = useCallback(() => {
     if (!user?.username || !application?.id) {
       return;
@@ -412,10 +426,10 @@ export default function UnifiedApplicationDetailsPage({
   }
 
   return (
-    <main className="max-w-[1200px] mx-auto">
+    <main className="w-full min-w-0">
       {/* Header */}
-      <div className="flex items-start justify-between gap-6">
-        <div className="flex min-w-0 flex-col gap-3">
+      <div className="flex items-center gap-4">
+        <div className="flex flex-1 min-w-0 flex-col gap-3">
           <Breadcrumb>
             <BreadcrumbList>
               <BreadcrumbItem>
@@ -442,6 +456,8 @@ export default function UnifiedApplicationDetailsPage({
             setIsNoteModalOpen(true);
           }}
           onEmailHistory={modals.openEmailHistoryModal}
+          onStartChat={handleStartChat}
+          unreadChatCount={unreadChatCount}
           userRole={user?.role}
           qcRequested={application?.qc_requested}
         />
@@ -479,7 +495,7 @@ export default function UnifiedApplicationDetailsPage({
             selectedLayout={layoutState.selectedLayout}
           />
 
-          <TabsContent value="skill-assessment" className="mt-4">
+          <TabsContent value="skill-assessment" className="mt-4 pb-4">
             <motion.div {...FADE_ANIMATION}>
               <SkillAssessmentLayout
                 allDocuments={allDocuments}

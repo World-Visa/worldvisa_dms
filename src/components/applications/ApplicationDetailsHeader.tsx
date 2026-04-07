@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { addTransitionType, startTransition } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -16,7 +17,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+} from "@/components/ui/primitives/dropdown-menu";
 import {
   CheckCircle,
   XCircle,
@@ -24,6 +25,9 @@ import {
 } from "lucide-react";
 import type { MandatoryDocumentValidationDetail } from "@/utils/checklistValidation";
 import { ApplicationActivitySheet } from "@/components/applications/ApplicationActivitySheet";
+import { ChatButton } from "@/components/applications/ChatButton";
+import { ROUTES } from "@/utils/routes";
+import { RiMore2Fill } from "react-icons/ri";
 
 interface QcRequested {
   qcId: string;
@@ -41,6 +45,8 @@ interface ApplicationDetailsHeaderProps {
   onActivateAccount?: () => void;
   onAddNote?: () => void;
   onEmailHistory?: () => void;
+  onStartChat?: () => void;
+  unreadChatCount?: number;
   userRole?: string;
   qcRequested?: QcRequested | null;
   applicationId: string;
@@ -100,6 +106,8 @@ export function ApplicationDetailsHeader({
   onActivateAccount,
   onAddNote,
   onEmailHistory,
+  onStartChat,
+  unreadChatCount,
   userRole,
   qcRequested,
   applicationId,
@@ -108,8 +116,15 @@ export function ApplicationDetailsHeader({
   const isAdmin = userRole !== "client";
   const [isActivitySheetOpen, setIsActivitySheetOpen] = useState(false);
 
+  const navigateToChecklist = () => {
+    startTransition(() => {
+      addTransitionType("nav-forward");
+      router.push(ROUTES.APPLICATION_CHECKLIST(applicationId));
+    });
+  };
+
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex shrink-0 items-center gap-2">
       {/* Push for Quality Check Button */}
       {qcRequested ? (
         <QcStatusButton
@@ -121,15 +136,14 @@ export function ApplicationDetailsHeader({
           <TooltipTrigger asChild>
             <div>
               <Button
-                variant={areAllDocumentsApproved ? "default" : "outline"}
+                variant={areAllDocumentsApproved ? "default" : "secondary"}
                 size="sm"
                 onClick={onPushForQualityCheck}
                 disabled={!areAllDocumentsApproved}
-                className={`flex items-center gap-2 cursor-pointer ${
-                  areAllDocumentsApproved
+                className={`flex items-center gap-2 cursor-pointer ${areAllDocumentsApproved
                     ? "bg-slate-900 hover:bg-slate-800 text-white"
                     : "opacity-50 cursor-not-allowed"
-                }`}
+                  }`}
               >
                 <span className="hidden sm:inline">
                   {areAllDocumentsApproved
@@ -189,19 +203,21 @@ export function ApplicationDetailsHeader({
         </Tooltip>
       )}
 
+      <ChatButton onClick={onStartChat} unreadCount={unreadChatCount ?? 0} />
+
       {isAdmin && (
-        <DropdownMenu>
+        <DropdownMenu >
           <DropdownMenuTrigger asChild>
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
-              className="flex items-center gap-2 cursor-pointer"
+              className="flex items-center rounded-lg gap-1 cursor-pointer outline-none focus-visible:ring-0"
             >
               <span className="hidden sm:inline">Actions</span>
-              <ChevronDown className="h-4 w-4" />
+              <RiMore2Fill className="size-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-44 mt-1" align="end">
+          <DropdownMenuContent className="w-44 mt-1" align="end" side="bottom" sideOffset={4}>
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold py-1">Account</DropdownMenuLabel>
               <DropdownMenuItem
@@ -210,7 +226,7 @@ export function ApplicationDetailsHeader({
                 }
                 className="cursor-pointer hover:bg-gray-100"
               >
-                Activate Account
+                Onboarding Detail
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
@@ -218,8 +234,8 @@ export function ApplicationDetailsHeader({
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold py-1">Documents</DropdownMenuLabel>
               <DropdownMenuItem
-                onClick={() => router.push(`/v2/applications/${applicationId}/checklist`)}
                 className="cursor-pointer hover:bg-gray-100"
+                onSelect={navigateToChecklist}
               >
                 Edit checklist
               </DropdownMenuItem>

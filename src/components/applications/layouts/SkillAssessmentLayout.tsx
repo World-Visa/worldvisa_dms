@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { DocumentCategoryFilter } from "@/components/applications/DocumentCategoryFilter";
 import { DocumentChecklistTable } from "@/components/applications/DocumentChecklistTable";
 import { DocumentsTable } from "@/components/applications/DocumentsTable";
@@ -65,7 +64,6 @@ export function SkillAssessmentLayout({
   onShowSampleDocuments,
   onHideSampleDocuments,
 }: SkillAssessmentLayoutProps) {
-  const router = useRouter();
   const [documentStatusFilter, setDocumentStatusFilter] = useState<
     DocumentStatus | null
   >(null);
@@ -73,7 +71,7 @@ export function SkillAssessmentLayout({
   const createChecklistAction =
     !isClientView && checklistState.state === "none" ? (
       <CreateChecklistButton
-        onClick={() => router.push(ROUTES.APPLICATION_CHECKLIST(applicationId))}
+        href={ROUTES.APPLICATION_CHECKLIST(applicationId)}
       />
     ) : undefined;
 
@@ -135,7 +133,6 @@ export function SkillAssessmentLayout({
             onToggleSampleDocuments={
               showSampleDocuments ? onHideSampleDocuments : onShowSampleDocuments
             }
-            sampleDocumentsCount={allDocuments?.length ?? 0}
           />
 
           <AnimatePresence mode="wait" initial={false}>

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
+import Image from "next/image";
 import { Check, ChevronDown, X, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +9,7 @@ export interface MultiSelectOption {
   value: string;
   label: string;
   role?: string;
+  icon?: string;
 }
 
 interface MultiSelectProps {
@@ -120,11 +122,15 @@ export function MultiSelect({
               <div className="flex flex-wrap gap-1">
                 {selectedLabels.slice(0, 2).map((label, index) => {
                   const optionValue = value[index];
+                  const optionIcon = options.find((o) => o.value === optionValue)?.icon;
                   return (
                     <span
                       key={optionValue}
                       className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full"
                     >
+                      {optionIcon && (
+                        <Image src={optionIcon} alt="" width={24} height={24} className="shrink-0" />
+                      )}
                       {label}
                       <span
                         onClick={(e) => handleRemove(optionValue, e)}
@@ -164,7 +170,7 @@ export function MultiSelect({
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute z-[9999] w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden">
+        <div className="absolute z-9999 w-full mt-1 bg-white border border-gray-300 rounded-md shadow-lg max-h-60 overflow-hidden">
           {/* Search Input */}
           <div className="p-2 border-b border-gray-200">
             <input
@@ -203,8 +209,12 @@ export function MultiSelect({
                       isDisabled && "opacity-50 cursor-not-allowed",
                     )}
                   >
-                    <div className="flex items-center gap-2 min-w-0 flex-1">
-                      <Users className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                    <div className="flex items-center gap-0.5 min-w-0 flex-1">
+                      {option.icon ? (
+                        <Image src={option.icon} alt="" width={26} height={26} className="shrink-0" />
+                      ) : (
+                        <Users className="h-4 w-4 text-gray-400 shrink-0" />
+                      )}
                       <div className="min-w-0 flex-1">
                         <div className="font-medium truncate">
                           {option.label}
@@ -217,7 +227,7 @@ export function MultiSelect({
                       </div>
                     </div>
                     {isSelected && (
-                      <Check className="h-4 w-4 text-blue-600 flex-shrink-0" />
+                      <Check className="h-4 w-4 text-blue-600 shrink-0" />
                     )}
                   </button>
                 );

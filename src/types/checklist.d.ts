@@ -1,10 +1,3 @@
-/**
- * Dynamic Checklist System Types
- *
- * This module defines all types related to the dynamic checklist functionality
- * for managing document requirements per application.
- */
-
 export interface ChecklistItem {
   checklist_id?: string;
   document_type: string;
@@ -29,6 +22,17 @@ export interface ChecklistCreateRequest {
   document_category: string;
   required: boolean;
   company_name?: string;
+  template_id?: string;
+}
+
+
+export interface DocumentTypeConfig {
+  category: string;
+  documentType: string;
+  companyName?: string;
+  allowedDocument?: number;
+  instruction?: string;
+  template_id?: string;
 }
 
 export interface ChecklistUpdateRequest {
@@ -67,6 +71,7 @@ export interface ChecklistDocument {
   checklist_id?: string;
   company_name?: string;
   description?: string;
+  template_id?: string;
 }
 
 export interface ChecklistStateData {

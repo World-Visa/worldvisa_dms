@@ -19,7 +19,6 @@ const DocumentStatusDisplay: React.FC<DocumentStatusDisplayProps> = ({
     <div className="mt-4 space-y-3">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          {!isClientView && <DocumentTimeline documentId={document._id} />}
           {!isClientView && <DocumentMovedFiles documentId={document._id} />}
         </div>
 

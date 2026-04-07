@@ -254,8 +254,10 @@ export async function getChatClients(params: {
 // Fetches one page of clients (backend filters by JWT role, 20/page)
 export async function getChatClientsPage(
   page: number,
+  search?: string,
 ): Promise<{ clients: ClientUser[]; total: number }> {
   const qs = new URLSearchParams({ limit: "20", page: String(page) });
+  if (search) qs.set("search", search);
   const raw = await fetcher<{
     status: string;
     pagination: { totalRecords: number };

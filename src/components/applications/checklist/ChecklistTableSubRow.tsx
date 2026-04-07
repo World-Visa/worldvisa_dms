@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion } from "motion/react";
 import {
   RiCloseCircleLine,
+  RiDeleteBin2Line,
   RiEyeLine,
   RiMore2Fill,
   RiUploadLine,
@@ -14,6 +15,7 @@ import {
   DropdownMenuContent,
   DropdownMenuGroup,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/primitives/dropdown-menu";
 import { CompactButton } from "@/components/ui/primitives/button-compact";
@@ -45,6 +47,7 @@ interface ChecklistTableSubRowProps {
   isClientView?: boolean;
   commentCounts: Record<string, number>;
   onReupload: (docId: string, documentType: string, category: string) => void;
+  onDelete?: (documentId: string, fileName: string, status: string, documentType: string, category: string) => void;
 }
 
 export function ChecklistTableSubRow({
@@ -59,6 +62,7 @@ export function ChecklistTableSubRow({
   isClientView,
   commentCounts,
   onReupload,
+  onDelete,
 }: ChecklistTableSubRowProps) {
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
@@ -197,6 +201,16 @@ export function ChecklistTableSubRow({
                     Reupload Document
                   </DropdownMenuItem>
                 )}
+              </DropdownMenuGroup>
+              <DropdownMenuSeparator />
+              <DropdownMenuGroup>
+                <DropdownMenuItem
+                  className="cursor-pointer text-error-base focus:text-error-base"
+                  onClick={() => onDelete?.(doc._id, doc.file_name, doc.status, documentType, category)}
+                >
+                  <RiDeleteBin2Line />
+                  Delete Document
+                </DropdownMenuItem>
               </DropdownMenuGroup>
             </DropdownMenuContent>
           </DropdownMenu>

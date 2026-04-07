@@ -17,7 +17,6 @@ import type {
 import type { Document } from "@/types/applications";
 import type { Company } from "@/types/documents";
 import {
-  getAllDocumentTypes,
   markSubmittedDocumentsAsMandatory,
   hasCompanyDocumentsInChecklist,
   getAvailableDocumentsForEditing,
@@ -75,11 +74,8 @@ export function useChecklistState({
     isBatchDeleting,
   } = useChecklistMutations(applicationId);
 
-  // Get all available document types
-  const allDocumentTypes = useMemo(
-    () => getAllDocumentTypes(companies),
-    [companies],
-  );
+  // No dynamic templates in this legacy hook — returns empty until migrated
+  const allDocumentTypes = useMemo(() => [], []);
 
   // Get checklist items from API
   const checklistItems = useMemo(() => {

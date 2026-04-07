@@ -7,20 +7,22 @@ import { parseCompaniesFromDocuments } from "@/utils/companyParsing";
 import { useChecklistPage } from "./useChecklistPage";
 import { ChecklistLayout } from "./ChecklistLayout";
 import { ChecklistEditor } from "./ChecklistEditor";
+import { ChecklistPageSkeleton } from "./ChecklistPageSkeleton";
 import { Card } from "@/components/ui/card";
-import { Skeleton } from "@/components/ui/skeleton";
+import { ROUTES } from "@/utils/routes";
+
 interface ChecklistPageProps {
   applicationId: string;
   isSpouseApplication: boolean;
 }
 
-export function ChecklistPage({ applicationId }: ChecklistPageProps) {
+export function ChecklistPage({
+  applicationId,
+  isSpouseApplication,
+}: ChecklistPageProps) {
   const { data: applicationData } = useApplicationDetails(applicationId);
-  const {
-    data: documentsData,
-    isLoading: isDocsLoading,
-    error: docsError,
-  } = useAllApplicationDocuments(applicationId);
+  const { data: documentsData, error: docsError } =
+    useAllApplicationDocuments(applicationId);
 
   const documents = documentsData?.data;
   const companies = useMemo(
@@ -31,30 +33,35 @@ export function ChecklistPage({ applicationId }: ChecklistPageProps) {
     (applicationData as { data?: { Record_Type?: string } })?.data
       ?.Record_Type ?? "default_record_type";
 
+  const visaServiceType =
+    (applicationData as { data?: { Service_Finalized?: string } })?.data
+      ?.Service_Finalized ?? "";
+
+  const applicationLabel =
+    (applicationData as { data?: { Name?: string } })?.data?.Name ??
+    "Application";
+  const applicationsListHref = isSpouseApplication
+    ? "/v2/spouse-skill-assessment-applications"
+    : ROUTES.ADMIN_HOME;
+  const applicationDetailsHref = isSpouseApplication
+    ? ROUTES.SPOUSE_SKILL_ASSESSMENT_APPLICATION_DETAILS(applicationId)
+    : ROUTES.APPLICATION_DETAILS(applicationId);
+
   const page = useChecklistPage({
     applicationId,
     documents,
     companies,
     recordType,
+    visaServiceType,
   });
 
-  if (isDocsLoading || page.isChecklistLoading) {
-    return (
-      <Card className="p-6">
-        <div className="space-y-4">
-          <Skeleton className="h-8 w-64" />
-          <Skeleton className="h-10 w-full" />
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Skeleton key={i} className="h-14 w-full" />
-          ))}
-        </div>
-      </Card>
-    );
+  if (page.isChecklistLoading) {
+    return <ChecklistPageSkeleton />;
   }
 
   if (docsError) {
     return (
-      <Card className="p-6">
+      <Card className="p-6 border-none">
         <p className="text-destructive">Failed to load documents.</p>
         <p className="text-sm text-muted-foreground mt-1">
           {String(docsError)}
@@ -65,10 +72,12 @@ export function ChecklistPage({ applicationId }: ChecklistPageProps) {
 
   return (
     <ChecklistLayout
-      applicationId={applicationId}
+      applicationsListHref={applicationsListHref}
+      applicationDetailsHref={applicationDetailsHref}
+      applicationLabel={applicationLabel}
       mode={page.mode}
       isSaving={page.isSaving}
-      onCancel={page.cancel}
+      hasChanges={page.hasChanges}
       onSave={page.handleSave}
     >
       <ChecklistEditor
@@ -83,15 +92,6 @@ export function ChecklistPage({ applicationId }: ChecklistPageProps) {
         onTabChange={page.handleTabChange}
         onSearchChange={page.setSearchQuery}
         onUpdateRequirement={page.updateDocumentRequirement}
-        onAddToPending={(item) =>
-          page.addToPendingChanges({
-            category: item.category,
-            documentType: item.documentType,
-            isUploaded: false,
-            requirement: item.requirement,
-            company_name: (item as { company_name?: string }).company_name,
-          })
-        }
         applicationId={applicationId}
       />
     </ChecklistLayout>

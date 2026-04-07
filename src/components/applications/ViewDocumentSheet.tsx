@@ -26,6 +26,7 @@ import { Document } from "@/types/applications";
 import { useDocumentData } from "@/hooks/useDocumentData";
 import { useQueryClient } from "@tanstack/react-query";
 import { getChecklistDocumentMeta } from "@/lib/documents/metadata";
+import DocumentTimeline from "./DocumentTimeline";
 
 interface ViewDocumentSheetProps {
   document: Document;
@@ -216,6 +217,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                       onSend={() => {}}
                     />
                   )}
+                  <DocumentTimeline documentId={document._id} />
                 </div>
               </div>
             </SheetHeader>
@@ -230,9 +232,10 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                       variant="warning"
                       title="Important"
                       description={
-                        <span className="whitespace-pre-line">
-                          {checklistMeta.importantNote}
-                        </span>
+                        <div
+                          className="prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_mark]:bg-yellow-200 [&_mark]:rounded-[2px] [&_mark]:px-0.5 [&_p]:my-0.5"
+                          dangerouslySetInnerHTML={{ __html: checklistMeta.importantNote }}
+                        />
                       }
                     />
                   )}

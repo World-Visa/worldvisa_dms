@@ -85,6 +85,9 @@ export function DocumentsTable({
   const [documentToDelete, setDocumentToDelete] = useState<{
     id: string;
     name: string;
+    status: string;
+    documentType: string;
+    category: string;
   } | null>(null);
   const [viewSheetOpen, setViewSheetOpen] = useState(false);
   const [selectedDocument, setSelectedDocument] =
@@ -162,8 +165,8 @@ export function DocumentsTable({
     setSelectedDocument(null);
   }, []);
 
-  const handleDeleteDocument = useCallback((documentId: string, fileName: string) => {
-    setDocumentToDelete({ id: documentId, name: fileName });
+  const handleDeleteDocument = useCallback((documentId: string, fileName: string, status: string, documentType: string, category: string) => {
+    setDocumentToDelete({ id: documentId, name: fileName, status, documentType, category });
     setDeleteDialogOpen(true);
   }, []);
 
@@ -188,6 +191,17 @@ export function DocumentsTable({
 
   const confirmDelete = async () => {
     if (!documentToDelete) return;
+    if (documentToDelete.status === "approved") {
+      setDeleteDialogOpen(false);
+      setDocumentToDelete(null);
+      return;
+    }
+    if (documentToDelete.status === "reviewed") {
+      setDeleteDialogOpen(false);
+      handleOpenReuploadModal(documentToDelete.id, documentToDelete.documentType, documentToDelete.category);
+      setDocumentToDelete(null);
+      return;
+    }
     try {
       if (isClientView) {
         await clientMoveDocumentMutation.mutateAsync(documentToDelete.id);
@@ -303,14 +317,38 @@ export function DocumentsTable({
           }
         }}
         onConfirm={confirmDelete}
-        title="Delete Document"
-        description={
-          <>
-            Delete <strong>{documentToDelete?.name}</strong>? This cannot be undone.
-          </>
+        title={
+          documentToDelete?.status === "approved"
+            ? "Delete Locked"
+            : documentToDelete?.status === "reviewed"
+              ? "Document Under Review"
+              : "Delete Document"
         }
-        confirmText="Delete"
-        variant="destructive"
+        description={
+          documentToDelete?.status === "approved" ? (
+            <>
+              The delete option has been locked for <strong>{documentToDelete.name}</strong> as
+              it has gone through level 3 verification. If you need assistance, contact your
+              content advisor.
+            </>
+          ) : documentToDelete?.status === "reviewed" ? (
+            <>
+              <strong>{documentToDelete.name}</strong> is currently under review and cannot be
+              deleted. You can replace it by uploading a new version.
+            </>
+          ) : (
+            <>Delete <strong>{documentToDelete?.name}</strong>? This cannot be undone.</>
+          )
+        }
+        confirmText={
+          documentToDelete?.status === "approved"
+            ? "Got it"
+            : documentToDelete?.status === "reviewed"
+              ? "Replace Document"
+              : "Delete"
+        }
+        variant={documentToDelete?.status === "pending" || !documentToDelete?.status ? "destructive" : "default"}
+        hideCancelButton={documentToDelete?.status === "approved"}
         isLoading={isDeletePending}
       />
 

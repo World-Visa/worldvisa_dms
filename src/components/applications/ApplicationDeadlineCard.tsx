@@ -126,39 +126,27 @@ export function ApplicationDeadlineCard({
 
     return (
       <div
-        className={cn(
-          "rounded-2xl border overflow-hidden flex flex-col h-full",
-          container,
-        )}
+        className="rounded-2xl border overflow-hidden flex flex-col h-full bg-white"
       >
-        {/* Top accent strip */}
-        <div className={cn("h-1 w-full shrink-0", accent)} />
 
         {/* Content */}
         <div className="p-5 flex flex-col gap-4 flex-1">
           {/* Header */}
-          <div className="flex items-center gap-2.5">
-            <div
-              className={cn(
-                "w-8 h-8 rounded-lg flex items-center justify-center shrink-0",
-                iconBg,
-              )}
-            >
-              <Calendar className={cn("h-4 w-4", iconColor)} />
-            </div>
+          <div className="flex items-center justify-between gap-2.5">
             <div className="flex items-center gap-1.5 min-w-0">
-              <p
-                className={cn(
-                  "text-[10px] font-semibold uppercase tracking-widest",
-                  labelColor,
-                )}
-              >
+              <p className="text-[10px] font-semibold uppercase tracking-widest text-text-sub">
                 Application Deadline
               </p>
-              {(passed || approaching) && (
-                <AlertTriangle className={cn("h-3 w-3 shrink-0", iconColor)} />
-              )}
             </div>
+            {canEdit && (
+              <Button
+                onClick={onEditDeadline}
+                variant="link"
+                className="p-0 h-auto text-sm text-foreground font-medium w-fit"
+              >
+                <Edit3 size={8} />
+              </Button>
+            )}
           </div>
 
           {/* Date */}
@@ -166,57 +154,34 @@ export function ApplicationDeadlineCard({
             <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-1 font-medium">
               Target Date
             </p>
-            <p className="text-xl font-bold text-slate-800 leading-tight">
+            <p className={cn("text-xl font-bold text-slate-800 leading-tight", passed ? "text-red-600" : approaching ? "text-amber-600" : "text-blue-600")}>
               {formatDate(deadline)}
             </p>
           </div>
 
           {/* Days — focal point */}
-          <div
-            className={cn(
-              "rounded-xl p-4 flex flex-col items-center justify-center flex-1 min-h-[90px]",
-              panelBg,
-            )}
-          >
-            <p
-              className={cn(
-                "text-5xl font-black tabular-nums leading-none",
-                daysColor,
-              )}
-            >
+          <div className="rounded-xl border border-gray-200 p-2 flex flex-col items-center justify-center flex-1 min-h-[90px] bg-bg-weak">
+            <p className={cn("text-5xl font-black tabular-nums leading-none text-text-strong", passed ? "text-red-600" : approaching ? "text-amber-600" : "text-blue-600")}>
               {days}
             </p>
-            <p
-              className={cn(
-                "text-[10px] font-bold uppercase tracking-widest mt-2",
-                labelColor,
-              )}
-            >
-              {passed ? "Days Overdue" : "Days Remaining"}
-            </p>
+            <div className="flex flex-col items-center gap-1">
+              <p className={cn("text-[10px] font-bold uppercase tracking-widest mt-2 text-text-sub", passed ? "text-red-600" : approaching ? "text-amber-600" : "text-blue-600")}>
+                {passed ? "Days Overdue" : "Days Remaining"}
+              </p>
+              <p className="text-xs text-text-soft">
+                {passed
+                  ? "Deadline has passed"
+                  : approaching
+                    ? "Deadline is approaching"
+                    : "Final lodgement target date"}
+              </p>
+            </div>
           </div>
 
           {/* Footer */}
           <div className="flex flex-row items-center md:justify-between justify-start gap-1.5 w-full">
-            <p className={cn("text-xs w-full", labelColor)}>
-              {passed
-                ? "⚠️ Deadline has passed"
-                : approaching
-                  ? "⚠️ Deadline is approaching"
-                  : "Final lodgement target date"}
-            </p>
-            {canEdit && (
-              <Button
-                onClick={onEditDeadline}
-                variant="link"
-                className={cn(
-                  "p-0 h-auto text-sm text-foreground font-medium justify-end w-fit",
-                )}
-              >
-                <Edit3 className="h-3 w-3 " />
-                Edit Deadline
-              </Button>
-            )}
+
+           
           </div>
         </div>
       </div>

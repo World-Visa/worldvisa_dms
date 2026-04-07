@@ -6,18 +6,16 @@ interface NextFetchOptions {
   };
 }
 
-/**
- * Generic fetch wrapper that automatically attaches the Clerk JWT.
- * Token is obtained from the module-level singleton set by ClerkTokenProvider.
- */
 export async function fetcher<T>(
   url: string,
   options: RequestInit & NextFetchOptions = {},
 ): Promise<T> {
   const token = await getClerkToken();
 
+  const isFormData = options.body instanceof FormData;
   const headers: Record<string, string> = {
-    "Content-Type": "application/json",
+    // Don't set Content-Type for FormData — browser sets it with the multipart boundary
+    ...(isFormData ? {} : { "Content-Type": "application/json" }),
     ...(options.headers as Record<string, string>),
   };
 

@@ -40,6 +40,18 @@ export const API_CONFIG = {
     // Quality check
     QUALITY_CHECK: `${ZOHO_BASE_URL}/visa_applications/quality_check`,
 
+    // Checklist document templates
+    CHECKLIST_DOCUMENT_TEMPLATES: {
+      BASE:       `${ZOHO_BASE_URL}/checklist-documents`,
+      VISA_TYPES: `${ZOHO_BASE_URL}/checklist-documents/visa-service-types`,
+      SUMMARY:    `${ZOHO_BASE_URL}/checklist-documents/summary`,
+      GROUPED:    `${ZOHO_BASE_URL}/checklist-documents/grouped`,
+      CATEGORIES: `${ZOHO_BASE_URL}/checklist-documents/categories`,
+      BY_ID:      (id: string) => `${ZOHO_BASE_URL}/checklist-documents/${id}`,
+      STATE:      (id: string) => `${ZOHO_BASE_URL}/checklist-documents/${id}/state`,
+      BULK:       `${ZOHO_BASE_URL}/checklist-documents/bulk`,
+    },
+
     // Checklist requests (Admin)
     CHECKLIST_REQUESTS: {
       LIST: `${ZOHO_BASE_URL}/visa_applications/checklist/requested`,

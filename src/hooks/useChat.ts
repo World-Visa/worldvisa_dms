@@ -448,10 +448,11 @@ export function useStaffUsers() {
   });
 }
 
-export function useChatClients(p0: { permissionMode?: string; currentUsername?: string; }) {
+export function useChatClients(p0: { permissionMode?: string; currentUsername?: string; search?: string }) {
+  const { search } = p0;
   const clientsQuery = useInfiniteQuery({
-    queryKey: CHAT_QUERY_KEYS.clientUsers,
-    queryFn: ({ pageParam }: { pageParam: number }) => getChatClientsPage(pageParam),
+    queryKey: [...CHAT_QUERY_KEYS.clientUsers, search ?? ""],
+    queryFn: ({ pageParam }: { pageParam: number }) => getChatClientsPage(pageParam, search),
     initialPageParam: 1,
     getNextPageParam: (lastPage, allPages) =>
       lastPage.clients.length === 20 ? allPages.length + 1 : undefined,

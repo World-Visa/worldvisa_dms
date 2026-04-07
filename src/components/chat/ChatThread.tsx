@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 import Image from "next/image";
-import { Settings, Users, ArrowLeft, MessageSquare, LogOut } from "lucide-react";
+import { Settings, Users, ArrowLeft, MessageSquare, LogOut, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -43,6 +43,8 @@ interface ChatThreadProps {
   onForwardMessage?: (message: ChatMessage, targetId: string) => void;
   /** When set (e.g. inside a sheet), emoji picker portals here so scroll works. */
   emojiPopoverContainerRef?: React.RefObject<HTMLElement | null>;
+  /** When set (e.g. inside a panel), renders an X close button in the header. */
+  onClose?: () => void;
 }
 
 interface ForwardDialogState {
@@ -62,6 +64,7 @@ export function ChatThread({
   onOpenGroupSettings,
   onLeaveGroup,
   emojiPopoverContainerRef,
+  onClose,
 }: ChatThreadProps) {
   const { data: conversationData } = useConversation(conversationId);
   const {
@@ -332,6 +335,17 @@ export function ChatThread({
             <Settings className="h-4 w-4" />
           </Button>
         )}
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon-sm"
+            onClick={onClose}
+            className="shrink-0"
+            aria-label="Close"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+        )}
       </div>
 
       {/* Messages */}
@@ -413,7 +427,10 @@ export function ChatThread({
                       isOwn={isOwn}
                       senderName={senderName}
                       senderId={message.sender.id}
-                      senderProfileImage={member?.profile_image_url}
+                      senderProfileImage={
+                        getProfileImageUrl(message.sender.type, message.sender.id) ??
+                        member?.profile_image_url
+                      }
                       showAvatar={senderChanged && !isOwn}
                       showSenderName={
                         senderChanged &&

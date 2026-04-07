@@ -1,20 +1,16 @@
 "use client";
 
 import { memo } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { ChecklistCategoryTabs } from "./ChecklistCategoryTabs";
-import { ChecklistEditorTable } from "./ChecklistEditorTable";
+import {
+  ChecklistEditorTable,
+  type ChecklistTableItem,
+} from "./ChecklistEditorTable";
 import { ChecklistTabs } from "@/components/applications/checklist/ChecklistTabs";
-import { SearchBox } from "@/components/ui/SearchBox";
+import { FacetedFormFilter } from "@/components/ui/faceted-filter/facated-form-filter";
+import { ListNoResults } from "@/components/applications/list-no-results";
 import type { ChecklistPageMode } from "./types";
-
-interface ChecklistTableItem {
-  category: string;
-  documentType: string;
-  requirement?: "mandatory" | "optional" | "not_required";
-  checklist_id?: string;
-  isSelected?: boolean;
-  description?: string;
-}
 
 interface ChecklistEditorProps {
   mode: ChecklistPageMode;
@@ -32,7 +28,6 @@ interface ChecklistEditorProps {
     documentType: string,
     requirement: "mandatory" | "optional" | "not_required",
   ) => void;
-  onAddToPending: (item: ChecklistTableItem) => void;
   applicationId: string;
 }
 
@@ -48,10 +43,15 @@ export const ChecklistEditor = memo(function ChecklistEditor({
   onTabChange,
   onSearchChange,
   onUpdateRequirement,
-  onAddToPending,
   applicationId,
 }: ChecklistEditorProps) {
   const isEdit = mode === "edit";
+  // On the "Current Checklist" top tab, inner tabs are redundant — show all items directly
+  const isChecklistTab = selectedCategory === "checklist";
+  const showInnerTabs = isEdit && !isChecklistTab;
+  // For specific category tabs in edit mode, show empty state when no checklist items exist for that category
+  const showEmptyState =
+    isEdit && !isChecklistTab && activeTab === "current" && categoryFilteredItems.length === 0;
 
   return (
     <div className="space-y-4">
@@ -64,40 +64,56 @@ export const ChecklistEditor = memo(function ChecklistEditor({
 
       <div className="flex flex-col gap-4">
         <div className="flex items-center justify-between gap-4 w-full">
-          {isEdit && (
+          {showInnerTabs && (
             <ChecklistTabs
               activeTab={activeTab}
               onTabChange={onTabChange}
             />
           )}
 
-          <div className="flex items-center gap-4">
-            <SearchBox
-              value={searchQuery}
-              onChange={onSearchChange}
-              placeholder="Search documents..."
-              aria-label="Search document checklist"
-              className="w-full"
-            />
-          </div>
+          <FacetedFormFilter
+            type="text"
+            size="small"
+            title="Search"
+            value={searchQuery}
+            onChange={onSearchChange}
+            placeholder="Search documents…"
+          />
         </div>
 
-        {searchQuery && (
-          <p className="text-sm text-muted-foreground" role="status">
-            {filteredItems.length === categoryFilteredItems.length
-              ? `Showing all ${filteredItems.length} documents`
-              : `Showing ${filteredItems.length} of ${categoryFilteredItems.length} documents`}
-          </p>
+        {showEmptyState ? (
+          <ListNoResults
+            title="No documents in checklist"
+            description="No checklist has been added for this category. Kindly add documents from the Available Documents tab."
+            action={
+              <button
+                type="button"
+                className="text-xs font-medium text-primary underline-offset-4 hover:underline"
+                onClick={() => onTabChange("available")}
+              >
+                Go to Available Documents
+              </button>
+            }
+          />
+        ) : (
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={`${activeTab}-${selectedCategory}`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+            >
+              <ChecklistEditorTable
+                items={filteredItems}
+                mode={mode as "create" | "edit"}
+                activeTab={activeTab}
+                applicationId={applicationId}
+                onUpdateRequirement={onUpdateRequirement}
+              />
+            </motion.div>
+          </AnimatePresence>
         )}
-
-        <ChecklistEditorTable
-          items={filteredItems}
-          mode={mode as "create" | "edit"}
-          activeTab={activeTab}
-          applicationId={applicationId}
-          onUpdateRequirement={onUpdateRequirement}
-          onAddToPending={onAddToPending}
-        />
       </div>
     </div>
   );

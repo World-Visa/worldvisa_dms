@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
+import { ChatPanelController } from "@/app/(admin-v2)/chat-panel-controller";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import { AppSidebar } from "@/components/v2/sidebar/app-sidebar";
@@ -37,6 +38,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
       <AppSidebar />
       <SidebarInset
         className={cn(
+          "min-w-0",
           "[html[data-content-layout=centered]_&]:mx-auto! [html[data-content-layout=centered]_&]:max-w-screen-2xl!",
           "max-[113rem]:peer-data-[variant=inset]:mr-2! min-[101rem]:peer-data-[variant=inset]:peer-data-[state=collapsed]:mr-auto!",
         )}
@@ -62,13 +64,18 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             </div>
           </div>
         </header>
-        <NuqsAdapter>
-          <Suspense fallback={<AdminContentFallback />}>
-            <ContentArea>
-              {children}
-            </ContentArea>
+        <div className="flex flex-1 min-h-0 overflow-hidden ">
+          <NuqsAdapter>
+            <Suspense fallback={<AdminContentFallback />}>
+              <ContentArea>
+                {children}
+              </ContentArea>
+            </Suspense>
+          </NuqsAdapter>
+          <Suspense fallback={null}>
+            <ChatPanelController />
           </Suspense>
-        </NuqsAdapter>
+        </div>
       </SidebarInset>
     </SidebarProvider>
   );
