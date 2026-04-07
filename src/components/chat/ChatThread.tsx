@@ -427,7 +427,10 @@ export function ChatThread({
                       isOwn={isOwn}
                       senderName={senderName}
                       senderId={message.sender.id}
-                      senderProfileImage={member?.profile_image_url}
+                      senderProfileImage={
+                        getProfileImageUrl(message.sender.type, message.sender.id) ??
+                        member?.profile_image_url
+                      }
                       showAvatar={senderChanged && !isOwn}
                       showSenderName={
                         senderChanged &&

@@ -64,7 +64,6 @@ import { useRemoveCompany } from "@/hooks/useRemoveCompany";
 import type { ApplicationNote } from "@/lib/api/applicationNotes";
 import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
 import { ClientOnboardingModal } from "@/components/applications/onboarding/ClientOnboardingModal";
-import { InlineToast } from "../ui/primitives/inline-toast";
 import type { ApplicationLayout } from "@/components/applications/layouts/LayoutChips";
 import { useQueryStates } from "nuqs";
 

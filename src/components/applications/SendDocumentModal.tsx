@@ -325,9 +325,9 @@ export function SendDocumentModal({
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button
-          variant="outline"
+          variant="secondary"
           size="sm"
-          className="gap-2 cursor-pointer h-8 text-xs font-medium"
+          className="gap-2 cursor-pointer h-8 text-xs"
         >
           <Send className="h-3.5 w-3.5" />
           <span className="hidden sm:inline">

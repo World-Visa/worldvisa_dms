@@ -27,9 +27,10 @@ import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { ClientChatSheet } from "@/components/chat/ClientChatSheet";
 import { useTotalUnreadCount } from "@/hooks/useChat";
+import { ChatButton } from "@/components/applications/ChatButton";
 import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
@@ -552,22 +553,11 @@ export default function ClientApplicationDetailsPageContent({
         </div>
         <div className="flex items-center gap-2">
           {applicationData?.data?.Application_Handled_By && (
-            <div className="relative">
-              <Button
-                variant="outline"
-                title="Chat with Processing Advisor"
-                onClick={() => setIsChatOpen(true)}
-                className="flex items-center gap-1 cursor-pointer bg-white border border-gray-200 rounded-lg"
-              >
-                <MessageCircle className="h-4 w-4" />
-                <span className="">Chat</span>
-                {chatUnreadCount > 0 && (
-                  <Badge variant="default" className="text-xs min-w-5 h-5 px-1.5">
-                    {chatUnreadCount > 99 ? "99+" : chatUnreadCount}
-                  </Badge>
-                )}
-              </Button>
-            </div>
+            <ChatButton
+              onClick={() => setIsChatOpen(true)}
+              unreadCount={chatUnreadCount}
+              label="Start Chat"
+            />
           )}
         </div>
       </div>

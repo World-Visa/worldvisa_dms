@@ -26,6 +26,7 @@ import { Document } from "@/types/applications";
 import { useDocumentData } from "@/hooks/useDocumentData";
 import { useQueryClient } from "@tanstack/react-query";
 import { getChecklistDocumentMeta } from "@/lib/documents/metadata";
+import DocumentTimeline from "./DocumentTimeline";
 
 interface ViewDocumentSheetProps {
   document: Document;
@@ -216,6 +217,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                       onSend={() => {}}
                     />
                   )}
+                  <DocumentTimeline documentId={document._id} />
                 </div>
               </div>
             </SheetHeader>

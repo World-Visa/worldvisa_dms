@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useJiggle } from "@/hooks/useJiggle";
 import { useRouter } from "next/navigation";
 import { addTransitionType, startTransition } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,11 +25,10 @@ import {
 } from "lucide-react";
 import type { MandatoryDocumentValidationDetail } from "@/utils/checklistValidation";
 import { ApplicationActivitySheet } from "@/components/applications/ApplicationActivitySheet";
+import { ChatButton } from "@/components/applications/ChatButton";
 import { ROUTES } from "@/utils/routes";
-import { RiMore2Fill, RiMessage3Line, RiMessage3Fill } from "react-icons/ri";
-import { motion, useReducedMotion } from "motion/react";
+import { RiMore2Fill } from "react-icons/ri";
 
-const SPRING_PRESS = { type: "spring" as const, stiffness: 500, damping: 28 };
 interface QcRequested {
   qcId: string;
   status: "pending" | "reviewed" | "removed";
@@ -115,10 +113,8 @@ export function ApplicationDetailsHeader({
   applicationId,
 }: ApplicationDetailsHeaderProps) {
   const router = useRouter();
-  const reduced = useReducedMotion();
   const isAdmin = userRole !== "client";
   const [isActivitySheetOpen, setIsActivitySheetOpen] = useState(false);
-  const chatJiggle = useJiggle(unreadChatCount ?? 0);
 
   const navigateToChecklist = () => {
     startTransition(() => {
@@ -207,47 +203,7 @@ export function ApplicationDetailsHeader({
         </Tooltip>
       )}
 
-      <div className="relative shrink-0">
-        <motion.button
-          onClick={onStartChat}
-          className="relative flex items-center gap-1.5 justify-center overflow-hidden rounded-[8px] outline-none
-              focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#c0d5ff]"
-          style={{
-            padding: 6,
-            backgroundImage:
-              "linear-gradient(180deg, rgba(255,255,255,0.153) 6.6667%, rgba(255,255,255,0) 103.33%)," +
-              "linear-gradient(90deg, #171717 0%, #171717 100%)",
-            boxShadow:
-              "0px 0px 0px 0.75px #171717," +
-              "inset 0px 1px 2px 0px rgba(255,255,255,0.16)",
-          }}
-          whileHover={reduced ? {} : { opacity: 0.88 }}
-          whileTap={reduced ? {} : { scale: 0.98 }}
-          transition={SPRING_PRESS}
-        >
-          <motion.span
-            className="origin-top flex items-center"
-            animate={chatJiggle ? { rotate: [0, 15, -15, 11, -11, 7.5, -7.5, 3.75, -3.75, 1.5, 0] } : { rotate: 0 }}
-            transition={{ duration: 3, ease: "easeInOut" }}
-          >
-            <RiMessage3Fill className="size-3.5 text-white" />
-          </motion.span>
-          <p
-            className="font-medium text-xs leading-[20px] tracking-[-0.084px] text-white select-none"
-            style={{ fontFeatureSettings: "'ss11', 'calt' 0" }}
-          >
-            Start Chat
-          </p>
-        </motion.button>
-
-        {(unreadChatCount ?? 0) > 0 && (
-          <div className="pointer-events-none absolute -top-1.5 -right-1.5 z-10 flex h-3.5 min-w-[14px] items-center justify-center rounded-full border border-neutral-200 bg-white px-0.5 shadow-sm">
-            <span className="text-[9px] font-semibold tabular-nums leading-none text-neutral-800">
-              {(unreadChatCount ?? 0) > 99 ? "99+" : unreadChatCount}
-            </span>
-          </div>
-        )}
-      </div>
+      <ChatButton onClick={onStartChat} unreadCount={unreadChatCount ?? 0} />
 
       {isAdmin && (
         <DropdownMenu >

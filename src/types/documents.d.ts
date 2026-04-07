@@ -132,6 +132,7 @@ export interface Timeline {
   timestamp: string;
   details?: string;
   triggered_by: string;
+  profile_image_url?: string;
 }
 
 export interface GetTimelineResponse {
