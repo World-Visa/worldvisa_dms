@@ -20,10 +20,15 @@ interface EmailHistoryModalProps {
   onOpenChange: (open: boolean) => void;
   clientEmail: string;
   clientName: string;
+  initialCompose?: { subject: string; html: string };
 }
 
-export function EmailHistoryModal({ isOpen, onOpenChange, clientEmail, clientName }: EmailHistoryModalProps) {
+export function EmailHistoryModal({ isOpen, onOpenChange, clientEmail, clientName, initialCompose }: EmailHistoryModalProps) {
   const [composeOpen, setComposeOpen] = useState(false);
+
+  useEffect(() => {
+    if (isOpen && initialCompose) setComposeOpen(true);
+  }, [isOpen]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [{ emailCat, emailId }, setEmailState] = useQueryStates(
     {
@@ -107,6 +112,8 @@ export function EmailHistoryModal({ isOpen, onOpenChange, clientEmail, clientNam
               <EmailHistoryCompose
                 key="compose"
                 defaultTo={clientEmail}
+                defaultSubject={initialCompose?.subject}
+                defaultHtml={initialCompose?.html}
                 onClose={() => setComposeOpen(false)}
               />
             )}

@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useEffect, useMemo, useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { AlertCircle } from "lucide-react";
 
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -45,19 +46,17 @@ interface ClientsManageClientProps {
 
 export function ClientsManageClient({ invited }: ClientsManageClientProps) {
   const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [leadOwner, setLeadOwner] = useState<string[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
+  const rawDebounced = useDebounce(searchInput.trim(), 300);
+  const debouncedSearch = rawDebounced.length >= 2 ? rawDebounced : "";
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput);
-      setCurrentPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
+    setCurrentPage(1);
+  }, [debouncedSearch]);
 
   const { data: adminUsers, isLoading: isLoadingAdmins } = useAdminUsers();
 
@@ -77,11 +76,12 @@ export function ClientsManageClient({ invited }: ClientsManageClientProps) {
     invited: invited || undefined,
   });
 
+  const showLoading = isLoading && !data;
   const clients: ClientRecord[] = data?.data?.clients ?? [];
   const totalPages = Math.max(1, data?.pagination?.totalPages ?? 1);
   const totalRecords = data?.pagination?.totalRecords ?? 0;
 
-  const hasActiveFilters = searchInput.trim() !== "" || leadOwner.length > 0;
+  const hasActiveFilters = debouncedSearch !== "" || leadOwner.length > 0;
 
   const clearFilters = () => {
     setSearchInput("");
@@ -140,7 +140,7 @@ export function ClientsManageClient({ invited }: ClientsManageClientProps) {
       )}
 
       {/* Empty */}
-      {!isLoading && !isError && clients.length === 0 && (
+      {!showLoading && !isError && clients.length === 0 && (
         <div className="py-16 h-[calc(60vh-200px)] flex items-center justify-center">
           <ListNoResults
             title={invited ? "No Invitations Found" : "No Clients Found"}
@@ -155,8 +155,8 @@ export function ClientsManageClient({ invited }: ClientsManageClientProps) {
       )}
 
       {/* Table */}
-      {(isLoading || clients.length > 0) && (
-        <Table isLoading={isLoading} loadingRowsCount={8} loadingRow={<TableLoadingRow />}>
+      {(showLoading || clients.length > 0) && (
+        <Table isLoading={showLoading} loadingRowsCount={8} loadingRow={<TableLoadingRow />}>
           <TableHeader>
             <TableRow>
               {CLIENTS_TABLE_COLUMNS.map((col) => (
@@ -166,7 +166,7 @@ export function ClientsManageClient({ invited }: ClientsManageClientProps) {
               ))}
             </TableRow>
           </TableHeader>
-          {!isLoading && (
+          {!showLoading && (
             <TableBody>
               {clients.map((client) => (
                 <ClientTableRow key={client._id} client={client} />

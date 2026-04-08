@@ -7,7 +7,11 @@ import Highlight from "@tiptap/extension-highlight";
 import Link from "@tiptap/extension-link";
 import Image from "@tiptap/extension-image";
 import Placeholder from "@tiptap/extension-placeholder";
-import { Bold, ImagePlus, Italic, Link as LinkIcon, Highlighter, Underline as UnderlineIcon } from "lucide-react";
+import { Table } from "@tiptap/extension-table";
+import { TableRow } from "@tiptap/extension-table-row";
+import { TableCell } from "@tiptap/extension-table-cell";
+import { TableHeader } from "@tiptap/extension-table-header";
+import { Bold, ImagePlus, Italic, Link as LinkIcon, Highlighter, Table2, Underline as UnderlineIcon } from "lucide-react";
 import { useRef } from "react";
 import { cn } from "@/lib/utils";
 
@@ -48,6 +52,10 @@ export function RichMailEditor({
       Link.configure({ openOnClick: false, autolink: true }),
       Image.configure({ inline: true, allowBase64: true }),
       Placeholder.configure({ placeholder }),
+      Table.configure({ resizable: false }),
+      TableRow,
+      TableCell,
+      TableHeader,
     ],
     content,
     immediatelyRender: false,
@@ -57,6 +65,9 @@ export function RichMailEditor({
           "prose prose-sm dark:prose-invert max-w-none outline-none px-4 py-3 text-sm leading-relaxed",
           "[&_p]:my-0.5 [&_a]:text-blue-600 [&_a]:underline [&_mark]:bg-yellow-200 [&_mark]:dark:bg-yellow-500/30 [&_mark]:rounded-[2px] [&_mark]:px-0.5",
           "[&_img]:max-w-full [&_img]:rounded [&_img]:my-1 [&_img]:inline",
+          "[&_table]:w-full [&_table]:border-collapse [&_table]:my-3 [&_table]:text-sm",
+          "[&_th]:border [&_th]:border-border [&_th]:bg-muted [&_th]:px-3 [&_th]:py-2 [&_th]:text-left [&_th]:text-xs [&_th]:font-semibold [&_th]:uppercase [&_th]:tracking-wide [&_th]:text-muted-foreground",
+          "[&_td]:border [&_td]:border-border [&_td]:px-3 [&_td]:py-2 [&_td]:align-middle [&_td]:text-foreground",
         ),
       },
       handleKeyDown: (_view, event) => {
@@ -138,6 +149,13 @@ export function RichMailEditor({
       icon: <ImagePlus className="size-3.5" />,
       active: false,
       action: () => imageInputRef.current?.click(),
+    },
+    {
+      label: "Table",
+      icon: <Table2 className="size-3.5" />,
+      active: editor.isActive("table"),
+      action: () =>
+        editor.chain().focus().insertTable({ rows: 3, cols: 2, withHeaderRow: true }).run(),
     },
   ];
 

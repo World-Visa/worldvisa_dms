@@ -1,14 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { addTransitionType, startTransition } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,12 +14,12 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/primitives/dropdown-menu";
-import {
-  CheckCircle,
-  XCircle,
-  ChevronDown,
-} from "lucide-react";
+import { CheckCircle, XCircle } from "lucide-react";
 import type { MandatoryDocumentValidationDetail } from "@/utils/checklistValidation";
+import {
+  QCActionCard,
+  QCActionTriggerButton,
+} from "@/components/applications/QCActionCard";
 import { ApplicationActivitySheet } from "@/components/applications/ApplicationActivitySheet";
 import { ChatButton } from "@/components/applications/ChatButton";
 import { ROUTES } from "@/utils/routes";
@@ -46,6 +42,7 @@ interface ApplicationDetailsHeaderProps {
   onAddNote?: () => void;
   onEmailHistory?: () => void;
   onStartChat?: () => void;
+  onSendReminderEmail?: () => void;
   unreadChatCount?: number;
   userRole?: string;
   qcRequested?: QcRequested | null;
@@ -107,6 +104,7 @@ export function ApplicationDetailsHeader({
   onAddNote,
   onEmailHistory,
   onStartChat,
+  onSendReminderEmail,
   unreadChatCount,
   userRole,
   qcRequested,
@@ -115,6 +113,42 @@ export function ApplicationDetailsHeader({
   const router = useRouter();
   const isAdmin = userRole !== "client";
   const [isActivitySheetOpen, setIsActivitySheetOpen] = useState(false);
+  const [qcPanelOpen, setQcPanelOpen] = useState(false);
+  const qcLeaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const qcCloseButtonRef = useRef<HTMLButtonElement>(null);
+  const QC_PANEL_ID = "qc-action-details-panel";
+
+  const cancelQcPanelClose = useCallback(() => {
+    if (qcLeaveTimerRef.current) {
+      clearTimeout(qcLeaveTimerRef.current);
+      qcLeaveTimerRef.current = null;
+    }
+  }, []);
+
+  const scheduleQcPanelClose = useCallback(() => {
+    cancelQcPanelClose();
+    qcLeaveTimerRef.current = setTimeout(() => {
+      setQcPanelOpen(false);
+      qcLeaveTimerRef.current = null;
+    }, 120);
+  }, [cancelQcPanelClose]);
+
+  const openQcPanel = useCallback(() => {
+    cancelQcPanelClose();
+    setQcPanelOpen(true);
+  }, [cancelQcPanelClose]);
+
+  useEffect(() => () => cancelQcPanelClose(), [cancelQcPanelClose]);
+
+  const qcBlocked = !areAllDocumentsApproved;
+
+  useEffect(() => {
+    if (!qcBlocked) setQcPanelOpen(false);
+  }, [qcBlocked]);
+
+  const openQcPanelWhenBlocked = useCallback(() => {
+    if (!areAllDocumentsApproved) openQcPanel();
+  }, [areAllDocumentsApproved, openQcPanel]);
 
   const navigateToChecklist = () => {
     startTransition(() => {
@@ -132,75 +166,67 @@ export function ApplicationDetailsHeader({
           onPushForQualityCheck={onPushForQualityCheck}
         />
       ) : (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <div>
-              <Button
-                variant={areAllDocumentsApproved ? "default" : "secondary"}
-                size="sm"
-                onClick={onPushForQualityCheck}
-                disabled={!areAllDocumentsApproved}
-                className={`flex items-center gap-2 cursor-pointer ${areAllDocumentsApproved
-                    ? "bg-slate-900 hover:bg-slate-800 text-white"
-                    : "opacity-50 cursor-not-allowed"
-                  }`}
+        <div
+          className="relative shrink-0"
+          onMouseEnter={openQcPanelWhenBlocked}
+          onMouseLeave={scheduleQcPanelClose}
+          onFocusCapture={openQcPanelWhenBlocked}
+          onBlurCapture={(e) => {
+            const next = e.relatedTarget as Node | null;
+            if (!next || !e.currentTarget.contains(next)) {
+              scheduleQcPanelClose();
+            }
+          }}
+        >
+          <QCActionTriggerButton
+            id="qc-push-trigger"
+            aria-controls={qcBlocked ? QC_PANEL_ID : undefined}
+            aria-expanded={qcBlocked && qcPanelOpen}
+            blocked={!areAllDocumentsApproved}
+            onClick={onPushForQualityCheck}
+            className="min-w-0"
+          >
+            <span className="hidden sm:inline">
+              {areAllDocumentsApproved ? "Ready for QC" : "Push to QC"}
+            </span>
+          </QCActionTriggerButton>
+
+          <AnimatePresence>
+            {qcPanelOpen && qcBlocked ? (
+              <motion.div
+                key="qc-hover-panel"
+                id={QC_PANEL_ID}
+                role="region"
+                aria-label="Quality check document status"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 6 }}
+                transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
+                className="absolute top-full right-0 z-50 flex w-[min(100vw-2rem,320px)] mt-2 flex-col bg-[#f7f7f7] border border-[#e5e7eb] rounded-[24px] shadow-lg"
+                layout
+                style={{
+                  background: "#f7f7f7",
+                  willChange: "transform",
+                  gap: 6,
+                  paddingTop: 12,
+                  paddingLeft: 4,
+                  paddingRight: 4,
+                  paddingBottom: 4,
+                }}
+                onMouseEnter={cancelQcPanelClose}
+                onMouseLeave={scheduleQcPanelClose}
               >
-                <span className="hidden sm:inline">
-                  {areAllDocumentsApproved
-                    ? "Ready for QC"
-                    : "Push to QC"}
-                </span>
-              </Button>
-            </div>
-          </TooltipTrigger>
-          <TooltipContent variant="default">
-            {areAllDocumentsApproved ? (
-              <span>
-                All mandatory documents are.
-                <br />Ready for quality check.
-              </span>
-            ) : (
-              <div className="w-full">
-                {validationDetails.length === 0 ? (
-                  <p className="text-sm text-gray-500">
-                    All mandatory documents must be reviewed or
-                    approved.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="font-medium text-sm">The following mandatory documents need attention:</p>
-                    <ul className="list-disc pl-4 text-xs space-y-1">
-                      {validationDetails.slice(0, 10).map((detail, index) => (
-                        <li key={index}>
-                          <span className="font-medium">
-                            {detail.documentType}
-                          </span>
-                          {detail.companyName && (
-                            <span className="text-gray-400">
-                              {" "}
-                              ({detail.companyName})
-                            </span>
-                          )}
-                          {" - "}
-                          <span className="text-yellow-400">
-                            {detail.status === "missing"
-                              ? "Not uploaded"
-                              : detail.status}
-                          </span>
-                        </li>
-                      ))}
-                      {validationDetails.length > 5 && (
-                        <li className="text-gray-400">
-                          ...and {validationDetails.length - 5} more
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                )}
-              </div>
-            )}
-          </TooltipContent>
-        </Tooltip>
+                <QCActionCard
+                  areAllDocumentsApproved={false}
+                  validationDetails={validationDetails}
+                  onClose={() => setQcPanelOpen(false)}
+                  closeButtonRef={qcCloseButtonRef}
+                  onFooterClick={onSendReminderEmail}
+                />
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+        </div>
       )}
 
       <ChatButton onClick={onStartChat} unreadCount={unreadChatCount ?? 0} />
