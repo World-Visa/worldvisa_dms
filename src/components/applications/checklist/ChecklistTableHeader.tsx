@@ -44,26 +44,6 @@ export const ChecklistTableHeader = memo(function ChecklistTableHeader({
 }: ChecklistTableHeaderProps) {
   return (
     <div className="flex flex-col gap-4">
-      {checklistState === "editing" && selectedCategory !== "all" && (
-        <ChecklistTabs
-          activeTab={activeTab}
-          onTabChange={onTabChange}
-        />
-      )}
-
-      {checklistState === "editing" &&
-        (pendingAdditions.length > 0 ||
-          pendingDeletions.length > 0 ||
-          pendingUpdates.length > 0) && (
-          <PendingChangesBanner
-            pendingAdditions={pendingAdditions}
-            pendingDeletions={pendingDeletions}
-            pendingUpdates={pendingUpdates}
-            onClearPendingChanges={onClearPendingChanges}
-            onSavePendingChanges={onSavePendingChanges}
-          />
-        )}
-
       <div className="flex w-full items-center justify-between gap-4">
         <FacetedFormFilter
           type="multi"
