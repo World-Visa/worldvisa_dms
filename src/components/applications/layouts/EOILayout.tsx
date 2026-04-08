@@ -9,7 +9,7 @@ import {
   useStage2Documents,
   useDeleteStage2Document,
 } from "@/hooks/useStage2Documents";
-import { EOIModal } from "@/components/applications/modals/EOIModal";
+import { EOISheet } from "@/components/applications/stage2/sheets/EOISheet";
 import type { EOILayoutProps, Stage2Document } from "@/types/stage2Documents";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
@@ -94,7 +94,7 @@ export function EOILayout({
             actionButtonClassName="bg-primary-blue"
           />
         ) : (
-          <div>
+          <div className="pb-10">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-lg font-medium">EOI Documents</h2>
               <StageDocumentsHeaderAction
@@ -119,7 +119,7 @@ export function EOILayout({
 
       {!isClientView && (
         <>
-          <EOIModal
+          <EOISheet
             isOpen={isModalOpen}
             onClose={handleModalClose}
             applicationId={applicationId}

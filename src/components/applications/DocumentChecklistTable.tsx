@@ -164,12 +164,10 @@ const DocumentChecklistTableComponent = ({
   const [selectedDocumentTypes, setSelectedDocumentTypes] = useState<string[]>([]);
 
   const {
-    activeTab,
     itemsPerPage,
     allDocumentTypes,
     extractedCompanies,
     currentCompany,
-    handleTabChange,
     queryClient,
   } = useDocumentChecklistLogic({
     documents,
@@ -556,20 +554,13 @@ const DocumentChecklistTableComponent = ({
   return (
     <div className="w-full space-y-4">
       <ChecklistTableHeader
-        title="Document Checklist"
         documentTypeOptions={documentTypeOptions}
         selectedDocumentTypes={selectedDocumentTypes}
         onDocumentTypesChange={(types) => {
           setSelectedDocumentTypes(types);
           setCurrentPage(1);
         }}
-        checklistState={checklistState}
         selectedCategory={selectedCategory}
-        activeTab={activeTab}
-        onTabChange={handleTabChange}
-        pendingAdditions={[]}
-        pendingDeletions={[]}
-        pendingUpdates={[]}
         extractedCompanies={extractedCompanies}
       />
 
