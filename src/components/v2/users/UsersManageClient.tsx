@@ -1,6 +1,7 @@
 "use client";
 
 import { memo, useEffect, useMemo, useState } from "react";
+import { useDebounce } from "@/hooks/useDebounce";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -63,30 +64,30 @@ const TableLoadingRow = memo(function TableLoadingRow() {
 
 interface UsersManageClientProps {
   initialData?: AdminUsersV2Response;
+  invited?: boolean;
 }
 
-export function UsersManageClient({ initialData }: UsersManageClientProps) {
+export function UsersManageClient({ initialData, invited }: UsersManageClientProps) {
   const { user: currentUser } = useAuth();
   const [searchInput, setSearchInput] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<string[]>([]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const rawDebounced = useDebounce(searchInput.trim(), 300);
+  const debouncedSearch = rawDebounced.length >= 2 ? rawDebounced : "";
+
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedSearch(searchInput);
-      setCurrentPage(1);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [searchInput]);
+    setCurrentPage(1);
+  }, [debouncedSearch]);
 
   const queryParams = {
     page: currentPage,
     limit: pageSize,
     search: debouncedSearch || undefined,
     role: roleFilter[0] || undefined,
+    invited: invited || undefined,
   };
 
   const { data, isLoading, isError, error, refetch } = useAdminUsersV2(queryParams);
@@ -106,7 +107,7 @@ export function UsersManageClient({ initialData }: UsersManageClientProps) {
   const totalPages = Math.max(1, resolvedData?.pagination?.totalPages ?? 1);
   const totalRecords = resolvedData?.pagination?.totalRecords ?? 0;
 
-  const hasActiveFilters = searchInput.trim() !== "" || roleFilter.length > 0;
+  const hasActiveFilters = debouncedSearch !== "" || roleFilter.length > 0;
 
   const clearFilters = () => {
     setSearchInput("");

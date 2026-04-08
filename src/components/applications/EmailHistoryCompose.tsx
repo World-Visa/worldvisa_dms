@@ -9,19 +9,49 @@ import { RichMailEditor, isEditorEmpty, stripTags } from "@/components/mail/rich
 import { useSendEmail } from "@/hooks/useEmail";
 import { cn } from "@/lib/utils";
 
+function inlineTableStyles(html: string): string {
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  for (const el of doc.querySelectorAll("table")) {
+    el.style.width = "100%";
+    el.style.borderCollapse = "collapse";
+    el.style.margin = "12px 0";
+    el.style.fontSize = "14px";
+  }
+  for (const el of doc.querySelectorAll("th")) {
+    el.style.padding = "8px 12px";
+    el.style.border = "1px solid #e5e7eb";
+    el.style.backgroundColor = "#f9fafb";
+    el.style.textAlign = "left";
+    el.style.fontSize = "11px";
+    el.style.fontWeight = "600";
+    el.style.textTransform = "uppercase";
+    el.style.letterSpacing = "0.06em";
+    el.style.color = "#6b7280";
+  }
+  for (const el of doc.querySelectorAll("td")) {
+    el.style.padding = "8px 12px";
+    el.style.border = "1px solid #e5e7eb";
+    el.style.verticalAlign = "middle";
+    el.style.color = "#374151";
+  }
+  return doc.body.innerHTML;
+}
+
 interface EmailHistoryComposeProps {
   defaultTo: string;
+  defaultSubject?: string;
+  defaultHtml?: string;
   onClose: () => void;
 }
 
-export function EmailHistoryCompose({ defaultTo, onClose }: EmailHistoryComposeProps) {
+export function EmailHistoryCompose({ defaultTo, defaultSubject, defaultHtml, onClose }: EmailHistoryComposeProps) {
   const [to, setTo] = useState(defaultTo);
   const [cc, setCc] = useState("");
   const [bcc, setBcc] = useState("");
   const [showCc, setShowCc] = useState(false);
   const [showBcc, setShowBcc] = useState(false);
-  const [subject, setSubject] = useState("");
-  const [bodyHtml, setBodyHtml] = useState("");
+  const [subject, setSubject] = useState(defaultSubject ?? "");
+  const [bodyHtml, setBodyHtml] = useState(defaultHtml ?? "");
   const [attachments, setAttachments] = useState<File[]>([]);
   const [minimized, setMinimized] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -35,7 +65,7 @@ export function EmailHistoryCompose({ defaultTo, onClose }: EmailHistoryComposeP
       {
         to: to.trim(),
         subject: subject.trim() || "(no subject)",
-        html: bodyHtml,
+        html: inlineTableStyles(bodyHtml),
         text: stripTags(bodyHtml),
         cc: cc.trim() || undefined,
         bcc: bcc.trim() || undefined,
@@ -57,9 +87,9 @@ export function EmailHistoryCompose({ defaultTo, onClose }: EmailHistoryComposeP
 
   return (
     <motion.div
-      className="absolute bottom-0 right-0 z-20 flex w-full flex-col overflow-hidden rounded-t-xl border bg-background shadow-2xl sm:w-[520px]"
+      className="absolute bottom-0 right-0 z-20 flex w-full flex-col overflow-hidden rounded-t-2xl border bg-background shadow-2xl sm:w-[700px]"
       initial={{ y: "100%", opacity: 0 }}
-      animate={{ y: 0, opacity: 1, height: minimized ? 48 : 480 }}
+      animate={{ y: 0, opacity: 1, height: minimized ? 48 : 580 }}
       exit={{ y: "100%", opacity: 0 }}
       transition={{ type: "spring", stiffness: 400, damping: 40 }}
     >

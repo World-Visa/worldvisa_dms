@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { ZOHO_BASE_URL, buildQueryString } from "@/lib/config/api";
+import { API_ENDPOINTS, ZOHO_BASE_URL, buildQueryString } from "@/lib/config/api";
 import { fetcher } from "@/lib/fetcher";
 
 export interface ClientApplicationData {
@@ -57,6 +57,12 @@ interface UseClientsParams {
   search?: string;
   lead_owner?: string;
   invited?: boolean;
+}
+
+function normalizeSearchValue(value: string | undefined): string | undefined {
+  const trimmed = value?.trim() ?? "";
+  if (trimmed.length < 2) return undefined;
+  return trimmed;
 }
 
 /** Normalizes `/clients/all` JSON whether the list is under `data.clients`, `data` as array, or top-level `clients`. */
@@ -134,25 +140,35 @@ function normalizeClientsResponse(raw: unknown, fallbackLimit: number): ClientsR
 }
 
 const fetchClients = async (params: UseClientsParams): Promise<ClientsResponse> => {
+  const search = normalizeSearchValue(params.search);
   const queryString = buildQueryString({
     page: params.page,
     limit: params.limit,
-    search: params.search || undefined,
+    search,
     lead_owner: params.lead_owner || undefined,
     invited: params.invited || undefined,
   });
 
-  const url = queryString
-    ? `${ZOHO_BASE_URL}/clients/all?${queryString}`
-    : `${ZOHO_BASE_URL}/clients/all`;
+  const url = queryString ? API_ENDPOINTS.CLIENTS.LIST(queryString) : `${ZOHO_BASE_URL}/clients/all`;
 
   const raw = await fetcher<unknown>(url);
   return normalizeClientsResponse(raw, params.limit);
 };
 
 export function useClients(params: UseClientsParams) {
+  const normalizedSearch = normalizeSearchValue(params.search) ?? "";
+  const normalizedLeadOwner = params.lead_owner ?? "";
+  const invitedFlag = params.invited ? "true" : "false";
+
   return useQuery({
-    queryKey: ["clients-v2", params],
+    queryKey: [
+      "clients-v2",
+      params.page,
+      params.limit,
+      invitedFlag,
+      normalizedLeadOwner,
+      normalizedSearch,
+    ],
     queryFn: () => fetchClients(params),
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,

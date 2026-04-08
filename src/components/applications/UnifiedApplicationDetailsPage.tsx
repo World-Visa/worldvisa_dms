@@ -8,6 +8,10 @@ import { ApplicantDetails } from "@/components/applications/ApplicantDetails";
 import { ApplicationDetailsHeader } from "@/components/applications/ApplicationDetailsHeader";
 import { DownloadAllDocumentsModal } from "@/components/applications/DownloadAllDocumentsModal";
 import { EmailHistoryModal } from "@/components/applications/EmailHistoryModal";
+import {
+  buildPendingDocumentsReminderHtml,
+  PENDING_DOCS_SUBJECT,
+} from "@/lib/emailTemplates/pendingDocumentsReminder";
 import { QualityCheckModal } from "@/components/applications/QualityCheckModal";
 import { ReuploadDocumentModal } from "@/components/applications/ReuploadDocumentModal";
 import { LayoutChips } from "@/components/applications/layouts/LayoutChips";
@@ -280,6 +284,22 @@ export default function UnifiedApplicationDetailsPage({
     );
   }, [allDocuments, checklistState.checklistData]);
 
+  const [reminderEmailData, setReminderEmailData] = useState<
+    { subject: string; html: string } | undefined
+  >();
+
+  const handleSendReminderEmail = useCallback(() => {
+    const docs = mandatoryDocValidationDetails.map((d) => ({
+      label: d.companyName ? `${d.documentType} (${d.companyName})` : d.documentType,
+      status: d.status,
+    }));
+    setReminderEmailData({
+      subject: PENDING_DOCS_SUBJECT,
+      html: buildPendingDocumentsReminderHtml(application?.Name ?? "", docs),
+    });
+    modals.openEmailHistoryModal();
+  }, [mandatoryDocValidationDetails, application?.Name, modals]);
+
   const [documentsPage, setDocumentsPage] = useState(1);
   const showSampleDocuments = isSampleQuery;
   const [previousCategoryBeforeSample, setPreviousCategoryBeforeSample] =
@@ -457,6 +477,7 @@ export default function UnifiedApplicationDetailsPage({
           }}
           onEmailHistory={modals.openEmailHistoryModal}
           onStartChat={handleStartChat}
+          onSendReminderEmail={handleSendReminderEmail}
           unreadChatCount={unreadChatCount}
           userRole={user?.role}
           qcRequested={application?.qc_requested}
@@ -613,9 +634,13 @@ export default function UnifiedApplicationDetailsPage({
 
       <EmailHistoryModal
         isOpen={modals.isEmailHistoryModalOpen}
-        onOpenChange={modals.setEmailHistoryModalOpen}
+        onOpenChange={(open) => {
+          modals.setEmailHistoryModalOpen(open);
+          if (!open) setReminderEmailData(undefined);
+        }}
         clientEmail={application?.Email ?? ""}
         clientName={application?.Name ?? ""}
+        initialCompose={reminderEmailData}
       />
 
       {deepLinkDoc && (

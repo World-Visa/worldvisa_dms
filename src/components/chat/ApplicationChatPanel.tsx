@@ -8,6 +8,7 @@ import { RiMessage3Fill } from "react-icons/ri";
 import { Button } from "@/components/ui/button";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 import { Skeleton } from "@/components/ui/skeleton";
+import { InlineToast } from "@/components/ui/primitives/inline-toast";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
 import { useAuth } from "@/hooks/useAuth";
 import {
@@ -211,9 +212,12 @@ export function ApplicationChatPanel({ data, onClose }: ApplicationChatPanelProp
                   Start Conversation
                 </Button>
               ) : (
-                <p className="text-xs text-neutral-300">
-                  Client not found in chat system
-                </p>
+                <InlineToast
+                  variant="info"
+                  title="Note"
+                  description="Invite and onboard the client to enable chat."
+                  className="border-neutral-200 border max-w-[320px] text-left"
+                />
               )}
             </motion.div>
           )}
