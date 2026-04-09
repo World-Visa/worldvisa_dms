@@ -35,6 +35,7 @@ interface DocumentListModalProps {
   isClientView?: boolean;
   /** When provided, ViewDocumentSheet navigates across all application documents instead of only `documents`. */
   allApplicationDocuments?: Document[];
+  visaServiceType?: string;
 }
 
 export function DocumentListModal({
@@ -48,6 +49,7 @@ export function DocumentListModal({
   category,
   isClientView = false,
   allApplicationDocuments,
+  visaServiceType,
 }: DocumentListModalProps) {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [documentToDelete, setDocumentToDelete] = useState<{
@@ -312,6 +314,7 @@ export function DocumentListModal({
           documentType={documentType}
           category={category}
           isClientView={isClientView}
+          visaServiceType={visaServiceType}
         />
       )}
 
@@ -324,6 +327,7 @@ export function DocumentListModal({
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}
         isClientView={isClientView}
+        visaServiceType={visaServiceType}
       />
     </Dialog>
   );

@@ -619,6 +619,7 @@ export default function ClientApplicationDetailsPageContent({
                   onChecklistRequestSuccess={handleRefresh}
                   showSampleDocuments={showSampleDocuments}
                   onToggleSampleDocuments={onToggleSampleDocuments}
+                  visaServiceType={applicationData?.data?.Service_Finalized}
                 />
               </motion.div>
             ) : selectedLayout === "outcome" ? (

@@ -23,9 +23,7 @@ import {
   X,
   FileText,
   File,
-  FileCheck,
   RotateCcw,
-  Eye,
 } from "lucide-react";
 import {
   DocumentUploadModalProps,
@@ -39,12 +37,10 @@ import {
   generateCurrentEmploymentDescription,
   generatePastEmploymentDescription,
 } from "@/utils/dateCalculations";
-import {
-  getChecklistDocumentMeta,
-  isDocumentTypeWithSampleInModal,
-} from "@/lib/documents/metadata";
+import { getChecklistDocumentMeta } from "@/lib/documents/metadata";
 import { InlineToast } from "@/components/ui/primitives/inline-toast";
 import { SampleDocumentModal } from "./SampleDocumentModal";
+import { useChecklistTemplateForDocument } from "@/hooks/useChecklistTemplateForDocument";
 
 // ─── Module-scope helpers ─────────────────────────────────────────────────────
 
@@ -110,18 +106,15 @@ function FileRow({ uploadedFile, isUploading, onRemove }: FileRowProps) {
   );
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const ACCEPT_IMAGE = ".jpg,.jpeg,image/jpeg,image/jpg";
 const ACCEPT_DOCUMENTS =
   ".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain";
 
-// ─── Main Component ───────────────────────────────────────────────────────────
 
 export function UploadDocumentsModal(props: DocumentUploadModalProps) {
   const isReupload = props.mode === "reupload";
 
-  // Type-safe mode-specific prop extraction
   const uploadProps = isReupload
     ? undefined
     : (props as UploadDocumentsModalProps);
@@ -136,9 +129,9 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     isClientView = false,
     instruction,
     clientLeadId,
+    visaServiceType,
   } = props;
 
-  // ── State ─────────────────────────────────────────────────────────────────
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>(
     uploadProps?.selectedDocumentType ?? "",
   );
@@ -153,7 +146,6 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ── Hooks (all called unconditionally — Rules of Hooks) ───────────────────
   const addDocumentMutation = useAddDocument();
   const clientUploadDocumentMutation = useClientUploadDocument();
   const reuploadMutation = useReuploadDocument();
@@ -161,11 +153,9 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
-  // Empty string → disabled internally in useDocumentData when not reupload mode
   const documentId = reuploadProps?.document?._id ?? "";
   const { document: currentDocument } = useDocumentData(documentId);
 
-  // ── Derived values ────────────────────────────────────────────────────────
   const effectiveDocumentType = isReupload
     ? (reuploadProps?.documentType ||
       reuploadProps?.document?.document_type ||
@@ -187,10 +177,19 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     [effectiveCategory, effectiveDocumentType],
   );
 
-  const hasSample = isDocumentTypeWithSampleInModal(
-    effectiveDocumentType,
+  const dynamicTemplate = useChecklistTemplateForDocument(
+    visaServiceType,
     effectiveCategory,
+    effectiveDocumentType,
   );
+
+  const hasSample = !!dynamicTemplate?.sampleDocumentUrl;
+
+  const effectiveImportantNote =
+    dynamicTemplate?.importantNote ?? documentMeta?.importantNote;
+
+  const effectiveAllowedDocument =
+    dynamicTemplate?.allowedDocument ?? documentMeta?.allowedDocument;
 
   const isIdentityPhotograph = useMemo(() => {
     const cat =
@@ -221,7 +220,6 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
       : []
     : uploadedFiles;
 
-  // ── Effects ───────────────────────────────────────────────────────────────
 
   useEffect(() => {
     if (isOpen && !isReupload && selectedDocumentCategory) {
@@ -262,7 +260,6 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     }
   }, [isOpen, isReupload, selectedDocumentCategory]);
 
-  // Sync upload-mode prop changes
   useEffect(() => {
     if (!isReupload) {
       const nextType = uploadProps?.selectedDocumentType;
@@ -276,7 +273,6 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     uploadProps?.selectedDocumentCategory,
   ]);
 
-  // Reset state when modal closes
   useEffect(() => {
     if (!isOpen) {
       setUploadedFile(null);
@@ -290,7 +286,6 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     }
   }, [isOpen]);
 
-  // ── File validation ───────────────────────────────────────────────────────
 
   function validateSingleFile(file: File): boolean {
     const fileName = file.name.toLowerCase();
@@ -339,7 +334,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
   }
 
   function validateAllowedDocumentLimit(fileCount: number): boolean {
-    const allowedDocument = documentMeta?.allowedDocument;
+    const allowedDocument = effectiveAllowedDocument;
     if (allowedDocument === undefined) return true;
 
     const existingCount = uploadProps?.existingDocumentCount ?? 0;
@@ -357,7 +352,6 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     return true;
   }
 
-  // ── File selection handlers ───────────────────────────────────────────────
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
@@ -872,8 +866,8 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
                     </p>
                   </div>
                   <span className="shrink-0 rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                    {documentMeta?.allowedDocument !== undefined
-                      ? `Max ${documentMeta.allowedDocument} file${documentMeta.allowedDocument === 1 ? "" : "s"}`
+                    {effectiveAllowedDocument !== undefined
+                      ? `Max ${effectiveAllowedDocument} file${effectiveAllowedDocument === 1 ? "" : "s"}`
                       : "Multiple files allowed"}
                   </span>
                 </div>
@@ -889,32 +883,18 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             ) : null}
 
             {hasSample ? (
-              <section className="rounded-md border border-violet-200/80 px-2 py-2">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100">
-                    <FileCheck className="h-5 w-5 text-violet-600" />
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-foreground">
-                      Sample document available
-                    </p>
-                    <p className="mt-0.5 text-xs leading-relaxed text-muted-foreground">
-                      View a reference template before uploading your{" "}
-                      <span className="font-medium">{effectiveDocumentType}</span>.
-                      This helps ensure your document meets the required format.
-                    </p>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="mt-3 gap-1.5 border-violet-300 text-violet-700 hover:border-violet-400 hover:bg-violet-100 focus-visible:ring-violet-400/30"
-                      onClick={() => setSampleModalOpen(true)}
-                    >
-                      View sample document
-                    </Button>
-                  </div>
-                </div>
-              </section>
+              <div className="flex items-center justify-between gap-3 rounded-md border border-border/60 px-3 py-2.5">
+                <span className="text-sm text-muted-foreground">Sample document available</span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-7 shrink-0 text-xs"
+                  onClick={() => setSampleModalOpen(true)}
+                >
+                  View sample
+                </Button>
+              </div>
             ) : null}
 
             {/* Upload zone */}
@@ -1036,14 +1016,15 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             )}
 
             {/* Important note */}
-            {documentMeta?.importantNote ? (
+            {effectiveImportantNote ? (
               <InlineToast
                 variant="warning"
                 title="Important"
                 description={
                   <div
                     className="prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_mark]:bg-yellow-200 [&_mark]:rounded-[2px] [&_mark]:px-0.5 [&_p]:my-0.5"
-                    dangerouslySetInnerHTML={{ __html: documentMeta.importantNote }}
+                    // eslint-disable-next-line react/no-danger
+                    dangerouslySetInnerHTML={{ __html: effectiveImportantNote }}
                   />
                 }
               />
@@ -1095,7 +1076,8 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
         onClose={() => setSampleModalOpen(false)}
         documentType={effectiveDocumentType}
         category={effectiveCategory}
-        samplePath=""
+        sampleDocumentUrl={dynamicTemplate?.sampleDocumentUrl ?? undefined}
+        importantNote={effectiveImportantNote ?? undefined}
       />
     </>
   );

@@ -52,6 +52,7 @@ interface ClientSkillAssessmentLayoutProps {
   onChecklistRequestSuccess?: () => void;
   showSampleDocuments: boolean;
   onToggleSampleDocuments: () => void;
+  visaServiceType?: string;
 }
 
 export function ClientSkillAssessmentLayout({
@@ -81,6 +82,7 @@ export function ClientSkillAssessmentLayout({
   onChecklistRequestSuccess,
   showSampleDocuments,
   onToggleSampleDocuments,
+  visaServiceType,
 }: ClientSkillAssessmentLayoutProps) {
   const allDocuments = useMemo(
     () =>
@@ -326,6 +328,7 @@ export function ClientSkillAssessmentLayout({
                     checklistState={checklistState}
                     onAddCompany={onAddCompany}
                     onRemoveCompany={onRemoveCompany}
+                    visaServiceType={visaServiceType}
                   />
                 );
               })()}

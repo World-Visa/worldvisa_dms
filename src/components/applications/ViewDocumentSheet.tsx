@@ -227,19 +227,6 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
               {/* Left: Document Review */}
               <div className="flex-1 flex flex-col min-h-0 order-1">
                 <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {checklistMeta?.importantNote && (
-                    <InlineToast
-                      variant="warning"
-                      title="Important"
-                      description={
-                        <div
-                          className="prose prose-sm max-w-none [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_mark]:bg-yellow-200 [&_mark]:rounded-[2px] [&_mark]:px-0.5 [&_p]:my-0.5"
-                          dangerouslySetInnerHTML={{ __html: checklistMeta.importantNote }}
-                        />
-                      }
-                    />
-                  )}
-
                   <DocumentPreview document={displayDoc} />
 
                   <DocumentStatusDisplay

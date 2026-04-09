@@ -127,6 +127,7 @@ const DocumentChecklistTableComponent = ({
   checklistState = "none",
   isClientView = false,
   checklistData,
+  visaServiceType,
 }: DocumentChecklistTableComponentProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedDocumentType, setSelectedDocumentType] = useState("");
@@ -663,6 +664,7 @@ const DocumentChecklistTableComponent = ({
         existingDocumentCount={
           documentCounts[`${selectedDocumentType}_${selectedDocumentCategory || "default"}`] ?? 0
         }
+        visaServiceType={visaServiceType}
       />
 
       <DocumentListModal
@@ -675,6 +677,7 @@ const DocumentChecklistTableComponent = ({
         category={selectedCompanyCategoryForView}
         onReuploadDocument={handleReuploadClick}
         isClientView={isClientView}
+        visaServiceType={visaServiceType}
         onDocumentDeleted={() => {
           queryClient
             .refetchQueries({ queryKey: ["application-documents-all", applicationId] })
@@ -751,6 +754,7 @@ const DocumentChecklistTableComponent = ({
         category={selectedReuploadDocumentCategory}
         isClientView={isClientView}
         instruction={selectedInstruction}
+        visaServiceType={visaServiceType}
       />
     </div>
   );

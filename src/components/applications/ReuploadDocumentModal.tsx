@@ -13,6 +13,7 @@ interface ReuploadDocumentModalProps {
   category: string;
   isClientView?: boolean;
   instruction?: string;
+  visaServiceType?: string;
 }
 
 export function ReuploadDocumentModal(props: ReuploadDocumentModalProps) {
@@ -28,6 +29,7 @@ export function ReuploadDocumentModal(props: ReuploadDocumentModalProps) {
       category={props.category}
       isClientView={props.isClientView}
       instruction={props.instruction}
+      visaServiceType={props.visaServiceType}
     />
   );
 }

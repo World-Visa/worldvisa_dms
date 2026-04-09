@@ -47,6 +47,7 @@ interface DocumentsTableProps {
   ) => void;
   onUploadSuccess?: () => void;
   emptyStateAction?: ReactNode;
+  visaServiceType?: string;
 }
 
 const COLUMN_COUNT = DOCUMENTS_TABLE_COLUMNS.length;
@@ -77,6 +78,7 @@ export function DocumentsTable({
   onReuploadDocument,
   onUploadSuccess,
   emptyStateAction,
+  visaServiceType,
 }: DocumentsTableProps) {
   const { isAdmin } = useHasPermission();
 
@@ -374,6 +376,7 @@ export function DocumentsTable({
         documentType={selectedReuploadDocumentType}
         category={selectedReuploadDocumentCategory}
         isClientView={isClientView}
+        visaServiceType={visaServiceType}
       />
     </>
   );

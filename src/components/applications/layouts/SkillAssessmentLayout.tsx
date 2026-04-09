@@ -42,6 +42,7 @@ interface SkillAssessmentLayoutProps {
   showSampleDocuments: boolean;
   onShowSampleDocuments: () => void;
   onHideSampleDocuments: () => void;
+  visaServiceType?: string;
 }
 
 export function SkillAssessmentLayout({
@@ -63,6 +64,7 @@ export function SkillAssessmentLayout({
   showSampleDocuments,
   onShowSampleDocuments,
   onHideSampleDocuments,
+  visaServiceType,
 }: SkillAssessmentLayoutProps) {
   const [documentStatusFilter, setDocumentStatusFilter] = useState<
     DocumentStatus | null
@@ -205,6 +207,7 @@ export function SkillAssessmentLayout({
                   isClientView={isClientView}
                   checklistState={checklistState.state}
                   checklistData={checklistState.checklistData}
+                  visaServiceType={visaServiceType}
                 />
               )}
             </motion.div>

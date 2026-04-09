@@ -52,6 +52,7 @@ export interface DocumentChecklistTableProps {
   checklistData?: ChecklistResponse;
   onAddCompany?: () => void;
   onRemoveCompany?: (companyName: string) => void;
+  visaServiceType?: string;
 }
 
 export interface ApiDocument {
@@ -83,6 +84,7 @@ export interface UploadDocumentsModalProps {
   instruction?: string;
   existingDocumentCount?: number;
   onSuccess?: () => void;
+  visaServiceType?: string;
 }
 
 export interface ReuploadDocumentModalProps {
@@ -96,6 +98,7 @@ export interface ReuploadDocumentModalProps {
   category: string;
   isClientView?: boolean;
   instruction?: string;
+  visaServiceType?: string;
 }
 
 export type DocumentUploadModalProps =
