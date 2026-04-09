@@ -605,6 +605,7 @@ export function ClientApplicationDetails({
             isClientView
             leadId={leadId}
             currentDeadline={application.Deadline_For_Lodgment}
+            deadlineExtensions={application.deadline_extensions}
           />
         </div>
       </div>
