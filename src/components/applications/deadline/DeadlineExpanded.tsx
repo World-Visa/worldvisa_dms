@@ -531,8 +531,18 @@ export default function DeadlineExpanded({
   const reduced = useReducedMotion();
 
   const { data: adminUsers = [], isLoading: usersLoading } = useAdminUsers();
-  const masterAdmins = adminUsers.filter((u) => u.role === "master_admin");
+  const masterAdmins = useMemo(() => {
+    const list = adminUsers.filter((u) => u.role === "master_admin");
+    if (process.env.NODE_ENV !== "production") return list;
 
+    return list.filter((u) => {
+      const username = (u.username ?? "").toLowerCase();
+      const fullName = (u.full_name ?? "").toLowerCase();
+      const haystack = `${username} ${fullName}`.trim();
+      return !(haystack.includes("vishnu") && haystack.includes("test"));
+    });
+  }, [adminUsers]);
+  
   const { mutate: createRequest } = useCreateApprovalRequest();
 
   function handleSubmit() {
