@@ -23,7 +23,9 @@ interface TableHeadProps extends React.ThHTMLAttributes<HTMLTableCellElement> {
   onSort?: () => void;
 }
 
-type TableHeaderProps = React.HTMLAttributes<HTMLTableSectionElement>;
+type TableHeaderProps = React.HTMLAttributes<HTMLTableSectionElement> & {
+    sticky?: boolean;
+};
 type TableBodyProps = React.HTMLAttributes<HTMLTableSectionElement>;
 type TableFooterProps = React.HTMLAttributes<HTMLTableSectionElement>;
 type TableRowProps = React.HTMLAttributes<HTMLTableRowElement>;
@@ -64,13 +66,19 @@ const Table = React.forwardRef<HTMLTableElement, TableProps>(
 );
 Table.displayName = 'Table';
 
-const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(({ className, ...props }, ref) => (
-  <thead
-    ref={ref}
-    className={cn('sticky top-0 z-10 bg-neutral-50 shadow-[0_0_0_1px_var(--color-neutral-alpha-200)]', className)}
-    {...props}
-  />
-));
+const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
+  ({ className, sticky = true, ...props }, ref) => (
+    <thead
+      ref={ref}
+      className={cn(
+        sticky && 'sticky top-0 z-10',
+        'bg-neutral-50 shadow-[0_0_0_1px_var(--color-neutral-alpha-200)]',
+        className,
+      )}
+      {...props}
+    />
+  ),
+);
 TableHeader.displayName = 'TableHeader';
 
 const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(

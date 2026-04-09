@@ -1,23 +1,13 @@
 import {
-    Banknote,
-    Bell,
-    Calendar,
-    ChartBar,
     ClipboardList,
     FileText,
     Fingerprint,
     Forklift,
-    Gauge,
-    GraduationCap,
-    Kanban,
     LayoutDashboard,
-    Lock,
     type LucideIcon,
     Mail,
     MessageSquare,
-    ReceiptText,
-    ShoppingBag,
-    SquareArrowUpRight,
+    ShieldCheck,
     Users,
 } from "lucide-react";
 import { ROLES } from "@/lib/roles";
@@ -40,7 +30,6 @@ export interface NavMainItem {
     comingSoon?: boolean;
     newTab?: boolean;
     isNew?: boolean;
-    /** If defined, only these roles can see this item. Undefined = visible to all roles. */
     allowedRoles?: string[];
 }
 
@@ -90,6 +79,13 @@ export const sidebarItems: NavGroup[] = [
                 allowedRoles: [ROLES.MASTER_ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
             },
             {
+                title: "Approval Requests",
+                url: ROUTES.APPROVAL_REQUESTS,
+                icon: ShieldCheck,
+                comingSoon: false,
+                allowedRoles: [ROLES.MASTER_ADMIN],
+            },
+            {
                 title: "Users",
                 url: "/v2/users",
                 icon: Users,
@@ -100,31 +96,6 @@ export const sidebarItems: NavGroup[] = [
                 comingSoon: false,
                 allowedRoles: [ROLES.MASTER_ADMIN],
             },
-            // {
-            //   title: "Calendar",
-            //   url: "/dashboard/coming-soon",
-            //   icon: Calendar,
-            //   comingSoon: true,
-            // },
-            // {
-            //   title: "Kanban",
-            //   url: "/dashboard/coming-soon",
-            //   icon: Kanban,
-            //   comingSoon: true,
-            // },
-            // {
-            //   title: "Invoice",
-            //   url: "/dashboard/coming-soon",
-            //   icon: ReceiptText,
-            //   comingSoon: true,
-            // },
-            // {
-            //   title: "Roles",
-            //   url: "/dashboard/coming-soon",
-            //   icon: Lock,
-            //   comingSoon: true,
-            // },
-
         ],
     },
     {

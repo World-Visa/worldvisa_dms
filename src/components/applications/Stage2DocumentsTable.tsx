@@ -2,7 +2,6 @@ import {
   Table,
   TableBody,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -43,44 +42,44 @@ export function Stage2DocumentsTable({
   onView,
   onEdit,
   onDelete,
-  containerClassname = "max-h-[60vh] overflow-y-auto",
+  containerClassname = "max-h-[60vh] overflow-y-auto pb-8",
 }: Stage2DocumentsTableProps) {
   const renderHeaderCells = () => {
     switch (type) {
       case "outcome":
         return (
           <>
-            <TableHead>Document Name</TableHead>
-            <TableHead>Uploaded By</TableHead>
-            <TableHead>Uploaded At</TableHead>
-            <TableHead>Outcome</TableHead>
-            <TableHead>Outcome Date</TableHead>
-            <TableHead>Skill Assessing Body</TableHead>
-            <TableHead className="w-[80px] text-right">Actions</TableHead>
+            <TableHead className="min-w-0 w-[22%]">Document Name</TableHead>
+            <TableHead className="w-[13%] min-w-0 whitespace-nowrap">Uploaded By</TableHead>
+            <TableHead className="w-[12%] whitespace-nowrap">Uploaded At</TableHead>
+            <TableHead className="w-[11%] min-w-0">Outcome</TableHead>
+            <TableHead className="w-[12%] whitespace-nowrap">Outcome Date</TableHead>
+            <TableHead className="min-w-0">Skill Assessing Body</TableHead>
+            <TableHead className="w-20 text-right">Actions</TableHead>
           </>
         );
       case "eoi":
         return (
           <>
-            <TableHead>Document Name</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Subclass</TableHead>
-            <TableHead>State</TableHead>
-            <TableHead>Points</TableHead>
-            <TableHead>ANZSCO</TableHead>
-            <TableHead className="w-[80px] text-right">Actions</TableHead>
+            <TableHead className="min-w-0 w-[24%]">Document Name</TableHead>
+            <TableHead className="w-[10%] whitespace-nowrap">Date</TableHead>
+            <TableHead className="min-w-0 w-[15%]">Subclass</TableHead>
+            <TableHead className="min-w-0 w-[14%]">State</TableHead>
+            <TableHead className="w-[7%] whitespace-nowrap">Points</TableHead>
+            <TableHead className="min-w-0 w-[18%]">ANZSCO</TableHead>
+            <TableHead className="w-20 text-right">Actions</TableHead>
           </>
         );
       case "invitation":
         return (
           <>
-            <TableHead>Document Name</TableHead>
-            <TableHead>Date</TableHead>
-            <TableHead>Subclass</TableHead>
-            <TableHead>State</TableHead>
-            <TableHead>Points</TableHead>
-            <TableHead>Deadline</TableHead>
-            <TableHead className="w-[80px] text-right">Actions</TableHead>
+            <TableHead className="min-w-0 w-[24%]">Document Name</TableHead>
+            <TableHead className="w-[10%] whitespace-nowrap">Date</TableHead>
+            <TableHead className="min-w-0 w-[15%]">Subclass</TableHead>
+            <TableHead className="min-w-0 w-[14%]">State</TableHead>
+            <TableHead className="w-[7%] whitespace-nowrap">Points</TableHead>
+            <TableHead className="w-[12%] whitespace-nowrap">Deadline</TableHead>
+            <TableHead className="w-20 text-right">Actions</TableHead>
           </>
         );
     }
@@ -99,70 +98,70 @@ export function Stage2DocumentsTable({
 
   return (
     <Table
+      className="w-full table-fixed"
       isLoading={isLoading}
       loadingRowsCount={5}
       loadingRow={<Stage2LoadingRow type={type} />}
       containerClassname={containerClassname}
     >
-      <TableHeader>
+      <TableHeader sticky={false}>
         <TableRow>
           {renderHeaderCells()}
         </TableRow>
       </TableHeader>
 
       {!isLoading && (
-        <>
-          <TableBody>
-            {displayDocuments.map((document, index) => {
-              const prevDoc = index > 0 ? displayDocuments[index - 1] : null;
-              const sameFileAsPrev =
-                type === "eoi" &&
-                !!prevDoc &&
-                (prevDoc.file_name || prevDoc.document_name) ===
-                  (document.file_name || document.document_name);
+        <TableBody>
+          {displayDocuments.map((document, index) => {
+            const prevDoc = index > 0 ? displayDocuments[index - 1] : null;
+            const sameFileAsPrev =
+              type === "eoi" &&
+              !!prevDoc &&
+              (prevDoc.file_name || prevDoc.document_name) ===
+                (document.file_name || document.document_name);
 
-              if (type === "outcome") {
-                return (
-                  <OutcomeDocumentRow
-                    key={document._id}
-                    document={document}
-                    isClientView={isClientView}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                  />
-                );
-              }
-
-              if (type === "invitation") {
-                return (
-                  <InvitationDocumentRow
-                    key={document._id}
-                    document={document}
-                    isClientView={isClientView}
-                    onView={onView}
-                    onEdit={onEdit}
-                    onDelete={onDelete}
-                  />
-                );
-              }
-
+            if (type === "outcome") {
               return (
-                <EOIDocumentRow
+                <OutcomeDocumentRow
                   key={document._id}
+                  rowIndex={index}
                   document={document}
-                  sameFileAsPrev={sameFileAsPrev}
                   isClientView={isClientView}
                   onView={onView}
                   onEdit={onEdit}
                   onDelete={onDelete}
                 />
               );
-            })}
-          </TableBody>
+            }
 
-          <TableFooter />
-        </>
+            if (type === "invitation") {
+              return (
+                <InvitationDocumentRow
+                  key={document._id}
+                  rowIndex={index}
+                  document={document}
+                  isClientView={isClientView}
+                  onView={onView}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                />
+              );
+            }
+
+            return (
+              <EOIDocumentRow
+                key={document._id}
+                rowIndex={index}
+                document={document}
+                sameFileAsPrev={sameFileAsPrev}
+                isClientView={isClientView}
+                onView={onView}
+                onEdit={onEdit}
+                onDelete={onDelete}
+              />
+            );
+          })}
+        </TableBody>
       )}
     </Table>
   );

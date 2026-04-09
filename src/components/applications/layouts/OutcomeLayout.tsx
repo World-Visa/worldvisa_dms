@@ -9,7 +9,7 @@ import {
   useStage2Documents,
   useDeleteStage2Document,
 } from "@/hooks/useStage2Documents";
-import { OutcomeModal } from "@/components/applications/modals/OutcomeModal";
+import { OutcomeSheet } from "@/components/applications/stage2/sheets/OutcomeSheet";
 import type {
   OutcomeLayoutProps,
   Stage2Document,
@@ -127,7 +127,7 @@ export function OutcomeLayout({
 
       {!isClientView && (
         <>
-          <OutcomeModal
+          <OutcomeSheet
             isOpen={isModalOpen}
             onClose={handleModalClose}
             applicationId={applicationId}

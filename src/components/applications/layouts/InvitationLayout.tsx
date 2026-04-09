@@ -9,7 +9,7 @@ import {
   useStage2Documents,
   useDeleteStage2Document,
 } from "@/hooks/useStage2Documents";
-import { InvitationModal } from "@/components/applications/modals/InvitationModal";
+import { InvitationSheet } from "@/components/applications/stage2/sheets/InvitationSheet";
 import type {
   InvitationLayoutProps,
   Stage2Document,
@@ -127,7 +127,7 @@ export function InvitationLayout({
 
       {!isClientView && (
         <>
-          <InvitationModal
+          <InvitationSheet
             isOpen={isModalOpen}
             onClose={handleModalClose}
             applicationId={applicationId}

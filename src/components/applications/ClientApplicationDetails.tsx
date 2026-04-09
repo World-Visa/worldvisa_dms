@@ -3,16 +3,53 @@
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientApplicationResponse, ClientDocument } from "@/types/client";
-import { ApplicationDeadlineCard } from "./ApplicationDeadlineCard";
-import { Calendar, User } from "lucide-react";
+import { Calendar } from "lucide-react";
 import { formatDate } from "@/utils/format";
-import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import DeadlineWidget from "./deadline/DeadlineWidget";
+import { DeadlineWidgetSkeleton } from "./deadline/DeadlineWidgetSkeleton";
+
+const FF: React.CSSProperties = { fontFeatureSettings: "'ss11', 'calt' 0" };
+
+function ClientInfoField({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p style={{ ...FF, fontSize: 11, color: "#a3a3a3", fontWeight: 500, marginBottom: 2, lineHeight: "16px" }}>
+        {label}
+      </p>
+      <p
+        style={{ ...FF, fontSize: 13, fontWeight: 500, color: "#171717", lineHeight: "20px", letterSpacing: "-0.078px" }}
+        className="truncate min-w-0 select-none"
+      >
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function ClientSectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <p
+      style={{
+        ...FF,
+        fontSize: 10,
+        fontWeight: 600,
+        textTransform: "uppercase",
+        letterSpacing: "0.08em",
+        color: "#a3a3a3",
+        paddingBottom: 8,
+        borderBottom: "1px solid #efefef",
+      }}
+    >
+      {children}
+    </p>
+  );
+}
 
 interface ClientApplicationDetailsProps {
   data?: ClientApplicationResponse;
@@ -36,30 +73,52 @@ export function ClientApplicationDetails({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex gap-6 items-stretch">
-          <div className="flex-7 min-w-0 bg-white border border-gray-200 rounded-2xl overflow-hidden">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <Skeleton className="h-5 w-48" />
-              <Skeleton className="h-6 w-24 rounded-full" />
+        <div className="flex gap-2 items-stretch w-full min-w-0">
+          {/* Skeleton — gray container matching ApplicationInfoCard */}
+          <div
+            className="flex-7 min-w-0 flex flex-col"
+            style={{
+              background: "#f7f7f7",
+              border: "1px solid #e5e7eb",
+              borderRadius: 24,
+              gap: 6,
+              paddingTop: 12,
+              paddingLeft: 4,
+              paddingRight: 4,
+              paddingBottom: 4,
+            }}
+          >
+            {/* Header row skeleton */}
+            <div className="flex items-center justify-between" style={{ paddingLeft: 10, paddingRight: 10 }}>
+              <Skeleton className="h-4 w-44" />
+              <Skeleton className="h-5 w-28 rounded-full" />
             </div>
-            <div className="p-6 grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
-              {[1, 2, 3, 4].map((i) => (
-                <div key={i} className="space-y-3">
-                  <Skeleton className="h-3 w-20" />
-                  <div className="space-y-2">
+            {/* White card skeleton */}
+            <div
+              style={{
+                borderRadius: "16px 16px 20px 20px",
+                background: "white",
+                boxShadow: "0px 0px 0px 1px #f5f5f5",
+                padding: 12,
+              }}
+            >
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-5">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="flex flex-col gap-3">
+                    <Skeleton className="h-2.5 w-24 mb-1" />
                     {[1, 2, 3].map((j) => (
                       <div key={j} className="space-y-1">
-                        <Skeleton className="h-3 w-14" />
-                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-2.5 w-16" />
+                        <Skeleton className="h-4 w-full max-w-[180px]" />
                       </div>
                     ))}
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-          <div className="flex-3 min-w-0">
-            <Skeleton className="h-48 w-full rounded-2xl" />
+          <div className="w-[358px] hidden md:block">
+            <DeadlineWidgetSkeleton />
           </div>
         </div>
       </div>
@@ -120,27 +179,69 @@ export function ClientApplicationDetails({
   };
 
   const deadlineStatus = getDeadlineStatus(application.Deadline_For_Lodgment);
+  const leadId = application.leadId ?? application.id;
 
   return (
     <div className="space-y-6">
       {/* 70/30 row — match admin ApplicantDetails layout */}
-      <div className="flex md:flex-row flex-col gap-6 items-stretch">
+      <div className="flex gap-2 items-stretch w-full min-w-0">
         {/* Left — Application Information (70%) */}
-        <div className="flex-7 min-w-0 bg-white border border-gray-200 rounded-2xl overflow-hidden">
-          <div className="md:px-6 px-4 md:py-4 py-3 border-b border-gray-100 flex flex-wrap md:flex-nowrap md:items-center md:justify-between justify-start gap-4">
-            <div className="flex items-center gap-3 whitespace-nowrap">
-              <div className="w-8 h-8 hidden md:flex bg-primary/10 rounded-lg  items-center justify-center">
-                <User className="h-4 w-4 text-primary" />
-              </div>
-              <h3 className="text-sm font-semibold text-slate-800">
-                Application Information
-              </h3>
-            </div>
-            <Badge className="h-6 px-3 bg-emerald-50 text-emerald-600 border border-emerald-200 rounded-full text-xs font-semibold hover:bg-emerald-50 w-fit whitespace-nowrap">
-              {application?.Application_Stage}
-            </Badge>
+        <div
+          className="flex-7 min-w-0 flex flex-col"
+          style={{
+            background: "#f7f7f7",
+            border: "1px solid #e5e7eb",
+            borderRadius: 24,
+            boxShadow:
+              "0px 4px 6px -1px rgba(0,0,0,0.07)," +
+              "0px 2px 4px -1px rgba(0,0,0,0.04)",
+            gap: 6,
+            paddingTop: 12,
+            paddingLeft: 4,
+            paddingRight: 4,
+            paddingBottom: 4,
+          }}
+        >
+          {/* Header — matches QCActionCard header pattern */}
+          <div className="flex flex-wrap md:flex-nowrap items-center justify-between gap-3" style={{ paddingLeft: 10, paddingRight: 10 }}>
+            <p
+              style={{ fontSize: 13, fontWeight: 500, lineHeight: "20px", letterSpacing: "-0.078px", color: "#a3a3a3", fontFeatureSettings: "'ss11', 'calt' 0" }}
+              className="select-none"
+            >
+              Application Information
+            </p>
+            {/* Application_Stage — soft emerald pill */}
+            <span
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                padding: "2px 10px",
+                borderRadius: 999,
+                background: "#f0fdf4",
+                border: "1px solid #bbf7d0",
+                fontFeatureSettings: "'ss11', 'calt' 0",
+              }}
+            >
+              <span style={{ fontSize: 11, fontWeight: 600, lineHeight: "18px", color: "#16a34a", letterSpacing: "-0.066px", fontFeatureSettings: "'ss11', 'calt' 0" }}>
+                {application?.Application_Stage}
+              </span>
+            </span>
           </div>
-          <div className="md:p-6 p-4">
+
+          {/* White card — identical to ApplicationInfoCard inner card */}
+          <div
+            className="relative overflow-hidden"
+            style={{
+              borderRadius: "16px 16px 20px 20px",
+              background: "white",
+              boxShadow:
+                "0px 4px 8px -2px rgba(51,51,51,0.06)," +
+                "0px 2px 4px 0px rgba(51,51,51,0.04)," +
+                "0px 1px 2px 0px rgba(51,51,51,0.04)," +
+                "0px 0px 0px 1px #f5f5f5",
+            }}
+          >
+          <div className="md:p-3 p-4">
             {/* Mobile (< md): clean accordion */}
             <div className="md:hidden">
               <div className="rounded-2xl border border-gray-100 bg-linear-to-b from-gray-50 to-white p-4 shadow-[0_1px_0_rgba(0,0,0,0.03)]">
@@ -433,151 +534,77 @@ export function ClientApplicationDetails({
               </div>
             </div>
 
-            {/* Desktop (md+): keep current grid */}
+            {/* Desktop (md+): QCActionCard-style gray container */}
             <div className="hidden md:block">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-6">
-                <div className="space-y-4">
-                  <h4 className="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                    Personal Information
-                  </h4>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Full Name
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.Name)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Email
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.Email)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Phone
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.Phone)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Application ID
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.id)}
-                      </p>
-                    </div>
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-x-8 gap-y-5">
+                {/* Col 1 — Personal Information */}
+                <div className="flex flex-col gap-3">
+                  <ClientSectionLabel>Personal Information</ClientSectionLabel>
+                  <ClientInfoField label="Full Name" value={formatValue(application.Name)} />
+                  <ClientInfoField label="Email" value={formatValue(application.Email)} />
+                  <ClientInfoField label="Phone" value={formatValue(application.Phone)} />
+                  <ClientInfoField label="Application ID" value={formatValue(application.id)} />
                 </div>
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                    Visa Details
-                  </h4>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Target Country
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.Qualified_Country || "")}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Service Type
-                      </p>
-                      <span className="inline-block mt-1 px-2 py-0.5 bg-primary text-primary-foreground text-[10px] font-bold rounded">
-                        {formatValue(
-                          application.Service_Finalized || "",
-                        ).toUpperCase()}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Suggested ANZSCO
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.Suggested_Anzsco || "")}
-                      </p>
-                    </div>
+                {/* Col 2 — Visa Details */}
+                <div className="flex flex-col gap-3">
+                  <ClientSectionLabel>Visa Details</ClientSectionLabel>
+                  <ClientInfoField label="Target Country" value={formatValue(application.Qualified_Country || "")} />
+                  <div>
+                    <p style={{ fontSize: 11, color: "#a3a3a3", fontWeight: 500, marginBottom: 2 }}>
+                      Service Type
+                    </p>
+                    <span style={{ fontSize: 13, fontWeight: 500, color: "#171717", lineHeight: "20px" }}>
+                      {formatValue(application.Service_Finalized || "")}
+                    </span>
                   </div>
+                  <ClientInfoField label="Suggested ANZSCO" value={formatValue(application.Suggested_Anzsco || "")} />
                 </div>
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                    Application Mgmt
-                  </h4>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Handled By
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.Application_Handled_By)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Created Date
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {application.Created_Time
-                          ? formatDate(application.Created_Time, "time")
-                          : "Not available"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Assessing Authority
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.Assessing_Authority || "")}
-                      </p>
-                    </div>
+                {/* Col 3 — Application Mgmt */}
+                <div className="flex flex-col gap-3">
+                  <ClientSectionLabel>Application Mgmt</ClientSectionLabel>
+                  <ClientInfoField label="Handled By" value={formatValue(application.Application_Handled_By)} />
+                  <div>
+                    <p style={{ fontSize: 11, color: "#a3a3a3", fontWeight: 500, marginBottom: 2 }}>
+                      Created Date
+                    </p>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: "#171717", lineHeight: "20px" }}>
+                      {application.Created_Time
+                        ? formatDate(application.Created_Time, "time")
+                        : "Not available"}
+                    </p>
                   </div>
+                  <ClientInfoField label="Assessing Authority" value={formatValue(application.Assessing_Authority || "")} />
                 </div>
-                <div className="space-y-4">
-                  <h4 className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">
-                    Assets & Files
-                  </h4>
-                  <div className="space-y-3">
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Record Type
-                      </p>
-                      <p className="text-sm font-semibold">
-                        {formatValue(application.Record_Type || "")}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-[11px] text-slate-400 dark:text-slate-500 mb-0.5">
-                        Total Attachments
-                      </p>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400">
-                        {application.AttachmentCount || 0} Documents
-                      </span>
-                    </div>
+                {/* Col 4 — Assets & Files */}
+                <div className="flex flex-col gap-3">
+                  <ClientSectionLabel>Assets & Files</ClientSectionLabel>
+                  <ClientInfoField label="Record Type" value={formatValue(application.Record_Type || "")} />
+                  <div>
+                    <p style={{ fontSize: 11, color: "#a3a3a3", fontWeight: 500, marginBottom: 2 }}>
+                      Total Documents
+                    </p>
+                    <p style={{ fontSize: 13, fontWeight: 500, color: "#171717", lineHeight: "20px" }}>
+                      {application.AttachmentCount || 0} documents
+                    </p>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+          {/* Inner shadow overlay */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{ borderRadius: "inherit", boxShadow: "inset 0px -1px 1px -0.5px rgba(51,51,51,0.06)" }}
+          />
+          </div>
         </div>
 
         {/* Right — Application Deadline (30%) */}
-        <div className="flex-3 min-w-0 hidden md:block">
-          <ApplicationDeadlineCard
-            deadline={application.Deadline_For_Lodgment}
-            user={user ?? null}
-            onEditDeadline={() => {}}
-            applicationStage={application.Application_Stage}
-            showEdit={false}
-            alwaysShowWhenDeadline={true}
+        <div className="w-[358px] hidden md:block">
+          <DeadlineWidget
+            isClientView
+            leadId={leadId}
+            currentDeadline={application.Deadline_For_Lodgment}
           />
         </div>
       </div>

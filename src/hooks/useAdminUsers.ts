@@ -7,6 +7,7 @@ export interface AdminUser {
   _id: string;
   username?: string;
   full_name?: string;
+  profile_image_url?: string;
   role: "admin" | "team_leader" | "master_admin" | "supervisor";
   __v: number;
 }

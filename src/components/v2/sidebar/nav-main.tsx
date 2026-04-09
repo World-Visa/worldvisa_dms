@@ -23,8 +23,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import type { NavGroup, NavMainItem } from "@/lib/navigations/sidebar-items";
+import { useApprovalRequestsPendingCount } from "@/hooks/useAdminApprovalRequests";
+import { useAuth } from "@/hooks/useAuth";
 import { useTotalUnreadCount } from "@/hooks/useChat";
 import { useEmailUnreadCount } from "@/hooks/useEmail";
+import { ROLES } from "@/lib/roles";
+import { ROUTES } from "@/utils/routes";
 
 interface NavMainProps {
   readonly items: readonly NavGroup[];
@@ -179,8 +183,12 @@ const EMAIL_URL = "/v2/mail";
 export function NavMain({ items }: NavMainProps) {
   const path = usePathname();
   const { state, isMobile } = useSidebar();
+  const { user } = useAuth();
   const totalUnread = useTotalUnreadCount();
   const { data: emailUnread } = useEmailUnreadCount();
+  const { data: pendingApprovalCount = 0 } = useApprovalRequestsPendingCount({
+    enabled: user?.role === ROLES.MASTER_ADMIN,
+  });
 
   const isItemActive = (url: string, subItems?: NavMainItem["subItems"]) => {
     if (subItems?.length) {
@@ -191,6 +199,13 @@ export function NavMain({ items }: NavMainProps) {
 
   const isSubmenuOpen = (subItems?: NavMainItem["subItems"]) => {
     return subItems?.some((sub) => path.startsWith(sub.url)) ?? false;
+  };
+
+  const resolveNavBadge = (url: string): number | undefined => {
+    if (url === CHAT_URL && totalUnread > 0) return totalUnread;
+    if (url === EMAIL_URL && (emailUnread ?? 0) > 0) return emailUnread ?? 0;
+    if (url === ROUTES.APPROVAL_REQUESTS && pendingApprovalCount > 0) return pendingApprovalCount;
+    return undefined;
   };
 
   return (
@@ -219,7 +234,7 @@ export function NavMain({ items }: NavMainProps) {
                 if (state === "collapsed" && !isMobile) {
                   // If no subItems, just render the button as a link
                   if (!item.subItems) {
-                    const badge = item.url === CHAT_URL && totalUnread > 0 ? totalUnread : undefined;
+                    const badge = resolveNavBadge(item.url);
                     return (
                       <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
@@ -249,11 +264,7 @@ export function NavMain({ items }: NavMainProps) {
                       key={item.title}
                       item={item}
                       isActive={isItemActive}
-                      badge={
-                        item.url === CHAT_URL && totalUnread > 0 ? totalUnread :
-                        item.url === EMAIL_URL && (emailUnread ?? 0) > 0 ? (emailUnread ?? 0) :
-                        undefined
-                      }
+                      badge={resolveNavBadge(item.url)}
                     />
                   );
                 }
@@ -264,11 +275,7 @@ export function NavMain({ items }: NavMainProps) {
                     item={item}
                     isActive={isItemActive}
                     isSubmenuOpen={isSubmenuOpen}
-                    badge={
-                        item.url === CHAT_URL && totalUnread > 0 ? totalUnread :
-                        item.url === EMAIL_URL && (emailUnread ?? 0) > 0 ? (emailUnread ?? 0) :
-                        undefined
-                      }
+                    badge={resolveNavBadge(item.url)}
                   />
                 );
               })}

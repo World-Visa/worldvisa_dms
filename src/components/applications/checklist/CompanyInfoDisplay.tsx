@@ -3,12 +3,23 @@
 import React, { memo, useEffect, useMemo, useState } from "react";
 import { Building2 } from "lucide-react";
 import { Company } from "@/types/documents";
-import { generateCompanyDescription } from "@/utils/dateCalculations";
+import {
+  generateCurrentEmploymentDescription,
+  generatePastEmploymentDescription,
+} from "@/utils/dateCalculations";
 
 interface CompanyInfoDisplayProps {
   selectedCategory: string;
   extractedCompanies: Company[];
 }
+
+const getDisplayCompanyName = (company: Company): string => {
+  if (company.description) {
+    const match = company.description.match(/(?:Worked|Working) at ([^f][^\s]*(?: [^f][^\s]*)*) (?:from|since)/);
+    if (match?.[1]) return match[1];
+  }
+  return company.name;
+};
 
 export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
   selectedCategory,
@@ -105,24 +116,19 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
     return foundCompany;
   }, [selectedCategory, extractedCompanies]);
 
+  const description = useMemo(() => {
+    if (!displayCompany) return "";
+    const name = getDisplayCompanyName(displayCompany);
+    const hasTo = displayCompany.toDate != null && String(displayCompany.toDate).trim() !== "";
+    if (hasTo) {
+      return generatePastEmploymentDescription(name, displayCompany.fromDate ?? "", displayCompany.toDate ?? "");
+    }
+    return generateCurrentEmploymentDescription(name, displayCompany.fromDate ?? "");
+  }, [displayCompany]);
+
   if (!isMounted || !displayCompany) {
-    // Keep a stable DOM node between server and client to avoid hydration mismatches
-    // when company data becomes available during the first client render.
     return <div className="h-0 w-0 overflow-hidden" aria-hidden="true" />;
   }
-
-  // Extract original case company name from description
-  const getDisplayCompanyName = (company: Company): string => {
-    if (company.description) {
-      // Extract company name from description: "Worked at COMPANY_NAME from..."
-      const match = company.description.match(/Worked at ([^ ]+) from/);
-      if (match && match[1]) {
-        return match[1];
-      }
-    }
-    // Fallback to stored name (which is now lowercase)
-    return company.name;
-  };
 
   return (
     <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2 border">
@@ -134,13 +140,7 @@ export const CompanyInfoDisplay = memo(function CompanyInfoDisplay({
           <div className="font-medium text-gray-900">
             {getDisplayCompanyName(displayCompany)}
           </div>
-          <div className="text-xs text-gray-600">
-            {displayCompany.description ||
-              generateCompanyDescription(
-                displayCompany.fromDate,
-                displayCompany.toDate,
-              )}
-          </div>
+          <div className="text-xs text-gray-600">{description}</div>
         </div>
       </div>
     </div>

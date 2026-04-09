@@ -1,3 +1,19 @@
+export interface DeadlineExtensionEntry {
+  fieldName: string;
+  previousValue?: string | null;
+  newValue: string;
+  reason: string;
+  requestedBy: string;
+  approvedBy: string;
+  requestId?: string;
+  approvedAt?: string;
+  approvedByInfo?: {
+    username?: string;
+    full_name?: string;
+    profile_image_url?: string | null;
+  };
+}
+
 export interface ApplicationOnboarding {
   client_record_exists: boolean;
   clerk_id: string | null;
@@ -25,7 +41,6 @@ export interface Application {
   Created_Time: string;
   Application_Handled_By: string;
   AttachmentCount: number;
-  // Optional visa-related properties
   Qualified_Country?: string;
   Service_Finalized?: string;
   Suggested_Anzsco?: string;
@@ -54,6 +69,7 @@ export interface Application {
     requested_to: string;
   } | null;
   application_onboarding?: ApplicationOnboarding | null;
+  deadline_extensions?: DeadlineExtensionEntry[];
 }
 
 export interface Document {
@@ -134,8 +150,6 @@ export interface SearchParams {
   word?: string;
   country?: string;
 }
-
-// ─── Applications List Page shared types ─────────────────────────────────────
 
 export type Country = "Australia" | "Canada";
 

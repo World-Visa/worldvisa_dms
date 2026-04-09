@@ -1,21 +1,28 @@
 import { useRef, useState } from 'react';
-import { RiErrorWarningFill } from 'react-icons/ri';
+import { RiErrorWarningFill, RiMessageLine } from 'react-icons/ri';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/primitives/popover';
+import { cn } from '@/lib/utils';
 
 interface DocumentRejectedPopoverProps {
   rejectMessage: string;
   children: React.ReactNode;
   className?: string;
+  /** Popover header label (default: rejection copy for document flows). */
+  title?: string;
+  /** `danger`: error styling; `neutral`: message-style header for non-rejection text. */
+  headerTone?: 'danger' | 'neutral';
 }
 
 export function DocumentRejectedPopover({
   rejectMessage,
   children,
   className,
+  title = 'Rejection Reason',
+  headerTone = 'danger',
 }: DocumentRejectedPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -32,6 +39,8 @@ export function DocumentRejectedPopover({
     }
     setIsOpen(false);
   };
+
+  const isNeutral = headerTone === 'neutral';
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -50,8 +59,19 @@ export function DocumentRejectedPopover({
         onMouseLeave={handleMouseLeave}
       >
         <div className="flex items-center gap-2 mb-2">
-          <RiErrorWarningFill className="text-error-base size-3.5 shrink-0" />
-          <span className="text-label-xs font-medium">Rejection Reason</span>
+          {isNeutral ? (
+            <RiMessageLine className="text-muted-foreground size-3.5 shrink-0" aria-hidden />
+          ) : (
+            <RiErrorWarningFill className="text-error-base size-3.5 shrink-0" aria-hidden />
+          )}
+          <span
+            className={cn(
+              'text-label-xs font-medium',
+              isNeutral ? 'text-muted-foreground' : 'text-foreground',
+            )}
+          >
+            {title}
+          </span>
         </div>
         <p className="text-xs text-text-sub leading-relaxed">{rejectMessage}</p>
       </PopoverContent>

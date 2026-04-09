@@ -82,7 +82,7 @@ export interface DeleteStage2DocumentResponse {
   message: string;
 }
 
-// Modal Props Interfaces
+// Modal / Sheet props (same shape; sheets replaced modals for stage-2 documents)
 
 export interface OutcomeModalProps {
   isOpen: boolean;
@@ -107,6 +107,10 @@ export interface InvitationModalProps {
   document?: Stage2Document;
   mode?: "create" | "edit";
 }
+
+export type OutcomeSheetProps = OutcomeModalProps;
+export type EOISheetProps = EOIModalProps;
+export type InvitationSheetProps = InvitationModalProps;
 
 // Layout Props Interfaces
 
