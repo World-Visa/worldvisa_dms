@@ -1,5 +1,6 @@
 
 import { Comment } from "./comments";
+import type { DeadlineExtensionEntry } from "./applications";
 
 export interface ClientApplicationResponse {
   data: {
@@ -23,6 +24,7 @@ export interface ClientApplicationResponse {
     Suggested_Anzsco?: string;
     Assessing_Authority?: string;
     Record_Type?: string;
+    deadline_extensions?: DeadlineExtensionEntry[];
   };
 }
 
