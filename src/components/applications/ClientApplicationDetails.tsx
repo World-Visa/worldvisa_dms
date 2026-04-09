@@ -3,7 +3,6 @@
 import React from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ClientApplicationResponse, ClientDocument } from "@/types/client";
-import { ApplicationDeadlineCard } from "./ApplicationDeadlineCard";
 import { Calendar } from "lucide-react";
 import { formatDate } from "@/utils/format";
 import {
@@ -12,6 +11,8 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import DeadlineWidget from "./deadline/DeadlineWidget";
+import { DeadlineWidgetSkeleton } from "./deadline/DeadlineWidgetSkeleton";
 
 const FF: React.CSSProperties = { fontFeatureSettings: "'ss11', 'calt' 0" };
 
@@ -72,7 +73,7 @@ export function ClientApplicationDetails({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex gap-6 items-stretch">
+        <div className="flex gap-2 items-stretch w-full min-w-0">
           {/* Skeleton — gray container matching ApplicationInfoCard */}
           <div
             className="flex-7 min-w-0 flex flex-col"
@@ -116,8 +117,8 @@ export function ClientApplicationDetails({
               </div>
             </div>
           </div>
-          <div className="flex-3 min-w-0 hidden md:block">
-            <Skeleton className="h-full min-h-[160px] w-full rounded-2xl" />
+          <div className="w-[358px] hidden md:block">
+            <DeadlineWidgetSkeleton />
           </div>
         </div>
       </div>
@@ -178,11 +179,12 @@ export function ClientApplicationDetails({
   };
 
   const deadlineStatus = getDeadlineStatus(application.Deadline_For_Lodgment);
+  const leadId = application.leadId ?? application.id;
 
   return (
     <div className="space-y-6">
       {/* 70/30 row — match admin ApplicantDetails layout */}
-      <div className="flex md:flex-row flex-col gap-6 items-stretch">
+      <div className="flex gap-2 items-stretch w-full min-w-0">
         {/* Left — Application Information (70%) */}
         <div
           className="flex-7 min-w-0 flex flex-col"
@@ -598,14 +600,11 @@ export function ClientApplicationDetails({
         </div>
 
         {/* Right — Application Deadline (30%) */}
-        <div className="flex-3 min-w-0 hidden md:block">
-          <ApplicationDeadlineCard
-            deadline={application.Deadline_For_Lodgment}
-            user={user ?? null}
-            onEditDeadline={() => {}}
-            applicationStage={application.Application_Stage}
-            showEdit={false}
-            alwaysShowWhenDeadline={true}
+        <div className="w-[358px] hidden md:block">
+          <DeadlineWidget
+            isClientView
+            leadId={leadId}
+            currentDeadline={application.Deadline_For_Lodgment}
           />
         </div>
       </div>

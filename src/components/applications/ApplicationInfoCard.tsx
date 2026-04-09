@@ -116,14 +116,9 @@ export function ApplicationInfoCard({ application, isSpouseApplication }: Applic
   return (
     // ── Outer gray container — exactly matches ApplicationDetailsHeader QC panel wrapper ──
     <motion.div
-      className="flex flex-col w-full min-w-0"
+      className="flex flex-col w-full min-w-0 rounded-[24px]"
       style={{
         background: "#f7f7f7",
-        border: "1px solid #e5e7eb",
-        borderRadius: 24,
-        boxShadow:
-          "0px 4px 6px -1px rgba(0,0,0,0.07)," +
-          "0px 2px 4px -1px rgba(0,0,0,0.04)",
         gap: 6,
         paddingTop: 12,
         paddingLeft: 4,
@@ -168,10 +163,7 @@ export function ApplicationInfoCard({ application, isSpouseApplication }: Applic
                 backgroundImage:
                   "linear-gradient(180deg, rgba(255,255,255,0.153) 6.6667%, rgba(255,255,255,0) 103.33%)," +
                   "linear-gradient(90deg, #171717 0%, #171717 100%)",
-                boxShadow:
-                  "0px 0px 0px 0.75px #171717," +
-                  "inset 0px 1px 2px 0px rgba(255,255,255,0.16)",
-                ...FF,
+                
               }}
             >
               <BadgeCheck size={11} style={{ color: "white", flexShrink: 0 }} />

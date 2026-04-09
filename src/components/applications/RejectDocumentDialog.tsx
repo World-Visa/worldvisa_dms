@@ -16,28 +16,39 @@ interface RejectDocumentDialogProps {
   isOpen: boolean;
   onClose: () => void;
   onConfirm: (reason: string) => void;
-  documentName: string;
+  /** Optional context name (e.g. file name); contextual line is not shown when omitted. */
+  documentName?: string;
   isLoading?: boolean;
+  title?: string;
+  confirmLabel?: string;
+  labelText?: string;
+  placeholder?: string;
+  loadingLabel?: string;
 }
 
 export function RejectDocumentDialog({
   isOpen,
   onClose,
   onConfirm,
-  documentName,
   isLoading = false,
+  title = "Reject Document",
+  confirmLabel = "Reject Document",
+  labelText = "Please provide a reason for rejection *",
+  placeholder = "Enter the reason for rejecting this document...",
+  loadingLabel = "Sending request...",
 }: RejectDocumentDialogProps) {
   const [reason, setReason] = useState("");
+  const fieldId = React.useId();
 
   const handleConfirm = () => {
     if (reason.trim()) {
       onConfirm(reason.trim());
-      setReason(""); // Reset form
+      setReason("");
     }
   };
 
   const handleClose = () => {
-    setReason(""); // Reset form
+    setReason("");
     onClose();
   };
 
@@ -70,23 +81,16 @@ export function RejectDocumentDialog({
 
         <DialogHeader className="gap-1">
           <DialogTitle className="text-base font-semibold leading-snug">
-            Reject Document
+            {title}
           </DialogTitle>
         </DialogHeader>
 
         <div className="space-y-5">
-          {/* <div>
-            <p className="text-sm text-foreground/90">
-              You are about to reject the document:{" "}
-              <strong>{documentName}</strong>
-            </p>
-          </div> */}
-
           <div className="space-y-2">
-            <Label htmlFor="reject-reason">Please provide a reason for rejection *</Label>
+            <Label htmlFor={fieldId}>{labelText}</Label>
             <Textarea
-              id="reject-reason"
-              placeholder="Enter the reason for rejecting this document..."
+              id={fieldId}
+              placeholder={placeholder}
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               className="min-h-[110px] resize-none"
@@ -108,13 +112,11 @@ export function RejectDocumentDialog({
           >
             {isLoading ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Sending request...
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                {loadingLabel}
               </>
             ) : (
-              <>
-                Reject Document
-              </>
+              confirmLabel
             )}
           </Button>
         </div>

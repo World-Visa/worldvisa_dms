@@ -61,6 +61,17 @@ export const API_CONFIG = {
         `${ZOHO_BASE_URL}/visa_applications/${leadId}/checklist-status`,
     },
 
+    // Admin approval requests (deadline extension etc.)
+    ADMIN_APPROVAL_REQUESTS: {
+      BASE:    `${ZOHO_BASE_URL}/visa_applications/admin-approval-requests`,
+      BY_LEAD: (leadId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/admin-approval-requests/lead/${leadId}`,
+      APPROVE: (id: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/admin-approval-requests/${id}/approve`,
+      REJECT:  (id: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/admin-approval-requests/${id}/reject`,
+    },
+
     // Client checklist requests
     CLIENT_CHECKLIST_REQUESTS: {
       LIST: `${ZOHO_BASE_URL}/clients/checklist/requested`,

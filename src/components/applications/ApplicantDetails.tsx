@@ -2,12 +2,10 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { Application } from "@/types/applications";
-
-import { useState } from "react";
-import { ApplicationDeadlineCard, shouldShowDeadlineCard } from "./ApplicationDeadlineCard";
-import { ApplicationDeadlineCardSkeleton } from "./ApplicationDeadlineCardSkeleton";
+import { shouldShowDeadlineCard } from "./ApplicationDeadlineCard";
 import { ApplicationInfoCard } from "./ApplicationInfoCard";
-import { DeadlineUpdateModal } from "./DeadlineUpdateModal";
+import DeadlineWidget from "./deadline/DeadlineWidget";
+import { DeadlineWidgetSkeleton } from "./deadline/DeadlineWidgetSkeleton";
 
 interface ApplicantDetailsProps {
   application: Application | undefined;
@@ -27,19 +25,16 @@ function LabeledValueSkeleton({ label, className }: { label: string; className?:
   );
 }
 
-/** Same layout as loaded ApplicantDetails: real labels, skeleton values (used by full-page skeletons). */
 export function ApplicantDetailsLoadingPlaceholder({
   isSpouseApplication = false,
 }: {
   isSpouseApplication?: boolean;
 }) {
-  const showDeadlineColumnWhileLoading = shouldShowDeadlineCard(undefined);
-
   return (
-    <div className="flex gap-6 items-stretch">
+    <div className="flex gap-2 items-stretch w-full min-w-0">
       {/* Gray outer container — matches ApplicationInfoCard */}
       <div
-        className={cn("min-w-0 flex flex-col", showDeadlineColumnWhileLoading ? "flex-7" : "flex-1")}
+        className={cn("min-w-0 flex flex-col flex-1")}
         style={{
           background: "#f7f7f7",
           border: "1px solid #e5e7eb",
@@ -118,11 +113,9 @@ export function ApplicantDetailsLoadingPlaceholder({
         </div>
       </div>
 
-      {showDeadlineColumnWhileLoading && (
-        <div className="flex-3 min-w-0">
-          <ApplicationDeadlineCardSkeleton />
-        </div>
-      )}
+      <div className="w-[358px]">
+        <DeadlineWidgetSkeleton />
+      </div>
     </div>
   );
 }
@@ -136,7 +129,6 @@ export function ApplicantDetails({
   isSpouseApplication = false,
   suppressErrorUI = false,
 }: ApplicantDetailsProps) {
-  const [isDeadlineModalOpen, setIsDeadlineModalOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -164,7 +156,7 @@ export function ApplicantDetails({
 
   return (
     <>
-      <div className="flex gap-6 items-stretch w-full min-w-0 ">
+      <div className="flex gap-2 items-stretch w-full min-w-0 ">
         <div className={cn("min-w-0", showDeadlineCard ? "flex-7" : "flex-1")}>
           <ApplicationInfoCard
             application={application}
@@ -173,26 +165,15 @@ export function ApplicantDetails({
           />
         </div>
 
-        {showDeadlineCard && (
-          <div className="flex-3 min-w-0">
-            <ApplicationDeadlineCard
-              deadline={application.Deadline_For_Lodgment}
-              user={user}
-              onEditDeadline={() => setIsDeadlineModalOpen(true)}
-              applicationStage={application.Application_Stage}
-            />
-          </div>
-        )}
+        <div className="w-[358px]">
+          <DeadlineWidget
+            leadId={application.id}
+            currentDeadline={application.Deadline_For_Lodgment}
+            deadlineExtensions={application.deadline_extensions}
+          />
+        </div>
       </div>
 
-      <DeadlineUpdateModal
-        isOpen={isDeadlineModalOpen}
-        onClose={() => setIsDeadlineModalOpen(false)}
-        leadId={application.id}
-        currentDeadline={application.Deadline_For_Lodgment}
-        applicationName={application.Name}
-        recordType={application.Record_Type}
-      />
     </>
   );
 }
