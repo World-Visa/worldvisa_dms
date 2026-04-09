@@ -151,6 +151,7 @@ export function ClientDocumentsContent({
         }
         onAddCompany={onAddCompany}
         onRemoveCompany={onRemoveCompany}
+        visaServiceType={applicationData?.data?.Service_Finalized}
       />
     );
   }

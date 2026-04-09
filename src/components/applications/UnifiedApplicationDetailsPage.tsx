@@ -536,6 +536,7 @@ export default function UnifiedApplicationDetailsPage({
                 showSampleDocuments={showSampleDocuments}
                 onShowSampleDocuments={handleShowSampleDocuments}
                 onHideSampleDocuments={handleHideSampleDocuments}
+                visaServiceType={application?.Service_Finalized}
               />
             </motion.div>
           </TabsContent>
@@ -612,6 +613,7 @@ export default function UnifiedApplicationDetailsPage({
         documentType={modals.selectedReuploadDocumentType}
         category={modals.selectedReuploadDocumentCategory}
         isClientView={false}
+        visaServiceType={application?.Service_Finalized}
       />
 
       <QualityCheckModal

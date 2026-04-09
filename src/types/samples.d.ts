@@ -28,8 +28,12 @@ export interface SampleDocumentModalProps {
   onClose: () => void;
   documentType: string;
   category: string;
-  samplePath: string;
+  samplePath?: string;
   companyName?: string;
+  /** Cloudflare URL for the sample document (from dynamic checklist template) */
+  sampleDocumentUrl?: string;
+  /** HTML importantNote from the dynamic checklist template */
+  importantNote?: string;
 }
 
 export interface SampleDocumentService {
