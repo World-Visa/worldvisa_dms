@@ -15,7 +15,9 @@ export interface ConversationMember {
   displayName: string;
   email?: string;
   lastReadAt?: string | null;
-  online_status?: boolean;
+  online_status?: boolean;       // backward compat boolean
+  presence_status?: import('./presence').PresenceStatus;
+  lastSeen?: string | null;
   profile_image_url?: string;
 }
 

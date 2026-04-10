@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Settings, Users, ArrowLeft, MessageSquare, LogOut, X } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatLastSeen } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
 import { PresenceDot } from "@/components/ui/presence-dot";
@@ -25,6 +25,7 @@ import { ChatInput } from "@/components/chat/ChatInput";
 import { DateSeparator, getDateLabel } from "@/components/chat/DateSeparator";
 import { ForwardMessageOverlay } from "@/components/chat/ForwardPicker";
 import type { ChatMessage, ParticipantType } from "@/types/chat";
+import { notificationSocket } from "@/lib/notificationSocket";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -67,6 +68,17 @@ export function ChatThread({
   onClose,
 }: ChatThreadProps) {
   const { data: conversationData } = useConversation(conversationId);
+
+  // Subscribe to presence updates for the other DM participant
+  useEffect(() => {
+    const conversation = conversationData?.data;
+    if (conversation?.type !== "dm") return;
+    const other = conversation.members?.find(
+      (m) => m.id !== currentUserId && m.id !== alternativeUserId,
+    );
+    if (!other?.id) return;
+    notificationSocket.subscribeToUsers([other.id]);
+  }, [conversationData?.data, currentUserId, alternativeUserId]);
   const {
     data: messagesData,
     isLoading,
@@ -302,11 +314,16 @@ export function ChatThread({
                 (m) =>
                   m.id !== currentUserId && m.id !== alternativeUserId,
               );
-              const isOnline = dmOther?.online_status ?? false;
+              const presenceStatus = dmOther?.presence_status
+                ?? (dmOther?.online_status ? "online" : "offline") as import("@/types/presence").PresenceStatus;
+              const statusText =
+                presenceStatus === "online" ? "Online" :
+                presenceStatus === "idle"   ? "Idle" :
+                formatLastSeen(dmOther?.lastSeen ?? null);
               return (
                 <p className="text-xs text-muted-foreground flex items-center gap-1.5 truncate">
-                  <PresenceDot online={isOnline} className="h-1.5 w-1.5 shrink-0" />
-                  <span>{isOnline ? "Online" : "Offline"}</span>
+                  <PresenceDot status={presenceStatus} className="h-1.5 w-1.5 shrink-0" />
+                  <span>{statusText}</span>
                 </p>
               );
             })()

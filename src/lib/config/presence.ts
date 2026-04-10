@@ -1,5 +1,9 @@
 export const PRESENCE_SOCKET_EVENTS = {
-  UPDATE: "presence:update",
+  UPDATE:    'presence:update',
+  SNAPSHOT:  'presence:snapshot',
+  HEARTBEAT: 'presence:heartbeat',
+  ACTIVITY:  'presence:activity',
+  SUBSCRIBE: 'presence:subscribe',
 } as const;
 
 // How often to refetch user/conversation data to keep online_status fresh.

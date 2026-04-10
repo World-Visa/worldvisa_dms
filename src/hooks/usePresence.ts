@@ -10,8 +10,10 @@ export function usePresence(): void {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    return notificationSocket.onPresenceUpdate(({ userId, online }) => {
-      // Patch all admin user list cache entries (all page/filter combinations)
+    // ── presence:update — single user status change ──────────────────────────
+    const unsubUpdate = notificationSocket.onPresenceUpdate(({ userId, status, lastSeen }) => {
+      const isOnline = status !== 'offline';
+
       queryClient.setQueriesData<AdminUsersV2Response>(
         { queryKey: ["admin-users-v2"], exact: false },
         (old) => {
@@ -21,14 +23,15 @@ export function usePresence(): void {
             data: {
               ...old.data,
               users: old.data.users.map((u) =>
-                u._id === userId ? { ...u, online_status: online } : u,
+                u._id === userId
+                  ? { ...u, online_status: isOnline, presence_status: status, lastSeen }
+                  : u,
               ),
             },
           };
         },
       );
 
-      // Patch all open conversation detail entries (ChatThread members)
       queryClient.setQueriesData<{ data: Conversation }>(
         { queryKey: ["chat", "conversation"], exact: false },
         (old) => {
@@ -38,12 +41,68 @@ export function usePresence(): void {
             data: {
               ...old.data,
               members: old.data.members.map((m) =>
-                m.id === userId ? { ...m, online_status: online } : m,
+                m.id === userId
+                  ? { ...m, online_status: isOnline, presence_status: status, lastSeen }
+                  : m,
               ),
             },
           };
         },
       );
     });
+
+    // ── presence:snapshot — bulk initial state after subscribe ───────────────
+    const unsubSnapshot = notificationSocket.onPresenceSnapshot(({ presences }) => {
+      queryClient.setQueriesData<AdminUsersV2Response>(
+        { queryKey: ["admin-users-v2"], exact: false },
+        (old) => {
+          if (!old) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              users: old.data.users.map((u) => {
+                const p = presences[u._id];
+                if (!p) return u;
+                return {
+                  ...u,
+                  online_status: p.status !== 'offline',
+                  presence_status: p.status,
+                  lastSeen: p.lastSeen,
+                };
+              }),
+            },
+          };
+        },
+      );
+
+      queryClient.setQueriesData<{ data: Conversation }>(
+        { queryKey: ["chat", "conversation"], exact: false },
+        (old) => {
+          if (!old?.data.members) return old;
+          return {
+            ...old,
+            data: {
+              ...old.data,
+              members: old.data.members.map((m) => {
+                const p = presences[m.id];
+                if (!p) return m;
+                return {
+                  ...m,
+                  online_status: p.status !== 'offline',
+                  presence_status: p.status,
+                  lastSeen: p.lastSeen,
+                };
+              }),
+            },
+          };
+        },
+      );
+    });
+
+    return () => {
+      unsubUpdate();
+      unsubSnapshot();
+    };
   }, [queryClient]);
 }

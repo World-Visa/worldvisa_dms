@@ -2,42 +2,17 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Check, ChevronDown, ArrowUpRight } from "lucide-react";
-import { cn, getProfileAvatarSrc } from "@/lib/utils";
+import { ArrowUpRight } from "lucide-react";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { cn, getProfileAvatarSrc, formatLastSeen } from "@/lib/utils";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList,
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PresenceDot } from "@/components/ui/presence-dot";
 import { useAdminUsersV2 } from "@/hooks/useAdminUsersV2";
 import { useAuth } from "@/hooks/useAuth";
-
-export type TeamMemberRole = "admin" | "master_admin" | "team_leader" | "supervisor";
-
-export interface TeamMember {
-  id: string;
-  name: string;
-  role: TeamMemberRole;
-}
-
-const ROLE_OPTIONS: { value: TeamMemberRole; label: string; description: string }[] = [
-  { value: "admin", label: "Admin", description: "Can manage applications and team workflows." },
-  { value: "master_admin", label: "Master Admin", description: "Full access to all resources and settings." },
-  { value: "supervisor", label: "Supervisor", description: "Can view, comment and supervise applications." },
-  { value: "team_leader", label: "Team Leader", description: "Can lead a team and review quality checks." },
-];
+import type { PresenceStatus } from "@/types/presence";
 
 function getInitials(name: string): string {
   return name
@@ -48,145 +23,77 @@ function getInitials(name: string): string {
     .slice(0, 2);
 }
 
-interface RoleDropdownProps {
-  memberId: string;
-  value: TeamMemberRole;
-  onRoleChange: (memberId: string, role: TeamMemberRole) => void;
-}
+const statusLabel: Record<PresenceStatus, string> = {
+  online:  "Online",
+  idle:    "Idle",
+  offline: "Offline",
+};
 
-function RoleDropdown({ memberId, value, onRoleChange }: RoleDropdownProps) {
-  const [open, setOpen] = React.useState(false);
-  const [searchQuery, setSearchQuery] = React.useState("");
+const statusColor: Record<PresenceStatus, string> = {
+  online:  "text-green-500",
+  idle:    "text-amber-400",
+  offline: "text-muted-foreground",
+};
 
-  const selectedOption = ROLE_OPTIONS.find((opt) => opt.value === value);
-  const filteredOptions = React.useMemo(() => {
-    if (!searchQuery.trim()) return ROLE_OPTIONS;
-    const q = searchQuery.toLowerCase();
-    return ROLE_OPTIONS.filter(
-      (opt) =>
-        opt.label.toLowerCase().includes(q) ||
-        opt.value.toLowerCase().replace("_", " ").includes(q),
-    );
-  }, [searchQuery]);
-
-  return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <button
-          type="button"
-          role="combobox"
-          aria-expanded={open}
-          className={cn(
-            "flex items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm shadow-xs transition-colors",
-            "hover:bg-accent/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-          )}
-        >
-          <span className="font-medium text-foreground">{selectedOption?.label ?? value}</span>
-          <ChevronDown className="size-4 shrink-0 opacity-50" />
-        </button>
-      </PopoverTrigger>
-      <PopoverContent
-        className="w-(--radix-popover-trigger-width)w-[240px] p-0"
-        align="end"
-        sideOffset={4}
-      >
-        <Command shouldFilter={false}>
-          <CommandInput
-            placeholder="Select new role..."
-            value={searchQuery}
-            onValueChange={setSearchQuery}
-          />
-          <CommandList>
-            <CommandEmpty>No role found.</CommandEmpty>
-            <CommandGroup>
-              {filteredOptions.map((option) => (
-                <CommandItem
-                  key={option.value}
-                  value={option.value}
-                  onSelect={() => {
-                    onRoleChange(memberId, option.value);
-                    setOpen(false);
-                    setSearchQuery("");
-                  }}
-                  className="relative flex cursor-pointer items-start gap-2 py-2.5 pr-8"
-                >
-                  <div className="flex flex-col items-start gap-0.5">
-                    <span className="font-medium text-foreground">{option.label}</span>
-                    <span className="text-muted-foreground text-xs leading-tight">
-                      {option.description}
-                    </span>
-                  </div>
-                  <span className="absolute right-2 top-1/2 -translate-y-1/2">
-                    {value === option.value ? (
-                      <Check className="size-4 text-foreground" />
-                    ) : null}
-                  </span>
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
-        </Command>
-      </PopoverContent>
-    </Popover>
-  );
+interface TeamMemberRow {
+  id: string;
+  name: string;
+  role: string;
+  presenceStatus: PresenceStatus;
+  lastSeen: string | null;
+  profile_image_url?: string;
 }
 
 export function TeamMembers() {
   const { user: currentUser } = useAuth();
-  const { data, isLoading } = useAdminUsersV2({ page: 1, limit: 6 });
+  const reduced = useReducedMotion();
+  const { data, isLoading } = useAdminUsersV2({ page: 1, limit: 200 });
 
-  const initialMembers = React.useMemo<(TeamMember & { onlineStatus?: boolean; profile_image_url?: string })[]>(() => {
+  const members = React.useMemo<TeamMemberRow[]>(() => {
     if (!data?.data.users) return [];
     return data.data.users
       .filter((u) => u._id !== currentUser?._id)
+      .filter((u) => (u.account_status ?? "active") === "active")
       .map((u) => ({
         id: u._id,
         name: u.username ?? u.full_name ?? "—",
-        role: u.role,
-        onlineStatus: u.online_status,
+        role: u.role.replace(/_/g, " "),
+        presenceStatus: u.presence_status ?? (u.online_status ? "online" : "offline"),
+        lastSeen: u.lastSeen ?? null,
         profile_image_url: u.profile_image_url,
-      }));
+      }))
+      .sort((a, b) => {
+        const rank = (s: PresenceStatus) => (s === "online" ? 0 : s === "idle" ? 1 : 2);
+        const byPresence = rank(a.presenceStatus) - rank(b.presenceStatus);
+        if (byPresence !== 0) return byPresence;
+        return a.name.localeCompare(b.name);
+      });
   }, [data, currentUser?._id]);
 
-  const [roleByMemberId, setRoleByMemberId] = React.useState<Record<string, TeamMemberRole>>({});
-
-  React.useEffect(() => {
-    if (initialMembers.length > 0) {
-      setRoleByMemberId(
-        Object.fromEntries(initialMembers.map((m) => [m.id, m.role])),
-      );
+  const counts = React.useMemo(() => {
+    let online = 0;
+    let idle = 0;
+    let offline = 0;
+    for (const m of members) {
+      if (m.presenceStatus === "online") online += 1;
+      else if (m.presenceStatus === "idle") idle += 1;
+      else offline += 1;
     }
-  }, [initialMembers]);
-
-  const handleRoleChange = React.useCallback((memberId: string, role: TeamMemberRole) => {
-    setRoleByMemberId((prev) => ({ ...prev, [memberId]: role }));
-  }, []);
-
-  const members = React.useMemo(
-    () =>
-      initialMembers.map((m) => ({
-        ...m,
-        role: roleByMemberId[m.id] ?? m.role,
-      })),
-    [initialMembers, roleByMemberId],
-  );
-
+    return { online, idle, offline };
+  }, [members]);
 
   return (
     <Card className="h-fit">
-      <CardHeader className="pb-4">
-        <div className="flex items-start justify-between gap-2">
+      <CardHeader className="pb-2">
+        <div className="flex items-center justify-between gap-2">
           <div>
             <CardTitle className="tracking-tight">Team Members</CardTitle>
-            <CardDescription className="text-sm">
-              Active admins and their current roles.
-            </CardDescription>
           </div>
           <Link
             href="/v2/users"
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm font-medium text-muted-foreground",
-              "transition-colors hover:bg-accent hover:text-accent-foreground",
+              "inline-flex items-center gap-1.5 text-sm font-medium text-muted-foreground",
+              "transition-colors hover:text-accent-foreground",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             )}
           >
@@ -196,56 +103,87 @@ export function TeamMembers() {
         </div>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 pt-0">
-        {isLoading
-          ? Array.from({ length: 5 }).map((_, i) => (
-              // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no stable id
-              <div key={i} className="flex items-center gap-3 rounded-lg py-1">
-                <Skeleton className="size-10 shrink-0 rounded-full" />
-                <div className="flex-1 space-y-1.5">
-                  <Skeleton className="h-4 w-32" />
-                  <Skeleton className="h-3 w-24" />
+        <ScrollArea className="h-[320px] pr-2">
+          <div className="flex flex-col gap-4">
+            {isLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: skeleton rows have no stable id
+                <div key={i} className="flex items-center gap-3 rounded-lg py-1">
+                  <Skeleton className="size-10 shrink-0 rounded-full" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-4 w-32" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <div className="shrink-0 space-y-1 text-right">
+                    <Skeleton className="h-3 w-12 ml-auto" />
+                    <Skeleton className="h-3 w-16 ml-auto" />
+                  </div>
                 </div>
-                <Skeleton className="h-9 w-28 shrink-0 rounded-md" />
+              ))
+            ) : members.length === 0 ? (
+              <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                No active admins found.
               </div>
-            ))
-          : members.map((member, index) => (
-              <div
-                key={member.id}
-                className="flex items-center gap-3 rounded-lg py-1"
-              >
-                <div className="relative shrink-0">
-                  <Avatar className="size-10">
-                    <AvatarImage
-                      src={getProfileAvatarSrc({
-                        profileImageUrl: member.profile_image_url,
-                        seed: member.id,
-                      })}
-                      alt={member.name}
-                    />
-                    <AvatarFallback className="text-xs">
-                      {getInitials(member.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <PresenceDot
-                    online={member.onlineStatus ?? false}
-                    className="absolute bottom-0 right-0 size-3 border-2 border-background"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-semibold text-foreground">{member.name}</p>
-                  <p className="truncate text-sm text-muted-foreground capitalize">
-                    {member.role.replace("_", " ")}
-                  </p>
-                </div>
-                <div className="shrink-0">
-                  <RoleDropdown
-                    memberId={member.id}
-                    value={member.role}
-                    onRoleChange={handleRoleChange}
-                  />
-                </div>
-              </div>
-            ))}
+            ) : (
+              <AnimatePresence initial={false}>
+                {members.map((member) => (
+                  <motion.div
+                    key={member.id}
+                    layout
+                    initial={reduced ? { opacity: 1, y: 0 } : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={reduced ? { opacity: 1 } : { opacity: 0, y: -6 }}
+                    transition={
+                      reduced
+                        ? { duration: 0 }
+                        : { type: "spring", stiffness: 420, damping: 34, mass: 0.7 }
+                    }
+                    className={cn(
+                      "flex items-center gap-3 rounded-lg py-1",
+                      member.presenceStatus === "online" && "text-foreground",
+                    )}
+                    style={{ willChange: "transform, opacity" }}
+                  >
+                    <div className="relative shrink-0">
+                      <Avatar className="size-10">
+                        <AvatarImage
+                          src={getProfileAvatarSrc({
+                            profileImageUrl: member.profile_image_url,
+                            seed: member.id,
+                          })}
+                          alt={member.name}
+                        />
+                        <AvatarFallback className="text-xs">
+                          {getInitials(member.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <PresenceDot
+                        status={member.presenceStatus}
+                        className="absolute bottom-0 right-0 size-3 border-2 border-background"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-semibold text-foreground">{member.name}</p>
+                      <p className="truncate text-sm text-muted-foreground capitalize">
+                        {member.role}
+                      </p>
+                    </div>
+                    <div className="shrink-0 text-right">
+                      <p className={cn("text-xs font-medium", statusColor[member.presenceStatus])}>
+                        {statusLabel[member.presenceStatus]}
+                      </p>
+                      {member.presenceStatus === "offline" && member.lastSeen && (
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                          {formatLastSeen(member.lastSeen)}
+                        </p>
+                      )}
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            )}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

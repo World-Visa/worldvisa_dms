@@ -14,7 +14,7 @@ import type {
   NotificationDeletedEvent,
   NotificationConnectionState,
 } from "@/types/notifications";
-import type { PresenceUpdateEvent } from "@/types/presence";
+import type { PresenceUpdateEvent, PresenceSnapshotEvent } from "@/types/presence";
 
 type Listener<T> = (data: T) => void;
 
@@ -28,6 +28,7 @@ export class NotificationSocketManager {
   private updatedListeners = new Set<Listener<NotificationUpdatedEvent>>();
   private deletedListeners = new Set<Listener<NotificationDeletedEvent>>();
   private presenceListeners = new Set<Listener<PresenceUpdateEvent>>();
+  private presenceSnapshotListeners = new Set<Listener<PresenceSnapshotEvent>>();
   private stateListeners = new Set<(state: NotificationConnectionState) => void>();
 
   private connectionState: NotificationConnectionState = {
@@ -75,6 +76,7 @@ export class NotificationSocketManager {
     this.updatedListeners.clear();
     this.deletedListeners.clear();
     this.presenceListeners.clear();
+    this.presenceSnapshotListeners.clear();
     this.stateListeners.clear();
   }
 
@@ -116,6 +118,28 @@ export class NotificationSocketManager {
       this.presenceListeners.delete(cb);
       this.socket?.off(PRESENCE_SOCKET_EVENTS.UPDATE, cb);
     };
+  }
+
+  onPresenceSnapshot(cb: Listener<PresenceSnapshotEvent>): () => void {
+    this.presenceSnapshotListeners.add(cb);
+    if (this.socket?.connected) this.socket.on(PRESENCE_SOCKET_EVENTS.SNAPSHOT, cb);
+    return () => {
+      this.presenceSnapshotListeners.delete(cb);
+      this.socket?.off(PRESENCE_SOCKET_EVENTS.SNAPSHOT, cb);
+    };
+  }
+
+  sendHeartbeat(): void {
+    this.socket?.emit(PRESENCE_SOCKET_EVENTS.HEARTBEAT);
+  }
+
+  sendActivity(): void {
+    this.socket?.emit(PRESENCE_SOCKET_EVENTS.ACTIVITY);
+  }
+
+  subscribeToUsers(userIds: string[]): void {
+    if (userIds.length === 0) return;
+    this.socket?.emit(PRESENCE_SOCKET_EVENTS.SUBSCRIBE, { userIds });
   }
 
   onConnectionStateChange(cb: (state: NotificationConnectionState) => void): () => void {
@@ -178,6 +202,7 @@ export class NotificationSocketManager {
     for (const cb of this.updatedListeners) s.on(SOCKET_EVENTS.UPDATED, cb);
     for (const cb of this.deletedListeners) s.on(SOCKET_EVENTS.DELETED, cb);
     for (const cb of this.presenceListeners) s.on(PRESENCE_SOCKET_EVENTS.UPDATE, cb);
+    for (const cb of this.presenceSnapshotListeners) s.on(PRESENCE_SOCKET_EVENTS.SNAPSHOT, cb);
   }
 
   private handleError(error: string): void {

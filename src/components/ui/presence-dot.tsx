@@ -1,18 +1,21 @@
 import { cn } from "@/lib/utils";
+import type { PresenceStatus } from "@/types/presence";
 
 interface PresenceDotProps {
-  online: boolean;
+  status: PresenceStatus;
   className?: string;
 }
 
-export function PresenceDot({ online, className }: PresenceDotProps) {
+const statusStyles: Record<PresenceStatus, string> = {
+  online:  "bg-green-500",
+  idle:    "bg-amber-400",
+  offline: "bg-muted-foreground/40",
+};
+
+export function PresenceDot({ status, className }: PresenceDotProps) {
   return (
     <span
-      className={cn(
-        "rounded-full",
-        online ? "bg-green-500" : "bg-muted-foreground/40",
-        className,
-      )}
+      className={cn("rounded-full", statusStyles[status], className)}
     />
   );
 }

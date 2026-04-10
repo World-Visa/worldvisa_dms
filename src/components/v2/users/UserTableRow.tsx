@@ -224,7 +224,7 @@ export const UserTableRow = React.memo(function UserTableRow({
               </AvatarFallback>
             </Avatar>
             <PresenceDot
-              online={onlineStatus}
+              status={user.presence_status ?? (onlineStatus ? "online" : "offline")}
               className="absolute bottom-0 right-0 size-3 translate-x-1/4 translate-y-1/4 border-2 border-background transition-colors duration-200 group-hover:border-primary"
             />
           </div>
