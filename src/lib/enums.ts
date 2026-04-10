@@ -36,3 +36,11 @@ export enum DocumentStatus {
   RequestReview = "request_review",
   Rejected = "rejected",
 }
+
+export enum StepTypeEnum {
+  IN_APP = 'in_app',
+  EMAIL = 'email',
+  CALL = 'call',
+  PUSH = 'push',
+  CHAT = 'chat',
+}

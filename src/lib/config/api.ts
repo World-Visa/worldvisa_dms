@@ -137,6 +137,10 @@ export function getFullUrl(
 }
 
 export const API_ENDPOINTS = {
+  ANALYTICS: {
+    DASHBOARD: (period: number) =>
+      `${ZOHO_BASE_URL}/visa_applications/admin/analytics?period=${period}`,
+  },
   VISA_APPLICATIONS: {
     LIST: (params?: string) =>
       `${ZOHO_BASE_URL}/visa_applications${params ? `?${params}` : ""}`,
