@@ -12,7 +12,9 @@ export interface AdminUserV2 {
   role: "master_admin" | "admin" | "team_leader" | "supervisor";
   __v: number;
   last_login?: string;
-  online_status?: boolean;
+  online_status?: boolean;       // backward compat boolean
+  presence_status?: import('@/types/presence').PresenceStatus;
+  lastSeen?: string | null;
   profile_image_url?: string;
   email?: string;
   account_status?: AccountStatus;
