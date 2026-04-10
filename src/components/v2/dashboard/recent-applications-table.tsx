@@ -3,8 +3,7 @@
 
 import { DataTable } from "@/components/v2/datatable/data-table";
 import { DataTablePagination } from "@/components/v2/datatable/data-table-pagination";
-import { DataTableViewOptions } from "@/components/v2/datatable/data-table-view-options";
-import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useDataTableInstance } from "@/hooks/use-data-table-instance";
 import type { RecentApplication } from "@/types/dashboard";
@@ -24,16 +23,12 @@ export function RecentApplicationsTable({ data = [], isLoading }: RecentApplicat
   });
 
   return (
-    <div className="grid grid-cols-1 gap-4 *:data-[slot=card]:shadow-xs">
+    <div className="grid grid-cols-1">
       <Card>
         <CardHeader>
           <CardTitle>Recent Applications</CardTitle>
-          <CardDescription>Latest visa applications submitted across all stages.</CardDescription>
-          <CardAction>
-            <DataTableViewOptions table={table} />
-          </CardAction>
         </CardHeader>
-        <CardContent className="flex size-full flex-col gap-4">
+        <CardContent className="">
           {isLoading ? (
             <div className="space-y-2">
               {Array.from({ length: 6 }).map((_, i) => (
@@ -43,7 +38,7 @@ export function RecentApplicationsTable({ data = [], isLoading }: RecentApplicat
             </div>
           ) : (
             <>
-              <div className="overflow-hidden rounded-md border">
+              <div className="overflow-hidden">
                 <DataTable table={table} columns={applicationColumns} />
               </div>
               {data.length > 10 && <DataTablePagination table={table} />}
