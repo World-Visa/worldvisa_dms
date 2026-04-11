@@ -2,15 +2,15 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { searchApplications, isValidSearchParams } from "@/lib/search";
-import { SearchParams } from "@/types/applications";
+import type { ApplicationsResponse, SearchParams } from "@/types/applications";
 
 export const useSearchApplications = (searchParams: SearchParams) => {
   const hasValidParams = isValidSearchParams(searchParams);
 
-  return useQuery({
+  return useQuery<ApplicationsResponse>({
     queryKey: ["search-applications", searchParams],
     queryFn: () => searchApplications(searchParams),
-    enabled: hasValidParams, // Only run query if we have valid search parameters
+    enabled: hasValidParams,
     staleTime: 1000 * 60, // 1 minute
     retry: 2,
     refetchOnWindowFocus: false,

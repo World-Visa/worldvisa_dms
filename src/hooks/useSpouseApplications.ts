@@ -5,9 +5,11 @@ import {
   getSpouseApplications,
   searchSpouseApplications,
 } from "@/lib/api/spouseApplications";
-import {
+import { isValidSearchParams } from "@/lib/search";
+import type {
   ApplicationsResponse,
   ApplicationsFilters,
+  SearchParams,
 } from "@/types/applications";
 
 /**
@@ -29,18 +31,15 @@ export const useSpouseApplications = (filters: ApplicationsFilters) => {
 };
 
 /**
- * Hook to search spouse applications by name, phone, or email
+ * Hook to search spouse applications via the same list endpoint as browsing.
  */
-export const useSearchSpouseApplications = (searchParams: {
-  name?: string;
-  phone?: string;
-  email?: string;
-  country?: string;
-}) => {
+export const useSearchSpouseApplications = (searchParams: SearchParams) => {
+  const hasValidParams = isValidSearchParams(searchParams);
+
   return useQuery<ApplicationsResponse>({
     queryKey: ["spouse-applications-search", searchParams],
     queryFn: () => searchSpouseApplications(searchParams),
-    enabled: !!(searchParams.name || searchParams.phone || searchParams.email),
+    enabled: hasValidParams,
     placeholderData: (prev) => prev,
     staleTime: 1000 * 60, // 1 minute
     retry: 2,

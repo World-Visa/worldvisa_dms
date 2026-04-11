@@ -145,8 +145,6 @@ export const API_ENDPOINTS = {
     LIST: (params?: string) =>
       `${ZOHO_BASE_URL}/visa_applications${params ? `?${params}` : ""}`,
     BY_ID: (id: string) => `${ZOHO_BASE_URL}/visa_applications/${id}`,
-    SEARCH: (params: string) =>
-      `${ZOHO_BASE_URL}/visa_applications/search?${params}`,
     UPDATE_FIELDS: `${ZOHO_BASE_URL}/visa_applications/update_fields`,
     QUALITY_CHECK: `${ZOHO_BASE_URL}/visa_applications/quality_check`,
     DEADLINE_STATS: (params: string) =>
@@ -198,8 +196,6 @@ export const API_ENDPOINTS = {
     SPOUSE: {
       LIST: (params: string) =>
         `${ZOHO_BASE_URL}/visa_applications/spouse/applications?${params}`,
-      SEARCH: (params: string) =>
-        `${ZOHO_BASE_URL}/visa_applications/spouse/applications/search?${params}`,
       BY_ID: (id: string) =>
         `${ZOHO_BASE_URL}/visa_applications/spouse/applications/${id}`,
       NOTES: (id: string) =>

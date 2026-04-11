@@ -8,7 +8,6 @@ import { resolveCountry } from "@/lib/applications/utils";
 import type {
   Country,
   DeadlineCategory,
-  SearchType,
   ApplicationStateFilter,
   ApplicationsFilters,
   SearchParams,
@@ -23,7 +22,6 @@ export interface ApplicationsListState {
   selectedCountry: Country;
   page: number;
   search: string;
-  searchType: SearchType;
   searchQuery: string;
   handledBy: string[];
   applicationStage: string[];
@@ -37,7 +35,6 @@ export interface ApplicationsListState {
   handleCountryChange: (country: Country) => void;
   handlePageChange: (newPage: number) => void;
   handleSearchChange: (value: string) => void;
-  handleSearchTypeChange: (type: SearchType) => void;
   handleSearchClick: () => Promise<void>;
   handleKeyPress: (e: React.KeyboardEvent) => void;
   handleHandledByChange: (value: string[]) => void;
@@ -58,7 +55,6 @@ export function useApplicationsListState({
   );
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
-  const [searchType, setSearchType] = useState<SearchType>("name");
   const [searchQuery, setSearchQuery] = useState("");
   const [handledBy, setHandledBy] = useState<string[]>([]);
   const [applicationStage, setApplicationStage] = useState<string[]>([]);
@@ -88,11 +84,13 @@ export function useApplicationsListState({
   // ── Derived: search params memo ──────────────────────────────────────────
   const searchParamsForAPI = useMemo<SearchParams>(() => {
     if (!searchQuery.trim()) return {};
-    const params: SearchParams = {};
-    params[searchType] = searchQuery.trim();
-    params.country = selectedCountry;
-    return params;
-  }, [searchQuery, searchType, selectedCountry]);
+    return {
+      search: searchQuery.trim(),
+      country: selectedCountry,
+      page,
+      limit: 20,
+    };
+  }, [searchQuery, selectedCountry, page]);
 
   // ── URL sync effects ─────────────────────────────────────────────────────
   useEffect(() => {
@@ -151,10 +149,6 @@ export function useApplicationsListState({
     setSearch(value);
   }, []);
 
-  const handleSearchTypeChange = useCallback((type: SearchType) => {
-    setSearchType(type);
-  }, []);
-
   const handleSearchClick = useCallback(async () => {
     if (search.trim()) {
       await measureAsync(async () => {
@@ -203,7 +197,6 @@ export function useApplicationsListState({
   const handleClearFilters = useCallback(() => {
     setSearch("");
     setSearchQuery("");
-    setSearchType("name");
     setHandledBy([]);
     setApplicationStage([]);
     setApplicationState(undefined);
@@ -220,7 +213,6 @@ export function useApplicationsListState({
     selectedCountry,
     page,
     search,
-    searchType,
     searchQuery,
     handledBy,
     applicationStage,
@@ -232,7 +224,6 @@ export function useApplicationsListState({
     handleCountryChange,
     handlePageChange,
     handleSearchChange,
-    handleSearchTypeChange,
     handleSearchClick,
     handleKeyPress,
     handleHandledByChange,

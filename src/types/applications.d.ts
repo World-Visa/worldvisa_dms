@@ -135,7 +135,6 @@ export interface ApplicationsResponse {
 export interface ApplicationsFilters {
   page: number;
   limit: number;
-  search?: string;
   handledBy?: string[];
   applicationStage?: string[];
   applicationState?: "Active" | "In-Active";
@@ -143,12 +142,12 @@ export interface ApplicationsFilters {
   country?: string;
 }
 
+/** Query params for visa/spouse application list search (unified with listing endpoint). */
 export interface SearchParams {
-  name?: string;
-  phone?: string;
-  email?: string;
-  word?: string;
+  search?: string;
   country?: string;
+  page?: number;
+  limit?: number;
 }
 
 export type Country = "Australia" | "Canada";
@@ -158,8 +157,6 @@ export type DeadlineCategory =
   | "overdue"
   | "noDeadline"
   | "future";
-
-export type SearchType = "name" | "phone" | "email";
 
 export type ApplicationStateFilter = "Active" | "In-Active";
 

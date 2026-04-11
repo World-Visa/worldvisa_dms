@@ -25,4 +25,5 @@ export const ROUTES = {
   APPROVAL_REQUESTS: '/v2/approval-requests',
   ANALYTICS: '/v2/analytics',
   VISA_APPLICATIONS: '/v2/applications',
+  CALL_LOGS: '/v2/call-logs',
 } as const;

@@ -3,6 +3,7 @@ import {
   ApplicationsResponse,
   ApplicationsFilters,
   ApplicationDetailsResponse,
+  SearchParams,
 } from "@/types/applications";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 
@@ -41,20 +42,21 @@ export async function getSpouseApplications(
   return fetcher<ApplicationsResponse>(url);
 }
 
-export async function searchSpouseApplications(searchParams: {
-  name?: string;
-  phone?: string;
-  email?: string;
-  country?: string;
-}): Promise<ApplicationsResponse> {
+export async function searchSpouseApplications(
+  params: SearchParams,
+): Promise<ApplicationsResponse> {
+  const term = params.search?.trim();
+  if (!term) {
+    throw new Error("A search term is required");
+  }
+
   const urlParams = new URLSearchParams();
+  urlParams.set("search", term);
+  if (params.country) urlParams.set("country", params.country);
+  if (params.page != null) urlParams.set("page", String(params.page));
+  if (params.limit != null) urlParams.set("limit", String(params.limit));
 
-  if (searchParams.name) urlParams.append("name", searchParams.name);
-  if (searchParams.phone) urlParams.append("phone", searchParams.phone);
-  if (searchParams.email) urlParams.append("email", searchParams.email);
-  if (searchParams.country) urlParams.append("country", searchParams.country);
-
-  const url = `${ZOHO_BASE_URL}/visa_applications/spouse/applications/search?${urlParams.toString()}`;
+  const url = `${ZOHO_BASE_URL}/visa_applications/spouse/applications?${urlParams.toString()}`;
 
   return fetcher<ApplicationsResponse>(url);
 }

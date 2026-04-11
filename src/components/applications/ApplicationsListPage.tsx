@@ -20,7 +20,6 @@ import type {
   ApplicationsResponse,
   SearchParams,
   EnabledFilters,
-  VisaApplication,
 } from "@/types/applications";
 
 const LazyApplicationsTable = lazy(() =>
@@ -28,11 +27,6 @@ const LazyApplicationsTable = lazy(() =>
     default: module.ApplicationsTable,
   })),
 );
-
-
-interface SearchableResponse {
-  data: VisaApplication[];
-}
 
 
 interface CountryTabNavProps {
@@ -103,7 +97,7 @@ interface ApplicationsListPageProps {
   ) => UseQueryResult<ApplicationsResponse>;
   useSearchHook: (
     params: SearchParams,
-  ) => UseQueryResult<SearchableResponse>;
+  ) => UseQueryResult<ApplicationsResponse>;
   type: "visa" | "spouse";
   getTitle: (country: Country) => string;
   enabledFilters: EnabledFilters;
@@ -134,7 +128,6 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
     selectedCountry,
     page,
     search,
-    searchType,
     searchQuery,
     handledBy,
     applicationStage,

@@ -4,10 +4,10 @@ import Image from "next/image";
 import { X } from "lucide-react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import { buildMcubeWidgetIframeSrc } from "@/lib/constants/mcube";
+import { McubeSoftphoneIframe } from "@/components/mcube/McubeSoftphoneIframe";
 import { useMcubePhoneStore } from "@/store/mcubePhoneStore";
 import { cn } from "@/lib/utils";
-
-const MCUBE_WIDGET_BASE = "https://mcube.vmc.in/widget-dev/Phone/auth";
 
 export function McubePhoneWidget() {
   const { user } = useAuth();
@@ -20,7 +20,7 @@ export function McubePhoneWidget() {
 
   if (!mcubeUsername || !authToken) return null;
 
-  const iframeSrc = `${MCUBE_WIDGET_BASE}?username=${encodeURIComponent(mcubeUsername)}&auth_token=${encodeURIComponent(authToken)}`;
+  const iframeSrc = buildMcubeWidgetIframeSrc(mcubeUsername, authToken);
 
   const panelTransition = reduceMotion
     ? { duration: 0 }
@@ -41,13 +41,7 @@ export function McubePhoneWidget() {
             exit={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 }}
             transition={panelTransition}
           >
-            <iframe
-              src={iframeSrc}
-              title="MCube Softphone"
-              className="min-h-0 flex-1 h-full w-full border-0 bg-white"
-              allow="microphone; camera"
-              sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-            />
+            <McubeSoftphoneIframe src={iframeSrc} />
           </motion.div>
         )}
       </AnimatePresence>
@@ -57,7 +51,10 @@ export function McubePhoneWidget() {
         onClick={toggle}
         aria-label={isOpen ? "Close softphone" : "Open softphone"}
         aria-expanded={isOpen}
-        className={cn("fixed bottom-4 right-4 z-50 flex items-center justify-center size-12 rounded-full hover:shadow-lg border-none ring-1 ring-black/1 transition-transform hover:scale-105 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring", isOpen && "shadow-lg bg-error/10 backdrop-blur-sm")}
+        className={cn(
+          "fixed bottom-4 right-4 z-50 flex size-12 items-center justify-center rounded-full border-none ring-1 ring-black/1 transition-transform hover:scale-105 hover:shadow-lg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+          isOpen && "bg-error/10 shadow-lg backdrop-blur-sm",
+        )}
       >
         {isOpen ? (
           <X className="size-5 text-error" aria-hidden />
