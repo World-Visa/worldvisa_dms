@@ -14,6 +14,7 @@ import { NotificationDropdown } from "@/components/v2/header/notification-dropdo
 import { AccountSwitcher } from "@/components/v2/sidebar/account-switcher";
 import { ContentArea } from "@/app/(admin-v2)/content-area";
 import { SidebarController } from "@/app/(admin-v2)/sidebar-controller";
+import { McubePhoneWidgetLoader } from "@/components/mcube/McubePhoneWidgetLoader";
 
 function AdminContentFallback() {
   return (
@@ -77,6 +78,9 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
           </Suspense>
         </div>
       </SidebarInset>
+
+      <McubePhoneWidgetLoader />
+
     </SidebarProvider>
   );
 }

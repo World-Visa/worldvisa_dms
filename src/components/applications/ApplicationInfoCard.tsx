@@ -9,13 +9,14 @@
 
 "use client";
 
+import { useState } from "react";
 import { motion, useReducedMotion } from "framer-motion";
-import Image from "next/image";
 import Link from "next/link";
 import { BadgeCheck } from "lucide-react";
 import { RiMessage3Fill } from "react-icons/ri";
 import { CopyButton } from "@/components/ui/primitives/copy-button";
 import { formatDate } from "@/utils/format";
+import { PhoneInfoField } from "@/components/applications/PhoneInfoField";
 import type { Application } from "@/types/applications";
 
 // ─── Spring configs (identical to QCActionCard) ───────────
@@ -237,7 +238,7 @@ export function ApplicationInfoCard({ application, isSpouseApplication }: Applic
               <SectionLabel>Personal Information</SectionLabel>
               <InfoField label="Full Name" value={formatValue(application.Name)} />
               <InfoField label="Email" value={formatValue(application.Email)} />
-              <InfoField label="Phone" value={formatValue(application.Phone)} />
+              <PhoneInfoField label="Phone" value={formatValue(application.Phone)} reduced={Boolean(reduced)} />
               {isSpouseApplication ? (
                 <InfoField
                   label="Main Applicant"

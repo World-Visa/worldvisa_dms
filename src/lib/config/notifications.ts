@@ -20,9 +20,15 @@ export const NOTIFICATION_ENDPOINTS = {
 
 // WebSocket event types
 export const SOCKET_EVENTS = {
-  NEW: "notification:new",
+  NEW:     "notification:new",
   UPDATED: "notification:updated",
   DELETED: "notification:deleted",
+} as const;
+
+// Call-log real-time events (emitted by mcubeWebhookController)
+export const CALL_LOG_SOCKET_EVENTS = {
+  NEW:     "call-log:new",
+  UPDATED: "call-log:updated",
 } as const;
 
 // Connection configuration

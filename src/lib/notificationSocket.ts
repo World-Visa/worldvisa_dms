@@ -5,6 +5,7 @@ import {
   NOTIFICATION_API_BASE_URL,
   NOTIFICATION_ENDPOINTS,
   SOCKET_EVENTS,
+  CALL_LOG_SOCKET_EVENTS,
   CONNECTION_CONFIG,
 } from "@/lib/config/notifications";
 import { PRESENCE_SOCKET_EVENTS } from "@/lib/config/presence";
@@ -15,6 +16,7 @@ import type {
   NotificationConnectionState,
 } from "@/types/notifications";
 import type { PresenceUpdateEvent, PresenceSnapshotEvent } from "@/types/presence";
+import type { CallLog } from "@/types/callLog";
 
 type Listener<T> = (data: T) => void;
 
@@ -30,6 +32,8 @@ export class NotificationSocketManager {
   private presenceListeners = new Set<Listener<PresenceUpdateEvent>>();
   private presenceSnapshotListeners = new Set<Listener<PresenceSnapshotEvent>>();
   private stateListeners = new Set<(state: NotificationConnectionState) => void>();
+  private callLogNewListeners = new Set<Listener<CallLog>>();
+  private callLogUpdatedListeners = new Set<Listener<CallLog>>();
 
   private connectionState: NotificationConnectionState = {
     isConnected: false,
@@ -78,6 +82,8 @@ export class NotificationSocketManager {
     this.presenceListeners.clear();
     this.presenceSnapshotListeners.clear();
     this.stateListeners.clear();
+    this.callLogNewListeners.clear();
+    this.callLogUpdatedListeners.clear();
   }
 
   isConnected(): boolean {
@@ -126,6 +132,24 @@ export class NotificationSocketManager {
     return () => {
       this.presenceSnapshotListeners.delete(cb);
       this.socket?.off(PRESENCE_SOCKET_EVENTS.SNAPSHOT, cb);
+    };
+  }
+
+  onCallLogNew(cb: Listener<CallLog>): () => void {
+    this.callLogNewListeners.add(cb);
+    if (this.socket?.connected) this.socket.on(CALL_LOG_SOCKET_EVENTS.NEW, cb);
+    return () => {
+      this.callLogNewListeners.delete(cb);
+      this.socket?.off(CALL_LOG_SOCKET_EVENTS.NEW, cb);
+    };
+  }
+
+  onCallLogUpdated(cb: Listener<CallLog>): () => void {
+    this.callLogUpdatedListeners.add(cb);
+    if (this.socket?.connected) this.socket.on(CALL_LOG_SOCKET_EVENTS.UPDATED, cb);
+    return () => {
+      this.callLogUpdatedListeners.delete(cb);
+      this.socket?.off(CALL_LOG_SOCKET_EVENTS.UPDATED, cb);
     };
   }
 
@@ -203,6 +227,8 @@ export class NotificationSocketManager {
     for (const cb of this.deletedListeners) s.on(SOCKET_EVENTS.DELETED, cb);
     for (const cb of this.presenceListeners) s.on(PRESENCE_SOCKET_EVENTS.UPDATE, cb);
     for (const cb of this.presenceSnapshotListeners) s.on(PRESENCE_SOCKET_EVENTS.SNAPSHOT, cb);
+    for (const cb of this.callLogNewListeners) s.on(CALL_LOG_SOCKET_EVENTS.NEW, cb);
+    for (const cb of this.callLogUpdatedListeners) s.on(CALL_LOG_SOCKET_EVENTS.UPDATED, cb);
   }
 
   private handleError(error: string): void {

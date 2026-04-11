@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo } from 'react';
 import { Bar, BarChart, Cell, XAxis, YAxis } from 'recharts';
-import type { ApplicationCategoryItem } from '@/api/activity';
+import type { ApplicationCategoryItem } from '@/types/analytics';
 import { ChartConfig, ChartContainer, ChartTooltip, DmsTooltip } from '@/components/ui/primitives/chart';
 import { ANALYTICS_TOOLTIPS } from '../constants/analytics-tooltips';
 import { createVolumeBasedHasDataChecker } from '@/utils/chart-validation';

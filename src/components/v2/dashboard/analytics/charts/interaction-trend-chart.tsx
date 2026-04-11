@@ -2,7 +2,7 @@
 
 import { Fragment, useCallback, useId, useMemo } from 'react';
 import { Area, AreaChart, XAxis, YAxis } from 'recharts';
-import type { DailyInteractionPoint } from '@/api/activity';
+import type { DailyInteractionPoint } from '@/types/analytics';
 import { ChartConfig, ChartContainer, ChartTooltip } from '@/components/ui/primitives/chart';
 import { ANALYTICS_TOOLTIPS } from '../constants/analytics-tooltips';
 import { createDateBasedHasDataChecker } from '@/utils/chart-validation';

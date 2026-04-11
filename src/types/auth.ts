@@ -11,6 +11,7 @@ export interface ClerkPublicMetadata {
   user_id?: string;
   lead_id?: string;
   username?: string;
+  mcube_username?: string;
 }
 
 /** Stable user shape consumed by 40+ components via useAuth() */
@@ -20,6 +21,7 @@ export interface AppUser {
   email?: string;
   username?: string;
   lead_id?: string;
+  mcube_username?: string;
 }
 
 export interface JWTPayload {

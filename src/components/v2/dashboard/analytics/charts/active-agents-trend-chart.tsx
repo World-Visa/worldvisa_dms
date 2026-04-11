@@ -2,7 +2,7 @@
 
 import { cn } from '@/lib/utils';
 import { getInitials, formatRole } from '@/lib/constants/users';
-import type { ActiveAgent } from '@/api/activity';
+import type { ActiveAgent } from '@/types/analytics';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/primitives/card';
 import { HelpTooltipIndicator } from '@/components/ui/primitives/help-tooltip-indicator';
