@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
-import type { DailyDeliveryPoint } from '@/api/activity';
+import type { DailyDeliveryPoint } from '@/types/analytics';
 import { STEP_TYPE_TO_ICON } from '@/components/icons/utils';
 import { ChartConfig, ChartContainer, ChartTooltip, DmsTooltip } from '@/components/ui/primitives/chart';
 import { ANALYTICS_TOOLTIPS } from '../constants/analytics-tooltips';

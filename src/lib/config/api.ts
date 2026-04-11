@@ -226,6 +226,13 @@ export const API_ENDPOINTS = {
     },
     INVITE: `${ZOHO_BASE_URL}/clients/invite`,
   },
+  MCUBE: {
+    OUTBOUND_CALL: `${API_BASE_URL}/api/mcube/calls/outbound`,
+  },
+  CALL_LOGS: {
+    LIST:  (params?: string) => `${API_BASE_URL}/api/mcube/call-logs${params ? `?${params}` : ''}`,
+    BY_ID: (callId: string)  => `${API_BASE_URL}/api/mcube/call-logs/${callId}`,
+  },
   USERS: {
     ALL: (params: string) => `${ZOHO_BASE_URL}/users/all?${params}`,
     BY_ID: (id: string) => `${ZOHO_BASE_URL}/users/${id}`,

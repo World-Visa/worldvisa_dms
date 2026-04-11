@@ -23,6 +23,7 @@ export function useAuth() {
             ? meta?.username ?? clerkUser.username ?? clerkUser.fullName ?? undefined
             : clerkUser.username ?? clerkUser.fullName ?? undefined,
           lead_id: meta?.lead_id,
+          mcube_username: meta?.mcube_username,
         }
       : null;
 

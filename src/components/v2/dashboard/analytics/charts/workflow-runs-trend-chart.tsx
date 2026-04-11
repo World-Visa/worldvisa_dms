@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { useCallback, useId, useMemo } from 'react';
 import { Area, ComposedChart, XAxis, YAxis } from 'recharts';
 import Link from 'next/link';
-import type { DailyLodgementPoint } from '@/api/activity';
+import type { DailyLodgementPoint } from '@/types/analytics';
 import { ChartConfig, ChartContainer, ChartTooltip, DmsTooltip } from '@/components/ui/primitives/chart';
 import { ANALYTICS_TOOLTIPS } from '../constants/analytics-tooltips';
 import { createDateBasedHasDataChecker } from '@/utils/chart-validation';

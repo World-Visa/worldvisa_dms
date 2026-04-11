@@ -6,7 +6,7 @@ import { AnalyticsPageSkeleton } from './analytics-page-skeleton';
 import { AnalyticsSection } from './analytics/analytics-section';
 import { ChartsSection } from './analytics/charts-section';
 import { WorkflowRunsTrendChart } from './analytics/charts/workflow-runs-trend-chart';
-import { ActiveSubscribersTrendChart } from './analytics/charts/active-subscribers-trend-chart';
+import { ActiveSubscribersTrendChart } from './analytics/charts/active-agents-trend-chart';
 import { ProvidersByVolume } from './analytics/charts/providers-by-volume';
 import { useDelayedLoading } from '@/hooks/use-delayed-loading';
 import { useAnalyticsData } from '@/hooks/use-analytics-data';

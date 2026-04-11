@@ -9,6 +9,9 @@ export interface UserDetailInfo {
   last_login: string | null;
   online_status?: boolean;
   profile_image_url?: string;
+  agent_number?: string;
+  mcube_username?: string;
+  clerk_id?: string;
 }
 
 export interface ReviewDocument {
