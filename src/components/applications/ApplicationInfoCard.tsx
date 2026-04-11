@@ -18,6 +18,7 @@ import { CopyButton } from "@/components/ui/primitives/copy-button";
 import { formatDate } from "@/utils/format";
 import { PhoneInfoField } from "@/components/applications/PhoneInfoField";
 import type { Application } from "@/types/applications";
+import Image from "next/image";
 
 // ─── Spring configs (identical to QCActionCard) ───────────
 const SPRING = { type: "spring" as const, stiffness: 240, damping: 22 };
@@ -238,7 +239,7 @@ export function ApplicationInfoCard({ application, isSpouseApplication }: Applic
               <SectionLabel>Personal Information</SectionLabel>
               <InfoField label="Full Name" value={formatValue(application.Name)} />
               <InfoField label="Email" value={formatValue(application.Email)} />
-              <PhoneInfoField label="Phone" value={formatValue(application.Phone)} reduced={Boolean(reduced)} />
+              {/* <PhoneInfoField label="Phone" value={formatValue(application.Phone)} reduced={Boolean(reduced)} /> */}
               {isSpouseApplication ? (
                 <InfoField
                   label="Main Applicant"
