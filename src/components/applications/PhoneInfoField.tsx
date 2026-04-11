@@ -9,7 +9,7 @@ import { useJiggle } from "@/hooks/useJiggle";
 import { initiateOutboundCall } from "@/lib/api/mcube";
 import { useAuth } from "@/hooks/useAuth";
 import { useUserDetails } from "@/hooks/useUserDetails";
-import { useMcubePhoneStore } from "@/store/mcubePhoneStore";
+import { useLayoutStore } from "@/store/layoutStore";
 
 const FF: React.CSSProperties = { fontFeatureSettings: "'ss11', 'calt' 0" };
 
@@ -30,7 +30,7 @@ export function PhoneInfoField({ label, value, reduced }: PhoneInfoFieldProps) {
 
   const handleCall = useCallback(async () => {
     if (!isProvided || isPending) return;
-    useMcubePhoneStore.getState().open();
+    useLayoutStore.getState().openPhonePanel();
     setIsPending(true);
     const toastId = toast.loading("Connecting call…");
     try {
