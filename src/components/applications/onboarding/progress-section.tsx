@@ -16,7 +16,7 @@ import { PointingArrow } from "@/components/icons/pointing-arrows";
 import { useInviteClient, useRevokeClientInvitation } from "@/hooks/useUserMutations";
 import { useCreateClientAccount } from "@/hooks/useActivateAccount";
 import { useOnboardingSteps, type StepStatus } from "@/hooks/use-onboarding-steps";
-import type { Application, ApplicationOnboarding } from "@/types/applications";
+import type { Application, ApplicationDetailsResponse, ApplicationOnboarding } from "@/types/applications";
 import { cn } from "@/lib/utils";
 import { InlineToast } from "@/components/ui/primitives/inline-toast";
 
@@ -202,6 +202,26 @@ export function ProgressSection({ applicationId, application, onboarding }: Prog
 
   const accountComplete = steps[0]?.status === "completed";
 
+  const updateOnboardingCache = (patch: Partial<ApplicationOnboarding>) => {
+    queryClient.setQueryData<ApplicationDetailsResponse>(
+      ["application", applicationId],
+      (old) => {
+        if (!old?.data.application_onboarding) return old;
+        return {
+          ...old,
+          data: {
+            ...old.data,
+            application_onboarding: {
+              ...old.data.application_onboarding,
+              ...patch,
+            },
+          },
+        };
+      },
+    );
+    queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
+  };
+
   const handleCreate = () => {
     if (!application?.Email) return;
     createAccount.mutate(
@@ -214,9 +234,7 @@ export function ProgressSection({ applicationId, application, onboarding }: Prog
         record_type: application.Record_Type ?? "",
       },
       {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
-        },
+        onSuccess: () => updateOnboardingCache({ client_record_exists: true }),
       },
     );
   };
@@ -224,9 +242,7 @@ export function ProgressSection({ applicationId, application, onboarding }: Prog
   const handleInvite = () => {
     if (!application?.Email) return;
     inviteClient.mutate(application.Email, {
-      onSuccess: () => {
-        queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
-      },
+      onSuccess: () => updateOnboardingCache({ clerk_invitation_id: "pending" }),
     });
   };
 
@@ -235,9 +251,7 @@ export function ProgressSection({ applicationId, application, onboarding }: Prog
     revokeInvitation.mutate(
       { invitationId: onboarding.clerk_invitation_id },
       {
-        onSuccess: () => {
-          queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
-        },
+        onSuccess: () => updateOnboardingCache({ clerk_invitation_id: null }),
       },
     );
   };
