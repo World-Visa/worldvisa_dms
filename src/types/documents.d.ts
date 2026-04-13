@@ -25,7 +25,7 @@ export interface DocumentChecklistItem {
 
 export interface Company {
   name: string;
-  fromDate: string; // Format: "YYYY-MM-DD"
+  fromDate: string; // Format: "YYYY-MM-DD" 
   toDate: string | null; // Format: "YYYY-MM-DD" or null for current employment
   isCurrentEmployment: boolean; // true if currently working at this company
   category: string; // Format: "WorldVisa Company Documents"

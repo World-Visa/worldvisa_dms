@@ -6,8 +6,8 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+  DialogClose,
+} from "@/components/ui/primitives/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { useAddDocument } from "@/hooks/useMutationsDocuments";
@@ -17,14 +17,7 @@ import { useClientReuploadDocument } from "@/hooks/useClientDocumentMutations";
 import { useDocumentData } from "@/hooks/useDocumentData";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import {
-  Upload,
-  X,
-  FileText,
-  File,
-  RotateCcw,
-} from "lucide-react";
+import { Upload, X, FileText, File, RotateCcw } from "lucide-react";
 import {
   DocumentUploadModalProps,
   UploadDocumentsModalProps,
@@ -38,11 +31,23 @@ import {
   generatePastEmploymentDescription,
 } from "@/utils/dateCalculations";
 import { getChecklistDocumentMeta } from "@/lib/documents/metadata";
+import { resolveFileFormats, isFileValid } from "@/lib/documents/fileFormats";
+import {
+  MAX_FILE_SIZE_BYTES,
+  MAX_TOTAL_SIZE_BYTES,
+  DEFAULT_MAX_FILES,
+} from "@/lib/documents/uploadLimits";
 import { InlineToast } from "@/components/ui/primitives/inline-toast";
 import { SampleDocumentModal } from "./SampleDocumentModal";
 import { useChecklistTemplateForDocument } from "@/hooks/useChecklistTemplateForDocument";
-
-// ─── Module-scope helpers ─────────────────────────────────────────────────────
+import {
+  showErrorToast,
+  showSuccessToast,
+  showWarningToast,
+} from "../ui/primitives/sonner-helpers";
+import { RiDeleteBin2Line, RiDeleteBin3Line, RiFileAddLine, RiFileUploadFill, RiFileUploadLine } from "react-icons/ri";
+import { CompactButton } from "../ui/primitives/button-compact";
+import { cn } from "@/lib/utils";
 
 interface FileRowProps {
   uploadedFile: UploadedFile;
@@ -52,7 +57,7 @@ interface FileRowProps {
 
 function getFileTypeIcon(fileName: string): React.ReactNode {
   const lower = fileName.toLowerCase();
-  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
     return <File className="h-5 w-5 shrink-0 text-emerald-600" />;
   }
   if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
@@ -63,9 +68,7 @@ function getFileTypeIcon(fileName: string): React.ReactNode {
   }
   return (
     <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-100">
-      <span className="text-[10px] font-semibold uppercase text-red-700">
-        PDF
-      </span>
+      <span className="text-[10px] font-semibold uppercase text-red-700">PDF</span>
     </div>
   );
 }
@@ -84,43 +87,29 @@ function FileRow({ uploadedFile, isUploading, onRemove }: FileRowProps) {
         {isUploading && (
           <div className="mt-2 space-y-1">
             <Progress value={uploadedFile.progress} className="h-1.5" />
-            <p className="text-xs text-muted-foreground">
-              {uploadedFile.progress}%
-            </p>
+            <p className="text-xs text-muted-foreground">{uploadedFile.progress}%</p>
           </div>
         )}
       </div>
       {!isUploading && (
-        <Button
-          type="button"
+        <CompactButton
+          icon={RiDeleteBin3Line}
           variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive"
+          size="md"
+          className="text-muted-foreground hover:text-destructive cursor-pointer"
           onClick={onRemove}
           aria-label="Remove file"
-        >
-          <X className="h-4 w-4" />
-        </Button>
+         />
       )}
     </li>
   );
 }
 
-
-const ACCEPT_IMAGE = ".jpg,.jpeg,image/jpeg,image/jpg";
-const ACCEPT_DOCUMENTS =
-  ".pdf,.doc,.docx,.txt,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain";
-
-
 export function UploadDocumentsModal(props: DocumentUploadModalProps) {
   const isReupload = props.mode === "reupload";
 
-  const uploadProps = isReupload
-    ? undefined
-    : (props as UploadDocumentsModalProps);
-  const reuploadProps = isReupload
-    ? (props as ReuploadDocumentModalProps)
-    : undefined;
+  const uploadProps = isReupload ? undefined : (props as UploadDocumentsModalProps);
+  const reuploadProps = isReupload ? (props as ReuploadDocumentModalProps) : undefined;
 
   const {
     isOpen,
@@ -135,8 +124,9 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>(
     uploadProps?.selectedDocumentType ?? "",
   );
-  const [selectedDocumentCategory, setSelectedDocumentCategory] =
-    useState<string>(uploadProps?.selectedDocumentCategory ?? "");
+  const [selectedDocumentCategory, setSelectedDocumentCategory] = useState<string>(
+    uploadProps?.selectedDocumentCategory ?? "",
+  );
   const [description, setDescription] = useState<string>("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploadedFile, setUploadedFile] = useState<UploadedFile | null>(null);
@@ -157,15 +147,11 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
   const { document: currentDocument } = useDocumentData(documentId);
 
   const effectiveDocumentType = isReupload
-    ? (reuploadProps?.documentType ||
-      reuploadProps?.document?.document_type ||
-      "Document")
+    ? (reuploadProps?.documentType || reuploadProps?.document?.document_type || "Document")
     : selectedDocumentType;
 
   const effectiveCategory = isReupload
-    ? (reuploadProps?.category ||
-      reuploadProps?.document?.document_category ||
-      "Other Documents")
+    ? (reuploadProps?.category || reuploadProps?.document?.document_category || "Other Documents")
     : selectedDocumentCategory;
 
   const displayDocument = isReupload
@@ -184,68 +170,36 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
   );
 
   const hasSample = !!dynamicTemplate?.sampleDocumentUrl;
+  const effectiveImportantNote = dynamicTemplate?.importantNote ?? documentMeta?.importantNote;
+  const effectiveAllowedDocument = dynamicTemplate?.allowedDocument ?? documentMeta?.allowedDocument;
 
-  const effectiveImportantNote =
-    dynamicTemplate?.importantNote ?? documentMeta?.importantNote;
-
-  const effectiveAllowedDocument =
-    dynamicTemplate?.allowedDocument ?? documentMeta?.allowedDocument;
-
-  const isIdentityPhotograph = useMemo(() => {
-    const cat =
-      effectiveCategory === "Identity Documents" ||
-      effectiveCategory === "Identity";
-    const type = effectiveDocumentType.toLowerCase();
-    return (
-      cat &&
-      (type.includes("photograph") ||
-        type.includes("photo") ||
-        type.includes("picture"))
-    );
-  }, [effectiveCategory, effectiveDocumentType]);
-
-  const fileAcceptAttribute = isIdentityPhotograph
-    ? ACCEPT_IMAGE
-    : ACCEPT_DOCUMENTS;
-
-  const fileHintText = isIdentityPhotograph
-    ? "JPG and JPEG files only · Max 5MB per file"
-    : "PDF, Word (.doc, .docx), or text (.txt) · Max 5MB per file";
+  const { acceptAttribute, allowedExtensions, allowedMimeTypes, hintText: fileHintText } =
+    useMemo(() => resolveFileFormats(dynamicTemplate?.format), [dynamicTemplate?.format]);
 
   const isUploadZoneDisabled = !isReupload && !selectedDocumentType;
 
-  const filesArray = isReupload
-    ? uploadedFile
-      ? [uploadedFile]
-      : []
-    : uploadedFiles;
+  const filesArray = isReupload ? (uploadedFile ? [uploadedFile] : []) : uploadedFiles;
 
 
   useEffect(() => {
     if (isOpen && !isReupload && selectedDocumentCategory) {
-      let autoDescription = "";
       const docs = uploadProps?.documents;
+      let autoDescription = "";
 
       if (docs && docs.length > 0) {
         const existingDoc = docs.find(
           (doc: ApiDocument) =>
-            doc.document_category === selectedDocumentCategory &&
-            doc.description,
+            doc.document_category === selectedDocumentCategory && doc.description,
         );
-        if (existingDoc?.description) {
-          autoDescription = existingDoc.description;
-        }
+        if (existingDoc?.description) autoDescription = existingDoc.description;
       }
 
       if (
         !autoDescription &&
         selectedDocumentCategory.includes("Documents") &&
-        ![
-          "Identity Documents",
-          "Education Documents",
-          "Other Documents",
-          "Self Employment/Freelance",
-        ].includes(selectedDocumentCategory) &&
+        !["Identity Documents", "Education Documents", "Other Documents", "Self Employment/Freelance"].includes(
+          selectedDocumentCategory,
+        ) &&
         uploadProps?.company
       ) {
         autoDescription = generateCompanyDescription(
@@ -254,9 +208,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
         );
       }
 
-      if (autoDescription) {
-        setDescription(autoDescription);
-      }
+      if (autoDescription) setDescription(autoDescription);
     }
   }, [isOpen, isReupload, selectedDocumentCategory]);
 
@@ -267,11 +219,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
       if (nextType) setSelectedDocumentType(nextType);
       if (nextCat) setSelectedDocumentCategory(nextCat);
     }
-  }, [
-    isReupload,
-    uploadProps?.selectedDocumentType,
-    uploadProps?.selectedDocumentCategory,
-  ]);
+  }, [isReupload, uploadProps?.selectedDocumentType, uploadProps?.selectedDocumentCategory]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -280,75 +228,27 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
       setIsUploading(false);
       setSampleModalOpen(false);
       setIsDragOver(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }, [isOpen]);
 
 
-  function validateSingleFile(file: File): boolean {
-    const fileName = file.name.toLowerCase();
-
-    const allowedExtensions = isIdentityPhotograph
-      ? [".jpg", ".jpeg"]
-      : [".pdf", ".doc", ".docx", ".txt"];
-
-    const allowedMimeTypes = isIdentityPhotograph
-      ? ["image/jpeg", "image/jpg"]
-      : [
-        "application/pdf",
-        "application/msword",
-        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "text/plain",
-      ];
-
-    const errorMessage = isIdentityPhotograph
-      ? `${file.name} is not supported. Only JPG and JPEG files are allowed for photographs.`
-      : `${file.name} is not supported. Only PDF, Word (.doc, .docx), and text (.txt) files are allowed.`;
-
-    const hasValidExtension = allowedExtensions.some((ext) =>
-      fileName.endsWith(ext),
-    );
-    if (!hasValidExtension) {
-      toast.error(errorMessage);
-      return false;
-    }
-
-    if (!allowedMimeTypes.includes(file.type)) {
-      toast.error(errorMessage);
-      return false;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error(`${file.name} is too large. Maximum file size is 5MB.`);
-      return false;
-    }
-
-    if (file.size === 0) {
-      toast.error(`${file.name} is empty. Please select a valid file.`);
-      return false;
-    }
-
-    return true;
+  function checkFileQuiet(file: File): boolean {
+    return isFileValid(file, allowedExtensions, allowedMimeTypes, MAX_FILE_SIZE_BYTES);
   }
 
   function validateAllowedDocumentLimit(fileCount: number): boolean {
-    const allowedDocument = effectiveAllowedDocument;
-    if (allowedDocument === undefined) return true;
-
+    const limit = effectiveAllowedDocument ?? DEFAULT_MAX_FILES;
     const existingCount = uploadProps?.existingDocumentCount ?? 0;
     const currentCount = uploadedFiles.length;
     const totalCount = existingCount + currentCount + fileCount;
 
-    if (totalCount > allowedDocument) {
-      toast.error(
-        `Maximum ${allowedDocument} file${allowedDocument === 1 ? "" : "s"} allowed for "${effectiveDocumentType}". ` +
-        `${existingCount} already uploaded, ${currentCount} selected in this session.`,
+    if (totalCount > limit) {
+      showWarningToast(
+        `Max ${limit} file${limit === 1 ? "" : "s"} allowed for "${effectiveDocumentType}"`,
       );
       return false;
     }
-
     return true;
   }
 
@@ -359,34 +259,47 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
     if (isReupload) {
       const file = files[0];
-      if (!validateSingleFile(file)) return;
-      setUploadedFile({
-        file,
-        progress: 0,
-        id: Math.random().toString(36).slice(2, 11),
-      });
+      if (!checkFileQuiet(file)) {
+        showWarningToast(`${file.name} — unsupported format or exceeds 5 MB`);
+        return;
+      }
+      setUploadedFile({ file, progress: 0, id: Math.random().toString(36).slice(2, 11) });
     } else {
       if (!validateAllowedDocumentLimit(files.length)) return;
-      const validFiles = files.filter(validateSingleFile);
-      const newFiles: UploadedFile[] = validFiles.map((file) => ({
-        file,
-        progress: 0,
-        id: Math.random().toString(36).slice(2, 11),
-      }));
-      setUploadedFiles((prev) => [...prev, ...newFiles]);
+
+      const validFiles: File[] = [];
+      const rejectedNames: string[] = [];
+      for (const file of files) {
+        if (checkFileQuiet(file)) {
+          validFiles.push(file);
+        } else {
+          rejectedNames.push(file.name);
+        }
+      }
+
+      if (rejectedNames.length > 0) {
+        const preview = rejectedNames.slice(0, 3).join(", ");
+        const extra = rejectedNames.length > 3 ? ` +${rejectedNames.length - 3} more` : "";
+        showWarningToast(`${preview}${extra} — unsupported format or exceeds 5 MB`);
+      }
+
+      if (validFiles.length > 0) {
+        const newFiles: UploadedFile[] = validFiles.map((file) => ({
+          file,
+          progress: 0,
+          id: Math.random().toString(36).slice(2, 11),
+        }));
+        setUploadedFiles((prev) => [...prev, ...newFiles]);
+      }
     }
 
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
-    if (!isUploading && !isUploadZoneDisabled) {
-      setIsDragOver(true);
-    }
+    if (!isUploading && !isUploadZoneDisabled) setIsDragOver(true);
   };
 
   const handleDragLeave = (event: React.DragEvent) => {
@@ -402,35 +315,27 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
     if (isUploadZoneDisabled || isUploading) return;
     if (!isReupload && !selectedDocumentType) {
-      toast.error("Please select a document type first");
+      showWarningToast("Select a document type first");
       return;
     }
 
     const files = Array.from(event.dataTransfer.files);
-
     if (isReupload && files.length > 1) {
-      toast.error("Please drop only one file for reupload.");
+      showWarningToast("Drop one file at a time for reupload");
       return;
     }
 
-    const fakeEvent = {
-      target: { files },
-    } as unknown as React.ChangeEvent<HTMLInputElement>;
-
+    const fakeEvent = { target: { files } } as unknown as React.ChangeEvent<HTMLInputElement>;
     handleFileSelect(fakeEvent);
   };
 
-  // ── Upload helpers ────────────────────────────────────────────────────────
 
   const getDocumentCategory = (category: string): string => {
     if (
       category.includes("Documents") &&
-      ![
-        "Identity Documents",
-        "Education Documents",
-        "Other Documents",
-        "Self Employment/Freelance",
-      ].includes(category)
+      !["Identity Documents", "Education Documents", "Other Documents", "Self Employment/Freelance"].includes(
+        category,
+      )
     ) {
       return category;
     }
@@ -458,12 +363,9 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
     if (
       apiCategory.includes("Company Documents") &&
-      ![
-        "Identity Documents",
-        "Education Documents",
-        "Other Documents",
-        "Self Employment/Freelance",
-      ].includes(apiCategory)
+      !["Identity Documents", "Education Documents", "Other Documents", "Self Employment/Freelance"].includes(
+        apiCategory,
+      )
     ) {
       return apiCategory;
     }
@@ -473,11 +375,9 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
   const getCompanyDescription = (category: string): string => {
     const docs = uploadProps?.documents;
-
     if (docs && docs.length > 0) {
       const existingDoc = docs.find(
-        (doc: ApiDocument) =>
-          doc.document_category === category && doc.description,
+        (doc: ApiDocument) => doc.document_category === category && doc.description,
       );
       if (existingDoc?.description) return existingDoc.description;
     }
@@ -486,38 +386,23 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
     if (
       company &&
       category.includes("Documents") &&
-      !["Identity Documents", "Education Documents", "Other Documents"].includes(
-        category,
-      )
+      !["Identity Documents", "Education Documents", "Other Documents"].includes(category)
     ) {
       if (company.description) return company.description;
       if (company.isCurrentEmployment) {
-        return generateCurrentEmploymentDescription(
-          company.name,
-          company.fromDate,
-        );
+        return generateCurrentEmploymentDescription(company.name, company.fromDate);
       }
       if (company.toDate) {
-        return generatePastEmploymentDescription(
-          company.name,
-          company.fromDate,
-          company.toDate,
-        );
+        return generatePastEmploymentDescription(company.name, company.fromDate, company.toDate);
       }
-      return generateCompanyDescription(
-        company.fromDate,
-        company.toDate ?? "2025-12-31",
-      );
+      return generateCompanyDescription(company.fromDate, company.toDate ?? "2025-12-31");
     }
 
     return "";
   };
 
-  const isMongoObjectId = (value: string): boolean =>
-    /^[a-fA-F0-9]{24}$/.test(value);
+  const isMongoObjectId = (value: string): boolean => /^[a-fA-F0-9]{24}$/.test(value);
 
-  // Resolve canonical client ID for /clients/:id/* endpoints.
-  // Priority: explicit lead id -> auth lead_id -> route/app id (if not Mongo ObjectId) -> safe legacy fallback.
   const getClientId = (): string | undefined => {
     const explicitLeadId = clientLeadId?.trim();
     const authLeadId = user?.lead_id?.trim();
@@ -526,15 +411,8 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
     if (explicitLeadId) return explicitLeadId;
     if (authLeadId) return authLeadId;
-
-    if (isClientView && appScopedId && !isMongoObjectId(appScopedId)) {
-      return appScopedId;
-    }
-
-    // Legacy fallback for unexpected non-Mongo identifiers only.
-    if (authUserId && !isMongoObjectId(authUserId)) {
-      return authUserId;
-    }
+    if (isClientView && appScopedId && !isMongoObjectId(appScopedId)) return appScopedId;
+    if (authUserId && !isMongoObjectId(authUserId)) return authUserId;
 
     return undefined;
   };
@@ -543,37 +421,24 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
   const handleUpload = async () => {
     if (!effectiveDocumentType || uploadedFiles.length === 0) {
-      toast.error("Please upload at least one file.");
+      showWarningToast("Add at least one file to continue");
       return;
     }
 
     const uploadedBy = user?.username ?? user?.email;
     if (!uploadedBy) {
-      toast.error("User information not available. Please login again.");
+      showErrorToast("User info unavailable — please sign in again");
       return;
     }
 
     const totalSize = uploadedFiles.reduce((sum, f) => sum + f.file.size, 0);
-    if (totalSize > 50 * 1024 * 1024) {
-      toast.error(
-        `Total file size (${(totalSize / 1024 / 1024).toFixed(2)}MB) exceeds the maximum limit of 50MB.`,
-      );
-      return;
-    }
-
-    if (uploadedFiles.length > 10) {
-      toast.error("Maximum 10 files can be uploaded at once.");
+    if (totalSize > MAX_TOTAL_SIZE_BYTES) {
+      showWarningToast("Total size exceeds 50 MB");
       return;
     }
 
     const clientId = getClientId();
-    if (isClientView && !clientId) {
-      toast.error("Client lead ID is missing. Please refresh and try again.");
-      return;
-    }
-
     setIsUploading(true);
-
     try {
       const progressInterval = window.setInterval(() => {
         setUploadedFiles((prev) =>
@@ -582,8 +447,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
       }, 200);
 
       try {
-        const finalDescription =
-          getCompanyDescription(effectiveCategory) || description;
+        const finalDescription = getCompanyDescription(effectiveCategory) || description;
         const finalCategory = getDocumentCategory(effectiveCategory);
 
         const uploadResult = isClientView
@@ -594,9 +458,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             document_category: finalCategory,
             uploaded_by: uploadedBy,
             description: finalDescription,
-            document_type: effectiveDocumentType
-              .toLowerCase()
-              .replace(/\s+/g, "_"),
+            document_type: effectiveDocumentType.toLowerCase().replace(/\s+/g, "_"),
           })
           : await addDocumentMutation.mutateAsync({
             applicationId,
@@ -605,9 +467,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             document_category: finalCategory,
             uploaded_by: uploadedBy,
             description: finalDescription,
-            document_type: effectiveDocumentType
-              .toLowerCase()
-              .replace(/\s+/g, "_"),
+            document_type: effectiveDocumentType.toLowerCase().replace(/\s+/g, "_"),
           });
 
         setUploadedFiles((prev) => prev.map((f) => ({ ...f, progress: 100 })));
@@ -636,9 +496,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
               uploaded_at: doc.uploaded_at,
               comments: [],
               __v: 0,
-              document_type: effectiveDocumentType
-                .toLowerCase()
-                .replace(/\s+/g, "_"),
+              document_type: effectiveDocumentType.toLowerCase().replace(/\s+/g, "_"),
               document_category: displayCategory,
               description: finalDescription,
             }),
@@ -658,10 +516,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
               if (!oldData?.data?.documents) return oldData;
               return {
                 ...oldData,
-                data: {
-                  ...oldData.data,
-                  documents: [...oldData.data.documents, ...newDocuments],
-                },
+                data: { ...oldData.data, documents: [...oldData.data.documents, ...newDocuments] },
               };
             },
           );
@@ -672,25 +527,18 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
               if (!oldData?.data?.documents) return oldData;
               return {
                 ...oldData,
-                data: {
-                  ...oldData.data,
-                  documents: [...oldData.data.documents, ...newDocuments],
-                },
+                data: { ...oldData.data, documents: [...oldData.data.documents, ...newDocuments] },
               };
             },
           );
 
           setTimeout(() => {
-            queryClient.invalidateQueries({
-              queryKey: ["application-documents", applicationId],
-            });
+            queryClient.invalidateQueries({ queryKey: ["application-documents", applicationId] });
             queryClient.invalidateQueries({
               queryKey: ["application-documents-all", applicationId],
             });
             queryClient.invalidateQueries({ queryKey: ["client-documents"] });
-            queryClient.invalidateQueries({
-              queryKey: ["client-documents-all"],
-            });
+            queryClient.invalidateQueries({ queryKey: ["client-documents-all"] });
           }, 100);
         }
       } catch (error) {
@@ -700,15 +548,13 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
       onClose();
       uploadProps?.onSuccess?.();
-
       setSelectedDocumentType("");
       setSelectedDocumentCategory("");
       setUploadedFiles([]);
     } catch (error) {
       setUploadedFiles((prev) => prev.map((f) => ({ ...f, progress: 0 })));
-      const errorMessage =
-        error instanceof Error ? error.message : "Unknown error occurred";
-      toast.error(`Failed to upload documents: ${errorMessage}`);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      showErrorToast(`Upload failed — ${message}`);
     } finally {
       setIsUploading(false);
     }
@@ -717,15 +563,13 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
   const handleReupload = async () => {
     const uploadedBy = user?.username ?? user?.email;
     if (!uploadedFile || !displayDocument || !uploadedBy) {
-      toast.error(
-        "Please select a file and ensure user information is available.",
-      );
+      showErrorToast("Select a file and ensure you are signed in");
       return;
     }
 
     const clientId = getClientId();
     if (isClientView && !clientId) {
-      toast.error("Client lead ID is missing. Please refresh and try again.");
+      showErrorToast("Client ID missing — please refresh and try again");
       return;
     }
 
@@ -764,17 +608,15 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
         setUploadedFile((prev) => (prev ? { ...prev, progress: 100 } : null));
         clearInterval(progressInterval);
 
-        toast.success("Document reuploaded successfully!");
-        setTimeout(() => {
-          onClose();
-        }, 500);
+        showSuccessToast("Document reuploaded successfully");
+        setTimeout(onClose, 500);
       } catch (error) {
         clearInterval(progressInterval);
         throw error;
       }
     } catch {
       setUploadedFile((prev) => (prev ? { ...prev, progress: 0 } : null));
-      toast.error("Failed to reupload document. Please try again.");
+      showErrorToast("Reupload failed — please try again");
     } finally {
       setIsUploading(false);
     }
@@ -793,93 +635,60 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
   };
 
   const handleSubmit = () => {
-    if (isReupload) {
-      void handleReupload();
-    } else {
-      void handleUpload();
-    }
+    if (isReupload) void handleReupload();
+    else void handleUpload();
   };
 
   const isSubmitDisabled = isReupload
     ? !uploadedFile || isUploading
     : !effectiveDocumentType || uploadedFiles.length === 0 || isUploading;
 
-  // ── Upload zone styles ────────────────────────────────────────────────────
   const uploadZoneClasses = [
-    "rounded-xl border-2 border-dashed p-8 text-center transition-all duration-150 select-none outline-none",
+    "rounded-xl border-2 border-dashed border-muted-foreground/20 p-8 text-center transition-all duration-150 select-none outline-none",
     isUploading || (!isReupload && isUploadZoneDisabled)
       ? "cursor-not-allowed border-muted-foreground/20 bg-muted/20"
       : isReupload
         ? isDragOver
           ? "cursor-copy border-border/80 bg-muted/20"
-          : "cursor-pointer border-border/50 bg-muted/5 hover:border-border/70 hover:bg-muted/10"
+          : "cursor-pointer border-border/50 bg-bg-weak hover:border-border/70 hover:bg-bg-weak"
         : isDragOver
-          ? "cursor-copy border-primary/80 bg-primary/15"
-          : "cursor-pointer border-primary/50 bg-primary/5 hover:border-primary/70 hover:bg-primary/10",
+          ? "cursor-copy border-muted-foreground/80 bg-neutral-50"
+          : "cursor-pointer border-muted-foreground/50 bg-bg-weak hover:border-muted-foreground/70 hover:bg-neutral-50/10",
   ].join(" ");
 
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <>
       <Dialog open={isOpen} onOpenChange={handleClose}>
         <DialogContent
-          className="flex h-auto max-h-[90vh] w-full flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl rounded-2xl"
-          showCloseButton
+          className="flex h-auto max-h-[90vh] w-full flex-col gap-0 overflow-hidden rounded-2xl p-0 max-w-xl"
         >
-          {/* ── Fixed Header ─────────────────────────────────────────────── */}
+          {/* Fixed Header */}
           <DialogHeader className="shrink-0 border-b border-border/80 bg-muted/30 px-6 pr-12 py-4">
             <DialogTitle className="flex items-center gap-2.5 font-medium tracking-tight text-foreground">
-              {isReupload ? (
-                <>
-                  Reupload document
-                </>
-              ) : (
-                <>
-                  Upload documents
-                </>
-              )}
+              {isReupload ? "Reupload document" : "Upload documents"}
             </DialogTitle>
           </DialogHeader>
 
-          {/* ── Scrollable Content ───────────────────────────────────────── */}
+          {/* Scrollable Content */}
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 py-5 space-y-4">
 
-            {/* Instruction banner */}
             {instruction?.trim() ? (
-              <InlineToast
-                variant="warning"
-                title="Instruction"
-                description={instruction}
-              />
+              <InlineToast variant="warning" title="Instruction" description={instruction} />
             ) : null}
 
-            {/* Document info card */}
             {(effectiveDocumentType || (isReupload && displayDocument)) ? (
-              <section className="rounded-md border border-border/80 bg-muted/20 p-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Document type
-                    </p>
-                    <p className="mt-1 font-medium text-foreground">
-                      {effectiveDocumentType}
-                    </p>
-                  </div>
-                  <span className="shrink-0 rounded-full border border-border/60 bg-background px-2.5 py-0.5 text-xs font-medium text-muted-foreground">
-                    {effectiveAllowedDocument !== undefined
-                      ? `Max ${effectiveAllowedDocument} file${effectiveAllowedDocument === 1 ? "" : "s"}`
-                      : "Multiple files allowed"}
-                  </span>
+              <section className="rounded-md border border-border/80 bg-bg-weak p-2">
+                <div className="flex items-center text-sm justify-between gap-2">
+                  <p className="text-xs flex items-center gap-1 font-medium uppercase tracking-wider text-muted-foreground">
+                    <span className="font-medium text-foreground">
+                      {effectiveAllowedDocument
+                        ? `Max ${effectiveAllowedDocument} file${effectiveAllowedDocument === 1 ? "" : "s"}`
+                        : "Multiple files allowed"}
+                    </span>
+                  </p>
+                  <p className="font-medium text-foreground">{effectiveDocumentType}</p>
                 </div>
               </section>
-            ) : null}
-
-            {/* Rejection reason — reupload only */}
-            {isReupload && displayDocument?.reject_message ? (
-              <div className="rounded-lg border border-red-200/80 bg-red-50/80 px-3 py-2.5 text-xs text-red-800">
-                <strong>Rejection reason:</strong>{" "}
-                {displayDocument.reject_message}
-              </div>
             ) : null}
 
             {hasSample ? (
@@ -899,17 +708,15 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
             {/* Upload zone */}
             <section className="space-y-3">
-              <p className="text-sm font-medium text-foreground">
-                {isReupload
-                  ? "Select new file to replace the rejected document"
-                  : "Upload files"}
-              </p>
+              {isReupload ? (
+                <p className="text-sm font-medium text-foreground">
+                  Select new file to replace the rejected document
+                </p>
+              ) : null}
               <div
                 className={uploadZoneClasses}
                 role="button"
-                tabIndex={
-                  isUploading || (!isReupload && isUploadZoneDisabled) ? -1 : 0
-                }
+                tabIndex={isUploading || (!isReupload && isUploadZoneDisabled) ? -1 : 0}
                 aria-label={
                   isReupload
                     ? "Drop your replacement file here or click to browse"
@@ -918,16 +725,10 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
                       : "Drop your files here or click to browse"
                 }
                 onClick={() => {
-                  if (!isUploading && !isUploadZoneDisabled) {
-                    fileInputRef.current?.click();
-                  }
+                  if (!isUploading && !isUploadZoneDisabled) fileInputRef.current?.click();
                 }}
                 onKeyDown={(e) => {
-                  if (
-                    e.key === "Enter" &&
-                    !isUploading &&
-                    !isUploadZoneDisabled
-                  ) {
+                  if (e.key === "Enter" && !isUploading && !isUploadZoneDisabled) {
                     fileInputRef.current?.click();
                   }
                 }}
@@ -939,35 +740,27 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
                   ref={fileInputRef}
                   type="file"
                   multiple={!isReupload}
-                  accept={fileAcceptAttribute}
+                  accept={acceptAttribute}
                   onChange={handleFileSelect}
                   className="hidden"
                   disabled={isUploading || (!isReupload && isUploadZoneDisabled)}
                   aria-label="Choose file to upload"
                 />
 
-                <div
-                  className={[
-                    "mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl transition-colors",
-                    isReupload ? "bg-gray-100" : "bg-gray-100",
-                  ].join(" ")}
-                >
+                <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-100 transition-colors">
                   {isReupload ? (
-                    <RotateCcw
-                      className={[
-                        "h-6 w-6 transition-colors",
-                        isUploading
-                          ? "text-muted-foreground/40"
-                          : "text-foreground",
-                      ].join(" ")}
+                    <RiFileUploadFill
+                      size={24}
+                      className={cn(
+                        "transition-colors",
+                        isUploading ? "text-muted-foreground/40" : "text-foreground",
+                      )}
                     />
                   ) : (
-                    <Upload
+                    <RiFileAddLine 
                       className={[
                         "h-6 w-6 transition-colors",
-                        isUploadZoneDisabled
-                          ? "text-muted-foreground/40"
-                          : "text-foreground",
+                        isUploadZoneDisabled ? "text-muted-foreground/40" : "text-foreground",
                       ].join(" ")}
                     />
                   )}
@@ -980,9 +773,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
                       ? "Please select a document type first"
                       : "Drop your file here or click to browse"}
                 </p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {fileHintText}
-                </p>
+                <p className="mt-1 text-xs text-muted-foreground">{fileHintText}</p>
               </div>
             </section>
 
@@ -990,9 +781,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             {filesArray.length > 0 && (
               <section className="space-y-2">
                 <p className="text-sm font-medium text-foreground">
-                  {isReupload
-                    ? "File to upload"
-                    : `Files to upload (${filesArray.length})`}
+                  {isReupload ? "File to upload" : ``}
                 </p>
                 <ul className="space-y-2">
                   {filesArray.map((uf) => (
@@ -1004,9 +793,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
                         if (isReupload) {
                           setUploadedFile(null);
                         } else {
-                          setUploadedFiles((prev) =>
-                            prev.filter((f) => f.id !== uf.id),
-                          );
+                          setUploadedFiles((prev) => prev.filter((f) => f.id !== uf.id));
                         }
                       }}
                     />
@@ -1015,7 +802,6 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
               </section>
             )}
 
-            {/* Important note */}
             {effectiveImportantNote ? (
               <InlineToast
                 variant="warning"
@@ -1029,27 +815,17 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
                 }
               />
             ) : null}
-
           </div>
 
-          {/* ── Fixed Footer ─────────────────────────────────────────────── */}
-          <DialogFooter className="shrink-0 flex-row items-center gap-2 border-t border-border/80 bg-muted/20 px-6 py-4">
-            <Button
-              variant="outline"
-              onClick={handleClose}
-              disabled={isUploading}
-              className="min-w-20"
-            >
-              Cancel
-            </Button>
+          {/* Fixed Footer */}
+          <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-neutral-alpha-200 bg-bg-weak px-6 py-4 rounded-b-2xl">
+            
             <Button
               onClick={handleSubmit}
               disabled={isSubmitDisabled}
               className={[
-                "min-w-36 gap-2",
-                isReupload
-                  ? "bg-primary-blue text-white hover:bg-primary-blue/90 focus-visible:ring-primary-blue/30"
-                  : "",
+                "min-w-36 gap-2 text-sm bg-neutral-900 text-white hover:bg-neutral-900/90 focus-visible:ring-neutral-900/30",
+                isSubmitDisabled ? "cursor-not-allowed opacity-50" : "",
               ].join(" ")}
             >
               {isUploading ? (
@@ -1058,16 +834,12 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
                   {isReupload ? "Reuploading…" : "Uploading…"}
                 </>
               ) : isReupload ? (
-                <>
-                  Reupload document
-                </>
+                "Reupload document"
               ) : (
-                <>
-                  Upload documents
-                </>
+                "Upload documents"
               )}
             </Button>
-          </DialogFooter>
+          </div>
         </DialogContent>
       </Dialog>
 

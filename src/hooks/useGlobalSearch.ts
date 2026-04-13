@@ -3,10 +3,7 @@ import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { globalSearch, type GlobalSearchResponse } from "@/lib/api/globalSearch";
 
-export function useGlobalSearch(
-  search: string,
-  country: "Australia" | "Canada",
-) {
+export function useGlobalSearch(search: string) {
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   useEffect(() => {
@@ -22,8 +19,8 @@ export function useGlobalSearch(
   }, [search]);
 
   return useQuery<GlobalSearchResponse>({
-    queryKey: ["global-search", debouncedSearch, country],
-    queryFn: () => globalSearch({ search: debouncedSearch, limit: 10, country }),
+    queryKey: ["global-search", debouncedSearch],
+    queryFn: () => globalSearch({ search: debouncedSearch, limit: 10 }),
     enabled: debouncedSearch.length >= 2,
     staleTime: 1000 * 30,
     refetchOnWindowFocus: false,

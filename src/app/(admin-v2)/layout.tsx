@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 import { SearchDialog } from "@/components/v2/sidebar/search-dialog";
+import { CommandPaletteSetup } from "@/components/v2/command-palette-setup";
 import { NotificationDropdown } from "@/components/v2/header/notification-dropdown";
 import { AccountSwitcher } from "@/components/v2/sidebar/account-switcher";
 import { ContentArea } from "@/app/(admin-v2)/content-area";
@@ -34,6 +35,7 @@ function AdminContentFallback() {
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   return (
+    <CommandPaletteSetup>
     <SidebarProvider defaultOpen={true}>
       <Suspense fallback={null}>
         <SidebarController />
@@ -88,5 +90,6 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
       {/* <McubePhoneWidgetLoader /> */}
 
     </SidebarProvider>
+    </CommandPaletteSetup>
   );
 }

@@ -29,7 +29,7 @@ export function EditProfileDetailsSheet({ open, onOpenChange, application }: Edi
       leadId: application.id ?? '',
       fullName: application.Name ?? '',
       email: application.Email ?? '',
-      phone: application.Phone ? `+91${application.Phone}` : '',
+      phone: application.Phone ?? '',
       assessingAuthority: application.Assessing_Authority ?? '',
       suggestedANZSCO: application.Suggested_Anzsco ?? '',
       serviceType: '',
@@ -41,15 +41,13 @@ export function EditProfileDetailsSheet({ open, onOpenChange, application }: Edi
     mode: 'onBlur',
   });
   
-  console.log(form.getValues());
-
   useEffect(() => {
     if (profile) {
       form.reset({
         leadId: profile.lead_id,
         fullName: profile.name ?? '',
         email: profile.email ?? '',
-        phone: profile.phone ? `+91${profile.phone}` : '',
+        phone: profile.phone ?? '',
         avatar: profile.profile_image_url ?? '',
         assessingAuthority: profile.assessing_authority ?? '',
         suggestedANZSCO: profile.suggested_anzsco ?? '',

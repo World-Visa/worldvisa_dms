@@ -6,6 +6,7 @@ export const ROUTES = {
   CLIENT_HOME: '/client/applications',
   APPLICATION_DETAILS: (id: string) => `/v2/applications/${id}`,
   APPLICATION_CHECKLIST: (id: string) => `/v2/applications/${id}/checklist`,
+  SPOUSE_SKILL_ASSESSMENT_APPLICATIONS: '/v2/spouse-skill-assessment-applications',
   SPOUSE_SKILL_ASSESSMENT_APPLICATION_DETAILS: (id: string) =>
     `/v2/spouse-skill-assessment-applications/${id}`,
   CHECKLIST_REQUESTS: '/v2/checklist-requests',
@@ -26,4 +27,8 @@ export const ROUTES = {
   ANALYTICS: '/v2/analytics',
   VISA_APPLICATIONS: '/v2/applications',
   CALL_LOGS: '/v2/call-logs',
+  QUALITY_CHECK: '/v2/quality-check',
+  REQUESTED_DOCS: '/v2/requested-docs',
+  EMAIL: '/v2/mail',
+  CHAT: '/v2/messages',
 } as const;

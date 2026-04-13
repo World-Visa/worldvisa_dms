@@ -5,7 +5,6 @@ import { useFormContext } from 'react-hook-form';
 import { RiMailLine, RiCameraLine } from 'react-icons/ri';
 import { z } from 'zod';
 import { AnimatePresence, motion, useMotionValue } from 'framer-motion';
-import { toast } from 'sonner';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/primitives/avatar';
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/primitives/form';
 import { Input } from '@/components/ui/primitives/input';
@@ -14,6 +13,7 @@ import { Separator } from '@/components/ui/primitives/separator';
 import { EditLeadFormSchema } from '@/components/applications/form/schema';
 import { CopyButton } from '@/components/ui/primitives/copy-button';
 import { uploadClientProfileImage } from '@/lib/api/clientProfile';
+import { showErrorToast, showSuccessToast } from '@/components/ui/primitives/sonner-helpers';
 
 export const EditLeadForm = () => {
     const form = useFormContext<z.infer<typeof EditLeadFormSchema>>();
@@ -51,9 +51,9 @@ export const EditLeadForm = () => {
             });
             fieldOnChange(newUrl);
             URL.revokeObjectURL(previewUrl);
-            toast.success('Profile image updated.');
+            showSuccessToast('Profile image updated successfully');
         } catch (err) {
-            toast.error(err instanceof Error ? err.message : 'Image upload failed');
+            showErrorToast(err instanceof Error ? err.message : 'Failed to update profile image');
             fieldOnChange(form.getValues('avatar') ?? '');
             URL.revokeObjectURL(previewUrl);
         } finally {
