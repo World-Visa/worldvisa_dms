@@ -82,7 +82,7 @@ const inputWrapperVariants = cva(
 
 const inputElVariants = cva(
   [
-    'w-full bg-transparent bg-none text-paragraph-sm text-text-strong outline-hidden',
+    'w-full bg-transparent bg-none text-text-strong outline-hidden',
     'transition duration-200 ease-out',
     'overflow-x-auto scrollbar-thin',
     'mask-[linear-gradient(to_right,black_calc(100%-1.5rem),transparent)]',
@@ -97,7 +97,7 @@ const inputElVariants = cva(
   {
     variants: {
       size: {
-        md: 'h-10',
+        md: 'h-10 text-paragraph-sm',
         sm: 'h-[2.35rem] text-paragraph-xs',
         xs: 'h-8 text-paragraph-xs',
         '2xs': 'h-7 text-paragraph-xs',

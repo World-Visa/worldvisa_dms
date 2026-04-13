@@ -38,6 +38,7 @@ export interface Application {
   Name: string;
   Email: string;
   Phone: string;
+  profile_image_url: string;
   Created_Time: string;
   Application_Handled_By: string;
   AttachmentCount: number;

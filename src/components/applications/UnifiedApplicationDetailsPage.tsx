@@ -6,6 +6,7 @@ import { NotesBanner } from "@/components/applications/NotesBanner";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
 import { ApplicantDetails } from "@/components/applications/ApplicantDetails";
 import { ApplicationDetailsHeader } from "@/components/applications/ApplicationDetailsHeader";
+import { EditProfileDetailsSheet } from "@/components/applications/EditProfileDetailsSheet";
 import { DownloadAllDocumentsModal } from "@/components/applications/DownloadAllDocumentsModal";
 import { EmailHistoryModal } from "@/components/applications/EmailHistoryModal";
 import {
@@ -255,6 +256,8 @@ export default function UnifiedApplicationDetailsPage({
     setIsClientOnboardingOpen(true);
   }, []);
 
+  const [isEditProfileSheetOpen, setIsEditProfileSheetOpen] = useState(false);
+
   const appState = useApplicationState({
     applicationId,
     urlCategory,
@@ -470,6 +473,7 @@ export default function UnifiedApplicationDetailsPage({
           onPushForQualityCheck={handlePushForQualityCheck}
           onDownloadAll={modals.openDownloadAllModal}
           onActivateAccount={handleActivateAccount}
+          onEditAccountDetails={() => setIsEditProfileSheetOpen(true)}
           applicationId={applicationId}
           onAddNote={() => {
             setEditingNote(null);
@@ -662,6 +666,14 @@ export default function UnifiedApplicationDetailsPage({
         open={isClientOnboardingOpen}
         onOpenChange={handleOnboardingModalOpenChange}
       />
+
+      {application && (
+        <EditProfileDetailsSheet
+          open={isEditProfileSheetOpen}
+          onOpenChange={setIsEditProfileSheetOpen}
+          application={application}
+        />
+      )}
     </main>
   );
 }

@@ -220,6 +220,9 @@ export const API_ENDPOINTS = {
       BY_ID: (leadId: string) =>
         `${ZOHO_BASE_URL}/clients/checklist/requested/${leadId}`,
     },
+    PROFILE: {
+      BY_ID: (leadId: string) => `${ZOHO_BASE_URL}/clients/profile/${leadId}`,
+    },
     INVITE: `${ZOHO_BASE_URL}/clients/invite`,
   },
   MCUBE: {
