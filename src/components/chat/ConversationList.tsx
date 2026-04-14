@@ -276,7 +276,7 @@ export function ConversationList({
       </div>
 
       {/* List */}
-      <ScrollArea className="flex-1 min-h-0">
+      <ScrollArea className="flex-1 min-h-0 scrollbar-hide">
         <div className="px-2 pb-3 space-y-0.5">
           {isLoading ? (
             <ConversationSkeleton />
