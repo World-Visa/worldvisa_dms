@@ -1,19 +1,25 @@
 import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/primitives/status-badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import TruncatedText from "@/components/ui/truncated-text";
 import { CopyButton } from "@/components/ui/primitives/copy-button";
+import { getServiceTypeBadgePalette } from "@/lib/constants/visaServiceTypes";
+import { cn } from "@/lib/utils";
 import type { VisaApplication } from "@/types/applications";
 import { formatDate } from "@/utils/format";
 
 export const ApplicationTableRow = memo(function ApplicationTableRow({
   application,
   onClick,
+  isSpouseApplication = false,
 }: {
   application: VisaApplication;
   onClick: (id: string) => void;
+  isSpouseApplication?: boolean;
 }) {
   const hasAttachments = application.AttachmentCount > 0;
+  const servicePalette = getServiceTypeBadgePalette(application.Service_Finalized);
 
   return (
     <TableRow
@@ -37,7 +43,25 @@ export const ApplicationTableRow = memo(function ApplicationTableRow({
           )}
         </div>
       </TableCell>
-      <TableCell className="text-foreground-600 text-sm">{application.Phone || "—"}</TableCell>
+      {!isSpouseApplication && (
+        <TableCell>
+          {application.Service_Finalized ? (
+            <StatusBadge
+              variant="light"
+              className={cn(
+                "ring-1 ring-inset text-xs",
+                servicePalette.bg,
+                servicePalette.text,
+                servicePalette.ring,
+              )}
+            >
+              {application.Service_Finalized}
+            </StatusBadge>
+          ) : (
+            <span className="text-foreground-400 text-sm">—</span>
+          )}
+        </TableCell>
+      )}
       <TableCell>
         {application.Application_Handled_By ? (
           <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">

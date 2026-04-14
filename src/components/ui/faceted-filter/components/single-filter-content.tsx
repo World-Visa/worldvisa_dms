@@ -1,6 +1,7 @@
 import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/primitives/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/primitives/radio-group';
+import { useEffect, useRef } from 'react';
 import { useKeyboardNavigation } from '../hooks/use-keyboard-navigation';
 import { FilterOption, SizeType } from '../types';
 import { BaseFilterContent } from './base-filter-content';
@@ -39,6 +40,14 @@ export function SingleFilterContent({
     initialSelectedValue: currentValue,
   });
 
+  const listRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (focusedIndex < 0 || !listRef.current) return;
+    const focused = listRef.current.children[focusedIndex] as HTMLElement | undefined;
+    focused?.scrollIntoView({ block: 'nearest' });
+  }, [focusedIndex]);
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onSearchChange(e.target.value);
   };
@@ -56,36 +65,38 @@ export function SingleFilterContent({
       searchPlaceholder={`Search ${title}...`}
       showNavigationFooter={true}
     >
-      <RadioGroup value={currentValue} onValueChange={onSelect} className={cn('flex flex-col gap-1 p-1')}>
-        {options.map((option, index) => {
-          const isFocused = index === focusedIndex;
-          const isDisabled = option.disabled;
+      <RadioGroup value={currentValue} onValueChange={onSelect} className={cn('p-1')}>
+        <div ref={listRef} className="flex flex-col gap-1">
+          {options.map((option, index) => {
+            const isFocused = index === focusedIndex;
+            const isDisabled = option.disabled;
 
-          return (
-            <div
-              key={option.value}
-              className={cn(
-                'flex items-center justify-between rounded-[4px] p-1.5',
-                isFocused && 'bg-neutral-50 ring-1 ring-neutral-200',
-                isDisabled && 'cursor-default'
-              )}
-              onMouseEnter={() => setFocusedIndex(index)}
-              onClick={() => !isDisabled && onSelect(option.value)}
-            >
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value={option.value} id={option.value} disabled={isDisabled} />
-                <Label
-                  className={cn('text-xs font-medium', isDisabled && 'cursor-default')}
-                  htmlFor={option.value}
-                  disabled={isDisabled}
-                >
-                  {option.label}
-                </Label>
+            return (
+              <div
+                key={option.value}
+                className={cn(
+                  'flex items-center justify-between rounded-[4px] p-1.5',
+                  isFocused && 'bg-neutral-50 ring-1 ring-neutral-200',
+                  isDisabled && 'cursor-default'
+                )}
+                onMouseEnter={() => setFocusedIndex(index)}
+                onClick={() => !isDisabled && onSelect(option.value)}
+              >
+                <div className="flex items-center gap-2">
+                  <RadioGroupItem value={option.value} id={option.value} disabled={isDisabled} />
+                  <Label
+                    className={cn('text-xs font-medium', isDisabled && 'cursor-default')}
+                    htmlFor={option.value}
+                    disabled={isDisabled}
+                  >
+                    {option.label}
+                  </Label>
+                </div>
+                {option.icon && <option.icon />}
               </div>
-              {option.icon && <option.icon />}
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </RadioGroup>
     </BaseFilterContent>
   );

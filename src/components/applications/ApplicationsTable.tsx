@@ -31,8 +31,6 @@ interface ApplicationsTableProps {
   onPageSizeChange?: (pageSize: number) => void;
 }
 
-const COLUMN_COUNT = APPLICATIONS_TABLE_COLUMNS.length;
-
 const TableLoadingRow = memo(function TableLoadingRow() {
   return (
     <TableRow>
@@ -60,6 +58,12 @@ export const ApplicationsTable = memo(function ApplicationsTable({
 }: ApplicationsTableProps) {
   const router = useRouter();
 
+  const columns = isSpouseApplication
+    ? APPLICATIONS_TABLE_COLUMNS.filter((c) => c.label !== "Service")
+    : APPLICATIONS_TABLE_COLUMNS;
+
+  const columnCount = columns.length;
+
   const displayData = isSearchMode ? searchResults : applications;
   const displayLoading = isSearchMode ? isSearchLoading : isLoading;
   const totalPages =
@@ -85,7 +89,7 @@ export const ApplicationsTable = memo(function ApplicationsTable({
     >
       <TableHeader>
         <TableRow>
-          {APPLICATIONS_TABLE_COLUMNS.map((col) => (
+          {columns.map((col) => (
             <TableHead key={col.label} className={col.headerClassName}>
               {col.label}
             </TableHead>
@@ -99,6 +103,7 @@ export const ApplicationsTable = memo(function ApplicationsTable({
               key={application.id}
               application={application}
               onClick={handleRowClick}
+              isSpouseApplication={isSpouseApplication}
             />
           ))}
         </TableBody>
@@ -106,7 +111,7 @@ export const ApplicationsTable = memo(function ApplicationsTable({
       {showPagination && (
         <TableFooter>
           <TableRow>
-            <TableCell colSpan={COLUMN_COUNT} className="p-0">
+            <TableCell colSpan={columnCount} className="p-0">
               <TablePaginationFooter
                 pageSize={limit}
                 currentPageItemsCount={displayData.length}

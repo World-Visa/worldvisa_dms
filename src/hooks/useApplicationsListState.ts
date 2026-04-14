@@ -1,10 +1,10 @@
 "use client";
 
 import { useState, useCallback, useMemo, useEffect } from "react";
+import { parseAsStringLiteral, useQueryState } from "nuqs";
 import { useDebounce } from "@/hooks/useDebounce";
 import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 import { useQueryString } from "@/hooks/useQueryString";
-import { resolveCountry } from "@/lib/applications/utils";
 import type {
   Country,
   DeadlineCategory,
@@ -15,6 +15,7 @@ import type {
 
 interface UseApplicationsListStateOptions {
   componentName: string;
+  availableCountries?: readonly Country[];
 }
 
 export interface ApplicationsListState {
@@ -27,6 +28,7 @@ export interface ApplicationsListState {
   applicationStage: string[];
   applicationState: ApplicationStateFilter | undefined;
   deadlineCategory: DeadlineCategory | null;
+  serviceType: string | undefined;
   // Derived
   isSearchMode: boolean;
   filters: ApplicationsFilters;
@@ -41,18 +43,23 @@ export interface ApplicationsListState {
   handleApplicationStageChange: (value: string[]) => void;
   handleApplicationStateChange: (value: ApplicationStateFilter | undefined) => void;
   handleDeadlineCategoryClick: (category: DeadlineCategory | null) => void;
+  handleServiceTypeChange: (value: string | undefined) => void;
   handleClearFilters: () => void;
 }
 
 export function useApplicationsListState({
   componentName,
+  availableCountries,
 }: UseApplicationsListStateOptions): ApplicationsListState {
   const { queryParams, updateQuery } = useQueryString();
   const { measureAsync } = usePerformanceMonitor(componentName);
 
-  const [selectedCountry, setSelectedCountry] = useState<Country>(() =>
-    resolveCountry(queryParams.country as string | undefined),
-  );
+  const countryParser = useMemo(() => {
+    const countries = (availableCountries ?? (["Australia", "Canada", "Germany"] as const)) as readonly Country[];
+    return parseAsStringLiteral(countries).withDefault("Australia");
+  }, [availableCountries]);
+
+  const [selectedCountry, setSelectedCountry] = useQueryState("country", countryParser);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -63,6 +70,7 @@ export function useApplicationsListState({
   >(undefined);
   const [deadlineCategory, setDeadlineCategory] =
     useState<DeadlineCategory | null>(null);
+  const [serviceType, setServiceType] = useState<string | undefined>(undefined);
 
   const debouncedSearch = useDebounce(search, 300);
 
@@ -77,9 +85,17 @@ export function useApplicationsListState({
       applicationStage:
         applicationStage.length > 0 ? applicationStage : undefined,
       applicationState: applicationState ?? undefined,
+      serviceType: serviceType ?? undefined,
       country: selectedCountry,
     };
-  }, [page, handledBy, applicationStage, applicationState, selectedCountry]);
+  }, [
+    page,
+    handledBy,
+    applicationStage,
+    applicationState,
+    serviceType,
+    selectedCountry,
+  ]);
 
   // ── Derived: search params memo ──────────────────────────────────────────
   const searchParamsForAPI = useMemo<SearchParams>(() => {
@@ -117,27 +133,19 @@ export function useApplicationsListState({
     }
   }, [queryParams.deadlineCategory, deadlineCategory]);
 
-  useEffect(() => {
-    const resolved = resolveCountry(queryParams.country as string | undefined);
-    if (resolved !== selectedCountry) {
-      setSelectedCountry(resolved);
-    }
-  }, [queryParams.country, selectedCountry]);
-
   // ── Handlers ─────────────────────────────────────────────────────────────
   const handleCountryChange = useCallback(
     (country: Country) => {
-      setSelectedCountry(country);
+      void setSelectedCountry(country === "Australia" ? null : country);
       setPage(1);
       setDeadlineCategory(null);
       setSearch("");
       setSearchQuery("");
       updateQuery({
-        country: country === "Australia" ? undefined : country,
         deadlineCategory: undefined,
       });
     },
-    [updateQuery],
+    [setSelectedCountry, updateQuery],
   );
 
   const handlePageChange = useCallback((newPage: number) => {
@@ -194,6 +202,11 @@ export function useApplicationsListState({
     [updateQuery],
   );
 
+  const handleServiceTypeChange = useCallback((value: string | undefined) => {
+    setServiceType(value);
+    setPage(1);
+  }, []);
+
   const handleClearFilters = useCallback(() => {
     setSearch("");
     setSearchQuery("");
@@ -201,13 +214,13 @@ export function useApplicationsListState({
     setApplicationStage([]);
     setApplicationState(undefined);
     setDeadlineCategory(null);
-    setSelectedCountry("Australia");
+    setServiceType(undefined);
+    void setSelectedCountry(null);
     setPage(1);
     updateQuery({
       deadlineCategory: undefined,
-      country: undefined,
     });
-  }, [updateQuery]);
+  }, [setSelectedCountry, updateQuery]);
 
   return {
     selectedCountry,
@@ -218,6 +231,7 @@ export function useApplicationsListState({
     applicationStage,
     applicationState,
     deadlineCategory,
+    serviceType,
     isSearchMode,
     filters,
     searchParamsForAPI,
@@ -230,6 +244,7 @@ export function useApplicationsListState({
     handleApplicationStageChange,
     handleApplicationStateChange,
     handleDeadlineCategoryClick,
+    handleServiceTypeChange,
     handleClearFilters,
   };
 }
