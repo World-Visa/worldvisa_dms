@@ -96,7 +96,7 @@ export interface ApplicationInfoCardProps {
 }
 
 // ─── Main component ───────────────────────────────────────
-export function ApplicationInfoCard({ application, isSpouseApplication }: ApplicationInfoCardProps) {
+export function ApplicationInfoCard({ application, isSpouseApplication, user }: ApplicationInfoCardProps) {
   const reduced = useReducedMotion();
 
   const lastComm = (() => {
@@ -230,7 +230,9 @@ export function ApplicationInfoCard({ application, isSpouseApplication }: Applic
               <SectionLabel>Personal Information</SectionLabel>
               <InfoField label="Full Name" value={formatValue(application.Name)} />
               <InfoField label="Email" value={formatValue(application.Email)} />
-              {/* <PhoneInfoField label="Phone" value={formatValue(application.Phone)} reduced={Boolean(reduced)} /> */}
+              {user?.role === "master_admin" && (
+                <PhoneInfoField label="Phone" value={formatValue(application.Phone)} reduced={Boolean(reduced)} />
+              )}
               {isSpouseApplication ? (
                 <InfoField
                   label="Main Applicant"
