@@ -78,12 +78,14 @@ export default function ChatPage() {
           </Tooltip>
         </div>
 
-        <ConversationList
-          selectedId={selectedConversationId}
-          onSelect={handleSelectConversation}
-          currentUserId={currentUserId}
-          showArchiveAndDelete
-        />
+        <div className="flex-1 min-h-0">
+          <ConversationList
+            selectedId={selectedConversationId}
+            onSelect={handleSelectConversation}
+            currentUserId={currentUserId}
+            showArchiveAndDelete
+          />
+        </div>
       </div>
 
       {/* Right panel — chat thread or empty state */}
