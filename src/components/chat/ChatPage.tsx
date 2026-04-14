@@ -47,7 +47,7 @@ export default function ChatPage() {
       {/* Left panel — conversation list */}
       <div
         className={cn(
-          "flex flex-col border-r border-border/40 bg-background",
+          "flex flex-col min-h-0 border-r border-border/40 bg-background",
           "w-full md:w-80 lg:w-96 shrink-0",
           // Mobile: hide list when thread is shown
           mobileView === "thread" ? "hidden md:flex" : "flex",
@@ -77,7 +77,7 @@ export default function ChatPage() {
       {/* Right panel — chat thread or empty state */}
       <div
         className={cn(
-          "flex-1 flex flex-col min-w-0 bg-background relative",
+          "flex-1 flex flex-col min-h-0 min-w-0 bg-background relative",
           // Mobile: hide thread when list is shown
           mobileView === "list" ? "hidden md:flex" : "flex",
         )}
