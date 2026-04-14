@@ -91,25 +91,10 @@ export async function getRequestedDocumentsToMe(
 
   try {
     const defaultParams = {
-      ...params,
-      sort: "requested_at",
+      sort: "last_activity_at",
       order: "desc" as const,
+      ...params,
     };
-
-    const searchParams = new URLSearchParams();
-
-    if (defaultParams.page)
-      searchParams.append("page", defaultParams.page.toString());
-    if (defaultParams.limit)
-      searchParams.append("limit", defaultParams.limit.toString());
-    if (defaultParams.status)
-      searchParams.append("status", defaultParams.status);
-    if (defaultParams.requested_by)
-      searchParams.append("requested_by", defaultParams.requested_by);
-    if (defaultParams.requested_to)
-      searchParams.append("requested_to", defaultParams.requested_to);
-    if (defaultParams.sort) searchParams.append("sort", defaultParams.sort);
-    if (defaultParams.order) searchParams.append("order", defaultParams.order);
 
     const url = getFullUrl(
       API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL_TO,
@@ -158,25 +143,10 @@ export async function getMyRequestedDocuments(
 
   try {
     const defaultParams = {
-      ...params,
-      sort: "requested_at",
+      sort: "last_activity_at",
       order: "desc" as const,
+      ...params,
     };
-
-    const searchParams = new URLSearchParams();
-
-    if (defaultParams.page)
-      searchParams.append("page", defaultParams.page.toString());
-    if (defaultParams.limit)
-      searchParams.append("limit", defaultParams.limit.toString());
-    if (defaultParams.status)
-      searchParams.append("status", defaultParams.status);
-    if (defaultParams.requested_by)
-      searchParams.append("requested_by", defaultParams.requested_by);
-    if (defaultParams.requested_to)
-      searchParams.append("requested_to", defaultParams.requested_to);
-    if (defaultParams.sort) searchParams.append("sort", defaultParams.sort);
-    if (defaultParams.order) searchParams.append("order", defaultParams.order);
 
     const url = getFullUrl(
       API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL_ME,
@@ -264,26 +234,10 @@ export async function getAllRequestedDocuments(
   filters: Omit<RequestedDocumentsParams, "page" | "limit"> = {},
 ): Promise<RequestedDocumentsResponse> {
   const defaultFilters: RequestedDocumentsParams = {
-    ...filters,
-    sort: "requested_at",
+    sort: "last_activity_at",
     order: "desc",
+    ...filters,
   };
-
-  const searchParams = new URLSearchParams({
-    page: page.toString(),
-    limit: limit.toString(),
-  });
-
-  if (defaultFilters.status)
-    searchParams.append("status", String(defaultFilters.status));
-  if (defaultFilters.requested_by)
-    searchParams.append("requested_by", String(defaultFilters.requested_by));
-  if (defaultFilters.requested_to)
-    searchParams.append("requested_to", String(defaultFilters.requested_to));
-  if (defaultFilters.sort)
-    searchParams.append("sort", String(defaultFilters.sort));
-  if (defaultFilters.order)
-    searchParams.append("order", String(defaultFilters.order));
 
   return fetcher<RequestedDocumentsResponse>(
     getFullUrl(API_CONFIG.ENDPOINTS.REQUESTED_DOCUMENTS.ALL, {

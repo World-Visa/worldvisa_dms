@@ -2,6 +2,7 @@
 
 import { memo, useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import {
   useRequestedDocumentsToMePaginated,
@@ -34,9 +35,11 @@ import { RequestedDocumentViewSheet } from "@/components/requested-documents/Req
 import { useAuth } from "@/hooks/useAuth";
 import { RequestedDocument } from "@/lib/api/requestedDocuments";
 import { REQUESTED_DOCS_TABLE_COLUMNS } from "@/lib/constants/requestedDocsTable";
+import { DirectionEnum } from "@/components/ui/table";
 import { RequestedDocTableRow } from "@/components/requested-documents/RequestedDocTableRow";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ROLES } from "@/lib/roles";
+import { notificationSocket } from "@/lib/notificationSocket";
 
 type ActiveTab = "requested-to-me" | "my-requests" | "all-requests";
 
@@ -81,6 +84,20 @@ export default function RequestedDocsClient() {
   const [selectedDocument, setSelectedDocument] =
     useState<RequestedDocument | null>(null);
   const [searchInput, setSearchInput] = useState("");
+  const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
+  // null sortField = default (last_activity_at for reactivity); 'requested_at' = user toggled
+  const [sortField, setSortField] = useState<"last_activity_at" | "requested_at">("last_activity_at");
+
+  const queryClient = useQueryClient();
+  useEffect(() => {
+    return notificationSocket.onNotificationNew((event) => {
+      if (event.source === "requested_reviews" || event.source === "document_review") {
+        queryClient.invalidateQueries({ queryKey: ["requested-documents-to-me"] });
+        queryClient.invalidateQueries({ queryKey: ["my-requested-documents"] });
+        queryClient.invalidateQueries({ queryKey: ["all-requested-documents-paginated"] });
+      }
+    });
+  }, [queryClient]);
 
   const { data: adminUsers = [], isLoading: isLoadingAdmins } = useAdminUsers();
   const adminOptions = useMemo(
@@ -97,22 +114,17 @@ export default function RequestedDocsClient() {
   const debouncedSearch = useDebounce(searchInput.trim(), 350);
   const isSearchMode = debouncedSearch.length > 0;
 
-  const apiFilters =
-    filters.status !== "all"
-      ? {
-        status: filters.status,
-        requested_by: filters.requestedBy || undefined,
-        requested_to: filters.requestedTo || undefined,
-      }
-      : {
-        requested_by: filters.requestedBy || undefined,
-        requested_to: filters.requestedTo || undefined,
-      };
+  const apiFilters = {
+    ...(filters.status !== "all" ? { status: filters.status } : {}),
+    requested_by: filters.requestedBy || undefined,
+    requested_to: filters.requestedTo || undefined,
+    sort: sortField,
+    order: sortOrder,
+  };
 
   const {
     data: requestedToMeData,
     isLoading: isLoadingRequestedToMe,
-    refetch: refetchRequestedToMe,
   } = useRequestedDocumentsToMePaginated(
     currentPage,
     limit,
@@ -125,7 +137,6 @@ export default function RequestedDocsClient() {
   const {
     data: myRequestsData,
     isLoading: isLoadingMyRequests,
-    refetch: refetchMyRequests,
   } = useMyRequestedDocumentsPaginated(
     currentPage,
     limit,
@@ -138,7 +149,6 @@ export default function RequestedDocsClient() {
   const {
     data: allRequestsData,
     isLoading: isLoadingAllRequests,
-    refetch: refetchAllRequests,
   } = useAllRequestedDocumentsPaginated(currentPage, limit, apiFilters, {
     enabled: activeTab === "all-requests" && isMasterAdmin,
   });
@@ -391,9 +401,36 @@ export default function RequestedDocsClient() {
               <TableHeader>
                 <TableRow>
                   {REQUESTED_DOCS_TABLE_COLUMNS.map((col) => (
-                    <TableHead key={col.label} className={col.headerClassName}>
-                      {col.label}
-                    </TableHead>
+                    col.label === "Requested" ? (
+                      <TableHead
+                        key={col.label}
+                        className={col.headerClassName}
+                        sortable
+                        sortDirection={
+                          sortField === "requested_at"
+                            ? sortOrder === "desc" ? DirectionEnum.DESC : DirectionEnum.ASC
+                            : false
+                        }
+                        onSort={() => {
+                          if (sortField !== "requested_at") {
+                            setSortField("requested_at");
+                            setSortOrder("desc");
+                          } else if (sortOrder === "desc") {
+                            setSortOrder("asc");
+                          } else {
+                            setSortField("last_activity_at");
+                            setSortOrder("desc");
+                          }
+                          setCurrentPage(1);
+                        }}
+                      >
+                        {col.label}
+                      </TableHead>
+                    ) : (
+                      <TableHead key={col.label} className={col.headerClassName}>
+                        {col.label}
+                      </TableHead>
+                    )
                   ))}
                 </TableRow>
               </TableHeader>
