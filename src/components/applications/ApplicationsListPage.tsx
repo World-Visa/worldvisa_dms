@@ -16,6 +16,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { COUNTRIES, COUNTRY_IMAGE_URLS } from "@/lib/applications/utils";
 import { ROLES } from "@/lib/roles";
+import { API_ENDPOINTS } from "@/lib/config/api";
 import type {
   Country,
   ApplicationsFilters as ApplicationsFiltersType,
@@ -157,6 +158,21 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
 
   const { countryTotals, visibleCountries } = useCountryApplicationTotals({
     countries: allowedCountries,
+    getUrl: (country) => {
+      const params = new URLSearchParams();
+      params.set("page", "1");
+      params.set("limit", "1");
+      params.set("country", country);
+
+      if (type === "spouse") {
+        return API_ENDPOINTS.VISA_APPLICATIONS.SPOUSE.LIST(params.toString());
+      }
+      return API_ENDPOINTS.VISA_APPLICATIONS.LIST(params.toString());
+    },
+    queryKeyPrefix:
+      type === "spouse"
+        ? (["spouse-applications", "totals"] as const)
+        : (["applications", "totals"] as const),
   });
 
   // If the currently-selected country is hidden (0 total), fall back.
