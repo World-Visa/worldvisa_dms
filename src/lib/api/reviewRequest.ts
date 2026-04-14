@@ -281,3 +281,14 @@ export async function createMultipleReviewRequests(
     throw error;
   }
 }
+
+export async function sendForReview(
+  documentId: string,
+  data: { requested_to: string[]; message: string },
+): Promise<{ success: boolean; data: { created: string[]; updated: string[] } }> {
+  return fetcher(API_CONFIG.ENDPOINTS.REVIEW_REQUESTS_SEND(documentId), {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+}

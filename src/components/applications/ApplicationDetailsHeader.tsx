@@ -11,7 +11,11 @@ import {
   DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/primitives/dropdown-menu";
 import { CheckCircle, XCircle } from "lucide-react";
@@ -23,7 +27,7 @@ import {
 import { ApplicationActivitySheet } from "@/components/applications/ApplicationActivitySheet";
 import { ChatButton } from "@/components/applications/ChatButton";
 import { ROUTES } from "@/utils/routes";
-import { RiMore2Fill } from "react-icons/ri";
+import { RiFileDownloadLine, RiMailLine, RiMore2Fill, RiStickyNoteLine, RiPhoneLine, RiEditLine, RiFileEditLine, RiPlug2Line, RiPlugFill, RiUser4Line, RiFingerprint2Line } from "react-icons/ri";
 
 interface QcRequested {
   qcId: string;
@@ -39,6 +43,7 @@ interface ApplicationDetailsHeaderProps {
   onPushForQualityCheck: () => void;
   onDownloadAll: () => void;
   onActivateAccount?: () => void;
+  onEditAccountDetails?: () => void;
   onAddNote?: () => void;
   onEmailHistory?: () => void;
   onStartChat?: () => void;
@@ -101,6 +106,7 @@ export function ApplicationDetailsHeader({
   onPushForQualityCheck,
   onDownloadAll,
   onActivateAccount,
+  onEditAccountDetails,
   onAddNote,
   onEmailHistory,
   onStartChat,
@@ -243,62 +249,85 @@ export function ApplicationDetailsHeader({
               <RiMore2Fill className="size-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-44 mt-1" align="end" side="bottom" sideOffset={4}>
+          <DropdownMenuContent className="w-44 mt-1 rounded-xl" align="end" side="bottom" sideOffset={4}>
             <DropdownMenuGroup>
-              <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold py-1">Account</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground font-mono font-medium py-1">Account</DropdownMenuLabel>
+              <DropdownMenuSub>
+                <DropdownMenuSubTrigger className="cursor-pointer font-light text-sm text-neutral-800">
+                  <RiUser4Line className="size-4 mr-2 shrink-0" />
+                  Profile
+                </DropdownMenuSubTrigger>
+                <DropdownMenuPortal>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem onClick={
+                      onActivateAccount ? () => onActivateAccount() : undefined
+                    }
+                      className="cursor-pointer font-light text-sm text-neutral-800" >Onboarding Details</DropdownMenuItem>
+                    <DropdownMenuItem onClick={onEditAccountDetails} className="cursor-pointer font-light text-sm text-neutral-800">
+                      Account Details
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuPortal>
+              </DropdownMenuSub>
+
               <DropdownMenuItem
-                onClick={
-                  onActivateAccount ? () => onActivateAccount() : undefined
-                }
-                className="cursor-pointer hover:bg-gray-100"
+                onClick={() => setIsActivitySheetOpen(true)}
+                className="cursor-pointer font-light text-sm text-neutral-800"
               >
-                Onboarding Detail
+                <RiFingerprint2Line className="size-4" />
+                <span className="hidden sm:inline">Activity Log</span>
               </DropdownMenuItem>
+
             </DropdownMenuGroup>
 
             <DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold py-1">Documents</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground font-mono font-medium py-1">Documents</DropdownMenuLabel>
               <DropdownMenuItem
-                className="cursor-pointer hover:bg-gray-100"
+                className="cursor-pointer font-light text-sm text-neutral-800"
                 onSelect={navigateToChecklist}
               >
-                Edit checklist
+                <RiFileEditLine className="size-4" />
+                <span className="hidden sm:inline">Edit Checklist</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={onDownloadAll}
                 disabled={!areAllDocumentsApproved}
-                className="cursor-pointer hover:bg-gray-100"
+                className="cursor-pointer font-light text-sm text-neutral-800"
               >
-                Download Documents
+                <RiFileDownloadLine className="size-4" />
+                <span className="hidden sm:inline">Download Docs</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
             <DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold py-1">Notes</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground font-mono font-medium py-1">Notes</DropdownMenuLabel>
               <DropdownMenuItem
                 onClick={onAddNote}
-                className="cursor-pointer hover:bg-gray-100"
+                className="cursor-pointer font-light text-sm text-neutral-800"
               >
-                Add Note
+                <RiStickyNoteLine className="size-4" />
+                <span className="hidden sm:inline">Add Note</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
             <DropdownMenuGroup>
               <DropdownMenuSeparator />
-              <DropdownMenuLabel className="text-xs uppercase text-muted-foreground font-mono font-bold">History</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground font-mono font-medium">History</DropdownMenuLabel>
               <DropdownMenuItem
-                onClick={() => setIsActivitySheetOpen(true)}
-                className="cursor-pointer hover:bg-gray-100"
+                // onClick={() => setIsActivitySheetOpen(true)}
+                className="cursor-pointer font-light text-sm text-neutral-800"
               >
-                View Activity Log
+                <RiPhoneLine className="size-4" />
+                <span className="hidden sm:inline">Call Logs</span>
               </DropdownMenuItem>
               <DropdownMenuItem
                 onClick={onEmailHistory}
-                className="cursor-pointer hover:bg-gray-100"
+                className="cursor-pointer font-light text-sm text-neutral-800"
               >
-                Email History
+                <RiMailLine className="size-4" />
+                <span className="hidden sm:inline">Email History</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
           </DropdownMenuContent>

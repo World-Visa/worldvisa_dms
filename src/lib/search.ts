@@ -1,55 +1,31 @@
 import { fetcher } from "./fetcher";
-import { VisaApplication, SearchParams } from "@/types/applications";
-
-export interface SearchResponse {
-  success: boolean;
-  data: VisaApplication[];
-}
+import { ApplicationsResponse, SearchParams } from "@/types/applications";
+import { ZOHO_BASE_URL } from "@/lib/config/api";
 
 /**
- * Search visa applications using the dedicated search endpoint
- * @param searchParams - Search parameters (name, phone, email)
- * @returns Promise<SearchResponse>
+ * Search visa applications via the same list endpoint as browsing.
  */
 export async function searchApplications(
   searchParams: SearchParams,
-): Promise<SearchResponse> {
-  // Filter out empty values
-  const filteredParams = Object.fromEntries(
-    Object.entries(searchParams).filter(
-      ([, value]) => value && value.trim() !== "",
-    ),
-  );
-
-  // Validate that at least one search parameter is provided
-  if (Object.keys(filteredParams).length === 0) {
-    throw new Error("At least one search parameter is required");
+): Promise<ApplicationsResponse> {
+  const term = searchParams.search?.trim();
+  if (!term) {
+    throw new Error("A search term is required");
   }
 
-  // Build query string for search endpoint
   const queryParams = new URLSearchParams();
+  queryParams.set("search", term);
+  if (searchParams.country) queryParams.set("country", searchParams.country);
+  if (searchParams.page != null)
+    queryParams.set("page", String(searchParams.page));
+  if (searchParams.limit != null)
+    queryParams.set("limit", String(searchParams.limit));
 
-  // Add each non-empty search parameter
-  Object.entries(filteredParams).forEach(([key, value]) => {
-    if (value && value.trim() !== "") {
-      queryParams.append(key, value.trim());
-    }
-  });
+  const url = `${ZOHO_BASE_URL}/visa_applications?${queryParams.toString()}`;
 
-  // Use the dedicated search endpoint
-  const url = `/api/zoho_dms/visa_applications/search?${queryParams.toString()}`;
-
-  return fetcher<SearchResponse>(url);
+  return fetcher<ApplicationsResponse>(url);
 }
 
-/**
- * Check if search parameters are valid (at least one non-empty search term)
- * @param searchParams - Search parameters to validate
- * @returns boolean
- */
 export function isValidSearchParams(searchParams: SearchParams): boolean {
-  const { country: _country, ...searchTerms } = searchParams;
-  return Object.values(searchTerms).some(
-    (value) => value && value.trim() !== "",
-  );
+  return Boolean(searchParams.search?.trim());
 }

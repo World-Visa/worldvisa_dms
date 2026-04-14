@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { ChatPanelController } from "@/app/(admin-v2)/chat-panel-controller";
+import { PhonePanelController } from "@/app/(admin-v2)/phone-panel-controller";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
 import { AppSidebar } from "@/components/v2/sidebar/app-sidebar";
@@ -10,11 +11,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 import { SearchDialog } from "@/components/v2/sidebar/search-dialog";
+import { CommandPaletteSetup } from "@/components/v2/command-palette-setup";
 import { NotificationDropdown } from "@/components/v2/header/notification-dropdown";
 import { AccountSwitcher } from "@/components/v2/sidebar/account-switcher";
 import { ContentArea } from "@/app/(admin-v2)/content-area";
 import { SidebarController } from "@/app/(admin-v2)/sidebar-controller";
 import { McubePhoneWidgetLoader } from "@/components/mcube/McubePhoneWidgetLoader";
+import PhoneCard from "@/components/mcube/PhoneCard";
 
 function AdminContentFallback() {
   return (
@@ -32,6 +35,7 @@ function AdminContentFallback() {
 
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   return (
+    <CommandPaletteSetup>
     <SidebarProvider defaultOpen={true}>
       <Suspense fallback={null}>
         <SidebarController />
@@ -59,6 +63,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             <div className="flex items-center gap-1">
               {/* <LayoutControls />
               <ThemeSwitcher /> */}
+              {/* <PhoneCard /> */}
               <NotificationDropdown />
               <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-6" />
               <AccountSwitcher />
@@ -76,11 +81,15 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
           <Suspense fallback={null}>
             <ChatPanelController />
           </Suspense>
+          <Suspense fallback={null}>
+            <PhonePanelController />
+          </Suspense>
         </div>
       </SidebarInset>
 
-      <McubePhoneWidgetLoader />
+      {/* <McubePhoneWidgetLoader /> */}
 
     </SidebarProvider>
+    </CommandPaletteSetup>
   );
 }

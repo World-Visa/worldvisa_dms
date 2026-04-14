@@ -34,16 +34,27 @@ export interface RequestedDocument {
     requested_to: string;
     status: "pending" | "reviewed";
     _id: string;
-    messages: unknown[];
+    messages: Array<{ username: string; message: string; _id: string; added_at: string }>;
     requested_at: string;
+    participants?: string[];
   };
   requested_reviews?: Array<{
     requested_by: string;
     requested_to: string;
     status: "pending" | "reviewed";
     _id: string;
-    messages: unknown[];
+    messages: Array<{ username: string; message: string; _id: string; added_at: string }>;
     requested_at: string;
+    participants?: string[];
+  }>;
+  review_chain?: Array<{
+    requested_by: string;
+    requested_to: string;
+    status: "pending" | "reviewed";
+    _id: string;
+    messages: Array<{ username: string; message: string; _id: string; added_at: string }>;
+    requested_at: string;
+    participants?: string[];
   }>;
   isOverdue?: boolean;
   daysSinceRequest?: number;

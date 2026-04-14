@@ -1,12 +1,3 @@
-/* ─────────────────────────────────────────────────────────
- * APPLICATION INFO CARD — ANIMATION STORYBOARD
- *
- * ENTER (matches QCActionCard/ApplicationDetailsHeader panel):
- *   80ms   header fades up (opacity 0→1, y 6→0, spring)
- *  160ms   white card springs in (opacity 0→1, y 10→0, spring-soft)
- *  col stagger: each column +60ms after card
- * ───────────────────────────────────────────────────────── */
-
 "use client";
 
 import { useState } from "react";

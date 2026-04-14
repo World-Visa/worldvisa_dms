@@ -7,6 +7,7 @@ import {
     type LucideIcon,
     Mail,
     MessageSquare,
+    Phone,
     ShieldCheck,
     Users,
 } from "lucide-react";
@@ -116,6 +117,13 @@ export const sidebarItems: NavGroup[] = [
                 icon: MessageSquare,
                 comingSoon: false,
                 isNew: false,
+                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
+            },
+            {
+                title: "Call Logs",
+                url: ROUTES.CALL_LOGS,
+                icon: Phone,
+                comingSoon: false,
                 allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
             },
         ],

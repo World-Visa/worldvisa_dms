@@ -1,7 +1,9 @@
 "use client";
 
-import { memo, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 
 import { ListNoResults } from "@/components/applications/list-no-results";
 import { FacetedFormFilter } from "@/components/ui/faceted-filter/facated-form-filter";
@@ -47,13 +49,23 @@ const TableLoadingRow = memo(function TableLoadingRow() {
 });
 
 export function QualityCheckClient() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const rawLeadId = searchParams.get("leadId");
+
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
   const [searchInput, setSearchInput] = useState("");
   const [filters, setFilters] = useState<Filters>(DEFAULT_FILTERS);
-  const [selectedItem, setSelectedItem] = useState<QualityCheckListItem | null>(
-    null,
-  );
+  const [selectedItem, setSelectedItem] = useState<QualityCheckListItem | null>(null);
+  const [targetLeadId, setTargetLeadId] = useState<string | null>(null);
+
+  // Phase 1: capture URL param and clear it immediately
+  useEffect(() => {
+    if (!rawLeadId) return;
+    setTargetLeadId(rawLeadId);
+    router.replace("/v2/quality-check", { scroll: false });
+  }, [rawLeadId, router]);
 
   const debouncedSearch = useDebounce(searchInput.trim(), 350);
   const isSearchMode = debouncedSearch.length > 0;
@@ -70,6 +82,15 @@ export function QualityCheckClient() {
 
   const items = data?.data ?? [];
   const totalItems = data?.pagination?.totalRecords ?? data?.totalCount ?? 0;
+
+  // Phase 2: once list loads, find item by leadId and open its sheet
+  useEffect(() => {
+    if (!targetLeadId || items.length === 0) return;
+    const found = items.find((item) => item.id === targetLeadId);
+    if (!found) return;
+    setSelectedItem(found);
+    setTargetLeadId(null);
+  }, [targetLeadId, items]);
 
   const hasActiveFilters =
     searchInput.trim() !== "" ||

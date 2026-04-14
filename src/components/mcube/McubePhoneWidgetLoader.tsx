@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 
 const McubePhoneWidget = dynamic(
   () => import("./McubePhoneWidget").then((m) => ({ default: m.McubePhoneWidget })),
-  { ssr: false }
+  { ssr: false },
 );
 
 export function McubePhoneWidgetLoader() {

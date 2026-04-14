@@ -26,6 +26,9 @@ export const API_CONFIG = {
     REVIEW_REQUESTS: (documentId: string) =>
       `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews`,
 
+    REVIEW_REQUESTS_SEND: (documentId: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/send`,
+
     REVIEW_REQUEST_MESSAGES: (documentId: string, reviewId: string) =>
       `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`,
 
@@ -145,8 +148,6 @@ export const API_ENDPOINTS = {
     LIST: (params?: string) =>
       `${ZOHO_BASE_URL}/visa_applications${params ? `?${params}` : ""}`,
     BY_ID: (id: string) => `${ZOHO_BASE_URL}/visa_applications/${id}`,
-    SEARCH: (params: string) =>
-      `${ZOHO_BASE_URL}/visa_applications/search?${params}`,
     UPDATE_FIELDS: `${ZOHO_BASE_URL}/visa_applications/update_fields`,
     QUALITY_CHECK: `${ZOHO_BASE_URL}/visa_applications/quality_check`,
     DEADLINE_STATS: (params: string) =>
@@ -198,8 +199,6 @@ export const API_ENDPOINTS = {
     SPOUSE: {
       LIST: (params: string) =>
         `${ZOHO_BASE_URL}/visa_applications/spouse/applications?${params}`,
-      SEARCH: (params: string) =>
-        `${ZOHO_BASE_URL}/visa_applications/spouse/applications/search?${params}`,
       BY_ID: (id: string) =>
         `${ZOHO_BASE_URL}/visa_applications/spouse/applications/${id}`,
       NOTES: (id: string) =>
@@ -223,6 +222,9 @@ export const API_ENDPOINTS = {
       LIST: `${ZOHO_BASE_URL}/clients/checklist/requested`,
       BY_ID: (leadId: string) =>
         `${ZOHO_BASE_URL}/clients/checklist/requested/${leadId}`,
+    },
+    PROFILE: {
+      BY_ID: (leadId: string) => `${ZOHO_BASE_URL}/clients/profile/${leadId}`,
     },
     INVITE: `${ZOHO_BASE_URL}/clients/invite`,
   },

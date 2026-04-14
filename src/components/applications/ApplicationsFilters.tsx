@@ -95,7 +95,7 @@ export function ApplicationsFilterBar({
         title="Search"
         value={search}
         onChange={onSearchChange}
-        placeholder="Search by name…"
+        placeholder="Search applications…"
       />
 
       {enabledFilters.applicationStage && (
