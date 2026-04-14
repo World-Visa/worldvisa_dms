@@ -119,7 +119,7 @@ function PaletteFooter({ commands }: { commands: CommandType[] }) {
           </div>
           <span className="text-sm font-normal text-text-soft">Navigate</span>
         </div>
-        <Button variant="primary" size="2xs" mode="gradient" className='text-sm'>
+        <Button variant="primary" size="2xs" mode="gradient" className='text-sm font'>
           <span>{getCategoryActionLabel(selectedCommand?.category, selectedValue)}</span>
           <Kbd className="border border-white/30 bg-transparent ring-transparent px-0 size-4 justify-center items-center">
             <RiCornerDownLeftLine className="size-2.5 text-white" />

@@ -230,7 +230,7 @@ export function ApplicationInfoCard({ application, isSpouseApplication }: Applic
               <SectionLabel>Personal Information</SectionLabel>
               <InfoField label="Full Name" value={formatValue(application.Name)} />
               <InfoField label="Email" value={formatValue(application.Email)} />
-              <PhoneInfoField label="Phone" value={formatValue(application.Phone)} reduced={Boolean(reduced)} />
+              {/* <PhoneInfoField label="Phone" value={formatValue(application.Phone)} reduced={Boolean(reduced)} /> */}
               {isSpouseApplication ? (
                 <InfoField
                   label="Main Applicant"

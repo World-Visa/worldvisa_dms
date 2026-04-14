@@ -63,7 +63,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
             <div className="flex items-center gap-1">
               {/* <LayoutControls />
               <ThemeSwitcher /> */}
-              <PhoneCard />
+              {/* <PhoneCard /> */}
               <NotificationDropdown />
               <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-6" />
               <AccountSwitcher />

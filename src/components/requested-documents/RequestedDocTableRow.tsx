@@ -9,9 +9,8 @@ import type { RequestedDocument } from "@/lib/api/requestedDocuments";
 import { ClientNameCell } from "@/components/requested-documents/ClientNameCell";
 import { RequestDocStatusBadge } from "@/components/requested-documents/RequestDocStatusBadge";
 import { CopyButton } from "@/components/ui/primitives/copy-button";
-import { Badge, BadgeIcon } from "@/components/ui/primitives/badge";
 import TruncatedText from "@/components/ui/truncated-text";
-import { ROUTE_CONFIG } from "@/lib/constants/requestedDocsTable";
+import { ReviewRouteDisplay } from "@/components/requested-documents/ReviewRouteDisplay";
 import { cn } from "@/lib/utils";
 
 export const RequestedDocTableRow = memo(function RequestedDocTableRow({
@@ -80,31 +79,7 @@ export const RequestedDocTableRow = memo(function RequestedDocTableRow({
 
       {/* Route */}
       <TableCell>
-        <div className="flex flex-col gap-1.5">
-          {(["by", "to"] as const).map((key) => {
-            const cfg = ROUTE_CONFIG[key];
-            const name = key === "by"
-              ? document.requested_review.requested_by
-              : document.requested_review.requested_to;
-            return (
-              <div key={key} className="flex items-center gap-1.5">
-                <span className="shrink-0 w-4 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
-                  {cfg.label}
-                </span>
-                <Badge variant="lighter" color={cfg.color} className="rounded-md" size="md">
-                  {/* <BadgeIcon as={cfg.icon} /> */}
-                  <TruncatedText className="max-w-[10ch] capitalize text-xs font-normal">
-                    {hasQuery ? (
-                      <HighlightText text={name} query={searchQuery!} />
-                    ) : (
-                      name
-                    )}
-                  </TruncatedText>
-                </Badge>
-              </div>
-            );
-          })}
-        </div>
+        <ReviewRouteDisplay document={document} />
       </TableCell>
 
       {/* Status */}

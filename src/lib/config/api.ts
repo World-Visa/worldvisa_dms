@@ -26,6 +26,9 @@ export const API_CONFIG = {
     REVIEW_REQUESTS: (documentId: string) =>
       `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews`,
 
+    REVIEW_REQUESTS_SEND: (documentId: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/send`,
+
     REVIEW_REQUEST_MESSAGES: (documentId: string, reviewId: string) =>
       `${ZOHO_BASE_URL}/visa_applications/documents/${documentId}/requested_reviews/${reviewId}/messages`,
 
