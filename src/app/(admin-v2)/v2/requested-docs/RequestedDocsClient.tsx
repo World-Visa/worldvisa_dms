@@ -1,6 +1,6 @@
 "use client";
 
-import { memo, useState, useEffect, useMemo } from "react";
+import { memo, useState, useEffect, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
@@ -61,9 +61,14 @@ export default function RequestedDocsClient() {
   const [targetDocId, setTargetDocId] = useState<string | null>(null);
   const deepLinkActive = !!rawDocId || !!targetDocId;
 
-  const [activeTab, setActiveTab] = useState<ActiveTab>(
-    isMasterAdmin ? "all-requests" : "requested-to-me",
-  );
+  const [activeTab, setActiveTab] = useState<ActiveTab>("requested-to-me");
+  const hasSetDefaultTab = useRef(false);
+  useEffect(() => {
+    if (!hasSetDefaultTab.current && user) {
+      hasSetDefaultTab.current = true;
+      if (isMasterAdmin) setActiveTab("all-requests");
+    }
+  }, [user, isMasterAdmin]);
   const [currentPage, setCurrentPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [filters, setFilters] = useState<FiltersType>({

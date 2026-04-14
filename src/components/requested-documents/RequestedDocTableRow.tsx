@@ -40,10 +40,10 @@ export const RequestedDocTableRow = memo(function RequestedDocTableRow({
       onClick={() => onView(document)}
     >
       {/* Document */}
-      <TableCell>
+      <TableCell className="pr-6">
         <div className="space-y-0.5">
           <div className="flex items-center gap-1">
-            <TruncatedText className="max-w-[26ch] font-medium text-foreground">
+            <TruncatedText className="max-w-[20ch] text-sm font-medium text-foreground">
               {companyName}
             </TruncatedText>
             {companyName !== "—" && (
@@ -55,7 +55,7 @@ export const RequestedDocTableRow = memo(function RequestedDocTableRow({
             )}
           </div>
           {docType !== "—" && (
-            <TruncatedText className="max-w-[26ch] text-xs text-muted-foreground font-normal">
+            <TruncatedText className="max-w-[20ch] text-xs text-muted-foreground font-normal">
               {hasQuery ? (
                 <HighlightText text={docType} query={searchQuery!} className="text-xs text-muted-foreground" />
               ) : (
@@ -73,8 +73,10 @@ export const RequestedDocTableRow = memo(function RequestedDocTableRow({
       </TableCell>
 
       {/* Client Name */}
-      <TableCell>
-        <ClientNameCell recordId={document.record_id} clientName={document.client_name} searchQuery={searchQuery} />
+      <TableCell className="pr-6">
+        <div className="text-xs">
+          <ClientNameCell recordId={document.record_id} clientName={document.client_name} searchQuery={searchQuery} />
+        </div>
       </TableCell>
 
       {/* Route */}
