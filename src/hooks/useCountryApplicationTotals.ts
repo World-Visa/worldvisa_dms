@@ -6,28 +6,28 @@ import qs from "query-string";
 import type { Country } from "@/types/applications";
 import type { ApplicationsResponse } from "@/types/applications";
 import { fetcher } from "@/lib/fetcher";
-import { ZOHO_BASE_URL } from "@/lib/config/api";
 import { COUNTRIES } from "@/lib/applications/utils";
 
 type UseCountryApplicationTotalsOptions = {
   countries?: readonly Country[];
   staleTimeMs?: number;
+  /** Returns a full URL for the totals query for a given country. */
+  getUrl: (country: Country) => string;
+  queryKeyPrefix?: readonly string[];
 };
 
 export function useCountryApplicationTotals({
   countries = COUNTRIES,
   staleTimeMs = 1000 * 60 * 5,
-}: UseCountryApplicationTotalsOptions = {}) {
+  getUrl,
+  queryKeyPrefix = ["applications", "totals"],
+}: UseCountryApplicationTotalsOptions) {
   const queries = useQueries({
     queries: countries.map((country) => {
-      const query = qs.stringify(
-        { page: 1, limit: 1, country },
-        { skipNull: true, skipEmptyString: true },
-      );
-      const url = `${ZOHO_BASE_URL}/visa_applications?${query}`;
+      const url = getUrl(country);
 
       return {
-        queryKey: ["applications", "totals", country] as const,
+        queryKey: [...queryKeyPrefix, country] as const,
         queryFn: () => fetcher<ApplicationsResponse>(url),
         staleTime: staleTimeMs,
         gcTime: staleTimeMs * 2,
