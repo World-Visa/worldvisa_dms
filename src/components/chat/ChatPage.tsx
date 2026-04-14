@@ -3,6 +3,11 @@
 import { useState } from "react";
 import { MessageSquare, PenSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/useAuth";
 import { useChatSocket } from "@/hooks/useChat";
@@ -48,7 +53,7 @@ export default function ChatPage() {
       <div
         className={cn(
           "flex flex-col min-h-0 border-r border-border/40 bg-background",
-          "w-full md:w-80 lg:w-96 shrink-0",
+          "w-full md:w-80 lg:w-96 shrink-0 px-2",
           // Mobile: hide list when thread is shown
           mobileView === "thread" ? "hidden md:flex" : "flex",
         )}
@@ -56,14 +61,21 @@ export default function ChatPage() {
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-4 border-b border-border/40 shrink-0">
           <h1 className="text-xl font-medium text-foreground">Messages</h1>
-          <Button
-            size="icon-sm"
-            variant="secondary"
-            onClick={() => setShowNewChat(true)}
-            className="h-8 w-8 rounded-xl"
-          >
-            <PenSquare className="h-4 w-4" />
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon-sm"
+                variant="secondary"
+                onClick={() => setShowNewChat(true)}
+                className="h-8 w-8 rounded-xl"
+              >
+                <PenSquare className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" align="center">
+              New message
+            </TooltipContent>
+          </Tooltip>
         </div>
 
         <ConversationList
