@@ -3,11 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RequestedDocument } from "@/lib/api/requestedDocuments";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallback,
-} from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 function ParticipantNode({
   name,
@@ -39,8 +35,11 @@ function ParticipantNode({
   );
 }
 
-
-export function ReviewRouteDisplay({ document }: { document: RequestedDocument }) {
+export function ReviewRouteDisplay({
+  document,
+}: {
+  document: RequestedDocument;
+}) {
   const { data: adminUsers = [] } = useAdminUsers();
 
   const adminMap = React.useMemo(() => {
@@ -53,22 +52,27 @@ export function ReviewRouteDisplay({ document }: { document: RequestedDocument }
 
   const chain = document.review_chain;
 
-  // Fallback for docs without a chain (older records before review_chain was added)
   if (!chain?.length) {
-    const nodes = [
-      document.requested_review.requested_by,
-      document.requested_review.requested_to,
-    ];
+    const review = document.requested_review;
+    const firstSender = review.messages?.[0]?.username;
+    const fallbackNodes: string[] = [];
+    if (firstSender && firstSender !== review.requested_by) {
+      fallbackNodes.push(firstSender);
+    }
+    fallbackNodes.push(review.requested_by);
+    if (review.requested_to !== fallbackNodes[fallbackNodes.length - 1]) {
+      fallbackNodes.push(review.requested_to);
+    }
     return (
       <div className="flex items-center gap-1.5 flex-wrap">
-        {nodes.map((node, i) => (
+        {fallbackNodes.map((node, i) => (
           <React.Fragment key={`${node}-${i}`}>
             <ParticipantNode
               name={node}
               imageUrl={adminMap[node]}
-              isLast={i === nodes.length - 1}
+              isLast={i === fallbackNodes.length - 1}
             />
-            {i < nodes.length - 1 && (
+            {i < fallbackNodes.length - 1 && (
               <ArrowRight className="h-3 w-3 text-gray-300 shrink-0" />
             )}
           </React.Fragment>
@@ -89,7 +93,6 @@ export function ReviewRouteDisplay({ document }: { document: RequestedDocument }
       nodes.push(chain[0].requested_to);
     }
   } else {
-    // New docs: each forward creates a separate entry — build from the full chain
     nodes.push(chain[0].requested_by);
     for (const entry of chain) {
       if (entry.requested_to !== nodes[nodes.length - 1]) {
