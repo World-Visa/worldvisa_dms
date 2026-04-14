@@ -94,10 +94,7 @@ export function useRequestedDocumentsToMePaginated(
         ).toLocaleDateString(),
       }));
 
-      return {
-        ...data,
-        data: sortByRequestedAtDesc(enhancedData),
-      };
+      return { ...data, data: enhancedData };
     },
     meta: {
       errorMessage: "Failed to load requested documents. Please try again.",
@@ -178,10 +175,7 @@ export function useMyRequestedDocumentsPaginated(
         ).toLocaleDateString(),
       }));
 
-      return {
-        ...data,
-        data: sortByRequestedAtDesc(enhancedData),
-      };
+      return { ...data, data: enhancedData };
     },
     meta: {
       errorMessage: "Failed to load my requested documents. Please try again.",
@@ -373,10 +367,7 @@ export function useAllRequestedDocumentsPaginated(
         ).toLocaleDateString(),
       }));
 
-      return {
-        ...data,
-        data: sortByRequestedAtDesc(enhancedData),
-      };
+      return { ...data, data: enhancedData };
     },
     staleTime: 2 * 60 * 1000,
     gcTime: 5 * 60 * 1000,

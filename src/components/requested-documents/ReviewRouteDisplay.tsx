@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RequestedDocument } from "@/lib/api/requestedDocuments";
 import { useAdminUsers } from "@/hooks/useAdminUsers";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/avatar";
 
 function ParticipantNode({
   name,
@@ -17,7 +17,7 @@ function ParticipantNode({
   const initials = name.slice(0, 2).toUpperCase();
   return (
     <div className="flex items-center gap-1">
-      <Avatar size="sm" className="size-2 shrink-0">
+      <Avatar className="size-4 shrink-0">
         {imageUrl && <AvatarImage src={imageUrl} alt={name} />}
         <AvatarFallback className="text-[8px] font-semibold">
           {initials}
