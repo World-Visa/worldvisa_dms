@@ -9,22 +9,14 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 import { cn } from "@/lib/utils";
 import { getDefaultAvatarSrc } from "@/lib/chatAvatars";
 import { GroupAvatar } from "@/components/chat/GroupAvatar";
@@ -284,87 +276,79 @@ export function ConversationList({
       </div>
 
       {/* List */}
-      <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5">
-        {isLoading ? (
-          <ConversationSkeleton />
-        ) : conversations.length === 0 ? (
-          <div className="text-center py-12">
-            <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">
-              {search
-                ? "No results found"
-                : showArchived
-                  ? "No archived conversations"
-                  : "No conversations yet"}
-            </p>
-          </div>
-        ) : showArchiveAndDelete ? (
-          conversations.map((conv) => (
-            <AdminConversationRow
-              key={conv._id}
-              conversation={conv}
-              isSelected={selectedId === conv._id}
-              currentUserId={currentUserId}
-              isArchivedView={showArchived}
-              onSelect={onSelect}
-              onArchive={() =>
-                archiveMutation.mutate({
-                  conversationId: conv._id,
-                  archived: !showArchived,
-                })
-              }
-              onDeleteRequest={() => setDeleteConfirmConvId(conv._id)}
-              isArchiving={
-                archiveMutation.isPending &&
-                archiveMutation.variables?.conversationId === conv._id
-              }
-              isDeleting={
-                deleteMutation.isPending &&
-                deleteMutation.variables === conv._id
-              }
-              getProfileImageUrl={getProfileImageUrl}
-            />
-          ))
-        ) : (
-          conversations.map((conv) => (
-            <ConversationRow
-              key={conv._id}
-              conversation={conv}
-              isSelected={selectedId === conv._id}
-              currentUserId={currentUserId}
-              onSelect={onSelect}
-              getProfileImageUrl={getProfileImageUrl}
-            />
-          ))
-        )}
-      </div>
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="px-2 pb-3 space-y-0.5">
+          {isLoading ? (
+            <ConversationSkeleton />
+          ) : conversations.length === 0 ? (
+            <div className="text-center py-12">
+              <MessageSquare className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
+              <p className="text-sm text-muted-foreground">
+                {search
+                  ? "No results found"
+                  : showArchived
+                    ? "No archived conversations"
+                    : "No conversations yet"}
+              </p>
+            </div>
+          ) : showArchiveAndDelete ? (
+            conversations.map((conv) => (
+              <AdminConversationRow
+                key={conv._id}
+                conversation={conv}
+                isSelected={selectedId === conv._id}
+                currentUserId={currentUserId}
+                isArchivedView={showArchived}
+                onSelect={onSelect}
+                onArchive={() =>
+                  archiveMutation.mutate({
+                    conversationId: conv._id,
+                    archived: !showArchived,
+                  })
+                }
+                onDeleteRequest={() => setDeleteConfirmConvId(conv._id)}
+                isArchiving={
+                  archiveMutation.isPending &&
+                  archiveMutation.variables?.conversationId === conv._id
+                }
+                isDeleting={
+                  deleteMutation.isPending &&
+                  deleteMutation.variables === conv._id
+                }
+                getProfileImageUrl={getProfileImageUrl}
+              />
+            ))
+          ) : (
+            conversations.map((conv) => (
+              <ConversationRow
+                key={conv._id}
+                conversation={conv}
+                isSelected={selectedId === conv._id}
+                currentUserId={currentUserId}
+                onSelect={onSelect}
+                getProfileImageUrl={getProfileImageUrl}
+              />
+            ))
+          )}
+        </div>
+      </ScrollArea>
 
       {showArchiveAndDelete && (
-        <AlertDialog
+        <ConfirmationModal
           open={!!deleteConfirmConvId}
           onOpenChange={(open) => !open && setDeleteConfirmConvId(null)}
-        >
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete conversation?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This will permanently delete the conversation and all messages
-                for everyone. This action cannot be undone.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setDeleteConfirmConvId(null)}>
-                Cancel
-              </AlertDialogCancel>
-              <AlertDialogAction
-                onClick={handleDeleteConfirm}
-                className="bg-destructive text-white hover:bg-destructive/90"
-              >
-                Delete
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+          onConfirm={handleDeleteConfirm}
+          title="Delete conversation?"
+          description={
+            <>
+              This will permanently delete the conversation and all messages for
+              everyone. This action cannot be undone.
+            </>
+          }
+          confirmText="Delete"
+          variant="destructive"
+          isLoading={deleteMutation.isPending}
+        />
       )}
     </div>
   );
