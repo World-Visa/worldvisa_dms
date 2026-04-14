@@ -1,11 +1,12 @@
 import type { Country } from "@/types/applications";
 
-export const COUNTRIES: readonly Country[] = ["Australia", "Canada"] as const;
+export const COUNTRIES: readonly Country[] = ["Australia", "Canada", "Germany"] as const;
 
 export const COUNTRY_IMAGE_URLS: Record<Country, string> = {
   Australia:
     "https://images.pexels.com/photos/1766215/pexels-photo-1766215.jpeg",
   Canada: "https://images.pexels.com/photos/2448946/pexels-photo-2448946.jpeg",
+  Germany: "https://images.pexels.com/photos/9930672/pexels-photo-9930672.jpeg",
 };
 
 
@@ -18,4 +19,8 @@ export const formatLocalDate = (date: Date): string => {
 
 
 export const resolveCountry = (urlCountry: string | undefined): Country =>
-  urlCountry === "Canada" ? "Canada" : "Australia";
+  urlCountry === "Canada"
+    ? "Canada"
+    : urlCountry === "Germany"
+      ? "Germany"
+      : "Australia";

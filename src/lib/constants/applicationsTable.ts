@@ -20,8 +20,8 @@ export const APPLICATIONS_TABLE_COLUMNS: readonly ApplicationsTableColumn[] = [
     skeletonClassName: "h-4 w-40 max-w-full",
   },
   {
-    label: "Phone",
-    skeletonClassName: "h-4 w-24 max-w-full",
+    label: "Service",
+    skeletonClassName: "h-6 w-28 rounded-md",
   },
   {
     label: "Handled By",

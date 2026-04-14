@@ -1,12 +1,13 @@
 "use client";
 
-import { memo, Suspense, lazy } from "react";
+import { memo, Suspense, lazy, useEffect } from "react";
 import type { UseQueryResult } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useDeadlineStats } from "@/hooks/useDeadlineStats";
 import {
   useApplicationsListState,
 } from "@/hooks/useApplicationsListState";
+import { useCountryApplicationTotals } from "@/hooks/useCountryApplicationTotals";
 import { ApplicationsFilterBar } from "@/components/applications/ApplicationsFilters";
 import { ApplicationsTableLoadingState } from "@/components/applications/ApplicationsTableLoadingState";
 import { ListNoResults } from "@/components/applications/list-no-results";
@@ -14,6 +15,7 @@ import { ErrorState } from "@/components/ui/ErrorState";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { COUNTRIES, COUNTRY_IMAGE_URLS } from "@/lib/applications/utils";
+import { ROLES } from "@/lib/roles";
 import type {
   Country,
   ApplicationsFilters as ApplicationsFiltersType,
@@ -31,19 +33,21 @@ const LazyApplicationsTable = lazy(() =>
 
 interface CountryTabNavProps {
   selectedCountry: Country;
+  countries: readonly Country[];
   countryTotals: Record<Country, number | undefined>;
   onCountryChange: (country: Country) => void;
 }
 
 function CountryTabNav({
   selectedCountry,
+  countries,
   countryTotals,
   onCountryChange,
 }: CountryTabNavProps) {
   return (
     <div className="mb-6">
       <div className="flex border-b border-gray-200">
-        {COUNTRIES.map((country) => {
+        {countries.map((country) => {
           const isActive = selectedCountry === country;
           const count = countryTotals[country];
           return (
@@ -118,10 +122,11 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
 }: ApplicationsListPageProps) {
   const { user } = useAuth();
   const canView =
-    user?.role === "master_admin" || user?.role === "team_leader";
+    user?.role === ROLES.MASTER_ADMIN || user?.role === ROLES.TEAM_LEADER;
 
   const state = useApplicationsListState({
     componentName: type === "visa" ? "ApplicationsClient" : "SpouseSkillAssessmentApplications",
+    availableCountries: type === "spouse" ? (["Australia"] as const) : COUNTRIES,
   });
 
   const {
@@ -133,6 +138,7 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
     applicationStage,
     applicationState,
     deadlineCategory,
+    serviceType,
     isSearchMode,
     filters,
     searchParamsForAPI,
@@ -143,25 +149,23 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
     handleApplicationStageChange,
     handleApplicationStateChange,
     handleDeadlineCategoryClick,
+    handleServiceTypeChange,
     handleClearFilters,
   } = state;
 
-  // ── Country count queries (lightweight badge totals) ──────────────────────
-  const { data: australiaCountData } = useApplicationsHook({
-    page: 1,
-    limit: 1,
-    country: "Australia",
-  });
-  const { data: canadaCountData } = useApplicationsHook({
-    page: 1,
-    limit: 1,
-    country: "Canada",
+  const allowedCountries = type === "spouse" ? (["Australia"] as const) : COUNTRIES;
+
+  const { countryTotals, visibleCountries } = useCountryApplicationTotals({
+    countries: allowedCountries,
   });
 
-  const countryTotals: Record<Country, number | undefined> = {
-    Australia: australiaCountData?.pagination.totalRecords,
-    Canada: canadaCountData?.pagination.totalRecords,
-  };
+  // If the currently-selected country is hidden (0 total), fall back.
+  useEffect(() => {
+    if (visibleCountries.length === 0) return;
+    if (!visibleCountries.includes(selectedCountry)) {
+      state.handleCountryChange(visibleCountries[0]);
+    }
+  }, [visibleCountries, selectedCountry, state]);
 
   // ── Main data query ───────────────────────────────────────────────────────
   const { data: regularData, isFetching, error } = useApplicationsHook(filters);
@@ -219,6 +223,7 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
     <>
       <CountryTabNav
         selectedCountry={selectedCountry}
+        countries={visibleCountries}
         countryTotals={countryTotals}
         onCountryChange={handleCountryChange}
       />
@@ -234,12 +239,14 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
           applicationState={enabledFilters.applicationState ? applicationState : undefined}
           handledBy={enabledFilters.handledBy ? handledBy : []}
           deadlineCategory={enabledFilters.deadline ? deadlineCategory : null}
+          serviceType={enabledFilters.serviceType ? serviceType : undefined}
           enabledFilters={enabledFilters}
           onSearchChange={handleSearchChange}
           onApplicationStageChange={handleApplicationStageChange}
           onApplicationStateChange={handleApplicationStateChange}
           onHandledByChange={handleHandledByChange}
           onDeadlineCategoryChange={handleDeadlineCategoryClick}
+          onServiceTypeChange={handleServiceTypeChange}
           onClearFilters={handleClearFilters}
           isLoading={displayLoading}
         />

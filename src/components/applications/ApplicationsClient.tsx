@@ -17,6 +17,7 @@ export const ApplicationsClient = memo(function ApplicationsClient() {
         applicationStage: true,
         applicationState: true,
         deadline: true,
+        serviceType: true,
       }}
     />
   );
