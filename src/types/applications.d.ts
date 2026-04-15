@@ -142,7 +142,6 @@ export interface ApplicationsFilters {
   applicationState?: "Active" | "In-Active";
   deadlineCategory?: "approaching" | "overdue" | "noDeadline" | "future" | null;
   country?: string;
-  serviceType?: string;
 }
 
 /** Query params for visa/spouse application list search (unified with listing endpoint). */
@@ -153,7 +152,7 @@ export interface SearchParams {
   limit?: number;
 }
 
-export type Country = "Australia" | "Canada" | "Germany";
+export type Country = "Australia" | "Canada";
 
 export type DeadlineCategory =
   | "approaching"
@@ -168,5 +167,4 @@ export interface EnabledFilters {
   applicationStage: boolean;
   applicationState: boolean;
   deadline: boolean;
-  serviceType: boolean;
 }
