@@ -15,6 +15,7 @@ import {
 import { Toaster as Sonner } from 'sonner';
 import { cn } from '@/lib/utils';
 import { CompactButton } from '@/components/ui/primitives/button-compact';
+import { Notification5Fill } from '@/components/icons/notification-5-fill';
 
 type ToasterProps = React.ComponentProps<typeof Sonner>;
 
@@ -52,6 +53,7 @@ const toastIconVariants = cva('min-w-5 size-5 p-[2px]', {
       error: 'fill-destructive',
       warning: 'fill-warning',
       info: 'fill-information',
+      notification: 'fill-information',
     },
   },
   defaultVariants: {
@@ -70,8 +72,11 @@ const VARIANT_ICONS = {
 };
 
 const ToastIcon = ({ className, variant = 'default', ...props }: ToastIconProps) => {
-  const Icon = VARIANT_ICONS[variant as keyof typeof VARIANT_ICONS];
+  if (variant === 'notification') {
+    return <Notification5Fill className={toastIconVariants({ variant, className })} />;
+  }
 
+  const Icon = VARIANT_ICONS[variant as keyof typeof VARIANT_ICONS];
   return <Icon className={toastIconVariants({ variant, className })} {...props} />;
 };
 

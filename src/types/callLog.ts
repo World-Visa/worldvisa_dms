@@ -8,7 +8,7 @@ export type CallStatus =
   | 'busy'
   | 'cancelled';
 
-export type CallDirection = 'inbound' | 'outbound';
+export type CallDirection = 'Inbound' | 'Outbound';
 
 // ── Filters passed to useCallLogs / API ─────────────────────────────────────
 

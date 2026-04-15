@@ -70,3 +70,40 @@ export const showWarningToast = (message: string | ReactNode, title?: string, op
     },
   });
 };
+
+export const showNotificationToast = (
+  title: string,
+  message: string,
+  action?: { label: string; onClick: () => void },
+  options: ExternalToast = {}
+) => {
+  showToast({
+    variant: 'md',
+    children: ({ close }) => (
+      <>
+        <ToastIcon variant="notification" />
+        <div className="flex flex-1 flex-col gap-0.5">
+          <span className="text-sm font-medium">{title}</span>
+          <span className="text-foreground-600 text-xs">{message}</span>
+          {action && (
+            <button
+              type="button"
+              className="text-primary mt-1 text-left text-xs font-medium"
+              onClick={() => {
+                action.onClick();
+                close();
+              }}
+            >
+              {action.label}
+            </button>
+          )}
+        </div>
+      </>
+    ),
+    options: {
+      duration: 6000,
+      ...CONSISTENT_TOAST_OPTIONS,
+      ...options,
+    },
+  });
+};
