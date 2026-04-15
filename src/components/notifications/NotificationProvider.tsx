@@ -2,13 +2,13 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { useAuth } from "@/hooks/useAuth";
 import { notificationSocket } from "@/lib/notificationSocket";
 import { useNotificationStore } from "@/store/notificationStore";
 import { getNotificationAction } from "@/components/v2/notifications/NotificationRow";
 import { usePresence } from "@/hooks/usePresence";
 import { usePresenceEmitter } from "@/hooks/usePresenceEmitter";
+import { showNotificationToast } from "@/components/ui/primitives/sonner-helpers";
 import type { NotificationNewEvent } from "@/types/notifications";
 
 // Cast socket event to Notification-compatible shape for getNotificationAction.
@@ -51,16 +51,11 @@ export function NotificationProvider({
 
     const unsubscribe = notificationSocket.onNotificationNew((notification) => {
       const action = getActionFromEvent(notification);
-      toast(notification.title ?? "New notification", {
-        description: notification.message,
-        duration: 6000,
-        action: action && !isClient
-          ? {
-              label: action.label,
-              onClick: () => router.push(action.href),
-            }
-          : undefined,
-      });
+      showNotificationToast(
+        notification.title ?? "New notification",
+        notification.message,
+        action && !isClient ? { label: action.label, onClick: () => router.push(action.href) } : undefined,
+      );
     });
 
     return unsubscribe;
