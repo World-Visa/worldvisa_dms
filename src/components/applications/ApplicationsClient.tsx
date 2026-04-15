@@ -13,11 +13,10 @@ export const ApplicationsClient = memo(function ApplicationsClient() {
       type="visa"
       getTitle={(country) => `${country} visa applications`}
       enabledFilters={{
-        handledBy: true,
+        handledBy: false,
         applicationStage: true,
         applicationState: true,
         deadline: true,
-        serviceType: true,
       }}
     />
   );

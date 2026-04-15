@@ -2,7 +2,6 @@
 
 import { useMemo } from "react";
 import { useQueries } from "@tanstack/react-query";
-import qs from "query-string";
 import type { Country } from "@/types/applications";
 import type { ApplicationsResponse } from "@/types/applications";
 import { fetcher } from "@/lib/fetcher";
@@ -42,7 +41,6 @@ export function useCountryApplicationTotals({
     const out: Record<Country, number | undefined> = {
       Australia: undefined,
       Canada: undefined,
-      Germany: undefined,
     };
     countries.forEach((country, idx) => {
       out[country] = queries[idx]?.data?.pagination.totalRecords;
