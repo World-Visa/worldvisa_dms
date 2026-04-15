@@ -32,8 +32,8 @@ export const CALL_STATUS_FALLBACK: CallStatusBadgeCfg = {
 };
 
 export const CALL_DIRECTION_BADGE: Record<CallDirection, { label: string; color: "blue" | "purple" }> = {
-  inbound:  { label: "Inbound",  color: "blue" },
-  outbound: { label: "Outbound", color: "purple" },
+  Inbound:  { label: "Inbound",  color: "blue" },
+  Outbound: { label: "Outbound", color: "purple" },
 };
 
 export const CALL_STATUS_OPTIONS: { value: CallStatus; label: string }[] = [
@@ -46,8 +46,8 @@ export const CALL_STATUS_OPTIONS: { value: CallStatus; label: string }[] = [
 ];
 
 export const CALL_DIRECTION_OPTIONS: { value: CallDirection; label: string }[] = [
-  { value: "inbound",  label: "Inbound" },
-  { value: "outbound", label: "Outbound" },
+  { value: "Inbound",  label: "Inbound" },
+  { value: "Outbound", label: "Outbound" },
 ];
 
 export const DATE_RANGE_OPTIONS: { value: DateRangePreset; label: string }[] = [
