@@ -21,13 +21,7 @@ export interface SendMessageRequest {
 
 export interface SendMessageResponse {
   status: "success" | "error";
-  data: {
-    _id: string;
-    message: string;
-    username: string;
-    added_at: string;
-    profile_image_url?: string | null;
-  };
+  data: RequestedDocumentMessage[];
   message?: string;
 }
 

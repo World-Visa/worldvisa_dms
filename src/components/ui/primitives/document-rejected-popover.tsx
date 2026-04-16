@@ -54,7 +54,7 @@ export function DocumentRejectedPopover({
       </PopoverTrigger>
       <PopoverContent
         side="top"
-        className="w-72 p-3"
+        className="w-72 p-3 min-h-[72px] max-h-[240px]"
         onMouseEnter={() => setIsOpen(true)}
         onMouseLeave={handleMouseLeave}
       >
@@ -73,7 +73,11 @@ export function DocumentRejectedPopover({
             {title}
           </span>
         </div>
-        <p className="text-xs text-text-sub leading-relaxed">{rejectMessage}</p>
+        <div className="max-h-[180px] overflow-y-auto pr-1">
+          <p className="text-xs text-text-sub leading-relaxed whitespace-pre-wrap wrap-break-word">
+            {rejectMessage}
+          </p>
+        </div>
       </PopoverContent>
     </Popover>
   );
