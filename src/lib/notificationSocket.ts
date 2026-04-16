@@ -34,6 +34,8 @@ export class NotificationSocketManager {
   private stateListeners = new Set<(state: NotificationConnectionState) => void>();
   private callLogNewListeners = new Set<Listener<CallLog>>();
   private callLogUpdatedListeners = new Set<Listener<CallLog>>();
+  private callInboundListeners = new Set<Listener<CallLog>>();
+  private callHangupListeners  = new Set<Listener<CallLog>>();
 
   private connectionState: NotificationConnectionState = {
     isConnected: false,
@@ -84,6 +86,8 @@ export class NotificationSocketManager {
     this.stateListeners.clear();
     this.callLogNewListeners.clear();
     this.callLogUpdatedListeners.clear();
+    this.callInboundListeners.clear();
+    this.callHangupListeners.clear();
   }
 
   isConnected(): boolean {
@@ -150,6 +154,24 @@ export class NotificationSocketManager {
     return () => {
       this.callLogUpdatedListeners.delete(cb);
       this.socket?.off(CALL_LOG_SOCKET_EVENTS.UPDATED, cb);
+    };
+  }
+
+  onCallInbound(cb: Listener<CallLog>): () => void {
+    this.callInboundListeners.add(cb);
+    if (this.socket?.connected) this.socket.on(CALL_LOG_SOCKET_EVENTS.INBOUND, cb);
+    return () => {
+      this.callInboundListeners.delete(cb);
+      this.socket?.off(CALL_LOG_SOCKET_EVENTS.INBOUND, cb);
+    };
+  }
+
+  onCallHangup(cb: Listener<CallLog>): () => void {
+    this.callHangupListeners.add(cb);
+    if (this.socket?.connected) this.socket.on(CALL_LOG_SOCKET_EVENTS.HANGUP, cb);
+    return () => {
+      this.callHangupListeners.delete(cb);
+      this.socket?.off(CALL_LOG_SOCKET_EVENTS.HANGUP, cb);
     };
   }
 
@@ -229,6 +251,8 @@ export class NotificationSocketManager {
     for (const cb of this.presenceSnapshotListeners) s.on(PRESENCE_SOCKET_EVENTS.SNAPSHOT, cb);
     for (const cb of this.callLogNewListeners) s.on(CALL_LOG_SOCKET_EVENTS.NEW, cb);
     for (const cb of this.callLogUpdatedListeners) s.on(CALL_LOG_SOCKET_EVENTS.UPDATED, cb);
+    for (const cb of this.callInboundListeners) s.on(CALL_LOG_SOCKET_EVENTS.INBOUND, cb);
+    for (const cb of this.callHangupListeners)  s.on(CALL_LOG_SOCKET_EVENTS.HANGUP, cb);
   }
 
   private handleError(error: string): void {

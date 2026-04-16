@@ -4,6 +4,7 @@ import type {
   CallLogListFilters,
   CallLogListResponse,
   CallLogDetailResponse,
+  UpdateCallNotesPayload,
 } from "@/types/callLog";
 
 export async function getCallLogs(
@@ -26,4 +27,14 @@ export async function getCallLogs(
 
 export async function getCallLogDetail(callId: string): Promise<CallLogDetailResponse> {
   return fetcher<CallLogDetailResponse>(API_ENDPOINTS.CALL_LOGS.BY_ID(callId));
+}
+
+export async function updateCallNotes(
+  callId: string,
+  payload: UpdateCallNotesPayload,
+): Promise<CallLogDetailResponse> {
+  return fetcher<CallLogDetailResponse>(API_ENDPOINTS.CALL_LOGS.NOTES(callId), {
+    method: "PATCH",
+    body: JSON.stringify(payload),
+  });
 }

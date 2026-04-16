@@ -8,16 +8,21 @@ export type CallStatus =
   | 'busy'
   | 'cancelled';
 
+export type CallAgentStatus =
+  | 'unanswered'
+  | 'client_busy'
+  | 'client_asked_call_later'
+  | 'not_connected'
+  | 'answered'
+  | 'none';
+
 export type CallDirection = 'Inbound' | 'Outbound';
 
-// ── Filters passed to useCallLogs / API ─────────────────────────────────────
 
 export interface CallLogListFilters {
-  /** Free-text search — phone numbers, agent name, client name, call ID */
   q?:         string;
   status?:    CallStatus | '';
   direction?: CallDirection | '';
-  /** Named preset — takes priority over startDate/endDate */
   dateRange?: DateRangePreset | '';
   startDate?: string;
   endDate?:   string;
@@ -66,8 +71,17 @@ export interface CallLog {
   answered_duration: string | null;
   disconnected_by:   string | null;
   recording_url:     string | null;
+  call_note:         string | null;
+  call_agent_status: CallAgentStatus | null;
   created_at:        string;
   updated_at:        string;
+}
+
+// ── Mutation payloads ────────────────────────────────────────────────────────
+
+export interface UpdateCallNotesPayload {
+  call_note?:         string | null;
+  call_agent_status?: CallAgentStatus | null;
 }
 
 // ── API response shapes ──────────────────────────────────────────────────────

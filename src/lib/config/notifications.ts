@@ -29,6 +29,8 @@ export const SOCKET_EVENTS = {
 export const CALL_LOG_SOCKET_EVENTS = {
   NEW:     "call-log:new",
   UPDATED: "call-log:updated",
+  INBOUND: "call:inbound",   // targeted to agent's room — triggers phone panel open
+  HANGUP:  "call:hangup",    // targeted to agent's room — triggers disposition modal
 } as const;
 
 // Connection configuration

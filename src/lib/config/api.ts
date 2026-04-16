@@ -234,6 +234,7 @@ export const API_ENDPOINTS = {
   CALL_LOGS: {
     LIST:  (params?: string) => `${API_BASE_URL}/api/mcube/call-logs${params ? `?${params}` : ''}`,
     BY_ID: (callId: string)  => `${API_BASE_URL}/api/mcube/call-logs/${callId}`,
+    NOTES: (callId: string)  => `${API_BASE_URL}/api/mcube/call-logs/${callId}/notes`,
   },
   USERS: {
     ALL: (params: string) => `${ZOHO_BASE_URL}/users/all?${params}`,
