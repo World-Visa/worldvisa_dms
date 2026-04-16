@@ -113,7 +113,7 @@ export function ConversationRow({
       className={cn(
         "w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors text-left",
         isSelected
-          ? "bg-primary/10 text-primary"
+          ? "bg-neutral-50 text-neutral-900"
           : "hover:bg-muted/60 text-foreground",
       )}
     >

@@ -123,7 +123,7 @@ export function ChatInput({
     resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT;
 
   return (
-    <div className="p-3 border-t border-border/40 bg-background shrink-0">
+    <div className="p-3 border-t border-border/40 bg-background shrink-0 focus-visible:ring-0">
       {/* File chips */}
       {files.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2">
