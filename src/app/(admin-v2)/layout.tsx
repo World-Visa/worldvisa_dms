@@ -18,6 +18,7 @@ import { ContentArea } from "@/app/(admin-v2)/content-area";
 import { SidebarController } from "@/app/(admin-v2)/sidebar-controller";
 import { McubePhoneWidgetLoader } from "@/components/mcube/McubePhoneWidgetLoader";
 import PhoneCard from "@/components/mcube/PhoneCard";
+import { CallEventsSetup } from "@/components/mcube/CallEventsSetup";
 
 function AdminContentFallback() {
   return (
@@ -36,6 +37,7 @@ function AdminContentFallback() {
 export default async function Layout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <CommandPaletteSetup>
+    <CallEventsSetup>
     <SidebarProvider defaultOpen={true}>
       <Suspense fallback={null}>
         <SidebarController />
@@ -90,6 +92,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
       {/* <McubePhoneWidgetLoader /> */}
 
     </SidebarProvider>
+    </CallEventsSetup>
     </CommandPaletteSetup>
   );
 }
