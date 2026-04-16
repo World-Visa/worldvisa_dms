@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { Trash2, MoreVertical, FileText, ExternalLink } from "lucide-react";
@@ -8,21 +8,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "../ui/alert-dialog";
 import { formatDistanceToNow } from "date-fns";
 import { Comment } from "@/types/comments";
 import { useAuth } from "@/hooks/useAuth";
 import { cn } from "@/lib/utils";
+import { isAdminRole } from "@/lib/roles";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
 interface CommentItemProps {
   comment: Comment;
@@ -36,6 +27,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
   onDelete,
   isDeleting = false,
 }) => {
+  const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const getSafeDocumentLink = (link?: string | null): string | null => {
     if (!link?.trim()) return null;
     try {
@@ -61,19 +53,15 @@ const CommentItem: React.FC<CommentItemProps> = ({
 
   const { user } = useAuth();
 
-  const isImportant =
-    comment.is_important ||
-    (comment.added_by ?? "").toLowerCase().includes("moshin");
-
-  const isOwnMessage = user && comment.added_by === user.username;
+  const normalizeUsername = (v: string | null | undefined) =>
+    (v ?? "").trim().toLowerCase();
+  const isOwnMessage =
+    Boolean(user?.username) &&
+    normalizeUsername(comment.added_by) === normalizeUsername(user?.username);
 
   const canDelete =
-    user &&
-    (user.role === "admin" ||
-      user.role === "team_leader" ||
-      user.role === "master_admin" ||
-      user.role === "supervisor" ||
-      (user.role === "client" && comment.added_by === user.username));
+    Boolean(user) &&
+    (isAdminRole(user?.role) || (user?.role === "client" && isOwnMessage));
 
   const timeAgo = formatDistanceToNow(new Date(comment.created_at), {
     addSuffix: true,
@@ -131,9 +119,7 @@ const CommentItem: React.FC<CommentItemProps> = ({
               "relative rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed max-w-[320px]",
               isOwnMessage
                 ? "bg-foreground text-background rounded-br-sm"
-                : isImportant
-                  ? "bg-destructive/10 text-foreground border border-destructive/20 rounded-bl-sm"
-                  : "bg-muted text-foreground rounded-bl-sm",
+                : "bg-muted text-foreground rounded-bl-sm",
             )}
           >
             {hasDocumentLink && documentLink && (
@@ -204,52 +190,46 @@ const CommentItem: React.FC<CommentItemProps> = ({
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
-                    variant="ghost"
+                    variant="secondary"
                     size="sm"
-                    className="h-6 w-6 p-0 hover:bg-muted cursor-pointer"
+                    className="h-6 w-6 p-0 rounded-lg cursor-pointer"
                     disabled={isDeleting}
                   >
                     <MoreVertical className="h-3 w-3 text-muted-foreground" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align={isOwnMessage ? "start" : "end"}>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <DropdownMenuItem
-                        className="text-destructive hover:bg-destructive/10 cursor-pointer"
-                        disabled={isDeleting}
-                        onSelect={(e) => e.preventDefault()}
-                      >
-                        <Trash2 className="h-3 w-3 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Comment</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete this comment? This
-                          action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => onDelete(comment._id)}
-                          className="bg-destructive cursor-pointer hover:bg-destructive/90"
-                          disabled={isDeleting}
-                        >
-                          {isDeleting ? "Deleting..." : "Delete"}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                  <DropdownMenuItem
+                    className="text-destructive hover:bg-destructive/10 cursor-pointer"
+                    disabled={isDeleting}
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setIsDeleteOpen(true);
+                    }}
+                  >
+                    <Trash2 className="h-3 w-3 mr-2" />
+                    Delete
+                  </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
           )}
         </div>
       </div>
+
+      <ConfirmationModal
+        open={isDeleteOpen}
+        onOpenChange={(open) => {
+          if (!isDeleting) setIsDeleteOpen(open);
+        }}
+        title="Delete Comment"
+        description="Are you sure you want to delete this comment? This action cannot be undone."
+        confirmText="Delete"
+        isLoading={isDeleting}
+        disabled={isDeleting}
+        variant="destructive"
+        onConfirm={() => onDelete(comment._id)}
+      />
     </div>
   );
 };
