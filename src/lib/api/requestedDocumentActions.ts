@@ -17,6 +17,8 @@ export interface UpdateDocumentStatusResponse {
 
 export interface DeleteRequestedDocumentRequest {
   reviewId: string;
+  username?: string;
+  role?: string;
 }
 
 export interface DeleteRequestedDocumentResponse {
