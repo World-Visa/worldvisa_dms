@@ -199,7 +199,11 @@ export function RequestedDocumentMessages({
             </div>
           ) : (
             messages.map((message, idx) => {
-              const isCurrentUser = message.username === user?.username;
+              const normalizeUsername = (v: string | null | undefined) =>
+                (v ?? "").trim().toLowerCase();
+              const isCurrentUser =
+                normalizeUsername(message.username) ===
+                normalizeUsername(user?.username);
               const canDelete = isCurrentUser;
               const messageKey = [
                 message._id ?? "missing-id",
