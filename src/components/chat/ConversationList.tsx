@@ -151,7 +151,7 @@ export function ConversationRow({
           </span>
         </div>
         <div className="flex items-center justify-between gap-2 mt-0.5">
-          <p className="text-xs text-muted-foreground truncate">{lastText}</p>
+          <p className="text-xs text-muted-foreground truncate">{lastText.slice(0, 40)} {lastText.length > 40 ? "..." : ""}</p>
           {conversation.unreadCount > 0 && (
             <Badge
               variant="default"
