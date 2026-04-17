@@ -242,7 +242,7 @@ export const InAppPreviewAvatar = (props: InAppPreviewAvatarProps) => {
     return (
       <div
         className={cn(
-          'flex size-8 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200',
+          'flex size-7 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-100 text-neutral-400',
           className,
         )}
         aria-hidden
