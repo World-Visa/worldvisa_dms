@@ -139,6 +139,7 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
     applicationStage,
     applicationState,
     deadlineCategory,
+    serviceType,
     isSearchMode,
     filters,
     searchParamsForAPI,
@@ -149,6 +150,7 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
     handleApplicationStageChange,
     handleApplicationStateChange,
     handleDeadlineCategoryClick,
+    handleServiceTypeChange,
     handleClearFilters,
   } = state;
 
@@ -253,12 +255,14 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
           applicationState={enabledFilters.applicationState ? applicationState : undefined}
           handledBy={enabledFilters.handledBy ? handledBy : []}
           deadlineCategory={enabledFilters.deadline ? deadlineCategory : null}
+          serviceType={enabledFilters.serviceType ? serviceType : undefined}
           enabledFilters={enabledFilters}
           onSearchChange={handleSearchChange}
           onApplicationStageChange={handleApplicationStageChange}
           onApplicationStateChange={handleApplicationStateChange}
           onHandledByChange={handleHandledByChange}
           onDeadlineCategoryChange={handleDeadlineCategoryClick}
+          onServiceTypeChange={handleServiceTypeChange}
           onClearFilters={handleClearFilters}
           isLoading={displayLoading}
         />

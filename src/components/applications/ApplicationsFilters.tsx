@@ -8,6 +8,7 @@ import { useAdminUsers } from "@/hooks/useAdminUsers";
 import { useAuth } from "@/hooks/useAuth";
 import { ApplicationStage, ApplicationState, DeadlineCategoryEnum } from "@/lib/enums";
 import { ROLES } from "@/lib/roles";
+import { VISA_SERVICE_TYPE_FILTER_OPTIONS } from "@/lib/constants/visaServiceTypes";
 import type {
   ApplicationStateFilter,
   DeadlineCategory,
@@ -37,12 +38,14 @@ interface ApplicationsFilterBarProps {
   applicationState: ApplicationStateFilter | undefined;
   handledBy: string[];
   deadlineCategory: DeadlineCategory | null;
+  serviceType: string | undefined;
   enabledFilters: EnabledFilters;
   onSearchChange: (value: string) => void;
   onApplicationStageChange: (value: string[]) => void;
   onApplicationStateChange: (value: ApplicationStateFilter | undefined) => void;
   onHandledByChange: (value: string[]) => void;
   onDeadlineCategoryChange: (value: DeadlineCategory | null) => void;
+  onServiceTypeChange: (value: string | undefined) => void;
   onClearFilters: () => void;
   isLoading?: boolean;
 }
@@ -53,12 +56,14 @@ export function ApplicationsFilterBar({
   applicationState,
   handledBy,
   deadlineCategory,
+  serviceType,
   enabledFilters,
   onSearchChange,
   onApplicationStageChange,
   onApplicationStateChange,
   onHandledByChange,
   onDeadlineCategoryChange,
+  onServiceTypeChange,
   onClearFilters,
   isLoading = false,
 }: ApplicationsFilterBarProps) {
@@ -85,7 +90,8 @@ export function ApplicationsFilterBar({
     applicationStage.length > 0 ||
     Boolean(applicationState) ||
     handledBy.length > 0 ||
-    Boolean(deadlineCategory);
+    Boolean(deadlineCategory) ||
+    Boolean(serviceType);
 
   return (
     <div className="flex flex-wrap items-center gap-2 py-2.5">
@@ -148,6 +154,18 @@ export function ApplicationsFilterBar({
           onSelect={(vals) =>
             onDeadlineCategoryChange((vals[0] as DeadlineCategory) ?? null)
           }
+        />
+      )}
+
+      {enabledFilters.serviceType && (
+        <FacetedFormFilter
+          type="single"
+          size="small"
+          title="Service Type"
+          placeholder="Filter by service…"
+          options={VISA_SERVICE_TYPE_FILTER_OPTIONS}
+          selected={serviceType ? [serviceType] : []}
+          onSelect={(vals) => onServiceTypeChange(vals[0] || undefined)}
         />
       )}
 
