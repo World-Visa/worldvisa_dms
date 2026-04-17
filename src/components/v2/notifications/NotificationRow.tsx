@@ -7,44 +7,7 @@ import { formatDistanceToNow } from "date-fns";
 import { Bell, ClipboardList, FileUp, MessageCircle, ShieldCheck } from "lucide-react";
 import { cn, getProfileAvatarSrc } from "@/lib/utils";
 import type { Notification, NotificationSource } from "@/types/notifications";
-
-// ─── Source meta ─────────────────────────────────────────────────────────────
-
-export interface NotificationAction {
-  label: string;
-  href: string;
-}
-
-export function getNotificationAction(n: Notification): NotificationAction | null {
-  switch (n.source) {
-    case "document_review": {
-      if (!n.leadId) return { label: "View Document", href: "/v2/requested-docs" };
-      const basePath =
-        n.applicationType === "Spouse_Skill_Assessment"
-          ? `/v2/spouse-skill-assessment-applications/${n.leadId}`
-          : `/v2/applications/${n.leadId}`;
-      return {
-        label: "View Document",
-        href: n.documentId ? `${basePath}?documentId=${n.documentId}` : basePath,
-      };
-    }
-    case "requested_reviews":
-      return {
-        label: "View Review",
-        href: n.documentId
-          ? `/v2/requested-docs?documentId=${n.documentId}`
-          : "/v2/requested-docs",
-      };
-    case "quality_check":
-      return { label: "View QC", href: "/v2/quality-check" };
-    case "requested_checklist":
-      return { label: "View Checklist", href: "/v2/checklist-requests" };
-    case "chat":
-      return { label: "Open Chat", href: "/v2/messages" };
-    default:
-      return null;
-  }
-}
+import { getNotificationAction } from "@/lib/constants/notifications";
 
 const SOURCE_BADGE: Record<NotificationSource, string> = {
   document_review: "Document",
