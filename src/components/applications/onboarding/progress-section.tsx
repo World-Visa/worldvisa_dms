@@ -24,6 +24,7 @@ interface ProgressSectionProps {
   applicationId: string;
   application: Application | null | undefined;
   onboarding: ApplicationOnboarding;
+  isSpouseApplication?: boolean;
 }
 
 interface StepActionProps {
@@ -193,7 +194,12 @@ function WelcomeHeader() {
   );
 }
 
-export function ProgressSection({ applicationId, application, onboarding }: ProgressSectionProps) {
+export function ProgressSection({
+  applicationId,
+  application,
+  onboarding,
+  isSpouseApplication = false,
+}: ProgressSectionProps) {
   const queryClient = useQueryClient();
   const { steps } = useOnboardingSteps(onboarding);
   const createAccount = useCreateClientAccount();
@@ -203,21 +209,34 @@ export function ProgressSection({ applicationId, application, onboarding }: Prog
   const accountComplete = steps[0]?.status === "completed";
 
   const updateOnboardingCache = (patch: Partial<ApplicationOnboarding>) => {
+    const applyPatch = (old: ApplicationDetailsResponse | undefined) => {
+      if (!old?.data.application_onboarding) return old;
+      return {
+        ...old,
+        data: {
+          ...old.data,
+          application_onboarding: {
+            ...old.data.application_onboarding,
+            ...patch,
+          },
+        },
+      };
+    };
+
+    if (isSpouseApplication) {
+      queryClient.setQueryData<ApplicationDetailsResponse>(
+        ["spouse-application-details", applicationId, undefined],
+        applyPatch,
+      );
+      queryClient.invalidateQueries({
+        queryKey: ["spouse-application-details", applicationId],
+      });
+      return;
+    }
+
     queryClient.setQueryData<ApplicationDetailsResponse>(
       ["application", applicationId],
-      (old) => {
-        if (!old?.data.application_onboarding) return old;
-        return {
-          ...old,
-          data: {
-            ...old.data,
-            application_onboarding: {
-              ...old.data.application_onboarding,
-              ...patch,
-            },
-          },
-        };
-      },
+      applyPatch,
     );
     queryClient.invalidateQueries({ queryKey: ["application", applicationId] });
   };

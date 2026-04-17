@@ -663,6 +663,7 @@ export default function UnifiedApplicationDetailsPage({
         applicationId={applicationId}
         application={application}
         onboarding={onboardingData}
+        isSpouseApplication={isSpouseApplication}
         open={isClientOnboardingOpen}
         onOpenChange={handleOnboardingModalOpenChange}
       />
