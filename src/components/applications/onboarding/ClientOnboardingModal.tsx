@@ -9,6 +9,7 @@ interface ClientOnboardingModalProps {
   applicationId: string;
   application: Application | null | undefined;
   onboarding: ApplicationOnboarding;
+  isSpouseApplication?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -17,6 +18,7 @@ export function ClientOnboardingModal({
   applicationId,
   application,
   onboarding,
+  isSpouseApplication = false,
   open,
   onOpenChange,
 }: ClientOnboardingModalProps) {
@@ -30,6 +32,7 @@ export function ClientOnboardingModal({
           applicationId={applicationId}
           application={application}
           onboarding={onboarding}
+          isSpouseApplication={isSpouseApplication}
         />
       </DialogContent>
     </Dialog>
