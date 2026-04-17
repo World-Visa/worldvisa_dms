@@ -60,6 +60,7 @@ export function EOISheet({
 }: EOISheetProps) {
   const { user } = useAuth();
   const reduceMotion = useReducedMotion();
+  const sheetContainerRef = useRef<HTMLDivElement>(null);
   const [subclass, setSubclass] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [point, setPoint] = useState("");
@@ -421,7 +422,10 @@ export function EOISheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-      <SheetContent className="flex h-full max-h-dvh flex-col gap-0 p-0 sm:max-w-lg">
+      <SheetContent
+        ref={sheetContainerRef}
+        className="flex h-full max-h-dvh flex-col gap-0 p-0 sm:max-w-lg"
+      >
         <SheetHeader className="p-0">
           <SheetTitle className="sr-only">{title}</SheetTitle>
           <header className="flex h-11 shrink-0 items-center gap-3 border-b px-4 pr-12">
@@ -497,6 +501,7 @@ export function EOISheet({
                         searchPlaceholder="Search ANZSCO code or occupation..."
                         emptyMessage="No ANZSCO code found."
                         disabled={isUploading}
+                        portalContainer={sheetContainerRef.current}
                       />
                       <div className="relative">
                         <div className="absolute inset-0 flex items-center">
