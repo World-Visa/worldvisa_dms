@@ -142,21 +142,16 @@ function InboxNotificationItem({
           </InAppPreviewSubject>
           {!notification.isRead ? (
             <span
-              className="mt-1 size-2 shrink-0 rounded-full bg-violet-500"
+              className="mt-1 size-2 shrink-0 rounded-full bg-violet-500/80"
               aria-hidden
             />
           ) : null}
         </div>
-        <InAppPreviewBody className="line-clamp-6 text-[13px] leading-snug text-neutral-500">
+        <InAppPreviewBody className="line-clamp-6 text-[13px] font-normal leading-snug text-neutral-600">
           {notification.message}
         </InAppPreviewBody>
-        {timeAgo ? (
-          <div className="mt-1 text-[12px] font-normal text-neutral-400">
-            {timeAgo === 'now' ? 'Just now' : `${timeAgo} ago`}
-          </div>
-        ) : null}
         {hasActions ? (
-          <InAppPreviewActions className="mt-2 gap-2">
+          <InAppPreviewActions className="mt-1 gap-1">
             {action ? (
               <InAppPreviewPrimaryAction onClick={() => onPrimary(action.href)}>
                 {action.label}
@@ -168,6 +163,11 @@ function InboxNotificationItem({
               </InAppPreviewSecondaryAction>
             ) : null}
           </InAppPreviewActions>
+        ) : null}
+        {timeAgo ? (
+          <div className="mt-1 text-[12px] font-normal text-neutral-400">
+            {timeAgo === 'now' ? 'Just now' : `${timeAgo} ago`}
+          </div>
         ) : null}
       </InAppPreviewNotificationContent>
     </InAppPreviewNotification>
