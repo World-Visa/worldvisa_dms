@@ -23,6 +23,7 @@ export const ROUTES = {
   PROFILE: '/v2/profile',
   PROFILE_SETTINGS: '/v2/profile/settings',
   SETTINGS_ACCOUNT: '/client/settings/account',
+  STAFF_SETTINGS: '/v2/profile/settings',
   APPROVAL_REQUESTS: '/v2/approval-requests',
   ANALYTICS: '/v2/analytics',
   VISA_APPLICATIONS: '/v2/applications',
