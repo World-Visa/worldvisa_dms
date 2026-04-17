@@ -32,6 +32,7 @@ interface ComboboxProps {
   emptyMessage?: string;
   disabled?: boolean;
   className?: string;
+  portalContainer?: HTMLElement | null;
 }
 
 export function Combobox({
@@ -43,6 +44,7 @@ export function Combobox({
   emptyMessage = "No option found.",
   disabled = false,
   className,
+  portalContainer,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
@@ -83,6 +85,7 @@ export function Combobox({
       <PopoverContent
         className="w-full p-0 max-h-[min(400px,70vh)] overflow-hidden"
         align="start"
+        container={portalContainer}
       >
         <Command shouldFilter={false}>
           <CommandInput
