@@ -125,10 +125,7 @@ function InboxNotificationItem({
 
   return (
     <InAppPreviewNotification
-      className={cn(
-        'border-b border-border/30 last:border-b-0 hover:bg-bg-weak',
-        !notification.isRead && 'bg-bg-weak',
-      )}
+      className={'border-b border-border/30 last:border-b-0 hover:bg-purple-50/20'}
     >
       {avatar.type === 'image' ? (
         <InAppPreviewAvatar src={avatar.src} />
