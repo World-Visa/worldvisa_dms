@@ -22,6 +22,7 @@ export const useApplications = (filters: ApplicationsFilters) => {
         : undefined,
     applicationState: filters.applicationState ?? undefined,
     deadlineCategory: filters.deadlineCategory || undefined,
+    serviceType: filters.serviceType ?? undefined,
   };
 
   const query = qs.stringify(transformedFilters, {
@@ -34,7 +35,8 @@ export const useApplications = (filters: ApplicationsFilters) => {
     (filters.handledBy && filters.handledBy.length > 0) ||
       (filters.applicationStage && filters.applicationStage.length > 0) ||
       filters.applicationState ||
-      filters.deadlineCategory,
+      filters.deadlineCategory ||
+      filters.serviceType,
   );
 
   return useQuery<ApplicationsResponse>({

@@ -7,7 +7,6 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "../ui/button";
-import { InlineToast } from "@/components/ui/primitives/inline-toast";
 import DocumentComments from "./DocumentComments";
 import CommentErrorBoundary from "./CommentErrorBoundary";
 import DocumentPreview from "./DocumentPreview";

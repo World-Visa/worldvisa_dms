@@ -28,6 +28,7 @@ export interface ApplicationsListState {
   applicationStage: string[];
   applicationState: ApplicationStateFilter | undefined;
   deadlineCategory: DeadlineCategory | null;
+  serviceType: string | undefined;
   // Derived
   isSearchMode: boolean;
   filters: ApplicationsFilters;
@@ -42,6 +43,7 @@ export interface ApplicationsListState {
   handleApplicationStageChange: (value: string[]) => void;
   handleApplicationStateChange: (value: ApplicationStateFilter | undefined) => void;
   handleDeadlineCategoryClick: (category: DeadlineCategory | null) => void;
+  handleServiceTypeChange: (value: string | undefined) => void;
   handleClearFilters: () => void;
 }
 
@@ -68,6 +70,7 @@ export function useApplicationsListState({
   >(undefined);
   const [deadlineCategory, setDeadlineCategory] =
     useState<DeadlineCategory | null>(null);
+  const [serviceType, setServiceType] = useState<string | undefined>(undefined);
 
   const debouncedSearch = useDebounce(search, 300);
 
@@ -82,6 +85,7 @@ export function useApplicationsListState({
       applicationStage:
         applicationStage.length > 0 ? applicationStage : undefined,
       applicationState: applicationState ?? undefined,
+      serviceType: serviceType ?? undefined,
       country: selectedCountry,
     };
   }, [
@@ -89,6 +93,7 @@ export function useApplicationsListState({
     handledBy,
     applicationStage,
     applicationState,
+    serviceType,
     selectedCountry,
   ]);
 
@@ -197,6 +202,11 @@ export function useApplicationsListState({
     [updateQuery],
   );
 
+  const handleServiceTypeChange = useCallback((value: string | undefined) => {
+    setServiceType(value);
+    setPage(1);
+  }, []);
+
   const handleClearFilters = useCallback(() => {
     setSearch("");
     setSearchQuery("");
@@ -204,6 +214,7 @@ export function useApplicationsListState({
     setApplicationStage([]);
     setApplicationState(undefined);
     setDeadlineCategory(null);
+    setServiceType(undefined);
     void setSelectedCountry(null);
     setPage(1);
     updateQuery({
@@ -220,6 +231,7 @@ export function useApplicationsListState({
     applicationStage,
     applicationState,
     deadlineCategory,
+    serviceType,
     isSearchMode,
     filters,
     searchParamsForAPI,
@@ -232,6 +244,7 @@ export function useApplicationsListState({
     handleApplicationStageChange,
     handleApplicationStateChange,
     handleDeadlineCategoryClick,
+    handleServiceTypeChange,
     handleClearFilters,
   };
 }

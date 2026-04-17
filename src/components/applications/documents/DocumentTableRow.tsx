@@ -2,12 +2,9 @@
 
 import { memo } from "react";
 import {
-  RiClockwiseLine,
-  RiCloseCircleLine,
   RiDeleteBin2Line,
   RiErrorWarningFill,
   RiEyeLine,
-  RiFolderForbidFill,
   RiMore2Fill,
   RiUploadLine,
 } from "react-icons/ri";
