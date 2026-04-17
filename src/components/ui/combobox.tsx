@@ -86,6 +86,12 @@ export function Combobox({
         className="w-full p-0 max-h-[min(400px,70vh)] overflow-hidden"
         align="start"
         container={portalContainer}
+        onWheelCapture={(e) => {
+          e.stopPropagation();
+        }}
+        onTouchMoveCapture={(e) => {
+          e.stopPropagation();
+        }}
       >
         <Command shouldFilter={false}>
           <CommandInput

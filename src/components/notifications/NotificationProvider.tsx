@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { notificationSocket } from "@/lib/notificationSocket";
 import { useNotificationStore } from "@/store/notificationStore";
-import { getNotificationAction } from "@/components/v2/notifications/NotificationRow";
 import { usePresence } from "@/hooks/usePresence";
 import { usePresenceEmitter } from "@/hooks/usePresenceEmitter";
 import { showNotificationToast } from "@/components/ui/primitives/sonner-helpers";
 import type { NotificationNewEvent } from "@/types/notifications";
+import { getNotificationAction } from "@/lib/constants/notifications";
 
 // Cast socket event to Notification-compatible shape for getNotificationAction.
 // Spread passes all event fields including documentId and applicationType.

@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 
 import { SearchDialog } from "@/components/v2/sidebar/search-dialog";
 import { CommandPaletteSetup } from "@/components/v2/command-palette-setup";
-import { NotificationDropdown } from "@/components/v2/header/notification-dropdown";
+import { Inbox } from "@/components/applications/in-app-notifications/inbox";
 import { AccountSwitcher } from "@/components/v2/sidebar/account-switcher";
 import { ContentArea } from "@/app/(admin-v2)/content-area";
 import { SidebarController } from "@/app/(admin-v2)/sidebar-controller";
@@ -63,10 +63,8 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <SearchDialog />
             </div>
             <div className="flex items-center gap-1">
-              {/* <LayoutControls />
-              <ThemeSwitcher /> */}
               <PhoneCard />
-              <NotificationDropdown />
+              <Inbox />
               <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-6" />
               <AccountSwitcher />
             </div>

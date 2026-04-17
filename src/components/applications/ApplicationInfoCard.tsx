@@ -156,7 +156,7 @@ export function ApplicationInfoCard({ application, isSpouseApplication, user }: 
                 backgroundImage:
                   "linear-gradient(180deg, rgba(255,255,255,0.153) 6.6667%, rgba(255,255,255,0) 103.33%)," +
                   "linear-gradient(90deg, #171717 0%, #171717 100%)",
-                
+
               }}
             >
               <BadgeCheck size={11} style={{ color: "white", flexShrink: 0 }} />
@@ -230,9 +230,7 @@ export function ApplicationInfoCard({ application, isSpouseApplication, user }: 
               <SectionLabel>Personal Information</SectionLabel>
               <InfoField label="Full Name" value={formatValue(application.Name)} />
               <InfoField label="Email" value={formatValue(application.Email)} />
-              {user?.role === "master_admin" && (
-                <PhoneInfoField label="Phone" value={formatValue(application.Phone)} reduced={Boolean(reduced)} />
-              )}
+              <PhoneInfoField label="Phone" value={formatValue(application.Phone)} reduced={Boolean(reduced)} />
               {isSpouseApplication ? (
                 <InfoField
                   label="Main Applicant"
