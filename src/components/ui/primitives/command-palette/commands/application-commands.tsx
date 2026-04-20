@@ -15,11 +15,12 @@ export function useApplicationCommands(apps: GlobalSearchApplication[] | undefin
     .map((app) => ({
       id: `app-${app.id}`,
       label: app.Name,
-      description: app.Email + (app.Phone ? ` · ${app.Phone}` : ''),
+      description: [app.Email, app.Phone, app.Application_Handled_By, app.id].filter(Boolean).join(' · '),
       category: 'applications' as const,
-      keywords: [app.Email, app.Phone, app.DMS_Application_Status].filter(Boolean) as string[],
+      keywords: [app.Name, app.Email, app.Phone, app.DMS_Application_Status, app.Application_Handled_By, app.id].filter(
+        Boolean
+      ) as string[],
       priority: 'high' as const,
-      metadata: { status: app.DMS_Application_Status },
       execute: () => { router.push(ROUTES.APPLICATION_DETAILS(app.id)); },
     }));
 }
