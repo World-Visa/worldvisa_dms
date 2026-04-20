@@ -72,7 +72,9 @@ export const ApplicationTableRow = memo(function ApplicationTableRow({
         )}
       </TableCell>
       <TableCell className="text-foreground-600 text-sm">
-        {application.Created_Time ? formatDate(application.Created_Time, "time") : "—"}
+        <TruncatedText>
+          {application.Created_Time ? formatDate(application.Created_Time, "time") : "—"}
+        </TruncatedText>
       </TableCell>
       <TableCell className="text-center">
         <Badge

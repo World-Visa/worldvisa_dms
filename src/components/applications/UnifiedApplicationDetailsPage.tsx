@@ -226,10 +226,13 @@ export default function UnifiedApplicationDetailsPage({
 
   const leadId = application?.id ?? "";
 
-  const { data: leadRequestsForBlocker } = useApprovalRequestsByLead(leadId, {});
+  const {
+    data: leadRequestsForBlocker,
+    isLoading: isLeadRequestsLoading,
+  } = useApprovalRequestsByLead(leadId, {});
 
   const isDeadlineBlocking = useMemo(() => {
-    if (!hasLoadedApplicationData) return false;
+    if (!hasLoadedApplicationData || isLeadRequestsLoading) return false;
     const daysLeft = computeDaysLeft(application?.Deadline_For_Lodgment);
     if (daysLeft === null || daysLeft >= 0) return false;
     const requests = leadRequestsForBlocker?.data ?? [];
@@ -247,6 +250,7 @@ export default function UnifiedApplicationDetailsPage({
     return latest?.status !== "pending";
   }, [
     hasLoadedApplicationData,
+    isLeadRequestsLoading,
     application?.Deadline_For_Lodgment,
     leadRequestsForBlocker,
   ]);
