@@ -14,5 +14,5 @@ export function getDocumentUrl(doc: DocUrlFields): string {
     ).replace(/\/$/, "");
     return `${base}/${doc.r2_key}`;
   }
-  return doc.download_url || doc.document_link || "";
+  return doc.document_link || doc.download_url || "";
 }
