@@ -16,7 +16,7 @@ export type CallAgentStatus =
   | 'answered'
   | 'none';
 
-export type CallDirection = 'Inbound' | 'Outbound';
+export type CallDirection = 'inbound' | 'outbound';
 
 
 export interface CallLogListFilters {
