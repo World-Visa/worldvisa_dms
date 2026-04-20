@@ -4,6 +4,8 @@ export const ROUTES = {
   VERIFYING: '/verifying',
   ADMIN_HOME: '/v2/applications',
   CLIENT_HOME: '/client/applications',
+  CLIENT_APPLICATION_DETAILS: (leadId: string) =>
+    `/client/applications/${leadId}`,
   APPLICATION_DETAILS: (id: string) => `/v2/applications/${id}`,
   APPLICATION_CHECKLIST: (id: string) => `/v2/applications/${id}/checklist`,
   SPOUSE_SKILL_ASSESSMENT_APPLICATIONS: '/v2/spouse-skill-assessment-applications',

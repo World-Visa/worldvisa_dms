@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
+import type { AccountStatus } from "@/hooks/useAdminUsersV2";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 import { fetcher } from "@/lib/fetcher";
-import { isAdminRole } from "@/lib/roles";
 
 export interface AdminUser {
   _id: string;
@@ -9,6 +9,7 @@ export interface AdminUser {
   full_name?: string;
   profile_image_url?: string;
   role: "admin" | "team_leader" | "master_admin" | "supervisor";
+  account_status?: AccountStatus;
   __v: number;
 }
 
@@ -145,15 +146,9 @@ export function useAdminUsers() {
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
     refetchOnWindowFocus: false, // Don't refetch on window focus for admin list
     select: (data) => {
-      // Filter and sort admin users
       return data
-        .filter((user) => isAdminRole(user.role))
-        .map((user) => ({
-          ...user,
-          username: user.username === "admin" ? "mohsin" : user.username,
-        }))
+        .filter((user) => user.account_status === "active")
         .sort((a, b) => {
-          // Sort by role priority, then by username
           const rolePriority: Record<string, number> = {
             master_admin: 0,
             admin: 1,

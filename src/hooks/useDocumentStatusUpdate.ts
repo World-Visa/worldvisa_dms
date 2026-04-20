@@ -4,6 +4,7 @@ import {
   UpdateDocumentStatusRequest,
 } from "@/lib/api/updateDocumentStatus";
 import { Document } from "@/types/applications";
+import { getDocumentUrl } from "@/lib/documents/getDocumentUrl";
 import { toast } from "sonner";
 import * as Sentry from "@sentry/nextjs";
 import { useAddComment } from "./useCommentMutations";
@@ -24,7 +25,7 @@ interface DocumentsResponse {
 
 interface UseDocumentStatusUpdateProps {
   applicationId?: string;
-  documentId?: string; // Add documentId for comment creation
+  documentId?: string;
   onSuccess?: (documentId: string, newStatus: string) => void;
   onError?: (error: Error, documentId: string, newStatus: string) => void;
 }
@@ -68,24 +69,22 @@ export function useDocumentStatusUpdate({
           );
         }
 
-        // If document is rejected and has a rejection message, create a comment
         if (status === "rejected" && rejectMessage && documentId) {
           try {
             const currentDocument = queryClient.getQueryData<Document>([
               "document",
               documentId,
             ]);
-            const documentLink =
-              currentDocument?.document_link || currentDocument?.download_url;
+            const documentLink = currentDocument
+              ? getDocumentUrl(currentDocument).trim() || undefined
+              : undefined;
 
-            // Use the comment creation mutation but don't await it to avoid blocking
             addCommentMutation.mutate({
               comment: `Document rejected: ${rejectMessage}`,
               added_by: changedBy,
               ...(documentLink ? { document_link: documentLink } : {}),
             });
           } catch (commentError) {
-            // Log comment creation error but don't fail the status update
             console.warn("Failed to create rejection comment:", commentError);
             Sentry.captureException(commentError, {
               tags: {
@@ -100,7 +99,6 @@ export function useDocumentStatusUpdate({
           }
         }
 
-        // Track performance
         if (responseTime > 2000) {
           console.warn(`Slow status update response: ${responseTime}ms`);
         }
@@ -114,7 +112,6 @@ export function useDocumentStatusUpdate({
       } catch (error) {
         const responseTime = Date.now() - startTime;
 
-        // Log error to Sentry
         Sentry.captureException(error, {
           tags: {
             operation: "update_document_status",
@@ -132,7 +129,6 @@ export function useDocumentStatusUpdate({
     },
 
     onMutate: async ({ documentId, status, rejectMessage }) => {
-      // Cancel any outgoing refetches for this document
       await queryClient.cancelQueries({
         queryKey: ["document", documentId],
       });
@@ -146,7 +142,6 @@ export function useDocumentStatusUpdate({
         });
       }
 
-      // Snapshot the previous values
       const previousDocument = queryClient.getQueryData<Document>([
         "document",
         documentId,
@@ -167,7 +162,6 @@ export function useDocumentStatusUpdate({
         data?: { documents?: Document[] };
       }>(["client-documents"]);
 
-      // Optimistically update the document status
       queryClient.setQueryData<Document>(["document", documentId], (old) => {
         if (!old) return old;
 
@@ -188,7 +182,6 @@ export function useDocumentStatusUpdate({
         };
       });
 
-      // Also update the documents list if available
       if (applicationId && previousDocumentsResponse) {
         queryClient.setQueryData<{ success: boolean; data: Document[] }>(
           ["application-documents", applicationId],
@@ -223,7 +216,6 @@ export function useDocumentStatusUpdate({
         );
       }
 
-      // Also update the all documents cache (used by DocumentChecklistTable)
       if (applicationId) {
         queryClient.setQueriesData<{ success: boolean; data: Document[] }>(
           {
@@ -260,7 +252,6 @@ export function useDocumentStatusUpdate({
         );
       }
 
-      // Also update client documents cache for real-time UI updates
       queryClient.setQueryData<{ data?: { documents?: Document[] } }>(
         ["client-documents"],
         (old) => {

@@ -76,22 +76,6 @@ export function useInfiniteEmailList(params: {
   });
 }
 
-export function useEmailCount(params: {
-  direction?: "inbound" | "outbound";
-  filter?: string;
-} = {}) {
-  return useQuery({
-    queryKey: ["email", "count", params.direction ?? "all", params.filter ?? ""],
-    queryFn: async () => {
-      const res = await getEmailList({ ...params, page: 1, limit: 1 });
-      return res.pagination.total;
-    },
-    staleTime: 2 * 60 * 1000,
-    gcTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  });
-}
-
 export function useEmailThread(threadId: string, enabled = true) {
   return useQuery({
     queryKey: EMAIL_KEYS.thread(threadId),

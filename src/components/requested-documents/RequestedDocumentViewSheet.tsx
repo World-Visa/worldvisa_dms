@@ -1,16 +1,15 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { Cross2Icon } from "@radix-ui/react-icons";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
-import { Button } from "@/components/ui/button";
-import {
-  AlertTriangle,
-} from "lucide-react";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/primitives/dialog";
+import { Button } from "@/components/ui/primitives/button";
+import { AlertTriangle } from "lucide-react";
 import { RequestedDocument } from "@/lib/api/requestedDocuments";
 import { useAddComment } from "@/hooks/useCommentMutations";
 import { RequestDocStatusBadge } from "./RequestDocStatusBadge";
@@ -21,19 +20,44 @@ import {
 import { useRequestedDocumentData } from "@/hooks/useRequestedDocumentData";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import DocumentPreview from "@/components/applications/DocumentPreview";
+import { DocumentEmbedPreview } from "@/components/applications/document-preview/DocumentEmbedPreview";
+import { getDocumentUrl, type DocUrlFields } from "@/lib/documents/getDocumentUrl";
 import { RequestedDocumentMessages } from "./RequestedDocumentMessages";
+import { RequestedApplicationDetailsPanel } from "./RequestedApplicationDetailsPanel";
 import { useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { useApplicationDetails } from "@/hooks/useApplicationDetails";
 import { useSpouseApplicationDetails } from "@/hooks/useSpouseApplicationDetails";
-import { ApplicationDetailsAccordion } from "./ApplicationDetailsAccordion";
 import { ApplicationDetailsResponse } from "@/types/applications";
-import { RiCheckLine, RiDeleteBin7Line, RiExternalLinkLine, RiLoader4Line } from "react-icons/ri";
+import {
+  RiArrowDownSLine,
+  RiArrowLeftLine,
+  RiCheckLine,
+  RiDeleteBin7Line,
+  RiExternalLinkLine,
+  RiFileUserLine,
+} from "react-icons/ri";
 import { PublishToClientDialog } from "./PublishToClientDialog";
 import { useSendRequestedDocumentMessage } from "@/hooks/useRequestedDocumentMessages";
 import { Textarea } from "../ui/textarea";
 import { showErrorToast, showWarningToast } from "../ui/primitives/sonner-helpers";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/primitives/dropdown-menu";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { cn } from "@/lib/utils";
+
+const REVIEW_COMMENT_SUGGESTIONS = [
+  "Good to go",
+  "Not Matching",
+  "Needs correction",
+  "Recheck",
+] as const;
+
+type SidePanelView = "messages" | "applicationDetails";
 
 interface RequestedDocumentViewSheetProps {
   document: RequestedDocument | null;
@@ -48,7 +72,12 @@ export function RequestedDocumentViewSheet({
   onClose,
   type,
 }: RequestedDocumentViewSheetProps) {
+  const reduceMotion = useReducedMotion();
   const { user } = useAuth();
+  const canAccessMessages = Boolean(
+    user?.role &&
+      ["admin", "team_leader", "master_admin", "supervisor"].includes(user.role),
+  );
   const updateStatusMutation = useUpdateDocumentStatus();
   const deleteDocumentMutation = useDeleteRequestedDocument();
   const sendRequestedMessageMutation = useSendRequestedDocumentMessage();
@@ -82,7 +111,7 @@ export function RequestedDocumentViewSheet({
 
   const [reviewComment, setReviewComment] = useState("");
   const [isReviewing, setIsReviewing] = useState(false);
-  const [isAccordionOpen, setIsAccordionOpen] = useState(false);
+  const [sidePanel, setSidePanel] = useState<SidePanelView>("messages");
   const [publishState, setPublishState] = useState<{
     isOpen: boolean;
     text: string;
@@ -94,7 +123,7 @@ export function RequestedDocumentViewSheet({
     if (!isOpen) {
       setReviewComment("");
       setIsReviewing(false);
-      setIsAccordionOpen(false);
+      setSidePanel("messages");
     }
   }, [isOpen]);
 
@@ -127,7 +156,6 @@ export function RequestedDocumentViewSheet({
       }
 
       setReviewComment("");
-      setIsAccordionOpen(false);
       onClose();
     } catch (error) {
       console.error("Failed to mark as reviewed:", error);
@@ -193,6 +221,18 @@ export function RequestedDocumentViewSheet({
     onClose();
   }, [displayDoc?.record_id, application?.Record_Type, router, onClose]);
 
+  const openApplicationDetails = useCallback(() => {
+    if (!displayDoc?.record_id) {
+      toast.error("Application record ID not found");
+      return;
+    }
+    setSidePanel("applicationDetails");
+  }, [displayDoc?.record_id]);
+
+  const backFromApplicationDetails = useCallback(() => {
+    setSidePanel("messages");
+  }, []);
+
   if (!displayDoc) return null;
 
   const isRequestedToMe = type === "requested-to-me";
@@ -205,162 +245,238 @@ export function RequestedDocumentViewSheet({
     displayDoc.requested_review.requested_by !== user?.username &&
     (isAssignedToMe || !!canReviewAnyAsRole);
   const canDelete = !isRequestedToMe;
-  const canAccessMessages =
-    user?.role &&
-    ["admin", "team_leader", "master_admin", "supervisor"].includes(user.role);
 
-  const documentForPreview = {
-    _id: displayDoc._id,
-    file_name: displayDoc.file_name,
-    document_name: displayDoc.document_name,
-    document_type: displayDoc.document_name || "Document",
-    document_category: displayDoc.document_category,
-    document_link: displayDoc.document_link,
-    uploaded_by: displayDoc.uploaded_by,
-    uploaded_at: displayDoc.uploaded_at,
-    status: displayDoc.status,
-    description: "",
-    workdrive_file_id: displayDoc.workdrive_file_id,
-    record_id: displayDoc.record_id,
-    workdrive_parent_id: "",
-    history: displayDoc.history || [],
-    comments: displayDoc.comments || [],
-    __v: 0,
-  };
+  const previewFileName =
+    displayDoc.file_name || displayDoc.document_name || "document";
+  const urlFields = displayDoc as RequestedDocument & DocUrlFields;
+  const docUrl = getDocumentUrl(urlFields);
+  const embedLeadId =
+    urlFields.storage_type === "r2" ? null : displayDoc.record_id;
+
+  const showSideColumn =
+    canAccessMessages ||
+    (Boolean(displayDoc.record_id) && sidePanel === "applicationDetails");
 
   return (
     <>
-      <Sheet open={isOpen} onOpenChange={onClose}>
-        <SheetContent className="inset-3! sm:inset-5! lg:inset-7! h-[calc(100dvh-1.5rem)]! sm:h-[calc(100dvh-2.5rem)]! lg:h-[calc(100dvh-3.5rem)]! max-h-[calc(100dvh-1.5rem)]! sm:max-h-[calc(100dvh-2.5rem)]! lg:max-h-[calc(100dvh-3.5rem)]! w-auto! max-w-[1140px]! translate-x-0! translate-y-0! mx-auto rounded-2xl border border-border/50 shadow-2xl p-0">
-          <div className="flex flex-col h-full overflow-hidden rounded-2xl">
-            <SheetHeader className="px-6 py-3 border-b border-border/40 shrink-0">
-              <SheetTitle className="sr-only">Document Review</SheetTitle>
-              <div className="flex items-center justify-between gap-4 pr-8">
-                <div className="flex items-center gap-4 min-w-0">
-                  <div className="min-w-0">
-                    <p className="text-lg font-medium text-foreground truncate">
-                      {displayDoc.document_name || displayDoc.file_name || "Document request"}
-                    </p>
-                    <div className="flex items-center gap-3 mt-0.5 flex-wrap">
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <span className="font-medium">Requested by:</span>
-                        {displayDoc.requested_review.requested_by}
-                      </span>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <span className="font-medium">Requested on:</span>
-                        {displayDoc.requested_review.requested_at
-                          ? new Date(
-                            displayDoc.requested_review.requested_at,
-                          ).toLocaleDateString("en-US", {
+      <Dialog
+        open={isOpen}
+        onOpenChange={(open) => {
+          if (!open) onClose();
+        }}
+      >
+        <DialogContent
+          hideCloseButton
+          className="flex h-[90vh] w-full max-w-[1240px] flex-col gap-0 overflow-hidden p-0 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0"
+        >
+          <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <DialogHeader className="flex shrink-0 flex-row items-center justify-between space-y-0 border-b border-border/40 px-6 py-3">
+              <DialogTitle className="sr-only">Document Review</DialogTitle>
+              <div className="flex min-w-0 flex-1 items-center gap-4">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-foreground">
+                    {displayDoc.document_name || displayDoc.file_name || "Document request"}
+                  </p>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-3">
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="font-medium">Requested by:</span>
+                      {displayDoc.requested_review.requested_by}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="font-medium">Requested on:</span>
+                      {displayDoc.requested_review.requested_at
+                        ? new Date(
+                          displayDoc.requested_review.requested_at,
+                        ).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                          timeZone: "UTC",
+                        })
+                        : "Unknown date"}
+                    </span>
+                    <span className="flex items-center gap-1 text-xs text-muted-foreground">
+                      <span className="font-medium">Uploaded on:</span>
+                      {displayDoc.uploaded_at
+                        ? new Date(displayDoc.uploaded_at).toLocaleDateString(
+                          "en-US",
+                          {
                             year: "numeric",
                             month: "short",
                             day: "numeric",
                             timeZone: "UTC",
-                          })
-                          : "Unknown date"}
+                          },
+                        )
+                        : "Unknown date"}
+                    </span>
+                    {displayDoc.isOverdue && (
+                      <span className="flex items-center gap-1 text-xs font-medium text-destructive">
+                        <AlertTriangle className="h-3 w-3" />
+                        Overdue ({displayDoc.daysSinceRequest} days)
                       </span>
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <span className="font-medium">Uploaded on:</span>
-                        {displayDoc.uploaded_at
-                          ? new Date(displayDoc.uploaded_at).toLocaleDateString(
-                            "en-US",
-                            {
-                              year: "numeric",
-                              month: "short",
-                              day: "numeric",
-                              timeZone: "UTC",
-                            },
-                          )
-                          : "Unknown date"}
-                      </span>
-                      {displayDoc.isOverdue && (
-                        <span className="flex items-center gap-1 text-xs text-destructive font-medium">
-                          <AlertTriangle className="h-3 w-3" />
-                          Overdue ({displayDoc.daysSinceRequest} days)
-                        </span>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {displayDoc?.record_id && (
-                    <Button
-                      onClick={handleViewApplication}
-                      variant="secondary"
-                      size="sm"
-                      className="cursor-pointer shrink-0"
-                    >
-                      <RiExternalLinkLine className="size-4" />
-                      View Application
-                    </Button>
-                  )}
-                  <RequestDocStatusBadge status={displayDoc.requested_review.status} />
-                </div>
               </div>
-            </SheetHeader>
 
-            <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
-              <div className="flex-1 flex flex-col min-h-0 order-1">
-                <div className="flex-1 overflow-y-auto p-6 space-y-4">
-                  {displayDoc?.record_id && (
-                    <ApplicationDetailsAccordion
-                      application={application}
-                      isLoading={isApplicationLoading}
-                      isOpen={isAccordionOpen}
-                      onToggle={() => setIsAccordionOpen(!isAccordionOpen)}
-                    />
-                  )}
+              <div className="flex shrink-0 items-center gap-2">
+                {displayDoc?.record_id && (
+                  <div className="flex items-center">
+                    <Button
+                      mode="gradient"
+                      variant="primary"
+                      size="2xs"
+                      className="rounded-r-none border-r border-white/20 text-xs"
+                      leadingIcon={RiFileUserLine}
+                      onClick={openApplicationDetails}
+                    >
+                      Application details
+                    </Button>
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          mode="gradient"
+                          variant="primary"
+                          size="2xs"
+                          className="rounded-l-none px-1.5 text-xs"
+                          leadingIcon={RiArrowDownSLine}
+                          aria-label="Application actions"
+                        />
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent className="w-50 rounded-xl" align="end">
+                        <DropdownMenuItem
+                          className="flex cursor-pointer items-center gap-2"
+                          onSelect={handleViewApplication}
+                        >
+                          <RiExternalLinkLine className="size-4 shrink-0" />
+                          Go to application
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                )}
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  mode="ghost"
+                  className="shrink-0 cursor-pointer"
+                  onClick={() => onClose()}
+                  aria-label="Close"
+                >
+                  <Cross2Icon className="size-4" />
+                </Button>
+              </div>
+            </DialogHeader>
 
-                  <DocumentPreview document={documentForPreview} />
-                </div>
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+              <div className="order-1 flex min-h-0 flex-1 flex-col">
+                <DocumentEmbedPreview
+                  className="min-h-0 flex-1 max-lg:min-h-[36vh]"
+                  fileName={previewFileName}
+                  viewUrl={docUrl}
+                  downloadUrl={docUrl || undefined}
+                  leadId={embedLeadId}
+                  zohoGradientViewButton={false}
+                  showFooter={false}
+                />
 
                 {isReviewing && (
-                  <div className="border-t border-border/40 px-6 py-3 shrink-0 space-y-2">
+                  <motion.div
+                    className="shrink-0 space-y-3 border-t border-border/40 bg-muted/10 px-6 py-3"
+                    initial={reduceMotion ? undefined : { opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={
+                      reduceMotion
+                        ? { duration: 0.12 }
+                        : { type: "spring", stiffness: 380, damping: 32 }
+                    }
+                  >
                     <Textarea
                       rows={3}
                       placeholder="Add your review comment..."
                       value={reviewComment}
                       onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setReviewComment(e.target.value)}
-                      className="w-full min-h-[80px] p-3 border border-border rounded-md resize-none text-sm bg-background focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-border/60"
+                      className="w-full min-h-[80px] resize-none rounded-md border border-border bg-background p-3 text-sm focus-visible:border-border/60 focus-visible:ring-0 focus-visible:ring-offset-0"
                     />
-                    <div className="flex justify-end">
-                      <Button
-                        onClick={handleMarkAsReviewed}
-                        disabled={
-                          updateStatusMutation.isPending || !reviewComment.trim()
-                        }
-                        size="sm"
-                        className="w-fit bg-foreground rounded-md text-background hover:bg-foreground/90 font-medium"
-                      >
-                        {updateStatusMutation.isPending
-                          ?
-                          <div className="flex items-center gap-2">
-                            <RiLoader4Line className="size-4 animate-spin" />
-                            <span className="font-medium">Marking as Reviewed</span>
-                          </div>
-                          : <div className="flex items-center gap-1">
-                            <RiCheckLine className="size-4" />
-                            <span className="font-medium">Mark as Reviewed</span>
-                          </div>
-                        }
-                      </Button>
+                    <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+                          Quick suggestions
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {REVIEW_COMMENT_SUGGESTIONS.map((suggestion, index) => {
+                            const isActive = reviewComment.trim() === suggestion;
+                            return (
+                              <motion.button
+                                key={suggestion}
+                                type="button"
+                                initial={
+                                  reduceMotion ? false : { opacity: 0, y: 6 }
+                                }
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={
+                                  reduceMotion
+                                    ? { duration: 0.1 }
+                                    : {
+                                        type: "spring",
+                                        stiffness: 420,
+                                        damping: 34,
+                                        delay: index * 0.05,
+                                      }
+                                }
+                                whileHover={
+                                  reduceMotion ? undefined : { scale: 1.02, y: -1 }
+                                }
+                                whileTap={
+                                  reduceMotion ? undefined : { scale: 0.97 }
+                                }
+                                onClick={() => setReviewComment(suggestion)}
+                                className={cn(
+                                  "rounded-lg border px-2 py-1.5 text-left text-xs font-medium leading-snug transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                                  isActive
+                                    ? "border-foreground/30 bg-foreground/[0.07] text-foreground"
+                                    : "border-border/60 bg-background text-foreground hover:border-border hover:bg-muted/40",
+                                )}
+                              >
+                                {suggestion}
+                              </motion.button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                      <div className="shrink-0">
+                        <Button
+                          onClick={handleMarkAsReviewed}
+                          disabled={!reviewComment.trim()}
+                          isLoading={updateStatusMutation.isPending}
+                          variant="secondary"
+                          mode="filled"
+                          size="xs"
+                          leadingIcon={RiCheckLine}
+                          className="shrink-0 text-xs"
+                        >
+                          Mark as Reviewed
+                        </Button>
+                      </div>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
 
-                <div className="border-t border-border/40 px-6 py-4 shrink-0">
-                  <div className="flex flex-row gap-2 flex-wrap justify-end">
+                <div
+                  className="flex shrink-0 flex-wrap items-center justify-between gap-4 border-t border-border/40 px-6 py-4"
+                  role="contentinfo"
+                >
+                  <RequestDocStatusBadge status={displayDoc.requested_review.status} />
+                  <div className="flex flex-wrap items-center justify-end gap-2">
                     {canReview && !isReviewing && (
                       <Button
-                        onClick={() => {
-                          setIsReviewing(true);
-                          setIsAccordionOpen(false);
-                        }}
-                        variant="default"
-                        size="sm"
-                        className="bg-[#222222] hover:bg-[#222222]/90 font-medium"
+                        onClick={() => setIsReviewing(true)}
+                        variant="secondary"
+                        mode="filled"
+                        size="xs"
+                        leadingIcon={RiCheckLine}
+                        className="shrink-0 text-xs"
                       >
-                        <RiCheckLine className="size-4" />
                         Mark as Reviewed
                       </Button>
                     )}
@@ -368,9 +484,10 @@ export function RequestedDocumentViewSheet({
                     {canReview && isReviewing && (
                       <Button
                         onClick={() => setIsReviewing(false)}
-                        variant="outline"
-                        size="sm"
-                        className="font-medium"
+                        variant="secondary"
+                        mode="outline"
+                        size="xs"
+                        className="shrink-0 text-xs"
                       >
                         Cancel Review
                       </Button>
@@ -378,52 +495,96 @@ export function RequestedDocumentViewSheet({
 
                     {canDelete && (
                       <Button
-                        variant="default"
-                        size="sm"
-                        className="bg-error-base hover:bg-error-base/90 font-medium"
+                        variant="error"
+                        mode="lighter"
+                        size="xs"
+                        leadingIcon={RiDeleteBin7Line}
                         onClick={handleDeleteRequest}
-                        disabled={deleteDocumentMutation.isPending}
+                        isLoading={deleteDocumentMutation.isPending}
+                        className="shrink-0 text-xs"
                       >
-                        <RiDeleteBin7Line className="size-4" />
-                        {deleteDocumentMutation.isPending
-                          ? "Deleting..."
-                          : "Delete Request"}
+                        Delete Request
                       </Button>
                     )}
                   </div>
                 </div>
               </div>
 
-              {canAccessMessages && (
+              {showSideColumn && (
                 <>
-                  <div className="hidden lg:block w-px bg-border/40 shrink-0" />
-                  <div className="w-full lg:w-[380px] lg:shrink-0 flex flex-col min-h-0 border-t lg:border-t-0 lg:border-l order-2 bg-muted/20 h-[50vh] lg:h-full">
-                    <RequestedDocumentMessages
-                      documentId={displayDoc._id}
-                      reviewId={displayDoc.requested_review._id}
-                      onPublishToClient={handlePublishToClient}
-                    />
+                  <div className="hidden h-full w-px shrink-0 bg-border/40 lg:block" />
+                  <div className="relative order-2 flex h-[50vh] min-h-0 w-full flex-col overflow-hidden border-t bg-muted/20 lg:h-full lg:w-[380px] lg:shrink-0 lg:border-t-0 lg:border-l">
+                    <AnimatePresence mode="wait">
+                      {canAccessMessages && sidePanel === "messages" && (
+                        <motion.div
+                          key="messages"
+                          className="absolute inset-0 flex flex-col"
+                          initial={{ x: -20, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          exit={{ x: -20, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 320, damping: 28 }}
+                        >
+                          <RequestedDocumentMessages
+                            documentId={displayDoc._id}
+                            reviewId={displayDoc.requested_review._id}
+                            onPublishToClient={handlePublishToClient}
+                          />
+                        </motion.div>
+                      )}
+                      {sidePanel === "applicationDetails" && displayDoc.record_id && (
+                        <motion.div
+                          key="application-details"
+                          className="absolute inset-0 flex flex-col"
+                          initial={{ x: 40, opacity: 0 }}
+                          animate={{ x: 0, opacity: 1 }}
+                          exit={{ x: 40, opacity: 0 }}
+                          transition={{ type: "spring", stiffness: 320, damping: 28 }}
+                        >
+                          <div className="flex shrink-0 items-center gap-2 border-b border-border/60 px-4 py-3">
+                            <Button
+                              variant="secondary"
+                              mode="ghost"
+                              size="2xs"
+                              className="cursor-pointer p-1"
+                              onClick={backFromApplicationDetails}
+                              aria-label={canAccessMessages ? "Back to messages" : "Close application details"}
+                            >
+                              <RiArrowLeftLine className="size-4" />
+                            </Button>
+                            <span className="text-sm font-semibold tracking-tight text-foreground">
+                              Application details
+                            </span>
+                          </div>
+                          <RequestedApplicationDetailsPanel
+                            application={application}
+                            isLoading={isApplicationLoading}
+                            requestedDocument={displayDoc}
+                            className="min-h-0 flex-1"
+                          />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 </>
               )}
             </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
-    <PublishToClientDialog
-      open={publishState.isOpen}
-      text={publishState.text}
-      isPending={addCommentMutation.isPending}
-      onOpenChange={(open) => {
-        if (!addCommentMutation.isPending) {
-          setPublishState((s) => ({ ...s, isOpen: open }));
-        }
-      }}
-      onClose={() => setPublishState({ isOpen: false, text: "" })}
-      onTextChange={(next) => setPublishState((s) => ({ ...s, text: next }))}
-      onSend={handleSendToClient}
-    />
+      <PublishToClientDialog
+        open={publishState.isOpen}
+        text={publishState.text}
+        isPending={addCommentMutation.isPending}
+        onOpenChange={(open) => {
+          if (!addCommentMutation.isPending) {
+            setPublishState((s) => ({ ...s, isOpen: open }));
+          }
+        }}
+        onClose={() => setPublishState({ isOpen: false, text: "" })}
+        onTextChange={(next) => setPublishState((s) => ({ ...s, text: next }))}
+        onSend={handleSendToClient}
+      />
     </>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/primitives/button";
 import { Document } from "@/types/applications";
 import { useDocumentStatusUpdate } from "@/hooks/useDocumentStatusUpdate";
 import { useDocumentData } from "@/hooks/useDocumentData";
@@ -21,21 +21,19 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
   const [updatingStatus, setUpdatingStatus] = useState<string | null>(null);
   const [isRejectDialogOpen, setIsRejectDialogOpen] = useState(false);
 
-  // Get real-time document data from cache
   const { document: currentDocument } = useDocumentData(document._id);
 
-  // Use the current document from cache, fallback to prop
   const displayDocument = currentDocument || document;
 
   const statusUpdateMutation = useDocumentStatusUpdate({
     applicationId,
-    documentId: document._id, // Pass documentId for comment creation
+    documentId: document._id,
     onSuccess: () => {
-      setUpdatingStatus(null); // Clear loading state
+      setUpdatingStatus(null);
     },
     onError: (error) => {
       console.error("Status update failed:", error);
-      setUpdatingStatus(null); // Clear loading state on error
+      setUpdatingStatus(null);
     },
   });
 
@@ -48,7 +46,7 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
       return;
     }
 
-    setUpdatingStatus(status); // Set which button is loading
+    setUpdatingStatus(status);
     statusUpdateMutation.mutate({
       documentId: document._id,
       status,
@@ -72,17 +70,18 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
 
   return (
     <>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center justify-end gap-2">
         {!isAdmin && (
           <Button
-            variant="default"
+            variant="primary"
+            mode="filled"
             size="sm"
             onClick={handleApprove}
             disabled={disabled || isUpdating || currentStatus === "approved"}
             className={`h-8 text-xs font-medium cursor-pointer ${
               currentStatus === "approved"
-                ? "bg-green-700 text-white"
-                : "bg-green-600 text-white hover:bg-green-700"
+                ? "bg-success-base text-white"
+                : "bg-success-base text-white hover:bg-success-darker"
             }`}
           >
             {updatingStatus === "approved"
@@ -93,14 +92,15 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
           </Button>
         )}
         <Button
-          variant="destructive"
+          variant="error"
+          mode="filled"
           size="sm"
           onClick={handleReject}
           disabled={disabled || isUpdating || currentStatus === "rejected"}
           className={`h-8 text-xs font-medium cursor-pointer ${
             currentStatus === "rejected"
-              ? "bg-red-700 text-white"
-              : "bg-red-600 text-white hover:bg-red-700"
+              ? "bg-error-base text-white"
+              : "bg-error-base text-white hover:bg-error-darker"
           }`}
         >
           {updatingStatus === "rejected"
@@ -110,15 +110,12 @@ const DocumentStatusButtons: React.FC<DocumentStatusButtonsProps> = ({
               : "Reject"}
         </Button>
         <Button
-          variant="default"
+          variant="primary"
+          mode="filled"
           size="sm"
           onClick={handleReviewed}
           disabled={disabled || isUpdating || currentStatus === "reviewed"}
-          className={`h-8 text-xs font-medium cursor-pointer ${
-            currentStatus === "reviewed"
-              ? "bg-blue-700 text-white border-blue-700"
-              : "bg-blue-600 text-white hover:bg-blue-700"
-          }`}
+          className="h-8 text-xs font-medium cursor-pointer bg-blue-500 hover:bg-blue-500/90"
         >
           {updatingStatus === "reviewed"
             ? "Updating..."

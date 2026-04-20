@@ -1,12 +1,12 @@
 "use client";
 
+import Image from "next/image";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogClose,
 } from "@/components/ui/primitives/dialog";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -17,7 +17,6 @@ import { useClientReuploadDocument } from "@/hooks/useClientDocumentMutations";
 import { useDocumentData } from "@/hooks/useDocumentData";
 import { useAuth } from "@/hooks/useAuth";
 import { useQueryClient } from "@tanstack/react-query";
-import { Upload, X, FileText, File, RotateCcw } from "lucide-react";
 import {
   DocumentUploadModalProps,
   UploadDocumentsModalProps,
@@ -45,9 +44,12 @@ import {
   showSuccessToast,
   showWarningToast,
 } from "../ui/primitives/sonner-helpers";
-import { RiDeleteBin2Line, RiDeleteBin3Line, RiFileAddLine, RiFileUploadFill, RiFileUploadLine } from "react-icons/ri";
+import { RiDeleteBin3Line, RiFileAddLine, RiFileUploadFill } from "react-icons/ri";
 import { CompactButton } from "../ui/primitives/button-compact";
 import { cn } from "@/lib/utils";
+import { getFileIcon } from "@/lib/utils/fileIcon";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../ui/tooltip";
+import { ChartTooltipContent } from "../ui/primitives/chart";
 
 interface FileRowProps {
   uploadedFile: UploadedFile;
@@ -55,33 +57,21 @@ interface FileRowProps {
   onRemove: () => void;
 }
 
-function getFileTypeIcon(fileName: string): React.ReactNode {
-  const lower = fileName.toLowerCase();
-  if (lower.endsWith(".jpg") || lower.endsWith(".jpeg") || lower.endsWith(".png")) {
-    return <File className="h-5 w-5 shrink-0 text-emerald-600" />;
-  }
-  if (lower.endsWith(".doc") || lower.endsWith(".docx")) {
-    return <FileText className="h-5 w-5 shrink-0 text-blue-600" />;
-  }
-  if (lower.endsWith(".txt")) {
-    return <File className="h-5 w-5 shrink-0 text-zinc-500" />;
-  }
-  return (
-    <div className="flex h-5 w-5 shrink-0 items-center justify-center rounded bg-red-100">
-      <span className="text-[10px] font-semibold uppercase text-red-700">PDF</span>
-    </div>
-  );
-}
-
 function FileRow({ uploadedFile, isUploading, onRemove }: FileRowProps) {
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-border/70 bg-muted/10 p-3">
-      {getFileTypeIcon(uploadedFile.file.name)}
+    <li className="flex items-center gap-2 rounded-lg border border-border/70 bg-muted/10 px-2 py-1.5">
+      <Image
+        src={getFileIcon(uploadedFile.file.name)}
+        width={50}
+        height={50}
+        alt=""
+        className="shrink-0 object-contain object-center"
+      />
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-medium text-foreground">
           {uploadedFile.file.name}
         </p>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-text-sub text-xs">
           {(uploadedFile.file.size / 1024 / 1024).toFixed(2)} MB
         </p>
         {isUploading && (
@@ -91,16 +81,21 @@ function FileRow({ uploadedFile, isUploading, onRemove }: FileRowProps) {
           </div>
         )}
       </div>
-      {!isUploading && (
-        <CompactButton
-          icon={RiDeleteBin3Line}
-          variant="ghost"
-          size="md"
-          className="text-muted-foreground hover:text-destructive cursor-pointer"
-          onClick={onRemove}
-          aria-label="Remove file"
-         />
-      )}
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {!isUploading && (
+            <CompactButton
+              icon={RiDeleteBin3Line}
+              variant="ghost"
+              size="md"
+              className="text-muted-foreground hover:text-destructive cursor-pointer"
+              onClick={onRemove}
+              aria-label="Remove file"
+            />
+          )}
+        </TooltipTrigger>
+        <TooltipContent variant="default" className="text-xs">Remove file</TooltipContent>
+      </Tooltip>
     </li>
   );
 }
@@ -459,6 +454,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             uploaded_by: uploadedBy,
             description: finalDescription,
             document_type: effectiveDocumentType.toLowerCase().replace(/\s+/g, "_"),
+            templateFormats: dynamicTemplate?.format,
           })
           : await addDocumentMutation.mutateAsync({
             applicationId,
@@ -468,6 +464,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             uploaded_by: uploadedBy,
             description: finalDescription,
             document_type: effectiveDocumentType.toLowerCase().replace(/\s+/g, "_"),
+            templateFormats: dynamicTemplate?.format,
           });
 
         setUploadedFiles((prev) => prev.map((f) => ({ ...f, progress: 100 })));
@@ -592,6 +589,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             document_category: effectiveCategory,
             uploaded_by: uploadedBy,
             description: displayDocument.description,
+            templateFormats: dynamicTemplate?.format,
           });
         } else {
           await reuploadMutation.mutateAsync({
@@ -602,6 +600,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
             document_category: effectiveCategory,
             uploaded_by: uploadedBy,
             description: displayDocument.description,
+            templateFormats: dynamicTemplate?.format,
           });
         }
 
@@ -757,7 +756,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
                       )}
                     />
                   ) : (
-                    <RiFileAddLine 
+                    <RiFileAddLine
                       className={[
                         "h-6 w-6 transition-colors",
                         isUploadZoneDisabled ? "text-muted-foreground/40" : "text-foreground",
@@ -819,7 +818,7 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
 
           {/* Fixed Footer */}
           <div className="shrink-0 flex flex-row items-center justify-end gap-2 border-t border-neutral-alpha-200 bg-bg-weak px-6 py-4 rounded-b-2xl">
-            
+
             <Button
               onClick={handleSubmit}
               disabled={isSubmitDisabled}

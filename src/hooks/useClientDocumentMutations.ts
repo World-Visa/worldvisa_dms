@@ -10,6 +10,7 @@ import {
 import { ClientDocument } from "@/types/client";
 import { Document } from "@/types/applications";
 import { toast } from "sonner";
+import { showSuccessToast } from "@/components/ui/primitives/sonner-helpers";
 
 export function useClientUploadDocument() {
   const queryClient = useQueryClient();
@@ -50,11 +51,10 @@ export function useClientUploadDocument() {
         }),
       ])
         .then(() => {
-          toast.success("Document uploaded successfully");
+          showSuccessToast("Document uploaded successfully");
         })
         .catch((error) => {
           console.error("Error invalidating queries after upload:", error);
-          toast.success("Document uploaded successfully");
         });
     },
     onError: (error: Error) => {

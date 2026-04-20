@@ -1,9 +1,8 @@
 "use client";
 
 import React from "react";
-import { Clock, Eye } from "lucide-react";
-
 import { StatusBadge, StatusBadgeIcon } from "@/components/ui/primitives/status-badge";
+import { RiCheckboxCircleFill, RiFolderWarningFill } from "react-icons/ri";
 
 interface StatusBadgeProps {
   status: "pending" | "reviewed";
@@ -14,8 +13,8 @@ export function RequestDocStatusBadge({ status }: StatusBadgeProps) {
     StatusBadgeProps["status"],
     { badgeStatus: "pending" | "completed"; icon: React.ElementType; label: string }
   > = {
-    pending: { badgeStatus: "pending", icon: Clock, label: "Pending" },
-    reviewed: { badgeStatus: "completed", icon: Eye, label: "Reviewed" },
+    pending: { badgeStatus: "pending", icon: RiFolderWarningFill, label: "Pending" },
+    reviewed: { badgeStatus: "completed", icon: RiCheckboxCircleFill, label: "Reviewed" },
   };
 
   const { badgeStatus, icon, label } = config[status] ?? config.pending;

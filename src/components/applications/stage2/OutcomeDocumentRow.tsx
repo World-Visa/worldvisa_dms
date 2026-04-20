@@ -1,7 +1,7 @@
 "use client";
 
 import { TableCell } from "@/components/ui/table";
-import { getAnzscoCodeByCode } from "@/lib/constants/australianData";
+import { getStage2AnzscoDisplay } from "@/lib/stage2DocumentDisplay";
 import type { Stage2Document } from "@/types/stage2Documents";
 import { formatDate } from "@/utils/format";
 import { Stage2RowActionsCell } from "@/components/applications/stage2/Stage2RowActionsCell";
@@ -20,13 +20,6 @@ type OutcomeDocumentRowProps = {
   onDelete?: (document: Stage2Document) => void;
 };
 
-function getAnzscoDisplay(code?: string) {
-  if (!code) return "N/A";
-  const data = getAnzscoCodeByCode(code);
-  if (data) return `${data.anzsco_code} - ${data.name} (${data.assessing_authority})`;
-  return code;
-}
-
 export function OutcomeDocumentRow({
   rowIndex,
   document,
@@ -35,32 +28,26 @@ export function OutcomeDocumentRow({
   onEdit,
   onDelete,
 }: OutcomeDocumentRowProps) {
-  const skillAssessingBodyDisplay = getAnzscoDisplay(document.skill_assessing_body);
-  const motionProps = useStage2RowMotionProps(rowIndex);
+  const skillAssessingBodyDisplay = getStage2AnzscoDisplay(document.skill_assessing_body);
   const outcome = document.outcome ?? "N/A";
-
+  const motionProps = useStage2RowMotionProps(rowIndex);
+  
   return (
     <MotionTableRow
       {...motionProps}
-      className="group transition-colors duration-200 hover:bg-neutral-50"
+      className="group transition-colors duration-200"
     >
-      <TableCell className="min-w-0 font-medium">
-        <TruncatedText className="max-w-full">{document.document_name || document.file_name}</TruncatedText>
+      <TableCell className="min-w-0 font-normal">
+        <TruncatedText className="max-w-full text-neutral-700">{document.document_name || document.file_name}</TruncatedText>
       </TableCell>
-      <TableCell className="min-w-0">
-        <TruncatedText className="max-w-full">{document.uploaded_by}</TruncatedText>
+      <TableCell className="min-w-0 font-normal">
+        <TruncatedText className="max-w-full text-neutral-700">{outcome}</TruncatedText>
       </TableCell>
-      <TableCell className="whitespace-nowrap text-text-sub text-sm">
-        {formatDate(document.uploaded_at, "short")}
+      <TableCell className="min-w-0 font-normal">
+        <TruncatedText className="max-w-full text-neutral-700">{skillAssessingBodyDisplay}</TruncatedText>
       </TableCell>
-      <TableCell className="min-w-0">
-        <TruncatedText className="max-w-full">{outcome}</TruncatedText>
-      </TableCell>
-      <TableCell className="whitespace-nowrap text-sm">
+      <TableCell className="whitespace-nowrap text-sm font-normal">
         {document.outcome_date ? formatDate(document.outcome_date, "short") : "N/A"}
-      </TableCell>
-      <TableCell className="min-w-0">
-        <TruncatedText className="max-w-full">{skillAssessingBodyDisplay}</TruncatedText>
       </TableCell>
 
       <Stage2RowActionsCell

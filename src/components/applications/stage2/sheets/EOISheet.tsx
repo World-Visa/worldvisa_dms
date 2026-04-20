@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -12,7 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/primitives/sheet";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button as SheetFooterButton } from "@/components/ui/primitives/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -27,23 +27,31 @@ import {
   useUpdateStage2Document,
   useReuploadStage2Document,
 } from "@/hooks/useStage2Documents";
-import { Combobox } from "@/components/ui/combobox";
 import { MultiSelect } from "@/components/ui/multi-select";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import {
   AUSTRALIAN_VISA_SUBCLASSES,
   AUSTRALIAN_STATES,
-  ANZSCO_CODES,
   getAnzscoCodeByCode,
 } from "@/lib/constants/australianData";
+import { AnzscoCombobox } from "@/components/ui/anzsco-combox";
 import type { EOISheetProps } from "@/types/stage2Documents";
 import TruncatedText from "@/components/ui/truncated-text";
+import {
+  computeEoiExpiryDate,
+  formatEoiExpiryForApi,
+  formatEoiExpiryForPatch,
+  getEoiExpiryPeriodLabel,
+} from "@/lib/stage2/eoiExpiry";
+import { formatDate } from "@/utils/format";
 
 interface UploadedFile {
   file: File;
@@ -70,12 +78,9 @@ export function EOISheet({
   const [customAnzscoCode, setCustomAnzscoCode] = useState("");
   const [customAnzscoName, setCustomAnzscoName] = useState("");
   const [customAssessingAuthority, setCustomAssessingAuthority] = useState("");
-  const [availableAnzscoOptions, setAvailableAnzscoOptions] = useState(
-    ANZSCO_CODES.map((code) => ({
-      value: code.anzsco_code,
-      label: `${code.anzsco_code} - ${code.name} (${code.assessing_authority})`,
-    })),
-  );
+  const [extraAnzscoItems, setExtraAnzscoItems] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({
@@ -107,6 +112,13 @@ export function EOISheet({
     (_, index) => (65 + index * 5).toString(),
   );
 
+  const computedExpiry = useMemo(() => computeEoiExpiryDate(date), [date]);
+
+  const expiryDisplayText = useMemo(() => {
+    if (!computedExpiry) return "N/A";
+    return `${formatDate(computedExpiry, "short")} (${getEoiExpiryPeriodLabel()} from EOI date)`;
+  }, [computedExpiry]);
+
   useEffect(() => {
     if (mode === "edit" && document) {
       setSubclass(document.subclass || "");
@@ -116,22 +128,17 @@ export function EOISheet({
       const skillBody = document.skill_assessing_body || "";
       if (skillBody) {
         const matchingCode = getAnzscoCodeByCode(skillBody);
-        if (matchingCode) {
-          setSelectedAnzscoCode(skillBody);
+        setSelectedAnzscoCode(skillBody);
+        if (!matchingCode) {
+          setExtraAnzscoItems([
+            { value: skillBody, label: `Custom - ${skillBody}` },
+          ]);
         } else {
-          setSelectedAnzscoCode(skillBody);
-          setAvailableAnzscoOptions((prev) => {
-            const exists = prev.some((opt) => opt.value === skillBody);
-            if (!exists)
-              return [
-                ...prev,
-                { value: skillBody, label: `Custom - ${skillBody}` },
-              ];
-            return prev;
-          });
+          setExtraAnzscoItems([]);
         }
       } else {
         setSelectedAnzscoCode("");
+        setExtraAnzscoItems([]);
       }
       setIsCustomAnzscoMode(false);
       setCustomAnzscoCode("");
@@ -144,6 +151,7 @@ export function EOISheet({
       setPoint("");
       setDate(undefined);
       setSelectedAnzscoCode("");
+      setExtraAnzscoItems([]);
       setIsCustomAnzscoMode(false);
       setCustomAnzscoCode("");
       setCustomAnzscoName("");
@@ -154,48 +162,9 @@ export function EOISheet({
     }
   }, [mode, document, isOpen]);
 
-  const validateFile = (file: File): boolean => {
-    const fileName = file.name.toLowerCase();
-    const allowedExtensions = [
-      ".pdf",
-      ".doc",
-      ".docx",
-      ".jpg",
-      ".jpeg",
-      ".png",
-    ];
-    const allowedMimeTypes = [
-      "application/pdf",
-      "application/msword",
-      "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-      "image/jpeg",
-      "image/jpg",
-      "image/png",
-    ];
-    if (
-      !allowedExtensions.some((ext) => fileName.endsWith(ext)) ||
-      !allowedMimeTypes.includes(file.type)
-    ) {
-      toast.error(
-        `${file.name}: only PDF, Word (.doc, .docx), and image files (.jpg, .jpeg, .png) are allowed.`,
-      );
-      return false;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error(`${file.name} is too large. Maximum file size is 5MB.`);
-      return false;
-    }
-    if (file.size === 0) {
-      toast.error(`${file.name} is empty. Please select a valid file.`);
-      return false;
-    }
-    return true;
-  };
-
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
-    const validFiles = files.filter(validateFile);
-    const newFiles: UploadedFile[] = validFiles.map((file) => ({
+    const newFiles: UploadedFile[] = files.map((file) => ({
       file,
       progress: 0,
       id: Math.random().toString(36).substr(2, 9),
@@ -217,8 +186,7 @@ export function EOISheet({
     e.preventDefault();
     e.stopPropagation();
     const files = Array.from(e.dataTransfer.files);
-    const validFiles = files.filter(validateFile);
-    const newFiles: UploadedFile[] = validFiles.map((file) => ({
+    const newFiles: UploadedFile[] = files.map((file) => ({
       file,
       progress: 0,
       id: Math.random().toString(36).substr(2, 9),
@@ -235,12 +203,13 @@ export function EOISheet({
       const code = customAnzscoCode.trim();
       const name = customAnzscoName.trim();
       const authority = customAssessingAuthority.trim();
-      if (!availableAnzscoOptions.some((o) => o.value === code)) {
-        setAvailableAnzscoOptions((prev) => [
+      setExtraAnzscoItems((prev) => {
+        if (prev.some((o) => o.value === code)) return prev;
+        return [
           ...prev,
           { value: code, label: `${code} - ${name} (${authority})` },
-        ]);
-      }
+        ];
+      });
       setSelectedAnzscoCode(code);
       setCustomAnzscoCode("");
       setCustomAnzscoName("");
@@ -280,13 +249,13 @@ export function EOISheet({
         return;
       }
     }
-    if (!user?.username) {
-      toast.error("User information not available. Please login again.");
-      return;
-    }
 
     const formattedDate = format(date, "yyyy-MM-dd");
     const anzscoValue = selectedAnzscoCode || undefined;
+    const expiryAtApi =
+      computedExpiry != null ? formatEoiExpiryForApi(computedExpiry) : undefined;
+    const expiryAtPatch =
+      computedExpiry != null ? formatEoiExpiryForPatch(computedExpiry) : undefined;
 
     setIsUploading(true);
 
@@ -300,12 +269,13 @@ export function EOISheet({
             file_name: replacementFile.name,
             document_name: replacementFile.name,
             document_type: replacementFile.type,
-            uploaded_by: user.username,
+            uploaded_by: user?.username ?? user?.email ?? "",
             subclass,
             state: document.state,
             point: Number(point),
             date: formattedDate,
             skill_assessing_body: anzscoValue,
+            ...(expiryAtPatch ? { expiry_at: expiryAtPatch } : {}),
           });
         } else {
           await updateMutation.mutateAsync({
@@ -318,6 +288,7 @@ export function EOISheet({
               point: Number(point),
               date: formattedDate,
               skill_assessing_body: anzscoValue,
+              ...(expiryAtPatch ? { expiry_at: expiryAtPatch } : {}),
             },
           });
         }
@@ -344,13 +315,14 @@ export function EOISheet({
               file_name: documentName,
               document_name: documentName,
               document_type: documentType,
-              uploaded_by: user.username,
+              uploaded_by: user?.username ?? user?.email ?? "",
               type: "eoi",
               subclass,
               state: stateCode,
               point: Number(point),
               date: formattedDate,
               skill_assessing_body: anzscoValue,
+              ...(expiryAtApi ? { expiry_at: expiryAtApi } : {}),
             });
           } catch {
             failed.push(`${documentName} (${stateCode})`);
@@ -361,9 +333,7 @@ export function EOISheet({
       }
 
       if (failed.length > 0) {
-        toast.error(
-          `Failed to upload: ${failed.slice(0, 3).join(", ")}${failed.length > 3 ? "..." : ""}`,
-        );
+        toast.error(`${failed.length} upload(s) failed. Please try again.`);
       } else {
         clearFormState();
         onClose();
@@ -382,6 +352,7 @@ export function EOISheet({
     setPoint("");
     setDate(undefined);
     setSelectedAnzscoCode("");
+    setExtraAnzscoItems([]);
     setUploadedFiles([]);
     setReplacementFile(null);
     if (replaceFileInputRef.current) replaceFileInputRef.current.value = "";
@@ -403,7 +374,6 @@ export function EOISheet({
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    if (!validateFile(file)) return;
     setReplacementFile(file);
     event.target.value = "";
   };
@@ -445,30 +415,39 @@ export function EOISheet({
             <motion.div
               key={`${isOpen}-${mode}-${document?._id ?? "new"}`}
               className="h-full overflow-y-auto"
-              initial={
-                reduceMotion ? false : { opacity: 0.97, y: 4 }
-              }
+              initial={reduceMotion ? false : { opacity: 0.97, y: 4 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
             >
-              <div className="space-y-4 p-4 pb-5">
+              {/* Visa Information */}
+              <div className="space-y-3 px-4 py-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-xs font-medium text-foreground">
                     Subclass *
                   </Label>
-                  <Combobox
-                    options={subclassOptions}
+                  <Select
                     value={subclass}
                     onValueChange={setSubclass}
-                    placeholder="Select a subclass..."
-                    searchPlaceholder="Search subclass..."
-                    emptyMessage="No subclass found."
                     disabled={isUploading}
-                  />
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select a subclass…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Subclass</SelectLabel>
+                        {subclassOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-xs font-medium text-foreground">
                     State{mode === "create" ? "s" : ""} *
                   </Label>
                   {mode === "create" ? (
@@ -478,7 +457,7 @@ export function EOISheet({
                       onChange={setSelectedStates}
                       placeholder="Select state(s)..."
                       disabled={isUploading}
-                      className="w-full min-h-[36px] rounded-md border border-input bg-background px-3 py-1.5 text-sm shadow-sm focus:border-ring focus:ring-2 focus:ring-ring"
+                      portalContainer={sheetContainerRef.current}
                     />
                   ) : (
                     <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
@@ -486,134 +465,40 @@ export function EOISheet({
                     </div>
                   )}
                 </div>
+              </div>
 
+              <Separator />
+
+              {/* Skill Assessing Body */}
+              <div className="space-y-3 px-4 py-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">
-                    Skill Assessing Body (ANZSCO Code)
+                  <Label className="text-xs font-medium text-foreground">
+                    ANZSCO
                   </Label>
-                  {!isCustomAnzscoMode ? (
-                    <div className="space-y-1.5">
-                      <Combobox
-                        options={availableAnzscoOptions}
-                        value={selectedAnzscoCode}
-                        onValueChange={setSelectedAnzscoCode}
-                        placeholder="Select ANZSCO code..."
-                        searchPlaceholder="Search ANZSCO code or occupation..."
-                        emptyMessage="No ANZSCO code found."
-                        disabled={isUploading}
-                        portalContainer={sheetContainerRef.current}
-                      />
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t border-border" />
-                        </div>
-                        <div className="relative flex justify-center text-xs">
-                          <span className="bg-background px-2 text-muted-foreground">
-                            or
-                          </span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        onClick={handleToggleCustomAnzscoMode}
-                        disabled={isUploading}
-                        className="h-auto p-0 text-xs font-normal text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                      >
-                        Add new ANZSCO code
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1.5">
-                          <Label
-                            htmlFor="custom-anzsco-code"
-                            className="text-xs font-medium text-muted-foreground"
-                          >
-                            ANZSCO Code *
-                          </Label>
-                          <Input
-                            id="custom-anzsco-code"
-                            type="text"
-                            placeholder="e.g., 121111"
-                            value={customAnzscoCode}
-                            onChange={(e) => setCustomAnzscoCode(e.target.value)}
-                            disabled={isUploading}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label
-                            htmlFor="custom-assessing-authority"
-                            className="text-xs font-medium text-muted-foreground"
-                          >
-                            Assessing Authority *
-                          </Label>
-                          <Input
-                            id="custom-assessing-authority"
-                            type="text"
-                            placeholder="e.g., VETASSESS"
-                            value={customAssessingAuthority}
-                            onChange={(e) =>
-                              setCustomAssessingAuthority(e.target.value)
-                            }
-                            disabled={isUploading}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label
-                          htmlFor="custom-anzsco-name"
-                          className="text-xs font-medium text-muted-foreground"
-                        >
-                          Occupation Name *
-                        </Label>
-                        <Input
-                          id="custom-anzsco-name"
-                          type="text"
-                          placeholder="e.g., Aquaculture Farmer"
-                          value={customAnzscoName}
-                          onChange={(e) => setCustomAnzscoName(e.target.value)}
-                          disabled={isUploading}
-                          onKeyDown={(e) =>
-                            e.key === "Enter" && handleAddCustomAnzsco()
-                          }
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleAddCustomAnzsco}
-                          disabled={
-                            !customAnzscoCode.trim() ||
-                            !customAnzscoName.trim() ||
-                            !customAssessingAuthority.trim() ||
-                            isUploading
-                          }
-                          className="flex items-center gap-1"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleToggleCustomAnzscoMode}
-                          disabled={isUploading}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  )}
+                  <div className="space-y-1.5">
+                    <AnzscoCombobox
+                      value={selectedAnzscoCode || null}
+                      onValueChange={(code) =>
+                        setSelectedAnzscoCode(code ?? "")
+                      }
+                      disabled={isUploading}
+                      placeholder="Search code, occupation, or assessing authority…"
+                      extraItems={extraAnzscoItems}
+                      portalContainer={sheetContainerRef.current}
+                    />
+                  </div>
                 </div>
+              </div>
 
+              <Separator />
+
+              {/* Points & Date */}
+              <div className="space-y-3 px-4 py-4">
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="point"
-                      className="text-xs font-medium text-muted-foreground"
+                      className="text-xs font-medium text-foreground"
                     >
                       Points *
                     </Label>
@@ -626,11 +511,14 @@ export function EOISheet({
                         <SelectValue placeholder="Select points" />
                       </SelectTrigger>
                       <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>Points</SelectLabel>
                         {pointOptions.map((value) => (
                           <SelectItem key={value} value={value}>
                             {value}
                           </SelectItem>
                         ))}
+                        </SelectGroup>
                       </SelectContent>
                     </Select>
                   </div>
@@ -638,7 +526,7 @@ export function EOISheet({
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="date"
-                      className="text-xs font-medium text-muted-foreground"
+                      className="text-xs font-medium text-foreground"
                     >
                       Date *
                     </Label>
@@ -651,11 +539,28 @@ export function EOISheet({
                   </div>
                 </div>
 
+                {date ? (
+                  <div className="space-y-1.5 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5">
+                    <Label className="text-xs font-medium text-muted-foreground">
+                      Expiry date (calculated)
+                    </Label>
+                    <p className="text-sm font-medium text-foreground">
+                      {expiryDisplayText}
+                    </p>
+                  </div>
+                ) : null}
+              </div>
+
+              <Separator />
+
+              {/* Files */}
+              <div className="space-y-3 px-4 py-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {mode === "edit" ? "File" : "Upload Files"}
+                </p>
+
                 {mode === "create" && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-muted-foreground">
-                      Upload Files *
-                    </Label>
                     <div
                       className="cursor-pointer rounded-lg border border-dashed border-border bg-muted/25 px-4 py-5 text-center transition-colors hover:bg-muted/40"
                       onClick={() => fileInputRef.current?.click()}
@@ -673,14 +578,12 @@ export function EOISheet({
                         Drop your files here, or click to browse
                       </p>
                       <p className="text-[11px] leading-snug text-muted-foreground">
-                        <span className="font-medium">PDF, Word, images</span> •
-                        Max 5MB per file. Document name = file name.
+                        Any file type • Max 5MB per file. Document name = file name.
                       </p>
                       <input
                         ref={fileInputRef}
                         type="file"
                         multiple
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/jpg,image/png"
                         onChange={handleFileSelect}
                         className="hidden"
                       />
@@ -690,9 +593,6 @@ export function EOISheet({
 
                 {mode === "edit" && document && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-muted-foreground">
-                      Current File
-                    </Label>
                     <div className="flex min-w-0 items-center gap-2.5 rounded-lg border bg-muted/50 p-2.5">
                       <FileText className="h-4 w-4 shrink-0 text-blue-600" />
                       <TruncatedText className="min-w-0 flex-1 text-sm font-medium">
@@ -705,7 +605,6 @@ export function EOISheet({
                       </Label>
                       <p className="text-[11px] text-muted-foreground">
                         Optionally choose a new file to replace the current document.
-                        Same types: PDF, Word, images. Max 5MB.
                       </p>
                       {replacementFile ? (
                         <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border bg-muted/30 p-2.5">
@@ -736,7 +635,6 @@ export function EOISheet({
                           <input
                             ref={replaceFileInputRef}
                             type="file"
-                            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/jpg,image/png"
                             onChange={handleReplaceFileSelect}
                             className="hidden"
                           />
@@ -813,9 +711,7 @@ export function EOISheet({
                 </span>
               </div>
               <Progress
-                value={
-                  totalUploads ? (currentUpload / totalUploads) * 100 : 0
-                }
+                value={totalUploads ? (currentUpload / totalUploads) * 100 : 0}
                 className="h-1.5"
               />
             </div>
@@ -825,22 +721,25 @@ export function EOISheet({
         <Separator />
 
         <SheetFooter className="p-0">
-          <div className="flex w-full items-center justify-between gap-3 border-t bg-background px-4 py-2.5">
-            <p className="min-w-0 truncate text-xs text-neutral-500">
-              EOI • Document name follows file name
-            </p>
+          <div className="flex w-full items-center justify-end gap-3 border-t bg-background px-4 py-2.5">
             <div className="flex shrink-0 items-center gap-2">
-              <Button
-                variant="outline"
+              <SheetFooterButton
+                variant="secondary"
+                mode="outline"
+                size="sm"
                 onClick={handleClose}
                 disabled={isUploading}
+                className="text-xs"
               >
                 Cancel
-              </Button>
-              <Button
+              </SheetFooterButton>
+              <SheetFooterButton
                 onClick={handleSubmit}
                 disabled={isUploading}
-                className="flex items-center gap-2"
+                size="sm"
+                mode="filled"
+                variant="secondary"
+                className="text-xs"
               >
                 {isUploading ? (
                   <>
@@ -852,10 +751,10 @@ export function EOISheet({
                 ) : (
                   <>
                     <Upload className="h-4 w-4" />
-                    {mode === "edit" ? "Update Document" : "Upload Document(s)"}
+                    {mode === "edit" ? "Update Document" : "Upload Documents"}
                   </>
                 )}
-              </Button>
+              </SheetFooterButton>
             </div>
           </div>
         </SheetFooter>
