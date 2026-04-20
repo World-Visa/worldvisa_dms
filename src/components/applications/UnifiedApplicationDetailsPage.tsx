@@ -69,6 +69,9 @@ import { useRemoveCompany } from "@/hooks/useRemoveCompany";
 import type { ApplicationNote } from "@/lib/api/applicationNotes";
 import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
 import { ClientOnboardingModal } from "@/components/applications/onboarding/ClientOnboardingModal";
+import { DeadlineBlockerModal } from "@/components/applications/deadline/DeadlineBlockerModal";
+import { computeDaysLeft } from "@/components/applications/deadline/deadline-date-utils";
+import { useApprovalRequestsByLead } from "@/hooks/useAdminApprovalRequests";
 import type { ApplicationLayout } from "@/components/applications/layouts/LayoutChips";
 import { useQueryStates } from "nuqs";
 
@@ -221,6 +224,33 @@ export default function UnifiedApplicationDetailsPage({
     useState(false);
   const hasLoadedApplicationData = !isApplicationLoading && Boolean(application);
 
+  const leadId = application?.id ?? "";
+
+  const { data: leadRequestsForBlocker } = useApprovalRequestsByLead(leadId, {});
+
+  const isDeadlineBlocking = useMemo(() => {
+    if (!hasLoadedApplicationData) return false;
+    const daysLeft = computeDaysLeft(application?.Deadline_For_Lodgment);
+    if (daysLeft === null || daysLeft >= 0) return false;
+    const requests = leadRequestsForBlocker?.data ?? [];
+    const latest = [...requests]
+      .filter(
+        (r) =>
+          r.fieldName === "Deadline_For_Lodgment" &&
+          r.recordType === "visa_application",
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.updatedAt || b.createdAt).getTime() -
+          new Date(a.updatedAt || a.createdAt).getTime(),
+      )[0];
+    return latest?.status !== "pending";
+  }, [
+    hasLoadedApplicationData,
+    application?.Deadline_For_Lodgment,
+    leadRequestsForBlocker,
+  ]);
+
   useEffect(() => {
     setHasDismissedAutoOnboardingModal(false);
     setIsClientOnboardingOpen(false);
@@ -228,6 +258,10 @@ export default function UnifiedApplicationDetailsPage({
 
   useEffect(() => {
     if (!hasLoadedApplicationData) {
+      return;
+    }
+
+    if (isDeadlineBlocking) {
       return;
     }
 
@@ -241,7 +275,12 @@ export default function UnifiedApplicationDetailsPage({
     }
 
     setIsClientOnboardingOpen(true);
-  }, [hasDismissedAutoOnboardingModal, hasLoadedApplicationData, isFullyOnboarded]);
+  }, [
+    hasDismissedAutoOnboardingModal,
+    hasLoadedApplicationData,
+    isFullyOnboarded,
+    isDeadlineBlocking,
+  ]);
 
   const handleOnboardingModalOpenChange = useCallback((open: boolean) => {
     setIsClientOnboardingOpen(open);
@@ -658,6 +697,12 @@ export default function UnifiedApplicationDetailsPage({
           onClose={clearDeepLinkDoc}
         />
       )}
+
+      <DeadlineBlockerModal
+        open={isDeadlineBlocking}
+        leadId={leadId}
+        currentDeadline={application?.Deadline_For_Lodgment}
+      />
 
       <ClientOnboardingModal
         applicationId={applicationId}
