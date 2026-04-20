@@ -49,24 +49,22 @@ export function Stage2DocumentsTable({
       case "outcome":
         return (
           <>
-            <TableHead className="min-w-0 w-[22%]">Document Name</TableHead>
-            <TableHead className="w-[13%] min-w-0 whitespace-nowrap">Uploaded By</TableHead>
-            <TableHead className="w-[12%] whitespace-nowrap">Uploaded At</TableHead>
-            <TableHead className="w-[11%] min-w-0">Outcome</TableHead>
-            <TableHead className="w-[12%] whitespace-nowrap">Outcome Date</TableHead>
+            <TableHead className="min-w-0">Document Name</TableHead>
+            <TableHead className=" min-w-0">Outcome</TableHead>
             <TableHead className="min-w-0">Skill Assessing Body</TableHead>
-            <TableHead className="w-20 text-right">Actions</TableHead>
+            <TableHead className=" whitespace-nowrap">Outcome Date</TableHead>
+            <TableHead className="w-24 text-right">Actions</TableHead>
           </>
         );
       case "eoi":
         return (
           <>
-            <TableHead className="min-w-0 w-[24%]">Document Name</TableHead>
-            <TableHead className="w-[10%] whitespace-nowrap">Date</TableHead>
-            <TableHead className="min-w-0 w-[15%]">Subclass</TableHead>
-            <TableHead className="min-w-0 w-[14%]">State</TableHead>
-            <TableHead className="w-[7%] whitespace-nowrap">Points</TableHead>
-            <TableHead className="min-w-0 w-[18%]">ANZSCO</TableHead>
+            <TableHead className="min-w-0">Document Name</TableHead>
+            <TableHead className="min-w-0">State</TableHead>
+            <TableHead className="min-w-0">Subclass</TableHead>
+            <TableHead className="whitespace-nowrap">Points</TableHead>
+            <TableHead className="whitespace-nowrap">Date</TableHead>
+            <TableHead className="whitespace-nowrap">Expiry</TableHead>
             <TableHead className="w-20 text-right">Actions</TableHead>
           </>
         );
@@ -78,7 +76,7 @@ export function Stage2DocumentsTable({
             <TableHead className="min-w-0 w-[15%]">Subclass</TableHead>
             <TableHead className="min-w-0 w-[14%]">State</TableHead>
             <TableHead className="w-[7%] whitespace-nowrap">Points</TableHead>
-            <TableHead className="w-[12%] whitespace-nowrap">Deadline</TableHead>
+            <TableHead className="w-[12%] whitespace-nowrap">Expiry</TableHead>
             <TableHead className="w-20 text-right">Actions</TableHead>
           </>
         );
@@ -98,7 +96,7 @@ export function Stage2DocumentsTable({
 
   return (
     <Table
-      className="w-full table-fixed"
+      className="w-full"
       isLoading={isLoading}
       loadingRowsCount={5}
       loadingRow={<Stage2LoadingRow type={type} />}

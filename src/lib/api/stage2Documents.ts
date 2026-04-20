@@ -150,6 +150,18 @@ export async function uploadStage2Document(
   if (request.skill_assessing_body) {
     formData.append("skill_assessing_body", request.skill_assessing_body);
   }
+  if (request.language_assessing_body?.trim()) {
+    formData.append(
+      "language_assessing_body",
+      request.language_assessing_body.trim(),
+    );
+  }
+  if (request.invitation_type?.trim()) {
+    formData.append("invitation_type", request.invitation_type.trim());
+  }
+  if (request.expiry_at?.trim()) {
+    formData.append("expiry_at", request.expiry_at.trim());
+  }
 
   const token = await getClerkToken();
 
@@ -231,7 +243,7 @@ export async function updateStage2Document(
   ) {
     metadata.outcome = String(request.metadata.outcome).trim();
   }
-  if (
+    if (
     request.metadata.skill_assessing_body !== undefined &&
     request.metadata.skill_assessing_body !== null &&
     String(request.metadata.skill_assessing_body).trim() !== ""
@@ -239,6 +251,31 @@ export async function updateStage2Document(
     metadata.skill_assessing_body = String(
       request.metadata.skill_assessing_body,
     ).trim();
+  }
+  if (
+    request.metadata.language_assessing_body !== undefined &&
+    request.metadata.language_assessing_body !== null &&
+    String(request.metadata.language_assessing_body).trim() !== ""
+  ) {
+    metadata.language_assessing_body = String(
+      request.metadata.language_assessing_body,
+    ).trim();
+  }
+  if (
+    request.metadata.invitation_type !== undefined &&
+    request.metadata.invitation_type !== null &&
+    String(request.metadata.invitation_type).trim() !== ""
+  ) {
+    metadata.invitation_type = String(
+      request.metadata.invitation_type,
+    ).trim();
+  }
+  if (
+    request.metadata.expiry_at !== undefined &&
+    request.metadata.expiry_at !== null &&
+    String(request.metadata.expiry_at).trim() !== ""
+  ) {
+    metadata.expiry_at = String(request.metadata.expiry_at).trim();
   }
 
   const headers: Record<string, string> = {
@@ -286,6 +323,8 @@ export interface ReuploadStage2DocumentRequest {
   point?: number;
   date?: string;
   skill_assessing_body?: string;
+  invitation_type?: string;
+  expiry_at?: string;
 }
 
 export async function reuploadStage2Document(
@@ -333,6 +372,9 @@ export async function reuploadStage2Document(
   if (request.date) formData.append("date", request.date);
   if (request.skill_assessing_body)
     formData.append("skill_assessing_body", request.skill_assessing_body);
+  if (request.invitation_type)
+    formData.append("invitation_type", request.invitation_type);
+  if (request.expiry_at) formData.append("expiry_at", request.expiry_at);
 
   const token = await getClerkToken();
   const headers: Record<string, string> = {};

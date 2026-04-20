@@ -7,6 +7,8 @@ export interface SampleDocument {
   updatedAt: string;
   zoho_workdrive_id?: string;
   zoho_parent_id?: string;
+  storage_type?: "workdrive" | "r2";
+  r2_key?: string;
   download_url?: string;
   document_link?: string;
   __v?: number;

@@ -11,8 +11,6 @@ import { showNotificationToast } from "@/components/ui/primitives/sonner-helpers
 import type { NotificationNewEvent } from "@/types/notifications";
 import { getNotificationAction } from "@/lib/constants/notifications";
 
-// Cast socket event to Notification-compatible shape for getNotificationAction.
-// Spread passes all event fields including documentId and applicationType.
 function getActionFromEvent(event: NotificationNewEvent) {
   return getNotificationAction({
     ...event,
@@ -32,7 +30,6 @@ export function NotificationProvider({
   usePresence();
   usePresenceEmitter();
 
-  // Connect / disconnect socket on auth change
   useEffect(() => {
     if (isAuthenticated) {
       notificationSocket.connect();
@@ -45,7 +42,6 @@ export function NotificationProvider({
     }
   }, [isAuthenticated, desktopNotificationsEnabled]);
 
-  // Real-time Sonner toast on new notification
   useEffect(() => {
     const isClient = user?.role === "client";
 
@@ -61,7 +57,6 @@ export function NotificationProvider({
     return unsubscribe;
   }, [router, user?.role]);
 
-  // Desktop (browser) notifications
   useEffect(() => {
     if (!desktopNotificationsEnabled || !("Notification" in window)) return;
 
@@ -85,7 +80,6 @@ export function NotificationProvider({
     return unsubscribe;
   }, [desktopNotificationsEnabled, router]);
 
-  // Sound notifications
   useEffect(() => {
     if (!soundEnabled) return;
 
@@ -93,7 +87,6 @@ export function NotificationProvider({
       const audio = new Audio("/sound/notification.mp3");
       audio.volume = 0.5;
       audio.play().catch(() => {
-        // Browser may block autoplay — ignore silently
       });
     });
 

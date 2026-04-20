@@ -5,11 +5,13 @@ import { StageDocumentsEmptyState } from "@/components/applications/layouts/Stag
 import { StageDocumentsHeaderAction } from "@/components/applications/layouts/StageDocumentsHeaderAction";
 import { Stage2DocumentsTable } from "@/components/applications/Stage2DocumentsTable";
 import { toast } from "sonner";
+import { getDocumentUrl } from "@/lib/documents/getDocumentUrl";
 import {
   useStage2Documents,
   useDeleteStage2Document,
 } from "@/hooks/useStage2Documents";
 import { EOISheet } from "@/components/applications/stage2/sheets/EOISheet";
+import { ViewStage2DocumentModal } from "@/components/applications/stage2/ViewStage2DocumentModal";
 import type { EOILayoutProps, Stage2Document } from "@/types/stage2Documents";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
@@ -28,6 +30,9 @@ export function EOILayout({
   );
   const [documentToDelete, setDocumentToDelete] =
     useState<Stage2Document | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<Stage2Document | null>(
+    null,
+  );
 
   const { data, isLoading, error } = useStage2Documents(applicationId, "eoi");
   const deleteMutation = useDeleteStage2Document();
@@ -35,20 +40,10 @@ export function EOILayout({
   const documents = data?.data || [];
 
   const handleView = (document: Stage2Document) => {
-    const url = document.document_link || document.download_url;
-    if (!url) {
+    if (!getDocumentUrl(document)) {
       toast.error("Document URL not available");
-      return;
     }
-    const width = 800;
-    const height = 600;
-    const top = (window.screen.height - height) / 2;
-    const left = (window.screen.width - width) / 2;
-    window.open(
-      url,
-      "_blank",
-      `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`,
-    );
+    setViewingDocument(document);
   };
 
   const handleEditClick = (document: Stage2Document) => {
@@ -81,6 +76,16 @@ export function EOILayout({
 
   return (
     <>
+      <ViewStage2DocumentModal
+        isOpen={!!viewingDocument}
+        onOpenChange={(open) => {
+          if (!open) setViewingDocument(null);
+        }}
+        document={viewingDocument}
+        isClientView={isClientView}
+        previewLeadId={applicationId}
+      />
+
       <div className="space-y-4">
         {error ? (
           <ErrorState title="Failed to load EOI documents" message="Please try again later." />
@@ -91,7 +96,6 @@ export function EOILayout({
             isClientView={isClientView}
             createButtonLabel="Create EOI"
             onCreate={() => setIsModalOpen(true)}
-            actionButtonClassName="bg-primary-blue"
           />
         ) : (
           <div className="pb-10">
@@ -99,9 +103,8 @@ export function EOILayout({
               <h2 className="text-lg font-medium">EOI Documents</h2>
               <StageDocumentsHeaderAction
                 isClientView={isClientView}
-                label="Add EOI Document"
+                label="Add EOI"
                 onClick={() => setIsModalOpen(true)}
-                buttonClassName="bg-primary-blue"
               />
             </div>
             <Stage2DocumentsTable

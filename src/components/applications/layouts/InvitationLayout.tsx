@@ -5,11 +5,13 @@ import { StageDocumentsEmptyState } from "@/components/applications/layouts/Stag
 import { StageDocumentsHeaderAction } from "@/components/applications/layouts/StageDocumentsHeaderAction";
 import { Stage2DocumentsTable } from "@/components/applications/Stage2DocumentsTable";
 import { toast } from "sonner";
+import { getDocumentUrl } from "@/lib/documents/getDocumentUrl";
 import {
   useStage2Documents,
   useDeleteStage2Document,
 } from "@/hooks/useStage2Documents";
 import { InvitationSheet } from "@/components/applications/stage2/sheets/InvitationSheet";
+import { ViewStage2DocumentModal } from "@/components/applications/stage2/ViewStage2DocumentModal";
 import type {
   InvitationLayoutProps,
   Stage2Document,
@@ -31,6 +33,9 @@ export function InvitationLayout({
   );
   const [documentToDelete, setDocumentToDelete] =
     useState<Stage2Document | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<Stage2Document | null>(
+    null,
+  );
 
   const { data, isLoading, error } = useStage2Documents(
     applicationId,
@@ -41,22 +46,10 @@ export function InvitationLayout({
   const documents = data?.data || [];
 
   const handleView = (document: Stage2Document) => {
-    const url = document.document_link || document.download_url;
-    if (!url) {
+    if (!getDocumentUrl(document)) {
       toast.error("Document URL not available");
-      return;
     }
-
-    const width = 800;
-    const height = 600;
-    const top = (window.screen.height - height) / 2;
-    const left = (window.screen.width - width) / 2;
-
-    window.open(
-      url,
-      "_blank",
-      `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`,
-    );
+    setViewingDocument(document);
   };
 
   const handleEditClick = (document: Stage2Document) => {
@@ -89,6 +82,16 @@ export function InvitationLayout({
 
   return (
     <>
+      <ViewStage2DocumentModal
+        isOpen={!!viewingDocument}
+        onOpenChange={(open) => {
+          if (!open) setViewingDocument(null);
+        }}
+        document={viewingDocument}
+        isClientView={isClientView}
+        previewLeadId={applicationId}
+      />
+
       <div className="space-y-4">
         {error ? (
           <ErrorState title="Failed to load invitation documents" message="Please try again later." />
@@ -99,7 +102,6 @@ export function InvitationLayout({
             isClientView={isClientView}
             createButtonLabel="Create Invitation"
             onCreate={() => setIsModalOpen(true)}
-            actionButtonClassName="bg-primary-blue"
           />
         ) : (
           <div>
@@ -107,9 +109,8 @@ export function InvitationLayout({
               <h2 className="text-lg font-medium">Invitation Documents</h2>
               <StageDocumentsHeaderAction
                 isClientView={isClientView}
-                label="Add Invitation Document"
+                label="Add Invitation"
                 onClick={() => setIsModalOpen(true)}
-                buttonClassName="bg-primary-blue"
               />
             </div>
             <Stage2DocumentsTable

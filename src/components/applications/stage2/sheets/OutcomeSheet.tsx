@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -11,19 +11,18 @@ import {
   SheetMain,
   SheetTitle,
 } from "@/components/ui/primitives/sheet";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/primitives/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import { DatePicker } from "@/components/ui/date-picker";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
-import { Upload, X, FileText, File, Plus } from "lucide-react";
+} from "@/components/ui/primitives/select";
+import { Upload, X, FileText, File } from "lucide-react";
 import Image from "next/image";
 import { RiFileAddLine, RiFileEditLine } from "react-icons/ri";
 import { toast } from "sonner";
@@ -34,17 +33,37 @@ import {
   useUpdateStage2Document,
 } from "@/hooks/useStage2Documents";
 import type { OutcomeSheetProps } from "@/types/stage2Documents";
-import { Combobox } from "@/components/ui/combobox";
+import { AnzscoCombobox } from "@/components/ui/anzsco-combox";
+import { DatePicker } from "@/components/ui/date-picker";
+import { getAnzscoCodeByCode } from "@/lib/constants/australianData";
 import {
-  ANZSCO_CODES,
-  getAnzscoCodeByCode,
-} from "@/lib/constants/australianData";
+  computeOutcomeExpiryDate,
+  formatOutcomeExpiryForApi,
+  getOutcomeExpiryDisplayParts,
+} from "@/lib/stage2/outcomeExpiry";
 import TruncatedText from "@/components/ui/truncated-text";
+import { formatDate } from "@/utils/format";
 
 interface UploadedFile {
   file: File;
   id: string;
 }
+
+const ENGLISH_LANGUAGE_TEST_OPTIONS = [
+  { value: "IELTS", label: "IELTS" },
+  { value: "TOEFL", label: "TOEFL" },
+  { value: "PTE", label: "PTE" },
+  { value: "CELPI", label: "CELPI" },
+];
+
+const OUTCOME_OPTIONS = [
+  { value: "English Language Test", label: "English Language Test" },
+  { value: "Skill Assessment Outcome", label: "Skill Assessment Outcome" },
+  { value: "APHRA", label: "APHRA" },
+  { value: "ECA", label: "ECA" },
+  { value: "Visa grant", label: "Visa grant" },
+  { value: "License/ Registration(ROI)", label: "License/ Registration(ROI)" },
+];
 
 export function OutcomeSheet({
   isOpen,
@@ -59,16 +78,8 @@ export function OutcomeSheet({
   const [outcomeDate, setOutcomeDate] = useState<Date | undefined>(undefined);
   const [outcome, setOutcome] = useState("");
   const [selectedAnzscoCode, setSelectedAnzscoCode] = useState("");
-  const [isCustomMode, setIsCustomMode] = useState(false);
-  const [customAnzscoCode, setCustomAnzscoCode] = useState("");
-  const [customAnzscoName, setCustomAnzscoName] = useState("");
-  const [customAssessingAuthority, setCustomAssessingAuthority] = useState("");
-  const [availableOptions, setAvailableOptions] = useState(
-    ANZSCO_CODES.map((code) => ({
-      value: code.anzsco_code,
-      label: `${code.anzsco_code} - ${code.name} (${code.assessing_authority})`,
-    })),
-  );
+  /** IELTS / PTE / etc. when outcome is English Language Test — persisted as language_assessing_body */
+  const [englishLanguageTest, setEnglishLanguageTest] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [stripProgress, setStripProgress] = useState(0);
@@ -77,46 +88,56 @@ export function OutcomeSheet({
   const uploadMutation = useUploadStage2Document();
   const updateMutation = useUpdateStage2Document();
 
+  const anzscoExtraItems = useMemo(() => {
+    if (mode !== "edit" || !document?.skill_assessing_body) return undefined;
+    const raw = document.skill_assessing_body.trim();
+    if (!raw) return undefined;
+    if (getAnzscoCodeByCode(raw)) return undefined;
+    return [{ value: raw, label: `Custom - ${raw}` }];
+  }, [mode, document]);
+
+  const computedExpiry = useMemo(() => {
+    if (!outcomeDate || !outcome.trim()) return null;
+    return computeOutcomeExpiryDate({
+      outcome,
+      outcome_date: format(outcomeDate, "yyyy-MM-dd"),
+      skill_assessing_body:
+        outcome !== "English Language Test" ? selectedAnzscoCode : undefined,
+    });
+  }, [outcomeDate, outcome, selectedAnzscoCode]);
+
+  const expiryDisplayText = useMemo(() => {
+    if (!outcomeDate || !outcome.trim()) return "N/A";
+    const parts = getOutcomeExpiryDisplayParts({
+      outcome,
+      outcome_date: format(outcomeDate, "yyyy-MM-dd"),
+      skill_assessing_body:
+        outcome !== "English Language Test" ? selectedAnzscoCode : undefined,
+    });
+    if (!parts) return "N/A";
+    return `${formatDate(parts.date, "short")} (${parts.periodLabel})`;
+  }, [outcomeDate, outcome, selectedAnzscoCode]);
+
   useEffect(() => {
     if (mode === "edit" && document) {
       setOutcomeDate(
         document.outcome_date ? new Date(document.outcome_date) : undefined,
       );
-      setOutcome(document.outcome || "");
-      const skillBody = document.skill_assessing_body || "";
-      if (skillBody) {
-        const matchingCode = getAnzscoCodeByCode(skillBody);
-        if (matchingCode) {
-          setSelectedAnzscoCode(skillBody);
-        } else {
-          setSelectedAnzscoCode(skillBody);
-          setAvailableOptions((prev) => {
-            const exists = prev.some((opt) => opt.value === skillBody);
-            if (!exists) {
-              return [
-                ...prev,
-                { value: skillBody, label: `Custom - ${skillBody}` },
-              ];
-            }
-            return prev;
-          });
-        }
-      } else {
+      const docOutcome = document.outcome || "";
+      setOutcome(docOutcome);
+      if (docOutcome === "English Language Test") {
+        setEnglishLanguageTest(document.language_assessing_body?.trim() || "");
         setSelectedAnzscoCode("");
+      } else {
+        setEnglishLanguageTest("");
+        const skillBody = document.skill_assessing_body || "";
+        setSelectedAnzscoCode(skillBody || "");
       }
-
-      setIsCustomMode(false);
-      setCustomAnzscoCode("");
-      setCustomAnzscoName("");
-      setCustomAssessingAuthority("");
     } else {
       setOutcomeDate(undefined);
       setOutcome("");
       setSelectedAnzscoCode("");
-      setIsCustomMode(false);
-      setCustomAnzscoCode("");
-      setCustomAnzscoName("");
-      setCustomAssessingAuthority("");
+      setEnglishLanguageTest("");
       setUploadedFiles([]);
     }
   }, [mode, document, isOpen]);
@@ -190,43 +211,6 @@ export function OutcomeSheet({
     setUploadedFiles((prev) => prev.filter((file) => file.id !== fileId));
   };
 
-  const handleAddCustomAnzscoCode = () => {
-    if (
-      customAnzscoCode.trim() &&
-      customAnzscoName.trim() &&
-      customAssessingAuthority.trim()
-    ) {
-      const customCode = customAnzscoCode.trim();
-      const customName = customAnzscoName.trim();
-      const customAuthority = customAssessingAuthority.trim();
-
-      if (!availableOptions.some((opt) => opt.value === customCode)) {
-        setAvailableOptions((prev) => [
-          ...prev,
-          {
-            value: customCode,
-            label: `${customCode} - ${customName} (${customAuthority})`,
-          },
-        ]);
-      }
-      setSelectedAnzscoCode(customCode);
-      setCustomAnzscoCode("");
-      setCustomAnzscoName("");
-      setCustomAssessingAuthority("");
-      setIsCustomMode(false);
-    }
-  };
-
-  const handleToggleCustomMode = () => {
-    setIsCustomMode(!isCustomMode);
-    setCustomAnzscoCode("");
-    setCustomAnzscoName("");
-    setCustomAssessingAuthority("");
-    if (!isCustomMode) {
-      setSelectedAnzscoCode("");
-    }
-  };
-
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
@@ -259,6 +243,8 @@ export function OutcomeSheet({
     }
 
     const formattedOutcomeDate = format(outcomeDate, "yyyy-MM-dd");
+    const expiryAt =
+      computedExpiry != null ? formatOutcomeExpiryForApi(computedExpiry) : undefined;
 
     if (mode === "create" && uploadedFiles.length === 0) {
       toast.error("Please upload at least one file.");
@@ -270,10 +256,24 @@ export function OutcomeSheet({
       return;
     }
 
+    if (outcome === "English Language Test") {
+      if (!englishLanguageTest.trim()) {
+        toast.error("Please select an English language test.");
+        return;
+      }
+    }
+
     setIsUploading(true);
     setStripProgress(0);
 
-    const anzscoCodeValue = selectedAnzscoCode || undefined;
+    const skillForApi =
+      outcome !== "English Language Test"
+        ? selectedAnzscoCode || undefined
+        : undefined;
+    const languageForApi =
+      outcome === "English Language Test"
+        ? englishLanguageTest.trim()
+        : undefined;
 
     try {
       if (mode === "edit" && document) {
@@ -284,7 +284,13 @@ export function OutcomeSheet({
             document_name: document.file_name,
             outcome_date: formattedOutcomeDate,
             outcome,
-            skill_assessing_body: anzscoCodeValue,
+            ...(skillForApi !== undefined
+              ? { skill_assessing_body: skillForApi }
+              : {}),
+            ...(languageForApi !== undefined
+              ? { language_assessing_body: languageForApi }
+              : {}),
+            ...(expiryAt ? { expiry_at: expiryAt } : {}),
           },
         });
       } else {
@@ -303,7 +309,13 @@ export function OutcomeSheet({
             type: "outcome",
             outcome_date: formattedOutcomeDate,
             outcome,
-            skill_assessing_body: anzscoCodeValue,
+            ...(skillForApi !== undefined
+              ? { skill_assessing_body: skillForApi }
+              : {}),
+            ...(languageForApi !== undefined
+              ? { language_assessing_body: languageForApi }
+              : {}),
+            ...(expiryAt ? { expiry_at: expiryAt } : {}),
           });
           setStripProgress(100);
         } finally {
@@ -325,10 +337,7 @@ export function OutcomeSheet({
     setOutcomeDate(undefined);
     setOutcome("");
     setSelectedAnzscoCode("");
-    setIsCustomMode(false);
-    setCustomAnzscoCode("");
-    setCustomAnzscoName("");
-    setCustomAssessingAuthority("");
+    setEnglishLanguageTest("");
     setUploadedFiles([]);
   }
 
@@ -378,42 +387,42 @@ export function OutcomeSheet({
               transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
             >
               <div className="space-y-4 p-4 pb-5">
-                <div className="grid grid-cols-1 gap-1 w-full sm:grid-cols-2">
-                  <div className="space-y-1.5">
+                <div className="flex flex-wrap gap-2">
+                  <div className="space-y-1.5 flex-1">
                     <Label
                       htmlFor="outcome"
-                      className="text-xs font-medium text-muted-foreground"
+                      className="text-xs font-medium text-foreground"
                     >
                       Outcome *
                     </Label>
                     <Select
                       value={outcome}
-                      onValueChange={setOutcome}
+                      onValueChange={(value) => {
+                        setOutcome(value);
+                        if (value === "English Language Test") {
+                          setSelectedAnzscoCode("");
+                        } else {
+                          setEnglishLanguageTest("");
+                        }
+                      }}
                       disabled={isUploading}
                     >
                       <SelectTrigger id="outcome" className="h-9 w-full">
                         <SelectValue placeholder="Select outcome" />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Skill Assessment Outcome">
-                          Skill Assessment Outcome
-                        </SelectItem>
-                        <SelectItem value="APHRA">APHRA</SelectItem>
-                        <SelectItem value="ECA">ECA</SelectItem>
-                        <SelectItem value="Visa grant">Visa grant</SelectItem>
-                        <SelectItem value="License/ Registration">
-                          License/ Registration
-                        </SelectItem>
+                      <SelectContent className="text-neutral-900">
+                        {OUTCOME_OPTIONS.map((option) => (
+                          <SelectItem key={option.value} value={option.value} className="text-neutral-900">
+                            {option.label}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label
-                      htmlFor="outcome-date"
-                      className="text-xs font-medium text-muted-foreground"
-                    >
-                      Outcome Date *
+                    <Label className="text-xs font-medium text-foreground">
+                      Outcome date *
                     </Label>
                     <DatePicker
                       value={outcomeDate}
@@ -424,133 +433,63 @@ export function OutcomeSheet({
                   </div>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">
-                    Skill Assessing Body (ANZSCO Code)
-                  </Label>
-                  {!isCustomMode ? (
+                {outcome && outcomeDate ? (
+                  <div className="space-y-1.5 rounded-lg border border-border/50 bg-muted/20 px-3 py-2.5">
+                    <Label className="text-xs font-medium text-muted-foreground">
+                      Expiry date (calculated)
+                    </Label>
+                    <p className="text-sm font-medium text-foreground">
+                      {expiryDisplayText}
+                    </p>
+                  </div>
+                ) : null}
+
+                {outcome !== "English Language Test" ? (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-foreground">
+                      Skill Assessing Body (ANZSCO Code)
+                    </Label>
                     <div className="space-y-1.5">
-                      <Combobox
-                        options={availableOptions}
+                      <AnzscoCombobox
                         value={selectedAnzscoCode}
-                        onValueChange={setSelectedAnzscoCode}
+                        onValueChange={(code) =>
+                          setSelectedAnzscoCode(code ?? "")
+                        }
                         placeholder="Select ANZSCO code..."
-                        searchPlaceholder="Search ANZSCO code or occupation..."
-                        emptyMessage="No ANZSCO code found."
                         disabled={isUploading}
                         portalContainer={sheetContainerRef.current}
+                        extraItems={anzscoExtraItems}
                       />
-                      <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                          <span className="w-full border-t border-gray-200" />
-                        </div>
-                        <div className="relative flex justify-center text-xs">
-                          <span className="bg-background px-2 text-muted-foreground">
-                            or
-                          </span>
-                        </div>
-                      </div>
-                      <Button
-                        variant="link"
-                        size="sm"
-                        onClick={handleToggleCustomMode}
-                        disabled={isUploading}
-                        className="h-auto p-0 text-xs font-normal text-muted-foreground underline underline-offset-2 hover:text-foreground"
-                      >
-                        Add new ANZSCO code
-                      </Button>
                     </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="space-y-1.5">
-                          <Label
-                            htmlFor="custom-anzsco-code"
-                            className="text-xs font-medium text-muted-foreground"
-                          >
-                            ANZSCO Code *
-                          </Label>
-                          <Input
-                            id="custom-anzsco-code"
-                            type="text"
-                            placeholder="e.g., 121111"
-                            value={customAnzscoCode}
-                            onChange={(e) => setCustomAnzscoCode(e.target.value)}
-                            disabled={isUploading}
-                          />
-                        </div>
-                        <div className="space-y-1.5">
-                          <Label
-                            htmlFor="custom-assessing-authority"
-                            className="text-xs font-medium text-muted-foreground"
-                          >
-                            Assessing Authority *
-                          </Label>
-                          <Input
-                            id="custom-assessing-authority"
-                            type="text"
-                            placeholder="e.g., VETASSESS"
-                            value={customAssessingAuthority}
-                            onChange={(e) =>
-                              setCustomAssessingAuthority(e.target.value)
-                            }
-                            disabled={isUploading}
-                          />
-                        </div>
-                      </div>
-                      <div className="space-y-1.5">
-                        <Label
-                          htmlFor="custom-anzsco-name"
-                          className="text-xs font-medium text-muted-foreground"
-                        >
-                          Occupation Name *
-                        </Label>
-                        <Input
-                          id="custom-anzsco-name"
-                          type="text"
-                          placeholder="e.g., Aquaculture Farmer"
-                          value={customAnzscoName}
-                          onChange={(e) => setCustomAnzscoName(e.target.value)}
-                          disabled={isUploading}
-                          onKeyDown={(e) => {
-                            if (e.key === "Enter") {
-                              handleAddCustomAnzscoCode();
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={handleAddCustomAnzscoCode}
-                          disabled={
-                            !customAnzscoCode.trim() ||
-                            !customAnzscoName.trim() ||
-                            !customAssessingAuthority.trim() ||
-                            isUploading
-                          }
-                          className="flex items-center gap-1"
-                        >
-                          <Plus className="h-4 w-4" />
-                          Add
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={handleToggleCustomMode}
-                          disabled={isUploading}
-                        >
-                          Cancel
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-foreground">
+                      English Language Test *
+                    </Label>
+                    <Select
+                      value={englishLanguageTest}
+                      onValueChange={setEnglishLanguageTest}
+                      disabled={isUploading}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select English Language Test" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {ENGLISH_LANGUAGE_TEST_OPTIONS.map((option) => (
+                            <SelectItem key={option.value} value={option.value} className="text-neutral-900">
+                              {option.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 {mode === "create" && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-muted-foreground">
+                    <Label className="text-xs font-medium text-foreground">
                       Upload Files *
                     </Label>
                     <div
@@ -589,7 +528,7 @@ export function OutcomeSheet({
 
                 {mode === "edit" && document && (
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">
+                    <Label className="text-xs font-medium text-foreground">
                       Current File
                     </Label>
                     <div className="flex min-w-0 items-center gap-2.5 rounded-lg border bg-muted/50 p-2.5">
@@ -603,7 +542,7 @@ export function OutcomeSheet({
 
                 {mode === "create" && uploadedFiles.length > 0 && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-muted-foreground">
+                    <Label className="text-xs font-medium text-foreground">
                       Files to Upload
                     </Label>
                     <div className="space-y-1.5">
@@ -652,8 +591,9 @@ export function OutcomeSheet({
                           </div>
                           {!isUploading && (
                             <Button
-                              variant="ghost"
-                              size="sm"
+                              variant="secondary"
+                              mode="ghost"
+                              size="2xs"
                               onClick={() => removeFile(uploadedFile.id)}
                             >
                               <X className="h-4 w-4" />
@@ -684,22 +624,25 @@ export function OutcomeSheet({
         <Separator />
 
         <SheetFooter className="p-0">
-          <div className="flex w-full items-center justify-between gap-3 border-t bg-background px-4 py-2.5">
-            <p className="min-w-0 truncate text-xs text-neutral-500">
-              Outcome • PDF, Word, or images up to 5MB
-            </p>
+          <div className="flex w-full items-center justify-end gap-3 border-t bg-background px-4 py-2.5">
             <div className="flex shrink-0 items-center gap-2">
               <Button
-                variant="outline"
+                variant="secondary"
+                mode="outline"
+                size="sm"
                 onClick={handleClose}
                 disabled={isUploading}
+                className="text-xs"
               >
                 Cancel
               </Button>
               <Button
                 onClick={handleSubmit}
                 disabled={isUploading}
-                className="flex items-center gap-2"
+                size="sm"
+                mode="filled"
+                variant="secondary"
+                className="text-xs"
               >
                 {isUploading ? (
                   <>

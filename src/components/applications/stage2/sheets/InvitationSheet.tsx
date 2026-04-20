@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
 import { motion, useReducedMotion } from "motion/react";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -12,6 +12,7 @@ import {
   SheetTitle,
 } from "@/components/ui/primitives/sheet";
 import { Button } from "@/components/ui/button";
+import { Button as SheetFooterButton } from "@/components/ui/primitives/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { DatePicker } from "@/components/ui/date-picker";
@@ -24,21 +25,33 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   useUploadStage2Document,
   useUpdateStage2Document,
+  useReuploadStage2Document,
 } from "@/hooks/useStage2Documents";
-import { Combobox } from "@/components/ui/combobox";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AnzscoCombobox } from "@/components/ui/anzsco-combox";
 import {
   AUSTRALIAN_VISA_SUBCLASSES,
   AUSTRALIAN_STATES,
+  getAnzscoCodeByCode,
 } from "@/lib/constants/australianData";
 import type { InvitationSheetProps } from "@/types/stage2Documents";
 import TruncatedText from "@/components/ui/truncated-text";
+import {
+  INVITATION_TYPE_OPTIONS,
+  INVITATION_TYPE_STATE_NOMINATION,
+  computeInvitationExpiryDate,
+  formatInvitationExpiryForApi,
+  formatInvitationExpiryForPatch,
+  getInvitationExpiryOffsetDays,
+} from "@/lib/stage2/invitationExpiry";
 
 interface UploadedFile {
   file: File;
@@ -54,18 +67,28 @@ export function InvitationSheet({
 }: InvitationSheetProps) {
   const { user } = useAuth();
   const reduceMotion = useReducedMotion();
+  const sheetContainerRef = useRef<HTMLDivElement>(null);
   const [subclass, setSubclass] = useState("");
   const [state, setState] = useState("");
   const [point, setPoint] = useState("");
   const [date, setDate] = useState<Date | undefined>(undefined);
-  const [deadlineDate, setDeadlineDate] = useState<Date | undefined>(undefined);
+  const [invitationType, setInvitationType] = useState(
+    INVITATION_TYPE_STATE_NOMINATION,
+  );
+  const [skillAnzscoCode, setSkillAnzscoCode] = useState("");
+  const [extraAnzscoItems, setExtraAnzscoItems] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [stripProgress, setStripProgress] = useState(0);
+  const [replacementFile, setReplacementFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const replaceFileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadMutation = useUploadStage2Document();
   const updateMutation = useUpdateStage2Document();
+  const reuploadMutation = useReuploadStage2Document();
 
   const subclassOptions = AUSTRALIAN_VISA_SUBCLASSES.filter((s) =>
     ["189", "190", "491"].includes(s.code),
@@ -90,18 +113,36 @@ export function InvitationSheet({
       setState(document.state || "");
       setPoint(document.point?.toString() || "");
       setDate(document.date ? new Date(document.date) : undefined);
-      setDeadlineDate(
-        document.deadline ? new Date(document.deadline) : undefined,
+      setInvitationType(
+        document.invitation_type?.trim() || INVITATION_TYPE_STATE_NOMINATION,
       );
+      const skill = document.skill_assessing_body?.trim() || "";
+      setSkillAnzscoCode(skill);
+      if (skill && !getAnzscoCodeByCode(skill)) {
+        setExtraAnzscoItems([
+          { value: skill, label: `${skill} (saved)` },
+        ]);
+      } else {
+        setExtraAnzscoItems([]);
+      }
+      setReplacementFile(null);
     } else {
       setSubclass("");
       setState("");
       setPoint("");
       setDate(undefined);
-      setDeadlineDate(undefined);
+      setInvitationType(INVITATION_TYPE_STATE_NOMINATION);
+      setSkillAnzscoCode("");
+      setExtraAnzscoItems([]);
       setUploadedFiles([]);
+      setReplacementFile(null);
     }
   }, [mode, document, isOpen]);
+
+  const computedExpiry = useMemo(() => {
+    if (!date || !invitationType) return null;
+    return computeInvitationExpiryDate(date, invitationType);
+  }, [date, invitationType]);
 
   const validateFile = (file: File): boolean => {
     const fileName = file.name.toLowerCase();
@@ -213,13 +254,25 @@ export function InvitationSheet({
       return;
     }
 
-    if (!deadlineDate) {
-      toast.error("Please select a deadline date.");
+    if (!invitationType) {
+      toast.error("Please select an invitation type.");
+      return;
+    }
+
+    if (!skillAnzscoCode.trim()) {
+      toast.error("Please select a skill assessing body (ANZSCO).");
       return;
     }
 
     const formattedDate = format(date, "yyyy-MM-dd");
-    const formattedDeadlineDate = format(deadlineDate, "yyyy-MM-dd");
+    const expiryDate = computeInvitationExpiryDate(date, invitationType);
+    if (!expiryDate) {
+      toast.error("Could not calculate expiry from the selected date.");
+      return;
+    }
+    const expiryAtCreate = formatInvitationExpiryForApi(expiryDate);
+    const expiryAtPatch = formatInvitationExpiryForPatch(expiryDate);
+    const skillBody = skillAnzscoCode.trim();
 
     if (mode === "create" && uploadedFiles.length === 0) {
       toast.error("Please upload at least one file.");
@@ -236,42 +289,68 @@ export function InvitationSheet({
 
     try {
       if (mode === "edit" && document) {
-        await updateMutation.mutateAsync({
-          applicationId,
-          documentId: document._id,
-          metadata: {
-            document_name: document.file_name,
-            subclass,
-            state,
-            point: Number(point),
-            date: formattedDate,
-            deadline: formattedDeadlineDate,
-          },
-        });
-      } else {
-        const stripInterval = window.setInterval(() => {
-          setStripProgress((p) => Math.min(p + 5, 90));
-        }, 200);
-
-        try {
-          await uploadMutation.mutateAsync({
+        if (replacementFile) {
+          await reuploadMutation.mutateAsync({
             applicationId,
-            files: uploadedFiles.map((uf) => uf.file),
-            file_name: uploadedFiles[0].file.name,
-            document_name: uploadedFiles[0].file.name,
-            document_type: uploadedFiles[0].file.type,
+            documentId: document._id,
+            file: replacementFile,
+            file_name: replacementFile.name,
+            document_name: replacementFile.name,
+            document_type: replacementFile.type,
             uploaded_by: user.username,
-            type: "invitation",
             subclass,
-            state,
+            state: document.state,
             point: Number(point),
             date: formattedDate,
-            deadline: formattedDeadlineDate,
+            skill_assessing_body: skillBody,
+            invitation_type: invitationType,
+            expiry_at: expiryAtPatch,
           });
-          setStripProgress(100);
-        } finally {
-          window.clearInterval(stripInterval);
+        } else {
+          await updateMutation.mutateAsync({
+            applicationId,
+            documentId: document._id,
+            metadata: {
+              document_name: document.file_name,
+              subclass,
+              state,
+              point: Number(point),
+              date: formattedDate,
+              invitation_type: invitationType,
+              skill_assessing_body: skillBody,
+              expiry_at: expiryAtPatch,
+            },
+          });
         }
+        clearFormState();
+        onClose();
+        return;
+      }
+
+      const stripInterval = window.setInterval(() => {
+        setStripProgress((p) => Math.min(p + 5, 90));
+      }, 200);
+
+      try {
+        await uploadMutation.mutateAsync({
+          applicationId,
+          files: uploadedFiles.map((uf) => uf.file),
+          file_name: uploadedFiles[0].file.name,
+          document_name: uploadedFiles[0].file.name,
+          document_type: "invitation",
+          uploaded_by: user.username,
+          type: "invitation",
+          subclass,
+          state,
+          point: Number(point),
+          date: formattedDate,
+          invitation_type: invitationType,
+          skill_assessing_body: skillBody,
+          expiry_at: expiryAtCreate,
+        });
+        setStripProgress(100);
+      } finally {
+        window.clearInterval(stripInterval);
       }
 
       clearFormState();
@@ -289,8 +368,12 @@ export function InvitationSheet({
     setState("");
     setPoint("");
     setDate(undefined);
-    setDeadlineDate(undefined);
+    setInvitationType(INVITATION_TYPE_STATE_NOMINATION);
+    setSkillAnzscoCode("");
+    setExtraAnzscoItems([]);
     setUploadedFiles([]);
+    setReplacementFile(null);
+    if (replaceFileInputRef.current) replaceFileInputRef.current.value = "";
   }
 
   const handleClose = () => {
@@ -304,6 +387,21 @@ export function InvitationSheet({
     if (!open) handleClose();
   };
 
+  const handleReplaceFileSelect = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!validateFile(file)) return;
+    setReplacementFile(file);
+    event.target.value = "";
+  };
+
+  const clearReplacementFile = () => {
+    setReplacementFile(null);
+    if (replaceFileInputRef.current) replaceFileInputRef.current.value = "";
+  };
+
   const title =
     mode === "edit" ? "Edit Invitation Document" : "Create Invitation Document";
 
@@ -311,7 +409,10 @@ export function InvitationSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-      <SheetContent className="flex h-full max-h-dvh flex-col gap-0 p-0 sm:max-w-lg">
+      <SheetContent
+        ref={sheetContainerRef}
+        className="flex h-full max-h-dvh flex-col gap-0 p-0 sm:max-w-lg"
+      >
         <SheetHeader className="p-0">
           <SheetTitle className="sr-only">{title}</SheetTitle>
           <header className="flex h-11 shrink-0 items-center gap-3 border-b px-4 pr-12">
@@ -335,42 +436,122 @@ export function InvitationSheet({
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
             >
-              <div className="space-y-4 p-4 pb-5">
+              {/* Visa information */}
+              <div className="space-y-3 px-4 py-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-muted-foreground">
+                  <Label className="text-xs font-medium text-foreground">
                     Subclass *
                   </Label>
-                  <Combobox
-                    options={subclassOptions}
+                  <Select
                     value={subclass}
                     onValueChange={setSubclass}
-                    placeholder="Select a subclass..."
-                    searchPlaceholder="Search subclass..."
-                    emptyMessage="No subclass found."
                     disabled={isUploading}
-                  />
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select a subclass…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Subclass</SelectLabel>
+                        {subclassOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">
-                      State *
-                    </Label>
-                    <Combobox
-                      options={stateOptions}
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-foreground">
+                    State *
+                  </Label>
+                  {mode === "create" ? (
+                    <Select
                       value={state}
                       onValueChange={setState}
-                      placeholder="Select a state..."
-                      searchPlaceholder="Search state..."
-                      emptyMessage="No state found."
                       disabled={isUploading}
+                    >
+                      <SelectTrigger className="h-9 w-full">
+                        <SelectValue placeholder="Select a state…" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectLabel>State / territory</SelectLabel>
+                          {stateOptions.map((opt) => (
+                            <SelectItem key={opt.value} value={opt.value}>
+                              {opt.label}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                      {document?.state ? getStateDisplay(document.state) : "N/A"}
+                    </div>
+                  )}
+                </div>
+
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-foreground">
+                    Invitation type *
+                  </Label>
+                  <Select
+                    value={invitationType}
+                    onValueChange={setInvitationType}
+                    disabled={isUploading}
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select invitation type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Invitation</SelectLabel>
+                        {INVITATION_TYPE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* ANZSCO */}
+              <div className="space-y-3 px-4 py-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-foreground">
+                    ANZSCO
+                  </Label>
+                  <div className="space-y-1.5">
+                    <AnzscoCombobox
+                      value={skillAnzscoCode || null}
+                      onValueChange={(code) =>
+                        setSkillAnzscoCode(code ?? "")
+                      }
+                      disabled={isUploading}
+                      placeholder="Search code, occupation, or assessing authority…"
+                      extraItems={extraAnzscoItems}
+                      portalContainer={sheetContainerRef.current}
                     />
                   </div>
+                </div>
+              </div>
 
+              <Separator />
+
+              {/* Points & invitation date */}
+              <div className="space-y-3 px-4 py-4">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="point"
-                      className="text-xs font-medium text-muted-foreground"
+                      className="text-xs font-medium text-foreground"
                     >
                       Points *
                     </Label>
@@ -383,23 +564,24 @@ export function InvitationSheet({
                         <SelectValue placeholder="Select points" />
                       </SelectTrigger>
                       <SelectContent>
-                        {pointOptions.map((value) => (
-                          <SelectItem key={value} value={value}>
-                            {value}
-                          </SelectItem>
-                        ))}
+                        <SelectGroup>
+                          <SelectLabel>Points</SelectLabel>
+                          {pointOptions.map((value) => (
+                            <SelectItem key={value} value={value}>
+                              {value}
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="date"
-                      className="text-xs font-medium text-muted-foreground"
+                      className="text-xs font-medium text-foreground"
                     >
-                      Date *
+                      Invitation date *
                     </Label>
                     <DatePicker
                       value={date}
@@ -407,29 +589,33 @@ export function InvitationSheet({
                       placeholder="Select date"
                       disabled={isUploading}
                     />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <Label
-                      htmlFor="deadline-date"
-                      className="text-xs font-medium text-muted-foreground"
-                    >
-                      Deadline *
-                    </Label>
-                    <DatePicker
-                      value={deadlineDate}
-                      onChange={setDeadlineDate}
-                      placeholder="Select deadline date"
-                      disabled={isUploading}
-                    />
+                    {computedExpiry ? (
+                      <p className="text-[11px] leading-snug text-muted-foreground">
+                        Expiry (auto):{" "}
+                        <span className="font-medium text-foreground">
+                          {format(computedExpiry, "MMM d, yyyy")}
+                        </span>
+                        <span className="text-muted-foreground">
+                          {" "}
+                          · {getInvitationExpiryOffsetDays(invitationType)}{" "}
+                          days from invitation date
+                        </span>
+                      </p>
+                    ) : null}
                   </div>
                 </div>
+              </div>
+
+              <Separator />
+
+              {/* Files */}
+              <div className="space-y-3 px-4 py-4">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  {mode === "edit" ? "File" : "Upload Files"}
+                </p>
 
                 {mode === "create" && (
                   <div className="space-y-2">
-                    <Label className="text-xs font-medium text-muted-foreground">
-                      Upload Files *
-                    </Label>
                     <div
                       className="cursor-pointer rounded-lg border border-dashed border-border bg-muted/25 px-4 py-5 text-center transition-colors hover:bg-muted/40"
                       onClick={() => fileInputRef.current?.click()}
@@ -438,7 +624,7 @@ export function InvitationSheet({
                     >
                       <Image
                         src="/icons/pdf_icon_modal.svg"
-                        alt="Upload Icon"
+                        alt="Upload"
                         width={56}
                         height={72}
                         className="mx-auto mb-3"
@@ -447,16 +633,13 @@ export function InvitationSheet({
                         Drop your files here, or click to browse
                       </p>
                       <p className="text-[11px] leading-snug text-muted-foreground">
-                        <span className="font-medium">
-                          PDF, Word, or images
-                        </span>{" "}
-                        • Max 5MB per file
+                        PDF, Word, or images • Max 5MB per file. Document name =
+                        file name.
                       </p>
                       <input
                         ref={fileInputRef}
                         type="file"
                         multiple
-                        accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,image/jpeg,image/jpg,image/png"
                         onChange={handleFileSelect}
                         className="hidden"
                       />
@@ -465,15 +648,55 @@ export function InvitationSheet({
                 )}
 
                 {mode === "edit" && document && (
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-medium text-muted-foreground">
-                      Current File
-                    </Label>
+                  <div className="space-y-2">
                     <div className="flex min-w-0 items-center gap-2.5 rounded-lg border bg-muted/50 p-2.5">
                       <FileText className="h-4 w-4 shrink-0 text-blue-600" />
                       <TruncatedText className="min-w-0 flex-1 text-sm font-medium">
                         {document.file_name}
                       </TruncatedText>
+                    </div>
+                    <div className="space-y-1.5 pt-1">
+                      <Label className="text-xs font-medium text-muted-foreground">
+                        Replace with new file
+                      </Label>
+                      <p className="text-[11px] text-muted-foreground">
+                        Optionally choose a new file to replace the current
+                        invitation. Same types: PDF, Word, images. Max 5MB.
+                      </p>
+                      {replacementFile ? (
+                        <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border bg-muted/30 p-2.5">
+                          <FileText className="h-4 w-4 shrink-0" />
+                          <TruncatedText className="min-w-0 flex-1 text-sm font-medium">
+                            {replacementFile.name}
+                          </TruncatedText>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 w-8 shrink-0 p-0"
+                            onClick={clearReplacementFile}
+                            disabled={isUploading}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div
+                          className="cursor-pointer rounded-lg border border-dashed border-border bg-muted/25 px-3 py-3.5 text-center transition-colors hover:bg-muted/40"
+                          onClick={() => replaceFileInputRef.current?.click()}
+                        >
+                          <Upload className="mx-auto mb-1.5 h-7 w-7 text-muted-foreground" />
+                          <p className="text-xs text-muted-foreground">
+                            Click to choose a file
+                          </p>
+                          <input
+                            ref={replaceFileInputRef}
+                            type="file"
+                            onChange={handleReplaceFileSelect}
+                            className="hidden"
+                          />
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -489,35 +712,23 @@ export function InvitationSheet({
                           key={uploadedFile.id}
                           className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border/80 bg-muted/20 p-2.5"
                         >
-                          {(() => {
-                            const fileName = uploadedFile.file.name.toLowerCase();
-                            if (
-                              fileName.endsWith(".jpg") ||
-                              fileName.endsWith(".jpeg") ||
-                              fileName.endsWith(".png")
-                            ) {
-                              return (
-                                <File className="h-4 w-4 shrink-0 text-green-600" />
-                              );
-                            }
-                            if (
-                              fileName.endsWith(".doc") ||
-                              fileName.endsWith(".docx")
-                            ) {
-                              return (
-                                <FileText className="h-4 w-4 shrink-0 text-blue-600" />
-                              );
-                            }
-                            return (
-                              <Image
-                                src="/icons/pdf_small.svg"
-                                alt="PDF Icon"
-                                width={20}
-                                height={20}
-                                className="shrink-0"
-                              />
-                            );
-                          })()}
+                          {uploadedFile.file.name
+                            .toLowerCase()
+                            .match(/\.(jpg|jpeg|png)$/) ? (
+                            <File className="h-4 w-4 shrink-0 text-green-600" />
+                          ) : uploadedFile.file.name
+                              .toLowerCase()
+                              .match(/\.(doc|docx)$/) ? (
+                            <FileText className="h-4 w-4 shrink-0 text-blue-600" />
+                          ) : (
+                            <Image
+                              src="/icons/pdf_small.svg"
+                              alt="PDF"
+                              width={20}
+                              height={20}
+                              className="shrink-0"
+                            />
+                          )}
                           <div className="min-w-0 flex-1">
                             <TruncatedText className="text-sm font-medium">
                               {uploadedFile.file.name}
@@ -561,22 +772,25 @@ export function InvitationSheet({
         <Separator />
 
         <SheetFooter className="p-0">
-          <div className="flex w-full items-center justify-between gap-3 border-t bg-background px-4 py-2.5">
-            <p className="min-w-0 truncate text-xs text-neutral-500">
-              Invitation • PDF, Word, or images up to 5MB
-            </p>
+          <div className="flex w-full items-center justify-end gap-3 border-t bg-background px-4 py-2.5">
             <div className="flex shrink-0 items-center gap-2">
-              <Button
-                variant="outline"
+              <SheetFooterButton
+                variant="secondary"
+                mode="outline"
+                size="sm"
                 onClick={handleClose}
                 disabled={isUploading}
+                className="text-xs"
               >
                 Cancel
-              </Button>
-              <Button
+              </SheetFooterButton>
+              <SheetFooterButton
                 onClick={handleSubmit}
                 disabled={isUploading}
-                className="flex items-center gap-2"
+                size="sm"
+                mode="filled"
+                variant="secondary"
+                className="text-xs"
               >
                 {isUploading ? (
                   <>
@@ -586,14 +800,19 @@ export function InvitationSheet({
                 ) : (
                   <>
                     <Upload className="h-4 w-4" />
-                    {mode === "edit" ? "Update Document" : "Upload Document"}
+                    {mode === "edit" ? "Update Document" : "Upload Documents"}
                   </>
                 )}
-              </Button>
+              </SheetFooterButton>
             </div>
           </div>
         </SheetFooter>
       </SheetContent>
     </Sheet>
   );
+}
+
+function getStateDisplay(code: string): string {
+  const state = AUSTRALIAN_STATES.find((s) => s.code === code);
+  return state ? `${state.code} - ${state.name}` : code;
 }

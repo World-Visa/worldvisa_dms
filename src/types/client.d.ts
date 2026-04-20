@@ -31,22 +31,24 @@ export interface ClientApplicationResponse {
 export interface ClientDocument {
   _id: string;
   record_id: string;
-  workdrive_file_id: string;
-  workdrive_parent_id: string;
+  workdrive_file_id?: string;
+  workdrive_parent_id?: string;
   file_name: string;
   document_name: string;
   document_category: string;
   description?: string;
   uploaded_by: string;
   status: "pending" | "approved" | "rejected";
+  storage_type?: "workdrive" | "r2";
+  r2_key?: string;
   history: Array<{
     status: string;
     changed_by: string;
     _id: string;
     changed_at: string;
   }>;
-  download_url: string;
-  document_link: string;
+  download_url?: string;
+  document_link?: string;
   uploaded_at: string;
   comments: Comment[];
   __v: number;

@@ -77,9 +77,11 @@ export interface Application {
 export interface Document {
   _id: string;
   record_id: string;
-  workdrive_file_id: string;
-  workdrive_parent_id: string;
+  workdrive_file_id?: string;
+  workdrive_parent_id?: string;
   file_name: string;
+  storage_type?: "workdrive" | "r2";
+  r2_key?: string;
   uploaded_by: string;
   status: "pending" | "approved" | "reviewed" | "request_review" | "rejected";
   reject_message?: string;

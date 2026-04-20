@@ -5,14 +5,16 @@ export type Stage2DocumentType = "outcome" | "eoi" | "invitation";
 export interface Stage2Document {
   _id: string;
   record_id: string;
-  workdrive_file_id: string;
-  workdrive_parent_id: string;
+  workdrive_file_id?: string;
+  workdrive_parent_id?: string;
   file_name: string;
   document_name: string;
   document_type: string;
   uploaded_by: string;
-  download_url: string;
-  document_link: string;
+  storage_type?: "workdrive" | "r2";
+  r2_key?: string;
+  download_url?: string;
+  document_link?: string;
   type: Stage2DocumentType;
   uploaded_at: string;
   createdAt: string;
@@ -24,10 +26,13 @@ export interface Stage2Document {
   point?: number;
   date?: string;
   deadline?: string;
+  invitation_type?: string;
+  language_assessing_body?: string;
   // Optional field for Outcome
   outcome_date?: string;
   outcome?: string;
   skill_assessing_body?: string;
+  expiry_at?: string;
 }
 
 export interface CreateStage2DocumentRequest {
@@ -44,9 +49,12 @@ export interface CreateStage2DocumentRequest {
   point?: number;
   date?: string;
   deadline?: string;
+  invitation_type?: string;
+  language_assessing_body?: string;
   outcome_date?: string;
   outcome?: string;
   skill_assessing_body?: string;
+  expiry_at?: string;
 }
 
 export interface UpdateStage2DocumentRequest {
@@ -59,9 +67,12 @@ export interface UpdateStage2DocumentRequest {
     point?: number;
     date?: string;
     deadline?: string;
+    invitation_type?: string;
+    language_assessing_body?: string;
     outcome_date?: string;
     outcome?: string;
     skill_assessing_body?: string;
+    expiry_at?: string;
   };
 }
 

@@ -2,7 +2,6 @@
 
 import type { ReactNode } from "react";
 import { IconFolderCode } from "@tabler/icons-react";
-import { Button } from "@/components/ui/button";
 import {
   Empty,
   EmptyContent,
@@ -11,7 +10,7 @@ import {
   EmptyMedia,
   EmptyTitle,
 } from "@/components/ui/empty";
-import { cn } from "@/lib/utils";
+import { StageDocumentsHeaderAction } from "./StageDocumentsHeaderAction";
 
 export interface StageDocumentsEmptyStateProps {
   title: string;
@@ -20,7 +19,6 @@ export interface StageDocumentsEmptyStateProps {
   createButtonLabel: string;
   onCreate: () => void;
   icon?: ReactNode;
-  actionButtonClassName?: string;
 }
 
 export function StageDocumentsEmptyState({
@@ -30,7 +28,6 @@ export function StageDocumentsEmptyState({
   createButtonLabel,
   onCreate,
   icon,
-  actionButtonClassName,
 }: StageDocumentsEmptyStateProps) {
   return (
     <Empty>
@@ -48,15 +45,7 @@ export function StageDocumentsEmptyState({
       </EmptyHeader>
       {!isClientView && (
         <EmptyContent>
-          <div className="flex flex-wrap gap-2">
-            <Button
-              type="button"
-              className={cn(actionButtonClassName)}
-              onClick={onCreate}
-            >
-              {createButtonLabel}
-            </Button>
-          </div>
+          <StageDocumentsHeaderAction label={createButtonLabel} onClick={onCreate} />
         </EmptyContent>
       )}
     </Empty>

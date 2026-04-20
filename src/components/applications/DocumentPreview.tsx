@@ -10,6 +10,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { Document } from "@/types/applications";
+import { openDocumentInSizedWindow } from "@/lib/documents/openDocumentViewer";
+import { getDocumentUrl } from "@/lib/documents/getDocumentUrl";
 
 interface DocumentPreviewProps {
   document: Document;
@@ -52,23 +54,14 @@ const DocumentPreview: React.FC<DocumentPreviewProps> = ({ document }) => {
     }
   };
 
+  const docUrl = getDocumentUrl(document);
+
   const handleViewDocument = () => {
-    const url = document.document_link || document.download_url;
-    if (!url) return;
-
-    const width = 800;
-    const height = 600;
-    const top = (window.screen.height - height) / 2;
-    const left = (window.screen.width - width) / 2;
-
-    window.open(
-      url,
-      "_blank",
-      `width=${width},height=${height},top=${top},left=${left},resizable=yes,scrollbars=yes`,
-    );
+    if (!docUrl) return;
+    openDocumentInSizedWindow(docUrl);
   };
 
-  const hasDocumentUrl = document.document_link || document.download_url;
+  const hasDocumentUrl = Boolean(docUrl);
   const displayFileName =
     document.file_name?.length > 30
       ? `${document.file_name.slice(0, 30)}…`

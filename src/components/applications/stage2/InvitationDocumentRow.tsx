@@ -2,7 +2,10 @@
 
 import { Badge } from "@/components/ui/primitives/badge";
 import { TableCell } from "@/components/ui/table";
-import { getStateByCode, getVisaSubclassByCode } from "@/lib/constants/australianData";
+import {
+  getStage2StateDisplay,
+  getStage2SubclassDisplay,
+} from "@/lib/stage2DocumentDisplay";
 import type { Stage2Document } from "@/types/stage2Documents";
 import { formatDate } from "@/utils/format";
 import { Stage2RowActionsCell } from "@/components/applications/stage2/Stage2RowActionsCell";
@@ -21,18 +24,6 @@ type InvitationDocumentRowProps = {
   onDelete?: (document: Stage2Document) => void;
 };
 
-function getSubclassDisplay(code?: string) {
-  if (!code) return "N/A";
-  const subclass = getVisaSubclassByCode(code);
-  return subclass ? subclass.label : code;
-}
-
-function getStateDisplay(code?: string) {
-  if (!code) return "N/A";
-  const state = getStateByCode(code);
-  return state ? `${state.code} - ${state.name}` : code;
-}
-
 export function InvitationDocumentRow({
   rowIndex,
   document,
@@ -42,7 +33,7 @@ export function InvitationDocumentRow({
   onDelete,
 }: InvitationDocumentRowProps) {
   const motionProps = useStage2RowMotionProps(rowIndex);
-  const stateLabel = document.state ? getStateDisplay(document.state) : "N/A";
+  const stateLabel = document.state ? getStage2StateDisplay(document.state) : "N/A";
 
   return (
     <MotionTableRow
@@ -50,13 +41,13 @@ export function InvitationDocumentRow({
       className="group transition-colors duration-200 hover:bg-neutral-50"
     >
       <TableCell className="min-w-0 font-medium">
-        <TruncatedText className="max-w-full">{document.document_name || document.file_name}</TruncatedText>
+        <TruncatedText className="max-w-full">{document.document_name?.slice(0, 20) || document.file_name?.slice(0, 20)}</TruncatedText>
       </TableCell>
       <TableCell className="whitespace-nowrap text-text-sub text-sm">
         {formatDate(document.date, "short")}
       </TableCell>
       <TableCell className="min-w-0">
-        <TruncatedText className="max-w-full">{getSubclassDisplay(document.subclass)}</TruncatedText>
+        <TruncatedText className="max-w-full">{getStage2SubclassDisplay(document.subclass)}</TruncatedText>
       </TableCell>
       <TableCell className="min-w-0">
         <Badge variant="lighter" color="purple" size="md" className="min-w-0 max-w-full">
@@ -67,7 +58,11 @@ export function InvitationDocumentRow({
         {document.point ?? "N/A"}
       </TableCell>
       <TableCell className="whitespace-nowrap text-sm">
-        {document.deadline ? formatDate(document.deadline, "short") : "N/A"}
+        {document.expiry_at
+          ? formatDate(document.expiry_at, "short")
+          : document.deadline
+            ? formatDate(document.deadline, "short")
+            : "N/A"}
       </TableCell>
 
       <Stage2RowActionsCell

@@ -26,7 +26,6 @@ const DocumentComments: React.FC<DocumentCommentsProps> = ({
   const deleteCommentMutation = useDeleteComment(documentId);
   const scrollEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll to bottom when new comments arrive
   useEffect(() => {
     if (scrollEndRef.current && comments.length > 0) {
       scrollEndRef.current.scrollIntoView({ behavior: "smooth" });

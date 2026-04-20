@@ -20,6 +20,7 @@ import {
   useDeleteSampleDocument,
 } from "@/hooks/useSampleDocuments";
 import type { SampleDocument } from "@/types/sampleDocuments";
+import { getDocumentUrl } from "@/lib/documents/getDocumentUrl";
 import { SampleDocumentsModal } from "./SampleDocumentsModal";
 import { SampleDocumentsUploadModal } from "./SampleDocumentsUploadModal";
 import { ErrorState } from "@/components/ui/ErrorState";
@@ -95,7 +96,7 @@ export function SampleDocumentsTable({
   }, [documents]);
 
   const handleViewDocument = (document: SampleDocument) => {
-    const url = document.document_link || document.download_url;
+    const url = getDocumentUrl(document);
 
     if (!url) {
       toast.error("Document URL not available");
