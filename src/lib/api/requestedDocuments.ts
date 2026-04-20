@@ -50,11 +50,20 @@ export interface RequestedDocument {
   review_chain?: Array<{
     requested_by: string;
     requested_to: string;
+    requested_to_role?: string;
     status: "pending" | "reviewed";
     _id: string;
     messages: Array<{ username: string; message: string; _id: string; added_at: string }>;
     requested_at: string;
     participants?: string[];
+  }>;
+  suggested_anzsco?: string;
+  timeline?: Array<{
+    event: string;
+    timestamp: string;
+    details: string;
+    triggered_by: string;
+    _id: string;
   }>;
   isOverdue?: boolean;
   daysSinceRequest?: number;

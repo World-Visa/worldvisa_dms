@@ -36,7 +36,14 @@ import {
   RiDeleteBin7Line,
   RiExternalLinkLine,
   RiFileUserLine,
+  RiRepeat2Line,
 } from "react-icons/ri";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PublishToClientDialog } from "./PublishToClientDialog";
 import { useSendRequestedDocumentMessage } from "@/hooks/useRequestedDocumentMessages";
 import { Textarea } from "../ui/textarea";
@@ -245,6 +252,9 @@ export function RequestedDocumentViewSheet({
     displayDoc.requested_review.requested_by !== user?.username &&
     (isAssignedToMe || !!canReviewAnyAsRole);
   const canDelete = !isRequestedToMe;
+  const iterationCount = displayDoc.review_chain?.filter(
+    (e) => e.requested_to_role === "master_admin" || e.requested_to_role === "supervisor"
+  ).length ?? 0;
 
   const previewFileName =
     displayDoc.file_name || displayDoc.document_name || "document";
@@ -309,6 +319,21 @@ export function RequestedDocumentViewSheet({
                         )
                         : "Unknown date"}
                     </span>
+                    {iterationCount > 1 && (
+                      <TooltipProvider>
+                        <Tooltip delayDuration={150}>
+                          <TooltipTrigger asChild>
+                            <span className="flex items-center gap-1 text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-md px-2 py-0.5 cursor-default">
+                              <RiRepeat2Line className="h-3.5 w-3.5" />
+                              Iteration {iterationCount}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="bottom" variant="default">
+                            Reviewed {iterationCount} time{iterationCount !== 1 ? "s" : ""}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    )}
                     {displayDoc.isOverdue && (
                       <span className="flex items-center gap-1 text-xs font-medium text-destructive">
                         <AlertTriangle className="h-3 w-3" />

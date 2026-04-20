@@ -85,7 +85,6 @@ export default function RequestedDocsClient() {
     useState<RequestedDocument | null>(null);
   const [searchInput, setSearchInput] = useState("");
   const [sortOrder, setSortOrder] = useState<"desc" | "asc">("desc");
-  // null sortField = default (last_activity_at for reactivity); 'requested_at' = user toggled
   const [sortField, setSortField] = useState<"last_activity_at" | "requested_at">("last_activity_at");
 
   const queryClient = useQueryClient();
@@ -399,12 +398,12 @@ export default function RequestedDocsClient() {
               loadingRow={<TableLoadingRow />}
             >
               <TableHeader>
-                <TableRow>
+                <TableRow className="bg-neutral-50/60">
                   {REQUESTED_DOCS_TABLE_COLUMNS.map((col) => (
                     col.label === "Requested" ? (
                       <TableHead
                         key={col.label}
-                        className={col.headerClassName}
+                        className={cn(col.headerClassName, "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70")}
                         sortable
                         sortDirection={
                           sortField === "requested_at"
@@ -427,7 +426,7 @@ export default function RequestedDocsClient() {
                         {col.label}
                       </TableHead>
                     ) : (
-                      <TableHead key={col.label} className={col.headerClassName}>
+                      <TableHead key={col.label} className={cn(col.headerClassName, "text-[11px] font-semibold uppercase tracking-wider text-muted-foreground/70 py-3")}>
                         {col.label}
                       </TableHead>
                     )

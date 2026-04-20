@@ -32,6 +32,13 @@ export const REQUESTED_DOCS_TABLE_COLUMNS: readonly RequestedDocsTableColumn[] =
     grow: 2,
   },
   {
+    label: "ANZSCO",
+    headerClassName: "",
+    skeletonClassName: "h-4 w-24",
+    minPx: 130,
+    grow: 0,
+  },
+  {
     label: "Status",
     headerClassName: "",
     skeletonClassName: "h-6 w-20 rounded-md",
@@ -42,7 +49,7 @@ export const REQUESTED_DOCS_TABLE_COLUMNS: readonly RequestedDocsTableColumn[] =
     label: "Requested",
     headerClassName: "",
     skeletonClassName: "h-4 w-28",
-    minPx: 170,
+    minPx: 140,
     grow: 0,
   },
   {
@@ -66,4 +73,3 @@ export const ROUTE_CONFIG: Record<"by" | "to", RouteParticipantCfg> = {
   by: { label: "By", color: "blue", icon: RiUserLine },
   to: { label: "To", color: "purple", icon: RiUserReceivedLine },
 };
-
