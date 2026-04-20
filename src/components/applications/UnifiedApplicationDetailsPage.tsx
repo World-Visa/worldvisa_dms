@@ -52,6 +52,7 @@ import {
   useEffect,
   useMemo,
   useCallback,
+  useRef,
   lazy,
   Suspense,
   useState,
@@ -72,6 +73,7 @@ import { ClientOnboardingModal } from "@/components/applications/onboarding/Clie
 import { DeadlineBlockerModal } from "@/components/applications/deadline/DeadlineBlockerModal";
 import { computeDaysLeft } from "@/components/applications/deadline/deadline-date-utils";
 import { useApprovalRequestsByLead } from "@/hooks/useAdminApprovalRequests";
+import { useLazyDocumentLoad } from "@/hooks/useLazyDocumentLoad";
 import type { ApplicationLayout } from "@/components/applications/layouts/LayoutChips";
 import { useQueryStates } from "nuqs";
 
@@ -109,14 +111,6 @@ interface UnifiedApplicationDetailsPageProps {
   applicationId: string;
   isSpouseApplication?: boolean;
 }
-
-type ExtendedWindow = Window & {
-  requestIdleCallback?: (
-    callback: IdleRequestCallback,
-    options?: IdleRequestOptions,
-  ) => number;
-  cancelIdleCallback?: (handle: number) => void;
-};
 
 export default function UnifiedApplicationDetailsPage({
   applicationId,
@@ -165,43 +159,9 @@ export default function UnifiedApplicationDetailsPage({
     () => urlCategory && urlCategory !== "submitted",
     [urlCategory],
   );
-  const [shouldLoadAllDocuments, setShouldLoadAllDocuments] = useState<boolean>(
-    () => Boolean(shouldEagerLoadAllDocuments),
+  const shouldLoadAllDocuments = useLazyDocumentLoad(
+    Boolean(shouldEagerLoadAllDocuments),
   );
-
-  useEffect(() => {
-    if (shouldEagerLoadAllDocuments) {
-      setShouldLoadAllDocuments(true);
-      return;
-    }
-
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const extendedWindow = window as ExtendedWindow;
-    let idleHandle: number | null = null;
-    let timeoutHandle: ReturnType<typeof setTimeout> | null = null;
-
-    const triggerFetch = () => setShouldLoadAllDocuments(true);
-
-    if (extendedWindow.requestIdleCallback) {
-      idleHandle = extendedWindow.requestIdleCallback(triggerFetch, {
-        timeout: 1500,
-      });
-    } else {
-      timeoutHandle = setTimeout(triggerFetch, 200);
-    }
-
-    return () => {
-      if (idleHandle !== null && extendedWindow.cancelIdleCallback) {
-        extendedWindow.cancelIdleCallback(idleHandle);
-      }
-      if (timeoutHandle) {
-        clearTimeout(timeoutHandle);
-      }
-    };
-  }, [shouldEagerLoadAllDocuments]);
 
   const {
     data: allDocumentsData,
@@ -220,8 +180,7 @@ export default function UnifiedApplicationDetailsPage({
     application?.application_onboarding ?? DEFAULT_APPLICATION_ONBOARDING;
   const { isFullyOnboarded } = useOnboardingSteps(onboardingData);
   const [isClientOnboardingOpen, setIsClientOnboardingOpen] = useState(false);
-  const [hasDismissedAutoOnboardingModal, setHasDismissedAutoOnboardingModal] =
-    useState(false);
+  const dismissedOnboardingIds = useRef(new Set<string>());
   const hasLoadedApplicationData = !isApplicationLoading && Boolean(application);
 
   const leadId = application?.id ?? "";
@@ -256,48 +215,28 @@ export default function UnifiedApplicationDetailsPage({
   ]);
 
   useEffect(() => {
-    setHasDismissedAutoOnboardingModal(false);
-    setIsClientOnboardingOpen(false);
-  }, [applicationId]);
-
-  useEffect(() => {
-    if (!hasLoadedApplicationData) {
-      return;
-    }
-
-    if (isDeadlineBlocking) {
-      return;
-    }
-
-    if (isFullyOnboarded) {
-      setIsClientOnboardingOpen(false);
-      return;
-    }
-
-    if (hasDismissedAutoOnboardingModal) {
-      return;
-    }
-
+    if (!hasLoadedApplicationData || isLeadRequestsLoading) return;
+    if (isDeadlineBlocking) { setIsClientOnboardingOpen(false); return; }
+    if (isFullyOnboarded)   { setIsClientOnboardingOpen(false); return; }
+    if (dismissedOnboardingIds.current.has(applicationId)) return;
     setIsClientOnboardingOpen(true);
   }, [
-    hasDismissedAutoOnboardingModal,
+    applicationId,
     hasLoadedApplicationData,
-    isFullyOnboarded,
+    isLeadRequestsLoading,
     isDeadlineBlocking,
+    isFullyOnboarded,
   ]);
 
   const handleOnboardingModalOpenChange = useCallback((open: boolean) => {
     setIsClientOnboardingOpen(open);
-
-    if (!open) {
-      setHasDismissedAutoOnboardingModal(true);
-    }
-  }, []);
+    if (!open) dismissedOnboardingIds.current.add(applicationId);
+  }, [applicationId]);
 
   const handleActivateAccount = useCallback(() => {
-    setHasDismissedAutoOnboardingModal(false);
+    dismissedOnboardingIds.current.delete(applicationId);
     setIsClientOnboardingOpen(true);
-  }, []);
+  }, [applicationId]);
 
   const [isEditProfileSheetOpen, setIsEditProfileSheetOpen] = useState(false);
 
@@ -462,14 +401,6 @@ export default function UnifiedApplicationDetailsPage({
     [isSpouseApplication],
   );
 
-  const pageTitle = useMemo(
-    () =>
-      isSpouseApplication
-        ? "Spouse Application Details"
-        : "Application Details",
-    [isSpouseApplication],
-  );
-
   const combinedError =
     applicationError ?? documentsError ?? allDocumentsError;
 
@@ -504,7 +435,7 @@ export default function UnifiedApplicationDetailsPage({
               <BreadcrumbSeparator />
               <BreadcrumbItem>
                 <BreadcrumbPage className="truncate capitalize">
-                  {isApplicationLoading ? "Loading…" : application?.Name ?? "Application"}
+                  {isApplicationLoading ? "Applciation" : application?.Name ?? "Application"}
                 </BreadcrumbPage>
               </BreadcrumbItem>
             </BreadcrumbList>
