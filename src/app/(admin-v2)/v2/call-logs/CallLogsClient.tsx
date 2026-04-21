@@ -20,7 +20,7 @@ import { FacetedFormFilter } from "@/components/ui/faceted-filter/facated-form-f
 import { Button } from "@/components/ui/primitives/button";
 import { ListNoResults } from "@/components/applications/list-no-results";
 import { CallLogTableRow } from "@/components/call-logs/CallLogTableRow";
-import { CallLogDetailSheet } from "@/components/call-logs/CallLogDetailSheet";
+import { CallLogDetailModal } from "@/components/call-logs/CallLogDetailModal";
 import { CALL_LOGS_TABLE_COLUMNS } from "@/lib/constants/callLogsTable";
 import {
   CALL_STATUS_OPTIONS,
@@ -215,8 +215,8 @@ export function CallLogsClient() {
         )}
       </div>
 
-      {/* Detail sheet */}
-      <CallLogDetailSheet
+      {/* Detail modal */}
+      <CallLogDetailModal
         log={selectedLog}
         isOpen={!!selectedLog}
         onClose={() => setSelectedLog(null)}
