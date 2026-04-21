@@ -34,7 +34,7 @@ function formatStartTime(iso: string): string {
 export const CallLogTableRow = memo(function CallLogTableRow({ log, onView }: CallLogTableRowProps) {
   const statusCfg  = CALL_STATUS_BADGE[log.status] ?? CALL_STATUS_FALLBACK;
   const dirCfg     = CALL_DIRECTION_BADGE[log.direction];
-  const DirectionIcon = log.direction === "Inbound" ? PhoneIncoming : PhoneOutgoing;
+  const DirectionIcon = log.direction === "inbound" ? PhoneIncoming : PhoneOutgoing;
 
   return (
     <TableRow
