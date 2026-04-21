@@ -14,7 +14,7 @@ export function McubeSoftphoneIframe({ src, className }: McubeSoftphoneIframePro
       title="MCube Softphone"
       className={cn("min-h-0 flex-1 h-full w-full border-0 bg-white", className)}
       allow="microphone; camera"
-      sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-microphone"
     />
   );
 }
