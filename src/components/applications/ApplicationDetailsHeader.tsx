@@ -46,6 +46,7 @@ interface ApplicationDetailsHeaderProps {
   onEditAccountDetails?: () => void;
   onAddNote?: () => void;
   onEmailHistory?: () => void;
+  onCallLogs?: () => void;
   onStartChat?: () => void;
   onSendReminderEmail?: () => void;
   unreadChatCount?: number;
@@ -109,6 +110,7 @@ export function ApplicationDetailsHeader({
   onEditAccountDetails,
   onAddNote,
   onEmailHistory,
+  onCallLogs,
   onStartChat,
   onSendReminderEmail,
   unreadChatCount,
@@ -316,7 +318,7 @@ export function ApplicationDetailsHeader({
               <DropdownMenuSeparator />
               <DropdownMenuLabel className="text-[10px] uppercase text-muted-foreground font-mono font-medium">History</DropdownMenuLabel>
               <DropdownMenuItem
-                // onClick={() => setIsActivitySheetOpen(true)}
+                onClick={onCallLogs}
                 className="cursor-pointer font-light text-sm text-neutral-800"
               >
                 <RiPhoneLine className="size-4" />

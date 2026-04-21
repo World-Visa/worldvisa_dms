@@ -127,7 +127,7 @@ function RightPanelSkeleton() {
 
 // ── Main content (left + right) ───────────────────────────────────────────────
 
-function ModalContent({ log: listLog }: { log: CallLog }) {
+function ModalContent({ log: listLog, showApplicationLink = true }: { log: CallLog; showApplicationLink?: boolean }) {
   const { data, isLoading } = useCallLogDetail(listLog.call_id);
   const log = data?.data?.callLog ?? listLog;
 
@@ -202,22 +202,24 @@ function ModalContent({ log: listLog }: { log: CallLog }) {
             </div>
 
             {/* Bottom — Application link card */}
-            <div className="p-3 border-t border-border/40">
-              <motion.div whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }}>
-                <Link
-                  href={ROUTES.APPLICATION_DETAILS(log.client_lead_id)}
-                  className="flex items-center gap-2.5 rounded-xl border border-stroke-soft bg-white dark:bg-neutral-900 px-3 py-2.5 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
-                >
-                  <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
-                    <ExternalLinkIcon className="size-3.5 text-neutral-600 dark:text-neutral-400" />
-                  </div>
-                  <div>
-                    <p className="text-xs font-semibold leading-tight">Application</p>
-                    <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">View full profile</p>
-                  </div>
-                </Link>
-              </motion.div>
-            </div>
+            {showApplicationLink ? (
+              <div className="p-3 border-t border-border/40">
+                <motion.div whileHover={{ scale: 1.015 }} whileTap={{ scale: 0.985 }}>
+                  <Link
+                    href={ROUTES.APPLICATION_DETAILS(log.client_lead_id)}
+                    className="flex items-center gap-2.5 rounded-xl border border-stroke-soft bg-white dark:bg-neutral-900 px-3 py-2.5 transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800"
+                  >
+                    <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-neutral-100 dark:bg-neutral-800">
+                      <ExternalLinkIcon className="size-3.5 text-neutral-600 dark:text-neutral-400" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-semibold leading-tight">Application</p>
+                      <p className="text-[11px] text-muted-foreground leading-tight mt-0.5">View full profile</p>
+                    </div>
+                  </Link>
+                </motion.div>
+              </div>
+            ) : null}
           </>
         )}
       </div>
@@ -330,6 +332,14 @@ function ModalContent({ log: listLog }: { log: CallLog }) {
         )}
       </motion.div>
     </>
+  );
+}
+
+export function CallLogDetailContent({ log, showApplicationLink = true }: { log: CallLog; showApplicationLink?: boolean }) {
+  return (
+    <div className="flex min-h-0 h-full w-full overflow-hidden">
+      <ModalContent key={log.call_id} log={log} showApplicationLink={showApplicationLink} />
+    </div>
   );
 }
 

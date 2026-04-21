@@ -9,6 +9,7 @@ import { ApplicationDetailsHeader } from "@/components/applications/ApplicationD
 import { EditProfileDetailsSheet } from "@/components/applications/EditProfileDetailsSheet";
 import { DownloadAllDocumentsModal } from "@/components/applications/DownloadAllDocumentsModal";
 import { EmailHistoryModal } from "@/components/applications/EmailHistoryModal";
+import { CallLogsModal } from "@/components/applications/CallLogsModal";
 import {
   buildPendingDocumentsReminderHtml,
   PENDING_DOCS_SUBJECT,
@@ -273,6 +274,8 @@ export default function UnifiedApplicationDetailsPage({
     { subject: string; html: string } | undefined
   >();
 
+  const [isCallLogsModalOpen, setIsCallLogsModalOpen] = useState(false);
+
   const handleSendReminderEmail = useCallback(() => {
     const docs = mandatoryDocValidationDetails.map((d) => ({
       label: d.companyName ? `${d.documentType} (${d.companyName})` : d.documentType,
@@ -453,6 +456,7 @@ export default function UnifiedApplicationDetailsPage({
             setEditingNote(null);
             setIsNoteModalOpen(true);
           }}
+          onCallLogs={() => setIsCallLogsModalOpen(true)}
           onEmailHistory={modals.openEmailHistoryModal}
           onStartChat={handleStartChat}
           onSendReminderEmail={handleSendReminderEmail}
@@ -621,6 +625,13 @@ export default function UnifiedApplicationDetailsPage({
         clientEmail={application?.Email ?? ""}
         clientName={application?.Name ?? ""}
         initialCompose={reminderEmailData}
+      />
+
+      <CallLogsModal
+        isOpen={isCallLogsModalOpen}
+        onOpenChange={setIsCallLogsModalOpen}
+        customerPhone={application?.Phone ?? ""}
+        customerName={application?.Name ?? ""}
       />
 
       {deepLinkDoc && (
