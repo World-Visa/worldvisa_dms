@@ -31,9 +31,9 @@ export const CALL_STATUS_FALLBACK: CallStatusBadgeCfg = {
   icon: RiTimeLine,
 };
 
-export const CALL_DIRECTION_BADGE: Record<CallDirection, { label: string; color: "blue" | "purple" }> = {
-  inbound:  { label: "Inbound",  color: "blue" },
-  outbound: { label: "Outbound", color: "purple" },
+export const CALL_DIRECTION_BADGE: Record<CallDirection, { label: string; color: "green" | "blue" }> = {
+  inbound:  { label: "Incoming",  color: "green" },
+  outbound: { label: "Outgoing", color: "blue" },
 };
 
 export const CALL_STATUS_OPTIONS: { value: CallStatus; label: string }[] = [
@@ -46,8 +46,8 @@ export const CALL_STATUS_OPTIONS: { value: CallStatus; label: string }[] = [
 ];
 
 export const CALL_DIRECTION_OPTIONS: { value: CallDirection; label: string }[] = [
-  { value: "inbound",  label: "Inbound" },
-  { value: "outbound", label: "Outbound" },
+  { value: "inbound",  label: "Incoming" },
+  { value: "outbound", label: "Outgoing" },
 ];
 
 export const DATE_RANGE_OPTIONS: { value: DateRangePreset; label: string }[] = [
@@ -57,12 +57,25 @@ export const DATE_RANGE_OPTIONS: { value: DateRangePreset; label: string }[] = [
   { value: "last_90d", label: "Last 90 Days" },
 ];
 
-export function formatCallDuration(seconds: string | null): string {
-  if (!seconds) return "—";
-  const total = parseInt(seconds, 10);
+export function formatCallDuration(duration: string | null): string {
+  if (!duration) return "—";
+  let total: number;
+  if (duration.includes(":")) {
+    const parts = duration.split(":").map(Number);
+    if (parts.length === 3) {
+      const [h, m, s] = parts;
+      total = h * 3600 + m * 60 + s;
+    } else {
+      return "—";
+    }
+  } else {
+    total = parseInt(duration, 10);
+  }
   if (Number.isNaN(total) || total <= 0) return "—";
-  const m = Math.floor(total / 60);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
   const s = total % 60;
-  if (m === 0) return `${s}s`;
-  return `${m}m ${s}s`;
+  if (h > 0) return `${h}h ${m}m ${s}s`;
+  if (m > 0) return `${m}m ${s}s`;
+  return `${s}s`;
 }

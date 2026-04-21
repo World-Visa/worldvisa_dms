@@ -7,11 +7,13 @@ type CallDispositionStore = {
   isModalOpen: boolean;
   openDispositionModal: (call: CallLog) => void;
   closeDispositionModal: () => void;
+  clearPendingCall: () => void;
 };
 
 export const useCallDispositionStore = create<CallDispositionStore>((set) => ({
-  pendingCall:          null,
-  isModalOpen:          false,
-  openDispositionModal: (call) => set({ pendingCall: call, isModalOpen: true }),
-  closeDispositionModal: ()    => set({ isModalOpen: false, pendingCall: null }),
+  pendingCall:           null,
+  isModalOpen:           false,
+  openDispositionModal:  (call) => set({ pendingCall: call, isModalOpen: true }),
+  closeDispositionModal: ()     => set({ isModalOpen: false }),
+  clearPendingCall:      ()     => set({ pendingCall: null }),
 }));

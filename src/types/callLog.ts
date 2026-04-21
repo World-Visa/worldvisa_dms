@@ -62,7 +62,7 @@ export interface CallLog {
   customer_phone:    string;
   /** Either an ObjectId string (list) or a populated object (detail) */
   client_id:         string | PopulatedClient | null;
-  client_lead_id:    string | null;
+  client_lead_id:    string;
   client_name:       string | null;
   mcube_did:         string;
   group_name:        string;
@@ -73,6 +73,8 @@ export interface CallLog {
   recording_url:     string | null;
   call_note:         string | null;
   call_agent_status: CallAgentStatus | null;
+  agent_image_url?:  string | null;
+  client_image_url?: string | null;
   created_at:        string;
   updated_at:        string;
 }

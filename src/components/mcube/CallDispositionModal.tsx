@@ -1,100 +1,77 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState, useEffect } from "react";
 import { PhoneOff, Phone, User } from "lucide-react";
 import {
   Dialog,
   DialogContent,
   DialogTitle,
   DialogDescription,
-} from "@/components/ui/dialog";
+} from "@/components/ui/primitives/dialog";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select";
+} from "@/components/ui/primitives/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/primitives/button";
+import { Label } from "@/components/ui/primitives/label";
 import { useCallDispositionStore } from "@/store/callDispositionStore";
-import { updateCallNotes } from "@/lib/api/callLogs";
-import { callLogKeys } from "@/hooks/useCallLogs";
-import type { CallAgentStatus, CallLogDetailResponse, CallLogListResponse } from "@/types/callLog";
-
-const AGENT_STATUS_OPTIONS: { value: CallAgentStatus; label: string }[] = [
-  { value: "answered",                label: "Answered" },
-  { value: "unanswered",              label: "Unanswered" },
-  { value: "client_busy",             label: "Client Busy" },
-  { value: "client_asked_call_later", label: "Client Asked to Call Later" },
-  { value: "not_connected",           label: "Not Connected" },
-  { value: "none",                    label: "None" },
-];
+import { useUpdateCallNotes } from "@/hooks/useCallLogs";
+import { AGENT_STATUS_OPTIONS } from "@/lib/constants/callDisposition";
+import { showSuccessToast, showErrorToast } from "@/components/ui/primitives/sonner-helpers";
+import type { CallAgentStatus } from "@/types/callLog";
 
 export function CallDispositionModal() {
-  const { isModalOpen, pendingCall, closeDispositionModal } = useCallDispositionStore();
-  const queryClient = useQueryClient();
+  const { isModalOpen, pendingCall, closeDispositionModal, clearPendingCall } = useCallDispositionStore();
 
   const [callAgentStatus, setCallAgentStatus] = useState<CallAgentStatus | "">("");
   const [callNote, setCallNote]               = useState("");
 
-  const { mutate, isPending } = useMutation({
-    mutationFn: () =>
-      updateCallNotes(pendingCall!.call_id, {
-        call_agent_status: callAgentStatus || null,
-        call_note:         callNote.trim() || null,
-      }),
-    onSuccess: (res: CallLogDetailResponse) => {
-      const updated = res.data.callLog;
+  const { mutate, isPending } = useUpdateCallNotes();
 
-      // Update detail cache if open
-      queryClient.setQueryData(callLogKeys.detail(updated.call_id), {
-        status: "success",
-        data:   { callLog: updated },
-      });
-
-      // Update all list caches in-place
-      queryClient.setQueriesData<CallLogListResponse>(
-        { queryKey: callLogKeys.all(), exact: false },
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            data: {
-              callLogs: old.data.callLogs.map((log) =>
-                log.call_id === updated.call_id ? updated : log,
-              ),
-            },
-          };
-        },
-      );
-
-      handleClose();
-    },
-  });
+  useEffect(() => {
+    if (pendingCall) {
+      setCallAgentStatus(pendingCall.call_agent_status ?? "");
+      setCallNote(pendingCall.call_note ?? "");
+    }
+  }, [pendingCall]);
 
   function handleClose() {
     setCallAgentStatus("");
     setCallNote("");
     closeDispositionModal();
+    setTimeout(clearPendingCall, 200);
+  }
+
+  function handleSubmit() {
+    if (!pendingCall) return;
+    mutate(
+      {
+        callId:  pendingCall.call_id,
+        payload: { call_agent_status: callAgentStatus || null, call_note: callNote.trim() || null },
+      },
+      {
+        onSuccess: () => { showSuccessToast("Call disposition saved successfully"); handleClose(); },
+        onError:   (error) => showErrorToast(`Failed to save disposition: ${error.message}`),
+      },
+    );
   }
 
   if (!pendingCall) return null;
 
   return (
     <Dialog open={isModalOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
-      <DialogContent className="max-w-[460px] gap-5 p-5">
+      <DialogContent className="max-w-[460px] gap-5 p-5 overflow-hidden">
         {/* Header */}
         <div className="flex items-start gap-3">
           <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-red-100 text-red-600 dark:bg-red-900/40 dark:text-red-400">
             <PhoneOff className="size-4" />
           </div>
           <div>
-            <DialogTitle className="text-base font-semibold leading-snug">
-              Call Ended
-            </DialogTitle>
+            <DialogTitle className="text-base font-semibold leading-snug">Call Ended</DialogTitle>
             <DialogDescription className="mt-0.5 text-sm text-muted-foreground">
               Log a disposition for this call before dismissing.
             </DialogDescription>
@@ -102,7 +79,7 @@ export function CallDispositionModal() {
         </div>
 
         {/* Call summary */}
-        <div className="rounded-lg border bg-muted/40 px-4 py-3 space-y-1.5 text-sm">
+        <div className="rounded-lg flex flex-col gap-1.5 border border-stroke-soft bg-neutral-50 dark:bg-neutral-900/40 px-4 py-3 text-sm">
           <div className="flex items-center gap-2 text-muted-foreground">
             <User className="size-3.5 shrink-0" />
             <span className="truncate">{pendingCall.client_name ?? "Unknown Caller"}</span>
@@ -114,57 +91,43 @@ export function CallDispositionModal() {
         </div>
 
         {/* Form */}
-        <div className="space-y-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="call-agent-status">Call Outcome</Label>
-            <Select
-              value={callAgentStatus}
-              onValueChange={(v) => setCallAgentStatus(v as CallAgentStatus)}
-            >
-              <SelectTrigger id="call-agent-status">
+        <div className="flex flex-col gap-3.5">
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="disp-agent-status" className="text-sm">Call Outcome</Label>
+            <Select value={callAgentStatus} onValueChange={(v) => setCallAgentStatus(v as CallAgentStatus)}>
+              <SelectTrigger id="disp-agent-status">
                 <SelectValue placeholder="Select outcome…" />
               </SelectTrigger>
               <SelectContent>
                 {AGENT_STATUS_OPTIONS.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </SelectItem>
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          <div className="space-y-1.5">
-            <Label htmlFor="call-note">
-              Note{" "}
-              <span className="font-normal text-muted-foreground">(optional)</span>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="disp-call-note" className="text-sm">
+              Note&nbsp;
+              <span className="font-normal text-xs text-muted-foreground">(optional)</span>
             </Label>
             <Textarea
-              id="call-note"
+              id="disp-call-note"
               rows={3}
               placeholder="Add a note about this call…"
               value={callNote}
               onChange={(e) => setCallNote(e.target.value)}
+              className="resize-y text-sm"
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="-mx-5 -mb-5 flex items-center justify-between border-t bg-muted/50 px-5 py-3">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleClose}
-            disabled={isPending}
-          >
+        <div className="-mx-5 -mb-5 flex items-center justify-end gap-2 border-t border-stroke-soft bg-neutral-50 dark:bg-neutral-900/40 px-5 py-3">
+          <Button variant="secondary" mode="outline" size="xs" className="text-xs" onClick={handleClose} disabled={isPending}>
             Dismiss
           </Button>
-          <Button
-            size="sm"
-            onClick={() => mutate()}
-            disabled={isPending}
-            className="bg-neutral-900 text-white"
-          >
+          <Button size="xs" variant="secondary" mode="filled" className="text-xs" onClick={handleSubmit} disabled={isPending}>
             {isPending ? "Saving…" : "Save & Close"}
           </Button>
         </div>
