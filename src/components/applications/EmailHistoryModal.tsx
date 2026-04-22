@@ -3,7 +3,10 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Mail } from "lucide-react";
 import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { parseAsString, parseAsStringLiteral, useQueryStates } from "nuqs";
+import { getEmailList } from "@/lib/api/email";
+import { EMAIL_KEYS } from "@/hooks/useEmail";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/primitives/dialog";
 import { EmailHistorySidebar } from "@/components/applications/EmailHistorySidebar";
 import { EmailHistoryList } from "@/components/applications/EmailHistoryList";
@@ -21,9 +24,10 @@ interface EmailHistoryModalProps {
   clientEmail: string;
   clientName: string;
   initialCompose?: { subject: string; html: string };
+  autoSelectLatest?: boolean;
 }
 
-export function EmailHistoryModal({ isOpen, onOpenChange, clientEmail, clientName, initialCompose }: EmailHistoryModalProps) {
+export function EmailHistoryModal({ isOpen, onOpenChange, clientEmail, clientName, initialCompose, autoSelectLatest }: EmailHistoryModalProps) {
   const [composeOpen, setComposeOpen] = useState(false);
 
   useEffect(() => {
@@ -45,6 +49,22 @@ export function EmailHistoryModal({ isOpen, onOpenChange, clientEmail, clientNam
       setComposeOpen(false);
     }
   }, [isOpen, setEmailState]);
+
+  const { data: latestEmailData } = useQuery({
+    queryKey: EMAIL_KEYS.list(undefined, clientEmail, undefined, 1, 1),
+    queryFn: () => getEmailList({ q: clientEmail, limit: 1 }),
+    enabled: isOpen && !!autoSelectLatest,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    if (!autoSelectLatest || emailId || !latestEmailData?.data?.[0]) return;
+    const thread = latestEmailData.data[0];
+    const navId = thread.thread_id ? `t-${thread.thread_id}` : `m-${thread._id}`;
+    void setEmailState({ emailId: navId });
+  }, [autoSelectLatest, latestEmailData, emailId, setEmailState]);
 
   const handleCategorySelect = (cat: EmailHistoryCategory) => {
     setEmailState({ emailCat: cat, emailId: "" });

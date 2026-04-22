@@ -60,6 +60,40 @@ export function useTotalUnreadCount() {
   return (data?.data ?? []).reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);
 }
 
+export function useLeadUnreadCount(
+  leadId: string,
+  clientName?: string,
+  userRole?: string,
+  username?: string,
+): number {
+  const { data: conversationsData } = useConversations({ limit: 50 });
+  const { data: clientsData } = useChatClients({
+    permissionMode: userRole === "admin" ? "restricted" : "unrestricted",
+    currentUsername: username ?? "",
+    search: clientName,
+  });
+
+  return useMemo(() => {
+    if (!leadId) return 0;
+    const allClients = clientsData?.data ?? [];
+    const target =
+      allClients.find((c) => c.lead_id === leadId) ??
+      (clientName
+        ? allClients.find(
+            (c) => c.name.trim().toLowerCase() === clientName.trim().toLowerCase(),
+          )
+        : null);
+    if (!target) return 0;
+    const conversations = conversationsData?.data ?? [];
+    const dm = conversations.find(
+      (conv) =>
+        conv.type === "dm" &&
+        conv.participants?.some((p) => p.type === "client" && p.id === target._id),
+    );
+    return dm?.unreadCount ?? 0;
+  }, [leadId, clientName, conversationsData, clientsData]);
+}
+
 export function useConversation(conversationId: string) {
   return useQuery({
     queryKey: CHAT_QUERY_KEYS.conversation(conversationId),

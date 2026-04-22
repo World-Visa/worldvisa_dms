@@ -167,8 +167,7 @@ const PersonaWithModel = memo(
         return;
       }
 
-      // Force a consistent persona color (black) regardless of theme.
-      const [r, g, b] = [0, 0, 0];
+      const [r, g, b] = theme === "dark" ? [255, 255, 255] : [0, 0, 0];
       viewModelInstanceColor.setRgb(r, g, b);
     }, [viewModelInstanceColor, theme, source.dynamicColor]);
 
