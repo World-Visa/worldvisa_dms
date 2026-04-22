@@ -56,8 +56,10 @@ export function useCallEvents() {
     // ── Targeted: action triggers for the specific agent only ─────────────────
     const unsubInbound = notificationSocket.onCallInbound((doc: CallLog) => {
       useLayoutStore.getState().openPhonePanel();
-      const caller = doc.client_name ?? doc.customer_phone ?? "Unknown";
-      showNotificationToast("Incoming call", `From: ${caller}`, undefined, { duration: 30_000 });
+      if (doc.direction === "inbound") {
+        const caller = doc.client_name ?? doc.customer_phone ?? "Unknown";
+        showNotificationToast("Incoming call", `From: ${caller}`, undefined, { duration: 30_000 });
+      }
     });
 
     const unsubHangup = notificationSocket.onCallHangup((doc: CallLog) => {
