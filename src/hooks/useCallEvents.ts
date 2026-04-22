@@ -60,7 +60,7 @@ export function useCallEvents() {
         const caller = doc.client_name ?? doc.customer_phone ?? "Unknown";
         showNotificationToast("Incoming call", `From: ${caller}`, undefined, {
           id: "incoming-call-toast",
-          duration: 30_000,
+          duration: 5_000, // 5 seconds
         });
       }
     });
