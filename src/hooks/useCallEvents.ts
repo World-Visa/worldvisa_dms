@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { showNotificationToast } from "@/components/ui/primitives/sonner-helpers";
 import { notificationSocket } from "@/lib/notificationSocket";
 import { callLogKeys } from "@/hooks/useCallLogs";
 import { useLayoutStore } from "@/store/layoutStore";
@@ -53,8 +54,10 @@ export function useCallEvents() {
     });
 
     // ── Targeted: action triggers for the specific agent only ─────────────────
-    const unsubInbound = notificationSocket.onCallInbound(() => {
+    const unsubInbound = notificationSocket.onCallInbound((doc: CallLog) => {
       useLayoutStore.getState().openPhonePanel();
+      const caller = doc.client_name ?? doc.customer_phone ?? "Unknown";
+      showNotificationToast("Incoming call", `From: ${caller}`, undefined, { duration: 30_000 });
     });
 
     const unsubHangup = notificationSocket.onCallHangup((doc: CallLog) => {
