@@ -11,6 +11,8 @@ export const ROUTES = {
   SPOUSE_SKILL_ASSESSMENT_APPLICATIONS: '/v2/spouse-skill-assessment-applications',
   SPOUSE_SKILL_ASSESSMENT_APPLICATION_DETAILS: (id: string) =>
     `/v2/spouse-skill-assessment-applications/${id}`,
+  SPOUSE_APPLICATION_CHECKLIST: (id: string) =>
+    `/v2/spouse-skill-assessment-applications/${id}/checklist`,
   CHECKLIST_REQUESTS: '/v2/checklist-requests',
   CHECKLIST_DOCS: '/v2/checklist-docs',
   CHECKLIST_DOCS_VISA: (visaType: string) =>

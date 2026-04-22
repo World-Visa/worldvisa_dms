@@ -39,6 +39,7 @@ interface SkillAssessmentLayoutProps {
     category: string,
   ) => void;
   isClientView?: boolean;
+  isSpouseApplication?: boolean;
   showSampleDocuments: boolean;
   onShowSampleDocuments: () => void;
   onHideSampleDocuments: () => void;
@@ -61,6 +62,7 @@ export function SkillAssessmentLayout({
   applicationId,
   onReuploadDocument,
   isClientView = false,
+  isSpouseApplication = false,
   showSampleDocuments,
   onShowSampleDocuments,
   onHideSampleDocuments,
@@ -70,11 +72,13 @@ export function SkillAssessmentLayout({
     DocumentStatus | null
   >(null);
 
+  const checklistHref = isSpouseApplication
+    ? ROUTES.SPOUSE_APPLICATION_CHECKLIST(applicationId)
+    : ROUTES.APPLICATION_CHECKLIST(applicationId);
+
   const createChecklistAction =
     !isClientView && checklistState.state === "none" ? (
-      <CreateChecklistButton
-        href={ROUTES.APPLICATION_CHECKLIST(applicationId)}
-      />
+      <CreateChecklistButton href={checklistHref} />
     ) : undefined;
 
   const documentsListLoading =

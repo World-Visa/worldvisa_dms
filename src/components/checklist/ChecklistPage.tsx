@@ -2,6 +2,7 @@
 
 import React, { useMemo } from "react";
 import { useApplicationDetails } from "@/hooks/useApplicationDetails";
+import { useSpouseApplicationDetails } from "@/hooks/useSpouseApplicationDetails";
 import { useAllApplicationDocuments } from "@/hooks/useApplicationDocuments";
 import { parseCompaniesFromDocuments } from "@/utils/companyParsing";
 import { useChecklistPage } from "./useChecklistPage";
@@ -20,7 +21,13 @@ export function ChecklistPage({
   applicationId,
   isSpouseApplication,
 }: ChecklistPageProps) {
-  const { data: applicationData } = useApplicationDetails(applicationId);
+  const regularQuery = useApplicationDetails(applicationId);
+  const spouseQuery = useSpouseApplicationDetails(applicationId, undefined, {
+    enabled: isSpouseApplication,
+  });
+
+  const applicationData = isSpouseApplication ? spouseQuery.data : regularQuery.data;
+
   const { data: documentsData, error: docsError } =
     useAllApplicationDocuments(applicationId);
 
@@ -31,11 +38,15 @@ export function ChecklistPage({
   );
   const recordType =
     (applicationData as { data?: { Record_Type?: string } })?.data
-      ?.Record_Type ?? "default_record_type";
+      ?.Record_Type ?? (isSpouseApplication ? "spouse_skill_assessment" : "default_record_type");
 
-  const visaServiceType =
+  const rawServiceType =
     (applicationData as { data?: { Service_Finalized?: string } })?.data
       ?.Service_Finalized ?? "";
+
+  const visaServiceType = isSpouseApplication && !rawServiceType
+    ? "Permanent Residency"
+    : rawServiceType;
 
   const applicationLabel =
     (applicationData as { data?: { Name?: string } })?.data?.Name ??

@@ -17,6 +17,10 @@ type LayoutStore = {
   openPhonePanel: () => void;
   closePhonePanel: () => void;
   togglePhonePanel: () => void;
+  niraPanelOpen: boolean;
+  niraPanelInitialQuery: string;
+  openNiraPanel: (query?: string) => void;
+  closeNiraPanel: () => void;
 };
 
 export const useLayoutStore = create<LayoutStore>((set) => ({
@@ -34,4 +38,8 @@ export const useLayoutStore = create<LayoutStore>((set) => ({
         ? { phonePanelOpen: false }
         : { phonePanelOpen: true, chatPanel: null },
     ),
+  niraPanelOpen: false,
+  niraPanelInitialQuery: '',
+  openNiraPanel: (query = '') => set({ niraPanelOpen: true, niraPanelInitialQuery: query }),
+  closeNiraPanel: () => set({ niraPanelOpen: false, niraPanelInitialQuery: '' }),
 }));
