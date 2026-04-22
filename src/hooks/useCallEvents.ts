@@ -18,7 +18,7 @@ export function useCallEvents() {
       queryClient.setQueriesData<CallLogListResponse>(
         { queryKey: callLogKeys.all(), exact: false },
         (old) => {
-          if (!old) return old;
+          if (!old?.data?.callLogs) return old;
           return {
             ...old,
             results: old.results + 1,
@@ -36,7 +36,7 @@ export function useCallEvents() {
       queryClient.setQueriesData<CallLogListResponse>(
         { queryKey: callLogKeys.all(), exact: false },
         (old) => {
-          if (!old) return old;
+          if (!old?.data?.callLogs) return old;
           return {
             ...old,
             data: {
