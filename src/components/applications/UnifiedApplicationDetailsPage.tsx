@@ -358,6 +358,10 @@ export default function UnifiedApplicationDetailsPage({
     handleStartChat();
   }, [handleStartChat]);
 
+  const handleCallLastComm = useCallback(() => {
+    setIsCallLogsModalOpen(true);
+  }, []);
+
   const handlePushForQualityCheck = useCallback(() => {
     if (!user?.username || !application?.id) {
       return;
@@ -504,6 +508,7 @@ export default function UnifiedApplicationDetailsPage({
           user={user}
           onEmailLastComm={handleEmailLastComm}
           onChatLastComm={handleChatLastComm}
+          onCallLastComm={handleCallLastComm}
         />
 
         <Tabs

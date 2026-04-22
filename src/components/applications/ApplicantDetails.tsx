@@ -16,6 +16,7 @@ interface ApplicantDetailsProps {
   suppressErrorUI?: boolean;
   onEmailLastComm?: () => void;
   onChatLastComm?: () => void;
+  onCallLastComm?: () => void;
 }
 
 function LabeledValueSkeleton({ label, className }: { label: string; className?: string }) {
@@ -132,6 +133,7 @@ export function ApplicantDetails({
   suppressErrorUI = false,
   onEmailLastComm,
   onChatLastComm,
+  onCallLastComm,
 }: ApplicantDetailsProps) {
 
   if (isLoading) {
@@ -168,6 +170,7 @@ export function ApplicantDetails({
             user={user}
             onEmailLastComm={onEmailLastComm}
             onChatLastComm={onChatLastComm}
+            onCallLastComm={onCallLastComm}
           />
         </div>
 
