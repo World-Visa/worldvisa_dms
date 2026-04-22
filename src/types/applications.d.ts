@@ -58,7 +58,7 @@ export interface Application {
   Spouse_Name?: string | null;
   last_communication_activity?:
     | string
-    | { date: string; provider: "chat" | "email" }
+    | { date: string; provider: "chat" | "email" | "call" }
     | null;
   spouse_lead_id?: string | null;
   online_status?: boolean;

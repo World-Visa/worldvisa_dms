@@ -95,10 +95,11 @@ export interface ApplicationInfoCardProps {
   user?: { role?: string } | null;
   onEmailLastComm?: () => void;
   onChatLastComm?: () => void;
+  onCallLastComm?: () => void;
 }
 
 // ─── Main component ───────────────────────────────────────
-export function ApplicationInfoCard({ application, isSpouseApplication, user, onEmailLastComm, onChatLastComm }: ApplicationInfoCardProps) {
+export function ApplicationInfoCard({ application, isSpouseApplication, user, onEmailLastComm, onChatLastComm, onCallLastComm }: ApplicationInfoCardProps) {
   const reduced = useReducedMotion();
 
   const lastComm = (() => {
@@ -359,6 +360,7 @@ export function ApplicationInfoCard({ application, isSpouseApplication, user, on
                 const handleClick =
                   lastComm.provider === "email" ? onEmailLastComm
                   : lastComm.provider === "chat" ? onChatLastComm
+                  : lastComm.provider === "call" ? onCallLastComm
                   : undefined;
                 const content = (
                   <>
@@ -380,6 +382,9 @@ export function ApplicationInfoCard({ application, isSpouseApplication, user, on
                       )}
                       {lastComm.provider === "chat" && (
                         <RiMessage3Fill className="w-3.5 h-3.5 text-blue-500" />
+                      )}
+                      {lastComm.provider === "call" && (
+                        <Image src="/icons/call.png" alt="Softphone" width={14} height={14} />
                       )}
                       <p
                         style={{ ...FF, fontSize: 13, fontWeight: 500, color: "#171717", lineHeight: "20px" }}
