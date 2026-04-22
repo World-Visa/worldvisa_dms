@@ -2,10 +2,11 @@ import { create } from "zustand";
 import type { CallLog } from "@/types/callLog";
 
 type CallDispositionStore = {
-  /** The call that just hung up and is awaiting agent disposition */
   pendingCall: CallLog | null;
   isModalOpen: boolean;
-  openDispositionModal: (call: CallLog) => void;
+  /** When true, a close button is shown and the modal can be dismissed without saving. */
+  closable: boolean;
+  openDispositionModal: (call: CallLog, closable?: boolean) => void;
   closeDispositionModal: () => void;
   clearPendingCall: () => void;
 };
@@ -13,7 +14,8 @@ type CallDispositionStore = {
 export const useCallDispositionStore = create<CallDispositionStore>((set) => ({
   pendingCall:           null,
   isModalOpen:           false,
-  openDispositionModal:  (call) => set({ pendingCall: call, isModalOpen: true }),
-  closeDispositionModal: ()     => set({ isModalOpen: false }),
-  clearPendingCall:      ()     => set({ pendingCall: null }),
+  closable:              false,
+  openDispositionModal:  (call, closable = false) => set({ pendingCall: call, isModalOpen: true, closable }),
+  closeDispositionModal: () => set({ isModalOpen: false }),
+  clearPendingCall:      () => set({ pendingCall: null }),
 }));

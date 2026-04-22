@@ -291,7 +291,7 @@ function ModalContent({ log: listLog, showApplicationLink = true }: { log: CallL
                   variant="secondary"
                   mode="outline"
                   leadingIcon={RiPencilLine}
-                  onClick={() => openDispositionModal(log)}
+                  onClick={() => openDispositionModal(log, true)}
                 >
                   Edit Disposition
                 </Button>
