@@ -58,7 +58,10 @@ export function useCallEvents() {
       useLayoutStore.getState().openPhonePanel();
       if (doc.direction === "inbound") {
         const caller = doc.client_name ?? doc.customer_phone ?? "Unknown";
-        showNotificationToast("Incoming call", `From: ${caller}`, undefined, { duration: 30_000 });
+        showNotificationToast("Incoming call", `From: ${caller}`, undefined, {
+          id: "incoming-call-toast",
+          duration: 30_000,
+        });
       }
     });
 

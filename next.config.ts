@@ -41,6 +41,7 @@ const nextConfig: NextConfig = {
       "workdrive.zohopublic.in",
       "res.cloudinary.com",
       "worldvisadms-files.worldvisadms.workers.dev",
+      "img.clerk.com",
     ],
   },
   experimental: {
