@@ -63,7 +63,7 @@ export function useUpdateCallNotes() {
       queryClient.setQueriesData<CallLogListResponse>(
         { queryKey: ["call-logs", "list"], exact: false },
         (old) => {
-          if (!old) return old;
+          if (!old?.data?.callLogs) return old;
           return {
             ...old,
             data: { callLogs: old.data.callLogs.map((l) => l.call_id === updated.call_id ? updated : l) },
