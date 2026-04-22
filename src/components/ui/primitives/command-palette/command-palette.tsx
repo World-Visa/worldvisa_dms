@@ -2,7 +2,6 @@
 
 import { useCommandState } from 'cmdk';
 import { useCallback, useEffect, useState } from 'react';
-import { Loader2, Search } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useGlobalSearch } from '@/hooks/useGlobalSearch';
 import * as CommandMenu from '@/components/ui/primitives/command-palette/command-menu';
@@ -15,7 +14,6 @@ import {
   RiFileLine,
   RiFlashlightLine,
   RiPlayFill,
-  RiQuestionLine,
   RiRouteFill,
   RiSearch2Line,
   RiSettings4Line,
@@ -24,7 +22,7 @@ import {
   RiArrowUpLine,
   RiArrowDownLine,
   RiCloseLine,
-  RiSearchLine
+  RiSearchLine,
 } from 'react-icons/ri';
 import { ListNoResults } from '@/components/applications/list-no-results';
 
@@ -56,18 +54,15 @@ function StatusBadge({ status }: { status: string }) {
 
 const CategoryIconWrapper = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div
-      className={'flex size-6 items-center justify-center rounded-8 bg-bg-weak text-text-sub border border-neutral-200'}
-    >
+    <div className="flex size-6 items-center justify-center rounded-8 bg-bg-weak text-text-sub border border-neutral-200">
       <div className="size-3.5 flex items-center justify-center">{children}</div>
     </div>
   );
 };
 
-
 const getDefaultIcon = (category: CommandCategory): React.ReactNode => {
   const defaultIcons: Record<CommandCategory, React.ReactNode> = {
-    'applications': <RiPlayFill />,
+    applications: <RiPlayFill />,
     'spouse-applications': <RiRouteFill />,
     'requested-docs': <RiFileLine />,
     'quality-check': <RiUserLine />,
@@ -78,9 +73,11 @@ const getDefaultIcon = (category: CommandCategory): React.ReactNode => {
   return defaultIcons[category];
 };
 
-const getCategoryActionLabel = (category: CommandCategory | undefined, value: string): string => {
+const getCategoryActionLabel = (category: CommandCategory | undefined, value: string | undefined): string => {
+  if (!value) return 'Open';
+
   const actionLabels: Record<CommandCategory, string> = {
-    'applications': 'Navigate to',
+    applications: 'Navigate to',
     'spouse-applications': 'Navigate to',
     'requested-docs': 'Navigate to',
     'quality-check': 'Navigate to',
@@ -89,21 +86,16 @@ const getCategoryActionLabel = (category: CommandCategory | undefined, value: st
     settings: 'Navigate to',
   };
 
-  // if (value.includes('Ask AI')) {
-  //   return 'Ask AI';
-  // } else if (!category) {
-  //   return 'Open Command';
-  // }
-
-  return actionLabels[category as CommandCategory];
+  return actionLabels[category as CommandCategory] ?? 'Open';
 };
-
-
 
 function PaletteFooter({ commands }: { commands: CommandType[] }) {
   const selectedValue = useCommandState((state) => state.value);
-  const selectedCommand = commands.find((cmd) => `${cmd.label} ${cmd.keywords?.join(' ') || ''}` === selectedValue);
+  const selectedCommand = commands.find(
+    (cmd) => `${cmd.label} ${cmd.keywords?.join(' ') || ''}` === selectedValue
+  );
 
+  const actionLabel = getCategoryActionLabel(selectedCommand?.category, selectedValue);
 
   return (
     <CommandMenu.Footer className="border-t border-stroke-soft bg-bg-weak">
@@ -119,8 +111,8 @@ function PaletteFooter({ commands }: { commands: CommandType[] }) {
           </div>
           <span className="text-sm font-normal text-text-soft">Navigate</span>
         </div>
-        <Button variant="primary" size="2xs" mode="gradient" className='text-sm font'>
-          <span>{getCategoryActionLabel(selectedCommand?.category, selectedValue)}</span>
+        <Button variant="primary" size="2xs" mode="gradient" className="text-sm font">
+          <span>{actionLabel}</span>
           <Kbd className="border border-white/30 bg-transparent ring-transparent px-0 size-4 justify-center items-center">
             <RiCornerDownLeftLine className="size-2.5 text-white" />
           </Kbd>
@@ -133,16 +125,27 @@ function PaletteFooter({ commands }: { commands: CommandType[] }) {
 export function CommandPalette() {
   const { isOpen, closeCommandPalette } = useCommandPalette();
   const [search, setSearch] = useState('');
-  const isSearching = search.trim().length >= 2;
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
-  const commandGroups = useCommandRegistry(search);
-  const allCommands = commandGroups.flatMap((g) => g.commands);
-
-  // React Query deduplicates this with the call inside useCommandRegistry
-  const { isLoading, isFetching } = useGlobalSearch(search);
+  const trimmed = search.trim();
+  const isSearching = trimmed.length >= 2;
+  const isLongQuery = trimmed.length > 50;
+  const searchQuery = isLongQuery ? '' : debouncedSearch;
 
   useEffect(() => {
-    if (!isOpen) setSearch('');
+    const t = setTimeout(() => setDebouncedSearch(trimmed), 450);
+    return () => clearTimeout(t);
+  }, [trimmed]);
+
+  const commandGroups = useCommandRegistry(searchQuery);
+  const allCommands = commandGroups.flatMap((g) => g.commands);
+
+  const { isLoading, isFetching } = useGlobalSearch(searchQuery);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSearch('');
+    }
   }, [isOpen]);
 
   const executeCommand = useCallback(
@@ -161,26 +164,28 @@ export function CommandPalette() {
 
   return (
     <CommandMenu.Dialog open={isOpen} onOpenChange={closeCommandPalette}>
-      {/* Search input */}
-      <div className="group/cmd-input flex items-center gap-2 p-3 bg-bg-weak">
-        <RiSearchLine className={cn('size-5 text-text-soft')} />
-        <CommandMenu.Input
-          value={search}
-          onValueChange={setSearch}
-          placeholder="Type a command, search..."
-          autoFocus
-          className="text-label-md text-text-sub placeholder:text-text-soft"
-        />
+      {/* Search bar */}
+      <div className="flex items-center gap-2 p-3 bg-bg-weak">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <RiSearchLine className="size-5 shrink-0 text-text-soft" />
+          <CommandMenu.Input
+            value={search}
+            onValueChange={setSearch}
+            placeholder="Search commands and pages..."
+            autoFocus
+            className="text-label-md text-text-sub placeholder:text-text-soft"
+          />
+        </div>
         <button
           onClick={closeCommandPalette}
-          className="size-4 items-center justify-center rounded-6 text-text-soft hover:text-icon-sub transition-colors"
+          className="size-4 shrink-0 flex items-center justify-center rounded-6 text-text-soft hover:text-icon-sub transition-colors"
         >
           <RiCloseLine className="size-4" />
         </button>
       </div>
 
       <CommandMenu.List className="py-0 min-h-[400px]">
-        {isSearching && !isLoading && commandGroups.length === 0 && (
+        {isSearching && !isLongQuery && !isLoading && !isFetching && commandGroups.length === 0 && (
           <CommandMenu.Empty>
             <ListNoResults
               title={`No results found for "${search}"`}
@@ -227,14 +232,7 @@ export function CommandPalette() {
           </CommandMenu.Group>
         ))}
 
-        {/* AI / Inkeep search — commented out, implement later */}
-        {/* {isSearching && (
-          <CommandMenu.Group heading="AI Assistant">
-            <CommandMenu.Item value={`Ask AI ${search}`} onSelect={openAiDrawer}>
-              Ask AI &quot;{search}&quot;
-            </CommandMenu.Item>
-          </CommandMenu.Group>
-        )} */}
+
       </CommandMenu.List>
 
       <PaletteFooter commands={allCommands} />

@@ -1,0 +1,7 @@
+export function AiSparkels(props: React.ComponentPropsWithoutRef<'svg'>) {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" fill="#737373" viewBox="0 0 256 256" stroke="null" strokeWidth="1px" strokeLinecap="butt" strokeLinejoin="miter" strokeDashoffset="0px" opacity="1" fillOpacity="1" strokeOpacity="1" fontFamily="&quot;Inter Variable&quot;, ui-sans-serif, system-ui, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;" fontSize="14px" fontWeight="500" textAnchor="start" dominantBaseline="auto" stopColor="#000000" stopOpacity="1" {...props}>
+            <path d="M208,144a15.78,15.78,0,0,1-10.42,14.94L146,178l-19,51.62a15.92,15.92,0,0,1-29.88,0L78,178l-51.62-19a15.92,15.92,0,0,1,0-29.88L78,110l19-51.62a15.92,15.92,0,0,1,29.88,0L146,110l51.62,19A15.78,15.78,0,0,1,208,144ZM152,48h16V64a8,8,0,0,0,16,0V48h16a8,8,0,0,0,0-16H184V16a8,8,0,0,0-16,0V32H152a8,8,0,0,0,0,16Zm88,32h-8V72a8,8,0,0,0-16,0v8h-8a8,8,0,0,0,0,16h8v8a8,8,0,0,0,16,0V96h8a8,8,0,0,0,0-16Z" fill="#737373" stroke="null" strokeWidth="1px" strokeLinecap="butt" strokeLinejoin="miter" strokeDashoffset="0px" opacity="1" fillOpacity="1" strokeOpacity="1" fontFamily="&quot;Inter Variable&quot;, ui-sans-serif, system-ui, sans-serif, &quot;Apple Color Emoji&quot;, &quot;Segoe UI Emoji&quot;, &quot;Segoe UI Symbol&quot;, &quot;Noto Color Emoji&quot;" fontSize="14px" fontWeight="500" textAnchor="start" dominantBaseline="auto" stopColor="#000000" stopOpacity="1" />
+        </svg>
+    );
+}

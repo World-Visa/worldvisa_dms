@@ -17,6 +17,7 @@ import { PhoneIncoming } from "../icons/phone-incoming";
 import { PhoneOutgoing } from "../icons/phone-outgoing";
 import Link from "next/link";
 import { ROUTES } from "@/utils/routes";
+import TruncatedText from "../ui/truncated-text";
 
 interface CallLogTableRowProps {
   log: CallLog;
@@ -101,9 +102,9 @@ export const CallLogTableRow = memo(function CallLogTableRow({ log, onView }: Ca
 
       {/* Start Time */}
       <TableCell>
-        <span className="text-sm text-muted-foreground tabular-nums">
+        <TruncatedText className="text-sm text-muted-foreground tabular-nums">
           {log.start_time ? formatStartTime(log.start_time) : "—"}
-        </span>
+        </TruncatedText>
       </TableCell>
     </TableRow>
   );

@@ -248,4 +248,7 @@ export const API_ENDPOINTS = {
     PROFILE_IMAGE: `${ZOHO_BASE_URL}/users/profile-image`,
     CHECK_AVAILABILITY: "/api/users/check-availability",
   },
+  NIRA: {
+    CHAT: `${ZOHO_BASE_URL}/nira/chat`,
+  },
 } as const;

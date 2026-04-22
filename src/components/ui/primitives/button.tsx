@@ -90,7 +90,7 @@ const buttonRootVariants = cva(
       {
         variant: 'secondary',
         mode: 'ghost',
-        class: 'bg-transparent text-text-sub ring-transparent hover:bg-bg-weak hover:text-text-strong focus-visible:bg-bg-white focus-visible:text-text-strong focus-visible:shadow-button-important-focus focus-visible:ring-stroke-strong',
+        class: 'bg-transparent text-text-sub ring-transparent hover:bg-gray-50 hover:text-text-strong focus-visible:bg-bg-white focus-visible:text-text-strong focus-visible:shadow-button-important-focus focus-visible:ring-stroke-strong',
       },
       {
         variant: 'secondary',

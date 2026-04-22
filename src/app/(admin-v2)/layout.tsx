@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { Suspense } from "react";
 import { ChatPanelController } from "@/app/(admin-v2)/chat-panel-controller";
+import { NiraPanelController } from "@/app/(admin-v2)/nira-panel-controller";
 import { PhonePanelController } from "@/app/(admin-v2)/phone-panel-controller";
 import { NuqsAdapter } from "nuqs/adapters/next/app";
 
@@ -19,6 +20,7 @@ import { SidebarController } from "@/app/(admin-v2)/sidebar-controller";
 import { McubePhoneWidgetLoader } from "@/components/mcube/McubePhoneWidgetLoader";
 import PhoneCard from "@/components/mcube/PhoneCard";
 import { CallEventsSetup } from "@/components/mcube/CallEventsSetup";
+import { AskNiraButton } from "@/components/ui/ai-elements/ask-nira-button";
 
 function AdminContentFallback() {
   return (
@@ -63,6 +65,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <SearchDialog />
             </div>
             <div className="flex items-center gap-1">
+              {/* <AskNiraButton /> */}
               <PhoneCard />
               <Inbox />
               <Separator orientation="vertical" className="mx-1 data-[orientation=vertical]:h-6" />
@@ -80,6 +83,9 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
           </NuqsAdapter>
           <Suspense fallback={null}>
             <ChatPanelController />
+          </Suspense>
+          <Suspense fallback={null}>
+            <NiraPanelController />
           </Suspense>
           <Suspense fallback={null}>
             <PhonePanelController />

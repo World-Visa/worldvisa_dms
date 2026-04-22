@@ -54,7 +54,7 @@ const CommandInput = React.forwardRef<
     <Command.Input
       ref={forwardedRef}
       className={cn(
-        'w-full bg-transparent text-sm text-foreground-950 outline-hidden',
+        'w-full bg-transparent text-base text-foreground-950 outline-hidden',
         'transition duration-200 ease-out',
         'placeholder:text-foreground-400',
         'focus:outline-hidden',

@@ -463,6 +463,7 @@ export default function UnifiedApplicationDetailsPage({
           unreadChatCount={unreadChatCount}
           userRole={user?.role}
           qcRequested={application?.qc_requested}
+          isSpouseApplication={isSpouseApplication}
         />
       </div>
 
@@ -515,6 +516,7 @@ export default function UnifiedApplicationDetailsPage({
                 checklistState={checklistState}
                 applicationId={applicationId}
                 onReuploadDocument={handleReuploadDocument}
+                isSpouseApplication={isSpouseApplication}
                 showSampleDocuments={showSampleDocuments}
                 onShowSampleDocuments={handleShowSampleDocuments}
                 onHideSampleDocuments={handleHideSampleDocuments}

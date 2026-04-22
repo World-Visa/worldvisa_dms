@@ -53,6 +53,7 @@ interface ApplicationDetailsHeaderProps {
   userRole?: string;
   qcRequested?: QcRequested | null;
   applicationId: string;
+  isSpouseApplication?: boolean;
 }
 
 function QcStatusButton({
@@ -117,6 +118,7 @@ export function ApplicationDetailsHeader({
   userRole,
   qcRequested,
   applicationId,
+  isSpouseApplication = false,
 }: ApplicationDetailsHeaderProps) {
   const router = useRouter();
   const isAdmin = userRole !== "client";
@@ -161,7 +163,10 @@ export function ApplicationDetailsHeader({
   const navigateToChecklist = () => {
     startTransition(() => {
       addTransitionType("nav-forward");
-      router.push(ROUTES.APPLICATION_CHECKLIST(applicationId));
+      const href = isSpouseApplication
+        ? ROUTES.SPOUSE_APPLICATION_CHECKLIST(applicationId)
+        : ROUTES.APPLICATION_CHECKLIST(applicationId);
+      router.push(href);
     });
   };
 
