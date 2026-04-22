@@ -1,5 +1,5 @@
 export const MCUBE_WIDGET_AUTH_BASE =
-  "https://mcube.vmc.in/widget-dev/Phone/auth";
+  "https://mcube.vmc.in/common-widget/Phone/auth";
 
 export function buildMcubeWidgetIframeSrc(
   username: string,
