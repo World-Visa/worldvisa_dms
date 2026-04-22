@@ -14,6 +14,8 @@ interface ApplicantDetailsProps {
   user: { role?: string } | null;
   isSpouseApplication?: boolean;
   suppressErrorUI?: boolean;
+  onEmailLastComm?: () => void;
+  onChatLastComm?: () => void;
 }
 
 function LabeledValueSkeleton({ label, className }: { label: string; className?: string }) {
@@ -128,6 +130,8 @@ export function ApplicantDetails({
   user,
   isSpouseApplication = false,
   suppressErrorUI = false,
+  onEmailLastComm,
+  onChatLastComm,
 }: ApplicantDetailsProps) {
 
   if (isLoading) {
@@ -162,6 +166,8 @@ export function ApplicantDetails({
             application={application}
             isSpouseApplication={isSpouseApplication}
             user={user}
+            onEmailLastComm={onEmailLastComm}
+            onChatLastComm={onChatLastComm}
           />
         </div>
 

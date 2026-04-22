@@ -93,10 +93,12 @@ export interface ApplicationInfoCardProps {
   application: Application;
   isSpouseApplication: boolean;
   user?: { role?: string } | null;
+  onEmailLastComm?: () => void;
+  onChatLastComm?: () => void;
 }
 
 // ─── Main component ───────────────────────────────────────
-export function ApplicationInfoCard({ application, isSpouseApplication, user }: ApplicationInfoCardProps) {
+export function ApplicationInfoCard({ application, isSpouseApplication, user, onEmailLastComm, onChatLastComm }: ApplicationInfoCardProps) {
   const reduced = useReducedMotion();
 
   const lastComm = (() => {
@@ -353,36 +355,53 @@ export function ApplicationInfoCard({ application, isSpouseApplication, user }: 
                 </p>
               </div>
               <InfoField label="Assessing Authority" value={formatValue(application.Assessing_Authority ?? "")} />
-              {lastComm && (
-                <div>
-                  <p
-                    style={{
-                      ...FF,
-                      fontSize: 11,
-                      color: "#a3a3a3",
-                      fontWeight: 500,
-                      marginBottom: 2,
-                      lineHeight: "16px",
-                    }}
-                  >
-                    Last Communication
-                  </p>
-                  <div className="flex items-center gap-1.5">
-                    {lastComm.provider === "email" && (
-                      <Image src="/gmail-icon.svg" alt="Email" width={14} height={14} />
-                    )}
-                    {lastComm.provider === "chat" && (
-                      <RiMessage3Fill className="w-3.5 h-3.5 text-blue-500" />
-                    )}
+              {lastComm && (() => {
+                const handleClick =
+                  lastComm.provider === "email" ? onEmailLastComm
+                  : lastComm.provider === "chat" ? onChatLastComm
+                  : undefined;
+                const content = (
+                  <>
                     <p
-                      style={{ ...FF, fontSize: 13, fontWeight: 500, color: "#171717", lineHeight: "20px" }}
-                      className="select-none"
+                      style={{
+                        ...FF,
+                        fontSize: 11,
+                        color: "#a3a3a3",
+                        fontWeight: 500,
+                        marginBottom: 2,
+                        lineHeight: "16px",
+                      }}
                     >
-                      {formatDate(lastComm.date, "datetime")}
+                      Last Communication
                     </p>
-                  </div>
-                </div>
-              )}
+                    <div className="flex items-center gap-1.5">
+                      {lastComm.provider === "email" && (
+                        <Image src="/gmail-icon.svg" alt="Email" width={14} height={14} />
+                      )}
+                      {lastComm.provider === "chat" && (
+                        <RiMessage3Fill className="w-3.5 h-3.5 text-blue-500" />
+                      )}
+                      <p
+                        style={{ ...FF, fontSize: 13, fontWeight: 500, color: "#171717", lineHeight: "20px" }}
+                        className="select-none"
+                      >
+                        {formatDate(lastComm.date, "datetime")}
+                      </p>
+                    </div>
+                  </>
+                );
+                return handleClick ? (
+                  <button
+                    type="button"
+                    onClick={handleClick}
+                    className="text-left cursor-pointer rounded-lg px-1.5 py-1 -mx-1.5 -my-1 transition-colors hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20"
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div>{content}</div>
+                );
+              })()}
             </motion.div>
 
             {/* Column 4 — Assets & Files */}

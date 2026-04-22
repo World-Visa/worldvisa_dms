@@ -47,7 +47,7 @@ import {
 } from "@/types/applications";
 import { useRouter } from "next/navigation";
 import { useLayoutStore } from "@/store/layoutStore";
-import { useTotalUnreadCount } from "@/hooks/useChat";
+import { useLeadUnreadCount } from "@/hooks/useChat";
 import { useDeepLinkDocument } from "@/hooks/useDeepLinkDocument";
 import {
   useEffect,
@@ -275,6 +275,7 @@ export default function UnifiedApplicationDetailsPage({
   >();
 
   const [isCallLogsModalOpen, setIsCallLogsModalOpen] = useState(false);
+  const [emailAutoSelectLatest, setEmailAutoSelectLatest] = useState(false);
 
   const handleSendReminderEmail = useCallback(() => {
     const docs = mandatoryDocValidationDetails.map((d) => ({
@@ -331,7 +332,12 @@ export default function UnifiedApplicationDetailsPage({
   }, [isSampleQuery, setChecklistUrlState, urlCategoryParam]);
 
   const openChatPanel = useLayoutStore((s) => s.openChatPanel);
-  const unreadChatCount = useTotalUnreadCount();
+  const unreadChatCount = useLeadUnreadCount(
+    application?.id ?? "",
+    application?.Name,
+    user?.role,
+    user?.username,
+  );
 
   const handleStartChat = useCallback(() => {
     if (!application) return;
@@ -342,6 +348,15 @@ export default function UnifiedApplicationDetailsPage({
       clientName: application.Name,
     });
   }, [application, applicationId, openChatPanel]);
+
+  const handleEmailLastComm = useCallback(() => {
+    setEmailAutoSelectLatest(true);
+    modals.openEmailHistoryModal();
+  }, [modals]);
+
+  const handleChatLastComm = useCallback(() => {
+    handleStartChat();
+  }, [handleStartChat]);
 
   const handlePushForQualityCheck = useCallback(() => {
     if (!user?.username || !application?.id) {
@@ -487,6 +502,8 @@ export default function UnifiedApplicationDetailsPage({
           suppressErrorUI
           isSpouseApplication={isSpouseApplication}
           user={user}
+          onEmailLastComm={handleEmailLastComm}
+          onChatLastComm={handleChatLastComm}
         />
 
         <Tabs
@@ -622,11 +639,15 @@ export default function UnifiedApplicationDetailsPage({
         isOpen={modals.isEmailHistoryModalOpen}
         onOpenChange={(open) => {
           modals.setEmailHistoryModalOpen(open);
-          if (!open) setReminderEmailData(undefined);
+          if (!open) {
+            setReminderEmailData(undefined);
+            setEmailAutoSelectLatest(false);
+          }
         }}
         clientEmail={application?.Email ?? ""}
         clientName={application?.Name ?? ""}
         initialCompose={reminderEmailData}
+        autoSelectLatest={emailAutoSelectLatest}
       />
 
       <CallLogsModal

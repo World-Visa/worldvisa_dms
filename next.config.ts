@@ -23,7 +23,8 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Permissions-Policy",
-            value: "camera=(), microphone=(), geolocation=()",
+            value:
+              'camera=(self "https://mcube.vmc.in"), microphone=(self "https://mcube.vmc.in"), geolocation=()',
           },
           {
             key: "Strict-Transport-Security",

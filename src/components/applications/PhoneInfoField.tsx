@@ -30,16 +30,18 @@ export function PhoneInfoField({ label, value, reduced }: PhoneInfoFieldProps) {
 
   const handleCall = useCallback(async () => {
     if (!isProvided || isPending) return;
-    useLayoutStore.getState().openPhonePanel();
     setIsPending(true);
-    const toastId = toast.loading("Connecting call…");
+    useLayoutStore.getState().openPhonePanel();
+    const toastId = toast.loading("Softphone is connecting…");
     try {
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      toast.loading("Initiating call…", { id: toastId });
       await initiateOutboundCall(value, exenumber);
       toast.success("Call initiated", { id: toastId, description: `Calling ${value}` });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Call failed", {
         id: toastId,
-        description: err?.message ?? "Could not connect the call. Try again.",
+        description: err instanceof Error ? err.message : "Could not connect the call. Try again.",
       });
     } finally {
       setIsPending(false);
