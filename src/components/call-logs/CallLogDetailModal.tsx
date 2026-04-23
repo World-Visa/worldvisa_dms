@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import { motion } from "motion/react";
 import { RiPhoneLine, RiPencilLine } from "react-icons/ri";
 import { Cross2Icon, ExternalLinkIcon } from "@radix-ui/react-icons";
@@ -11,18 +11,11 @@ import { Button } from "@/components/ui/primitives/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/primitives/avatar";
 import { Label } from "@/components/ui/primitives/label";
 import { Separator } from "@/components/ui/primitives/separator";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/primitives/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useCallLogDetail } from "@/hooks/useCallLogs";
-import { AGENT_STATUS_OPTIONS } from "@/lib/constants/callDisposition";
+import { formatAgentStatus, DIAL_STATUS } from "@/lib/constants/callDisposition";
 import { useCallDispositionStore } from "@/store/callDispositionStore";
-import type { CallLog, CallAgentStatus } from "@/types/callLog";
+import type { CallLog } from "@/types/callLog";
 import {
   CALL_STATUS_BADGE,
   CALL_STATUS_FALLBACK,
@@ -131,15 +124,9 @@ function ModalContent({ log: listLog, showApplicationLink = true }: { log: CallL
   const { data, isLoading } = useCallLogDetail(listLog.call_id);
   const log = data?.data?.callLog ?? listLog;
 
-  const [agentStatus, setAgentStatus] = useState<CallAgentStatus | "">(log.call_agent_status ?? "");
-  const [note, setNote] = useState(log.call_note ?? "");
-
-  useEffect(() => {
-    if (data?.data?.callLog) {
-      setAgentStatus(data.data.callLog.call_agent_status ?? "");
-      setNote(data.data.callLog.call_note ?? "");
-    }
-  }, [data]);
+  const isCompleted    = log.dial_status?.toLowerCase() === DIAL_STATUS.ANSWER;
+  const isMissed       = log.dial_status?.toLowerCase() === DIAL_STATUS.NOANSWER;
+  const hasDisposition = isCompleted || isMissed;
 
   const { openDispositionModal } = useCallDispositionStore();
 
@@ -282,52 +269,52 @@ function ModalContent({ log: listLog, showApplicationLink = true }: { log: CallL
               </Section>
             )}
 
-            <Section
-              title="Call Disposition"
-              action={
-                <Button
-                  size="xs"
-                  className="text-xs"
-                  variant="secondary"
-                  mode="outline"
-                  leadingIcon={RiPencilLine}
-                  onClick={() => openDispositionModal(log, true)}
-                >
-                  Edit Disposition
-                </Button>
-              }
-            >
-              <div className="flex flex-col gap-3.5">
-                <div className="flex flex-col gap-1.5">
-                  <Label htmlFor="call-outcome" className="text-sm">Call Outcome</Label>
-                  <Select value={agentStatus} disabled>
-                    <SelectTrigger id="call-outcome" disabled>
-                      <SelectValue placeholder="No outcome set" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {AGENT_STATUS_OPTIONS.map((opt) => (
-                        <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+            {hasDisposition && (
+              <Section
+                title="Call Disposition"
+                action={
+                  <Button
+                    size="xs"
+                    className="text-xs"
+                    variant="secondary"
+                    mode="outline"
+                    leadingIcon={RiPencilLine}
+                    onClick={() => openDispositionModal(log, true)}
+                  >
+                    Edit Disposition
+                  </Button>
+                }
+              >
+                <div className="flex flex-col gap-3.5">
+                  {isCompleted ? (
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="call-note" className="text-sm">
+                        Note&nbsp;
+                        <span className="font-normal text-xs text-muted-foreground">(optional)</span>
+                      </Label>
+                      <Textarea
+                        id="call-note"
+                        rows={3}
+                        placeholder="No note added"
+                        value={log.call_note ?? ""}
+                        disabled
+                        className="resize-none text-sm"
+                      />
+                    </div>
+                  ) : (
+                    <div className="flex flex-col gap-1.5">
+                      <Label htmlFor="call-outcome" className="text-sm">Call Outcome</Label>
+                      <div
+                        id="call-outcome"
+                        className="flex h-9 items-center rounded-md border border-input bg-muted px-3 text-sm text-muted-foreground"
+                      >
+                        {formatAgentStatus(log.call_agent_status)}
+                      </div>
+                    </div>
+                  )}
                 </div>
-
-                <div className="flex flex-col gap-1">
-                  <Label htmlFor="call-note" className="text-sm">
-                    Note&nbsp;
-                    <span className="font-normal text-xs text-muted-foreground">(optional)</span>
-                  </Label>
-                  <Textarea
-                    id="call-note"
-                    rows={3}
-                    placeholder="No note added"
-                    value={note}
-                    disabled
-                    className="resize-none text-sm"
-                  />
-                </div>
-              </div>
-            </Section>
+              </Section>
+            )}
           </>
         )}
       </motion.div>

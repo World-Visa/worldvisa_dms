@@ -8,13 +8,7 @@ export type CallStatus =
   | 'busy'
   | 'cancelled';
 
-export type CallAgentStatus =
-  | 'unanswered'
-  | 'client_busy'
-  | 'client_asked_call_later'
-  | 'not_connected'
-  | 'answered'
-  | 'none';
+export type CallAgentStatus = string;
 
 export type CallDirection = 'inbound' | 'outbound';
 

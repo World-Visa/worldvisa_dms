@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
-import { CheckCircle2, ArrowRight, ArrowLeft, X } from "lucide-react";
+import { CheckCircle2, X } from "lucide-react";
 import { VisuallyHidden } from "@radix-ui/react-visually-hidden";
 import Image from "next/image";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { useCallDispositionStore } from "@/store/callDispositionStore";
 import { useUpdateCallNotes } from "@/hooks/useCallLogs";
-import { AGENT_STATUS_OPTIONS } from "@/lib/constants/callDisposition";
+import { MISSED_CALL_OPTIONS, DIAL_STATUS } from "@/lib/constants/callDisposition";
 import { formatCallDuration } from "@/lib/constants/callLogs";
 import { getInitials } from "@/lib/constants/users";
 import { showSuccessToast, showErrorToast } from "@/components/ui/primitives/sonner-helpers";
@@ -21,62 +21,60 @@ import {
   SPRING_LAYOUT,
   SPRING_PRESS,
 } from "@/components/applications/deadline/deadline-motion";
-import type { CallAgentStatus } from "@/types/callLog";
-
-const OUTCOME_OPTIONS = AGENT_STATUS_OPTIONS.filter((o) => o.value !== "none");
 
 export function CallDispositionModal() {
   const { isModalOpen, closable, pendingCall, closeDispositionModal, clearPendingCall } =
     useCallDispositionStore();
 
-  const [view, setView] = useState<"outcome" | "note">("outcome");
-  const [callAgentStatus, setCallAgentStatus] = useState<CallAgentStatus | "">("");
+  const [callAgentStatus, setCallAgentStatus] = useState("");
   const [callNote, setCallNote] = useState("");
   const noteRef = useRef<HTMLTextAreaElement>(null);
   const reduced = useReducedMotion();
   const { mutate, isPending } = useUpdateCallNotes();
 
-  useEffect(() => {
-    if (pendingCall) {
-      setCallAgentStatus(pendingCall.call_agent_status ?? "");
-      setCallNote(pendingCall.call_note ?? "");
-      setView("outcome");
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pendingCall?._id]);
+  const isCompleted = pendingCall?.dial_status?.toLowerCase() === DIAL_STATUS.ANSWER;
+  const isMissed    = pendingCall?.dial_status?.toLowerCase() === DIAL_STATUS.NOANSWER;
 
   useEffect(() => {
-    if (view === "note") {
+    if (!pendingCall || !isModalOpen) return;
+    if (pendingCall.dial_status?.toLowerCase() === DIAL_STATUS.ANSWER) {
+      setCallAgentStatus(pendingCall.dial_status);
+      setCallNote(pendingCall.call_note ?? "");
+    } else {
+      setCallAgentStatus(pendingCall.call_agent_status ?? "");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isModalOpen, pendingCall?._id]);
+
+  useEffect(() => {
+    if (isCompleted && isModalOpen) {
       const id = setTimeout(() => noteRef.current?.focus(), 60);
       return () => clearTimeout(id);
     }
-  }, [view]);
+  }, [isCompleted, isModalOpen]);
 
   function handleDismiss() {
     if (!closable) return;
     setCallAgentStatus("");
     setCallNote("");
-    setView("outcome");
     closeDispositionModal();
     setTimeout(clearPendingCall, 200);
   }
 
   function handleSave() {
-    if (!pendingCall || !callAgentStatus || !callNote.trim() || isPending) return;
+    if (!pendingCall || isPending) return;
+
+    const payload = isCompleted
+      ? { call_agent_status: pendingCall.dial_status, call_note: callNote.trim() || null }
+      : { call_agent_status: callAgentStatus || null, call_note: null };
+
     mutate(
-      {
-        callId: pendingCall.call_id,
-        payload: {
-          call_agent_status: callAgentStatus as CallAgentStatus,
-          call_note: callNote.trim(),
-        },
-      },
+      { callId: pendingCall.call_id, payload },
       {
         onSuccess: () => {
           showSuccessToast("Call disposition saved");
           setCallAgentStatus("");
           setCallNote("");
-          setView("outcome");
           closeDispositionModal();
           setTimeout(clearPendingCall, 200);
         },
@@ -87,11 +85,13 @@ export function CallDispositionModal() {
 
   if (!pendingCall) return null;
 
-  const caller = pendingCall.client_name ?? pendingCall.customer_phone ?? "Unknown Caller";
+  const caller   = pendingCall.client_name ?? pendingCall.customer_phone ?? "Unknown Caller";
   const initials = getInitials(caller);
   const duration = formatCallDuration(pendingCall.answered_duration);
-  const canGoNext = callAgentStatus !== "";
-  const canSave = callNote.trim().length > 0 && !isPending;
+
+  const canSave = isCompleted
+    ? callNote.trim().length > 0 && !isPending
+    : callAgentStatus !== "" && !isPending;
 
   return (
     <Dialog open={isModalOpen} modal>
@@ -101,6 +101,7 @@ export function CallDispositionModal() {
         onEscapeKeyDown={(e) => { if (!closable) e.preventDefault(); else handleDismiss(); }}
         className="p-1 border-0 overflow-hidden sm:max-w-[360px]"
         style={{
+          zIndex: 200,
           borderRadius: 24,
           background: "#f7f7f7",
           boxShadow:
@@ -121,21 +122,18 @@ export function CallDispositionModal() {
           transition={SPRING_LAYOUT}
         >
           <AnimatePresence mode="popLayout" initial={false}>
-            {view === "outcome" ? (
+            {/* ── Missed call: outcome chips only ── */}
+            {isMissed && (
               <motion.div
-                key="outcome"
+                key="missed"
                 className="flex flex-col w-full"
                 style={{ gap: 8, paddingTop: 12 }}
                 initial={{ opacity: 0, y: reduced ? 0 : 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{
-                  opacity: 0,
-                  scale: 0.97,
-                  transition: { duration: 0.14, ease: [0.4, 0, 1, 1] },
-                }}
+                exit={{ opacity: 0, scale: 0.97, transition: { duration: 0.14, ease: [0.4, 0, 1, 1] } }}
                 transition={reduced ? { duration: 0.15 } : SPRING_ENTRY}
               >
-                {/* ── Modal header ───────────────────────── */}
+                {/* Header */}
                 <div
                   className="flex flex-col gap-2"
                   style={{ paddingLeft: 10, paddingRight: 10, paddingTop: 4 }}
@@ -148,15 +146,13 @@ export function CallDispositionModal() {
                       >
                         Log this call
                       </p>
-
                       <p
                         className="text-[13px] leading-[20px] tracking-[-0.078px] text-[#737373] select-none"
                         style={{ fontFeatureSettings: "'ss11', 'calt' 0" }}
                       >
-                        Select an outcome and add a note before closing.
+                        Select why the call wasn't answered.
                       </p>
                     </div>
-
                     {closable && (
                       <motion.button
                         type="button"
@@ -172,107 +168,17 @@ export function CallDispositionModal() {
                       </motion.button>
                     )}
                   </div>
-
-
                 </div>
 
-                {/* iPhone-style caller card */}
-                <div
-                  style={{
-                    borderRadius: DEADLINE_INNER_CARD_RADIUS_PX,
-                    background: "white",
-                    boxShadow: DEADLINE_WHITE_CARD_SHADOW,
-                    paddingTop: 20,
-                    paddingBottom: 20,
-                    paddingLeft: 14,
-                    paddingRight: 14,
-                  }}
-                >
-                  <div className="flex flex-col items-center gap-3">
-                    {/* Avatar */}
-                    <div
-                      className="flex items-center justify-center shrink-0 font-semibold select-none overflow-hidden"
-                      style={{
-                        width: 64,
-                        height: 64,
-                        borderRadius: "50%",
-                        background: "#f0f0f0",
-                        border: "2.5px solid #e5e5e5",
-                        fontSize: 22,
-                        letterSpacing: "-0.5px",
-                        color: "#525252",
-                        fontFeatureSettings: "'ss11', 'calt' 0",
-                      }}
-                    >
-                      {pendingCall.client_image_url ? (
-                        <Image
-                          src={pendingCall.client_image_url}
-                          alt={caller}
-                          width={64}
-                          height={64}
-                          className="object-cover"
-                          style={{ borderRadius: "50%" }}
-                        />
-                      ) : (
-                        initials
-                      )}
-                    </div>
+                {/* Caller card */}
+                <CallerCard
+                  pendingCall={pendingCall}
+                  caller={caller}
+                  initials={initials}
+                  duration={duration}
+                />
 
-                    {/* Name + phone */}
-                    <div className="flex flex-col items-center gap-0.5">
-                      <p
-                        className="font-semibold text-[17px] leading-[24px] tracking-[-0.34px] text-[#171717] select-none text-center"
-                        style={{ fontFeatureSettings: "'ss11', 'calt' 0" }}
-                      >
-                        {caller}
-                      </p>
-                      <p
-                        className="text-[12px] leading-[16px] tracking-[-0.06px] text-[#a3a3a3] select-none"
-                        style={{ fontFeatureSettings: "'ss11', 'calt' 0" }}
-                      >
-                        {pendingCall.customer_phone}
-                      </p>
-                    </div>
-
-                    {/* Call Ended + duration row */}
-                    <div className="flex items-center gap-2">
-                      <span
-                        className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium leading-4 select-none"
-                        style={{
-                          background: "#fef2f2",
-                          color: "#ef4444",
-                          fontFeatureSettings: "'ss11', 'calt' 0",
-                        }}
-                      >
-                        <span
-                          className="rounded-full shrink-0"
-                          style={{ width: 5, height: 5, background: "#ef4444" }}
-                          aria-hidden
-                        />
-                        Call Ended
-                      </span>
-
-                      <span
-                        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full select-none"
-                        style={{ background: "#f5f5f5", border: "1px solid #ebebeb" }}
-                      >
-                        <span
-                          className="rounded-full shrink-0"
-                          style={{ width: 5, height: 5, background: "#d4d4d4" }}
-                          aria-hidden
-                        />
-                        <span
-                          className="text-[12px] leading-[16px] tracking-[-0.06px] font-medium text-[#737373]"
-                          style={{ fontFeatureSettings: "'ss11', 'calt' 0", fontVariantNumeric: "tabular-nums" }}
-                        >
-                          {duration}
-                        </span>
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Outcome chips */}
+                {/* Missed outcome chips */}
                 <div
                   style={{
                     borderRadius: DEADLINE_INNER_CARD_RADIUS_PX,
@@ -291,91 +197,27 @@ export function CallDispositionModal() {
                     Call Outcome <span style={{ color: "#ef4444" }}>*</span>
                   </p>
                   <div className="flex flex-wrap gap-1.5">
-                    {OUTCOME_OPTIONS.map((opt) => {
-                      const selected = callAgentStatus === opt.value;
-                      return (
-                        <motion.button
-                          key={opt.value}
-                          type="button"
-                          className="relative flex items-center gap-1.5 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#c0d5ff]"
-                          style={{
-                            paddingLeft: 10,
-                            paddingRight: 10,
-                            paddingTop: 5,
-                            paddingBottom: 5,
-                            borderRadius: 10,
-                            border: selected ? "none" : "1px solid #e5e5e5",
-                            background: selected ? "#171717" : "transparent",
-                            cursor: "pointer",
-                          }}
-                          whileTap={reduced ? {} : { scale: 0.95 }}
-                          transition={SPRING_PRESS}
-                          onClick={() => setCallAgentStatus(opt.value)}
-                        >
-                          <AnimatePresence>
-                            {selected && (
-                              <motion.span
-                                initial={{ opacity: 0, scale: 0.6 }}
-                                animate={{ opacity: 1, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.6 }}
-                                transition={SPRING_PRESS}
-                                style={{ display: "flex", color: "white" }}
-                              >
-                                <CheckCircle2 size={11} strokeWidth={2.2} />
-                              </motion.span>
-                            )}
-                          </AnimatePresence>
-                          <span
-                            className="text-[12px] leading-[16px] tracking-[-0.06px] font-medium"
-                            style={{
-                              fontFeatureSettings: "'ss11', 'calt' 0",
-                              color: selected ? "white" : "#525252",
-                            }}
-                          >
-                            {opt.label}
-                          </span>
-                        </motion.button>
-                      );
-                    })}
+                    {MISSED_CALL_OPTIONS.map((opt) => (
+                      <OutcomeChip
+                        key={opt.value}
+                        opt={opt}
+                        selected={callAgentStatus === opt.value}
+                        reduced={reduced ?? false}
+                        onClick={() => setCallAgentStatus(opt.value)}
+                      />
+                    ))}
                   </div>
                 </div>
 
-                {/* Next */}
-                <motion.button
-                  type="button"
-                  className="relative flex items-center justify-center gap-1.5 w-full overflow-hidden select-none outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#c0d5ff]"
-                  style={{
-                    height: 44,
-                    borderRadius: DEADLINE_INNER_CARD_RADIUS_PX,
-                    backgroundColor: canGoNext ? "transparent" : "#ebebeb",
-                    backgroundImage: canGoNext
-                      ? "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%)," +
-                        "linear-gradient(90deg, #171717 0%, #171717 100%)"
-                      : "none",
-                    boxShadow: canGoNext
-                      ? "0px 0px 0px 0.75px #171717,inset 0px 1px 2px 0px rgba(255,255,255,0.16)"
-                      : "none",
-                    border: "none",
-                    cursor: canGoNext ? "pointer" : "not-allowed",
-                  }}
-                  whileHover={canGoNext && !reduced ? { opacity: 0.88 } : {}}
-                  whileTap={canGoNext && !reduced ? { scale: 0.97 } : {}}
-                  transition={SPRING_PRESS}
-                  onClick={() => { if (canGoNext) setView("note"); }}
-                  disabled={!canGoNext}
-                >
-                  <span
-                    className="font-medium text-[13px] leading-[20px] tracking-[-0.078px]"
-                    style={{ fontFeatureSettings: "'ss11', 'calt' 0", color: canGoNext ? "white" : "#a3a3a3" }}
-                  >
-                    Next
-                  </span>
-                  {canGoNext && <ArrowRight size={13} strokeWidth={2.2} color="white" />}
-                </motion.button>
+                {/* Save */}
+                <SaveButton canSave={canSave} isPending={isPending} reduced={reduced ?? false} onClick={handleSave} />
               </motion.div>
-            ) : (
+            )}
+
+            {/* ── Completed call: note only ── */}
+            {isCompleted && (
               <motion.div
-                key="note"
+                key="completed"
                 className="flex flex-col w-full"
                 style={{ gap: 8, paddingTop: 12 }}
                 initial={{ opacity: 0, y: reduced ? 0 : 10 }}
@@ -388,26 +230,12 @@ export function CallDispositionModal() {
                   className="flex items-center gap-2"
                   style={{ paddingLeft: 6, paddingRight: 6, paddingTop: 4 }}
                 >
-                  <motion.button
-                    type="button"
-                    aria-label="Back"
-                    className="flex items-center justify-center outline-none focus-visible:ring-2 focus-visible:ring-[#c0d5ff]"
-                    style={{ width: 28, height: 28, borderRadius: 8, background: "#ebebeb", border: "none", cursor: "pointer", color: "#737373" }}
-                    whileHover={reduced ? {} : { background: "#e0e0e0" } as never}
-                    whileTap={reduced ? {} : { scale: 0.94 }}
-                    transition={SPRING_PRESS}
-                    onClick={() => setView("outcome")}
-                  >
-                    <ArrowLeft size={13} strokeWidth={2.2} />
-                  </motion.button>
-
                   <p
                     className="font-semibold text-[15px] leading-[22px] tracking-[-0.3px] text-[#171717] select-none flex-1"
                     style={{ fontFeatureSettings: "'ss11', 'calt' 0" }}
                   >
                     Add a note
                   </p>
-
                   {closable && (
                     <motion.button
                       type="button"
@@ -423,6 +251,14 @@ export function CallDispositionModal() {
                     </motion.button>
                   )}
                 </div>
+
+                {/* Caller card */}
+                <CallerCard
+                  pendingCall={pendingCall}
+                  caller={caller}
+                  initials={initials}
+                  duration={duration}
+                />
 
                 {/* Note card */}
                 <div
@@ -468,42 +304,205 @@ export function CallDispositionModal() {
                 </div>
 
                 {/* Save */}
-                <motion.button
-                  type="button"
-                  className="relative flex items-center justify-center w-full overflow-hidden select-none outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#c0d5ff]"
-                  style={{
-                    height: 44,
-                    borderRadius: DEADLINE_INNER_CARD_RADIUS_PX,
-                    backgroundColor: canSave ? "transparent" : "#ebebeb",
-                    backgroundImage: canSave
-                      ? "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%)," +
-                        "linear-gradient(90deg, #171717 0%, #171717 100%)"
-                      : "none",
-                    boxShadow: canSave
-                      ? "0px 0px 0px 0.75px #171717,inset 0px 1px 2px 0px rgba(255,255,255,0.16)"
-                      : "none",
-                    border: "none",
-                    cursor: canSave ? "pointer" : "not-allowed",
-                    opacity: isPending ? 0.7 : 1,
-                  }}
-                  whileHover={canSave && !reduced ? { opacity: 0.88 } : {}}
-                  whileTap={canSave && !reduced ? { scale: 0.97 } : {}}
-                  transition={SPRING_PRESS}
-                  onClick={handleSave}
-                  disabled={!canSave}
-                >
-                  <span
-                    className="font-medium text-[13px] leading-[20px] tracking-[-0.078px]"
-                    style={{ fontFeatureSettings: "'ss11', 'calt' 0", color: canSave ? "white" : "#a3a3a3" }}
-                  >
-                    {isPending ? "Saving…" : "Save & Close"}
-                  </span>
-                </motion.button>
+                <SaveButton canSave={canSave} isPending={isPending} reduced={reduced ?? false} onClick={handleSave} />
               </motion.div>
             )}
           </AnimatePresence>
         </motion.div>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+function CallerCard({
+  pendingCall,
+  caller,
+  initials,
+  duration,
+}: {
+  pendingCall: { client_image_url?: string | null; customer_phone: string; answered_duration: string | null };
+  caller: string;
+  initials: string;
+  duration: string;
+}) {
+  return (
+    <div
+      style={{
+        borderRadius: DEADLINE_INNER_CARD_RADIUS_PX,
+        background: "white",
+        boxShadow: DEADLINE_WHITE_CARD_SHADOW,
+        paddingTop: 20,
+        paddingBottom: 20,
+        paddingLeft: 14,
+        paddingRight: 14,
+      }}
+    >
+      <div className="flex flex-col items-center gap-3">
+        <div
+          className="flex items-center justify-center shrink-0 font-semibold select-none overflow-hidden"
+          style={{
+            width: 64,
+            height: 64,
+            borderRadius: "50%",
+            background: "#f0f0f0",
+            border: "2.5px solid #e5e5e5",
+            fontSize: 22,
+            letterSpacing: "-0.5px",
+            color: "#525252",
+            fontFeatureSettings: "'ss11', 'calt' 0",
+          }}
+        >
+          {pendingCall.client_image_url ? (
+            <Image
+              src={pendingCall.client_image_url}
+              alt={caller}
+              width={64}
+              height={64}
+              className="object-cover"
+              style={{ borderRadius: "50%" }}
+            />
+          ) : (
+            initials
+          )}
+        </div>
+
+        <div className="flex flex-col items-center gap-0.5">
+          <p
+            className="font-semibold text-[17px] leading-[24px] tracking-[-0.34px] text-[#171717] select-none text-center"
+            style={{ fontFeatureSettings: "'ss11', 'calt' 0" }}
+          >
+            {caller}
+          </p>
+          <p
+            className="text-[12px] leading-[16px] tracking-[-0.06px] text-[#a3a3a3] select-none"
+            style={{ fontFeatureSettings: "'ss11', 'calt' 0" }}
+          >
+            {pendingCall.customer_phone}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium leading-4 select-none"
+            style={{ background: "#fef2f2", color: "#ef4444", fontFeatureSettings: "'ss11', 'calt' 0" }}
+          >
+            <span className="rounded-full shrink-0" style={{ width: 5, height: 5, background: "#ef4444" }} aria-hidden />
+            Call Ended
+          </span>
+          <span
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full select-none"
+            style={{ background: "#f5f5f5", border: "1px solid #ebebeb" }}
+          >
+            <span className="rounded-full shrink-0" style={{ width: 5, height: 5, background: "#d4d4d4" }} aria-hidden />
+            <span
+              className="text-[12px] leading-[16px] tracking-[-0.06px] font-medium text-[#737373]"
+              style={{ fontFeatureSettings: "'ss11', 'calt' 0", fontVariantNumeric: "tabular-nums" }}
+            >
+              {duration}
+            </span>
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OutcomeChip({
+  opt,
+  selected,
+  reduced,
+  onClick,
+}: {
+  opt: { value: string; label: string };
+  selected: boolean;
+  reduced: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      type="button"
+      className="relative flex items-center gap-1.5 select-none outline-none focus-visible:ring-2 focus-visible:ring-[#c0d5ff]"
+      style={{
+        paddingLeft: 10,
+        paddingRight: 10,
+        paddingTop: 5,
+        paddingBottom: 5,
+        borderRadius: 10,
+        border: selected ? "none" : "1px solid #e5e5e5",
+        background: selected ? "#171717" : "transparent",
+        cursor: "pointer",
+      }}
+      whileTap={reduced ? {} : { scale: 0.95 }}
+      transition={SPRING_PRESS}
+      onClick={onClick}
+    >
+      <AnimatePresence>
+        {selected && (
+          <motion.span
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.6 }}
+            transition={SPRING_PRESS}
+            style={{ display: "flex", color: "white" }}
+          >
+            <CheckCircle2 size={11} strokeWidth={2.2} />
+          </motion.span>
+        )}
+      </AnimatePresence>
+      <span
+        className="text-[12px] leading-[16px] tracking-[-0.06px] font-medium"
+        style={{ fontFeatureSettings: "'ss11', 'calt' 0", color: selected ? "white" : "#525252" }}
+      >
+        {opt.label}
+      </span>
+    </motion.button>
+  );
+}
+
+function SaveButton({
+  canSave,
+  isPending,
+  reduced,
+  onClick,
+}: {
+  canSave: boolean;
+  isPending: boolean;
+  reduced: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <motion.button
+      type="button"
+      className="relative flex items-center justify-center w-full overflow-hidden select-none outline-none focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:ring-[#c0d5ff]"
+      style={{
+        height: 44,
+        borderRadius: DEADLINE_INNER_CARD_RADIUS_PX,
+        backgroundColor: canSave ? "transparent" : "#ebebeb",
+        backgroundImage: canSave
+          ? "linear-gradient(180deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0) 100%)," +
+            "linear-gradient(90deg, #171717 0%, #171717 100%)"
+          : "none",
+        boxShadow: canSave
+          ? "0px 0px 0px 0.75px #171717,inset 0px 1px 2px 0px rgba(255,255,255,0.16)"
+          : "none",
+        border: "none",
+        cursor: canSave ? "pointer" : "not-allowed",
+        opacity: isPending ? 0.7 : 1,
+      }}
+      whileHover={canSave && !reduced ? { opacity: 0.88 } : {}}
+      whileTap={canSave && !reduced ? { scale: 0.97 } : {}}
+      transition={SPRING_PRESS}
+      onClick={onClick}
+      disabled={!canSave}
+    >
+      <span
+        className="font-medium text-[13px] leading-[20px] tracking-[-0.078px]"
+        style={{ fontFeatureSettings: "'ss11', 'calt' 0", color: canSave ? "white" : "#a3a3a3" }}
+      >
+        {isPending ? "Saving…" : "Save & Close"}
+      </span>
+    </motion.button>
   );
 }
