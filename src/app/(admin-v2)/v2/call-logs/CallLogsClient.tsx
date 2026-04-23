@@ -48,7 +48,7 @@ export function CallLogsClient() {
   const [direction, setDirection] = useQueryState("direction", parseAsString.withDefault(""));
   const [dateRange, setDateRange] = useQueryState("dateRange", parseAsString.withDefault(""));
   const [page,      setPage]      = useQueryState("page",      parseAsInteger.withDefault(1));
-  const [limit,     setLimit]     = useQueryState("limit",     parseAsInteger.withDefault(10));
+  const [limit,     setLimit]     = useQueryState("limit",     parseAsInteger.withDefault(20));
 
   // ── Ephemeral UI state ─────────────────────────────────────────────────────
   const [selectedLog, setSelectedLog] = useState<CallLog | null>(null);
