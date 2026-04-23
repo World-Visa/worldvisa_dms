@@ -1,10 +1,14 @@
 import React from 'react';
-import { Persona } from '../ui/ai-elements/persona';
+import { CallListBlank } from '../call-logs/call-list-blank';
 
 export const EmptyChat = () => {
     return (
         <div className="flex w-full flex-col items-center h-full justify-center gap-4">
-            <Persona className="size-32" state="listening" variant="obsidian" />
+
+            <CallListBlank
+                title="No messages yet"
+                description="Once you start a conversation, your messages will appear here."
+            />
         </div>
     );
 };

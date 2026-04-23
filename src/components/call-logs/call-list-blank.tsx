@@ -15,7 +15,7 @@ export const CallListBlank = ({
   title = "No call logs yet",
   description = "Once calls are made or received, they’ll appear here for quick review and follow-ups.",
   actionHref = ROUTES.VISA_APPLICATIONS,
-  actionLabel = "View Applications",
+  actionLabel = "",
 }: CallListBlankProps) => {
   return (
     <div className="flex h-full w-full flex-col items-center justify-center gap-6">
