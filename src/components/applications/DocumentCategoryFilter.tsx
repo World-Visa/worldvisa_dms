@@ -116,6 +116,7 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
   showSampleDocuments = false,
   onToggleSampleDocuments,
   onAddCompany,
+  onRemoveCompany,
 }: ExtendedDocumentCategoryFilterProps) {
   const categories = useMemo(
     () =>
@@ -173,6 +174,8 @@ export const DocumentCategoryFilter = memo(function DocumentCategoryFilter({
           showSampleDocuments={showSampleDocuments}
           onAddCompany={onAddCompany}
           onToggleSampleDocuments={onToggleSampleDocuments}
+          allDocuments={documents}
+          onRemoveCompany={isClientView ? undefined : onRemoveCompany}
         />
       </div>
 

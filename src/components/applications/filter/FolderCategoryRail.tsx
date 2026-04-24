@@ -4,9 +4,15 @@ import { memo, useCallback, useEffect, useRef, useState, type ReactNode } from "
 import Image from "next/image";
 import { AnimatePresence, motion } from "framer-motion";
 import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { toast } from "sonner";
 import type { DocumentCategoryInfo } from "@/types/documents";
+import type { Document } from "@/types/applications";
 import { cn } from "@/lib/utils";
 import { FolderCategoryCard } from "./FolderCategoryCard";
+import { ConfirmationModal } from "@/components/ui/confirmation-modal";
+import { useDeleteDocument } from "@/hooks/useMutationsDocuments";
+import { getCompanyDocuments, filterDocumentsWithValidIds } from "@/utils/companyDocuments";
+import { showSuccessToast, showWarningToast } from "@/components/ui/primitives/sonner-helpers";
 
 interface FolderCategoryRailProps {
   categories: DocumentCategoryInfo[];
@@ -18,6 +24,15 @@ interface FolderCategoryRailProps {
   showSampleDocuments: boolean;
   onAddCompany?: () => void;
   onToggleSampleDocuments?: () => void;
+  allDocuments?: Document[];
+  onRemoveCompany?: (companyName: string) => void;
+}
+
+interface PendingDelete {
+  name: string;
+  category: string;   // label — used for getCompanyDocuments
+  label: string;      // display name
+  categoryId: string; // actual category.id — used for URL reset
 }
 
 interface FolderActionCardProps {
@@ -100,11 +115,56 @@ export const FolderCategoryRail = memo(function FolderCategoryRail({
   showSampleDocuments,
   onAddCompany,
   onToggleSampleDocuments,
+  allDocuments,
+  onRemoveCompany,
 }: FolderCategoryRailProps) {
   const shouldRenderActionPanel = showAddCompanyAction || showSampleDocumentsAction;
+  const deleteDocumentMutation = useDeleteDocument();
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteCompany = useCallback(
+    async (companyName: string, companyCategory: string, categoryId: string) => {
+      const companyDocuments = getCompanyDocuments(companyCategory, allDocuments || []);
+      const validDocuments = filterDocumentsWithValidIds(companyDocuments);
+
+      if (validDocuments.length === 0) {
+        onRemoveCompany?.(companyName);
+        if (selectedCategory === categoryId) onCategoryChange("all");
+        showSuccessToast("Company removed successfully");
+        return;
+      }
+
+      const results = await Promise.allSettled(
+        validDocuments.map((doc) => deleteDocumentMutation.mutateAsync(doc._id)),
+      );
+
+      const failCount = results.filter((r) => r.status === "rejected").length;
+      const successCount = results.length - failCount;
+
+      if (successCount === 0) {
+        showWarningToast("Failed to delete documents. Company was not removed.");
+        return;
+      }
+
+      onRemoveCompany?.(companyName);
+      if (selectedCategory === categoryId) onCategoryChange("all");
+
+      if (failCount > 0) {
+        showWarningToast(
+          `Company removed. ${successCount} document${successCount !== 1 ? "s" : ""} deleted, ${failCount} could not be deleted.`,
+        );
+      } else {
+        showSuccessToast(
+          `Company and ${successCount} document${successCount !== 1 ? "s" : ""} removed successfully`,
+        );
+      }
+    },
+    [allDocuments, onRemoveCompany, selectedCategory, onCategoryChange, deleteDocumentMutation],
+  );
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
 
@@ -153,15 +213,30 @@ export const FolderCategoryRail = memo(function FolderCategoryRail({
           className="overflow-x-auto scroll-smooth scrollbar-hide"
         >
           <div className="flex items-end gap-3 pb-3 pt-4 pr-1">
-            {categories.map((category) => (
-              <FolderCategoryCard
-                key={category.id}
-                category={category}
-                count={categoryCounts[category.id] ?? category.count ?? 0}
-                isActive={selectedCategory === category.id}
-                onClick={onCategoryChange}
-              />
-            ))}
+            {categories.map((category) => {
+              const isCompany = category.id.includes("company") && !!onRemoveCompany;
+              const companyName = category.label.replace(" Company Documents", "");
+              return (
+                <FolderCategoryCard
+                  key={category.id}
+                  category={category}
+                  count={categoryCounts[category.id] ?? category.count ?? 0}
+                  isActive={selectedCategory === category.id}
+                  onClick={onCategoryChange}
+                  onDelete={
+                    isCompany
+                      ? () =>
+                          setPendingDelete({
+                            name: companyName,
+                            category: category.label,
+                            label: companyName,
+                            categoryId: category.id,
+                          })
+                      : undefined
+                  }
+                />
+              );
+            })}
           </div>
         </div>
 
@@ -234,6 +309,32 @@ export const FolderCategoryRail = memo(function FolderCategoryRail({
           ) : null}
         </div>
       ) : null}
+
+      <ConfirmationModal
+        open={!!pendingDelete}
+        onOpenChange={(open) => {
+          if (!open && !isDeleting) setPendingDelete(null);
+        }}
+        variant="destructive"
+        title="Delete Company"
+        description={
+          pendingDelete
+            ? `This will permanently delete all documents for "${pendingDelete.label}" and remove the company. This action cannot be undone.`
+            : ""
+        }
+        confirmText="Delete Company"
+        isLoading={isDeleting}
+        onConfirm={async () => {
+          if (!pendingDelete) return;
+          setIsDeleting(true);
+          try {
+            await handleDeleteCompany(pendingDelete.name, pendingDelete.category, pendingDelete.categoryId);
+          } finally {
+            setIsDeleting(false);
+            setPendingDelete(null);
+          }
+        }}
+      />
     </div>
   );
 });

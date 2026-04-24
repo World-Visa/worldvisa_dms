@@ -6,6 +6,7 @@ export type ActivityType =
   | "document_uploaded"
   | "document_reuploaded"
   | "document_status_changed"
+  | "document_deleted"
   | "comment_added"
   | "comment_edited"
   | "comment_deleted"

@@ -167,6 +167,8 @@ export const API_ENDPOINTS = {
     DOCUMENTS: {
       BY_APP: (appId: string) =>
         `${ZOHO_BASE_URL}/visa_applications/${appId}/documents`,
+      BY_ID: (docId: string) =>
+        `${ZOHO_BASE_URL}/visa_applications/documents/${docId}`,
       COMMENT: (docId: string) =>
         `${ZOHO_BASE_URL}/visa_applications/documents/${docId}/comment`,
       STATUS: (docId: string) =>
