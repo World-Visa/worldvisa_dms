@@ -72,6 +72,7 @@ import type { ApplicationNote } from "@/lib/api/applicationNotes";
 import { ClientOnboardingModal } from "@/components/applications/onboarding/ClientOnboardingModal";
 import { DeadlineBlockerModal } from "@/components/applications/deadline/DeadlineBlockerModal";
 import { computeDaysLeft } from "@/components/applications/deadline/deadline-date-utils";
+import { shouldShowDeadlineCard } from "@/components/applications/ApplicationDeadlineCard";
 import { useApprovalRequestsByLead } from "@/hooks/useAdminApprovalRequests";
 import { useLazyDocumentLoad } from "@/hooks/useLazyDocumentLoad";
 import type { ApplicationLayout } from "@/components/applications/layouts/LayoutChips";
@@ -192,6 +193,7 @@ export default function UnifiedApplicationDetailsPage({
 
   const isDeadlineBlocking = useMemo(() => {
     if (!hasLoadedApplicationData || isLeadRequestsLoading) return false;
+    if (!shouldShowDeadlineCard(application?.Application_Stage)) return false;
     const daysLeft = computeDaysLeft(application?.Deadline_For_Lodgment);
     if (daysLeft === null || daysLeft >= 0) return false;
     const requests = leadRequestsForBlocker?.data ?? [];
@@ -210,6 +212,7 @@ export default function UnifiedApplicationDetailsPage({
   }, [
     hasLoadedApplicationData,
     isLeadRequestsLoading,
+    application?.Application_Stage,
     application?.Deadline_For_Lodgment,
     leadRequestsForBlocker,
   ]);
