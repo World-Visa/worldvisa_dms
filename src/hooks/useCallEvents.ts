@@ -2,11 +2,11 @@
 
 import { useEffect } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { showNotificationToast } from "@/components/ui/primitives/sonner-helpers";
 import { notificationSocket } from "@/lib/notificationSocket";
 import { callLogKeys } from "@/hooks/useCallLogs";
 import { useLayoutStore } from "@/store/layoutStore";
 import { useCallDispositionStore } from "@/store/callDispositionStore";
+import { useIncomingCallStore } from "@/store/incomingCallStore";
 import type { CallLog, CallLogListResponse } from "@/types/callLog";
 
 export function useCallEvents() {
@@ -57,15 +57,12 @@ export function useCallEvents() {
     const unsubInbound = notificationSocket.onCallInbound((doc: CallLog) => {
       useLayoutStore.getState().openPhonePanel();
       if (doc.direction === "inbound") {
-        const caller = doc.client_name ?? doc.customer_phone ?? "Unknown";
-        showNotificationToast("Incoming call", `From: ${caller}`, undefined, {
-          id: "incoming-call-toast",
-          duration: 5_000, // 5 seconds
-        });
+        useIncomingCallStore.getState().show(doc);
       }
     });
 
     const unsubHangup = notificationSocket.onCallHangup((doc: CallLog) => {
+      useIncomingCallStore.getState().dismiss();
       useCallDispositionStore.getState().openDispositionModal(doc);
     });
 

@@ -277,10 +277,12 @@ export default function UnifiedApplicationDetailsPage({
   const [emailAutoSelectLatest, setEmailAutoSelectLatest] = useState(false);
 
   const handleSendReminderEmail = useCallback(() => {
-    const docs = mandatoryDocValidationDetails.map((d) => ({
-      label: d.companyName ? `${d.documentType} (${d.companyName})` : d.documentType,
-      status: d.status,
-    }));
+    const docs = mandatoryDocValidationDetails
+      .filter((d) => d.status === "missing" || d.status === "rejected")
+      .map((d) => ({
+        label: d.companyName ? `${d.documentType} (${d.companyName})` : d.documentType,
+        status: d.status,
+      }));
     setReminderEmailData({
       subject: PENDING_DOCS_SUBJECT,
       html: buildPendingDocumentsReminderHtml(application?.Name ?? "", docs),
