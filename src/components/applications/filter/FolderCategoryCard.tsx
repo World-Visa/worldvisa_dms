@@ -1,8 +1,9 @@
 "use client";
 
-import { memo } from "react";
+import { memo, useState } from "react";
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
+import { Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { DocumentCategoryInfo } from "@/types/documents";
 
@@ -11,6 +12,7 @@ interface FolderCategoryCardProps {
   count: number;
   isActive: boolean;
   onClick: (categoryId: string) => void;
+  onDelete?: () => void;
 }
 
 function getFolderIconByCategory(categoryId: string) {
@@ -25,8 +27,10 @@ export const FolderCategoryCard = memo(function FolderCategoryCard({
   count,
   isActive,
   onClick,
+  onDelete,
 }: FolderCategoryCardProps) {
   const icon = getFolderIconByCategory(category.id);
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
     <motion.div
@@ -36,6 +40,8 @@ export const FolderCategoryCard = memo(function FolderCategoryCard({
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") onClick(category.id);
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       aria-pressed={isActive}
       whileHover={{ y: isActive ? -3 : -2 }}
       animate={{ y: isActive ? -3 : 0 }}
@@ -67,6 +73,25 @@ export const FolderCategoryCard = memo(function FolderCategoryCard({
           height={icon.h}
           className={icon.cls}
         />
+        <AnimatePresence>
+          {isHovered && onDelete && (
+            <motion.button
+              type="button"
+              initial={{ opacity: 0, scale: 0.75 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.75 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete();
+              }}
+              aria-label="Delete company"
+              className="absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-lg bg-white/90 text-neutral-400 shadow-sm transition-colors hover:bg-red-50 hover:text-red-500"
+            >
+              <Trash2 className="h-3 w-3" />
+            </motion.button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Content section — white background, fixed height */}

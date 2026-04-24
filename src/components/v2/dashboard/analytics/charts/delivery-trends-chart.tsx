@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useMemo, useState } from 'react';
-import { Bar, BarChart, CartesianGrid, XAxis } from 'recharts';
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis } from 'recharts';
 import type { DailyDeliveryPoint } from '@/types/analytics';
 import { STEP_TYPE_TO_ICON } from '@/components/icons/utils';
 import { ChartConfig, ChartContainer, ChartTooltip, DmsTooltip } from '@/components/ui/primitives/chart';
@@ -14,6 +14,27 @@ import { StepTypeEnum } from '@/lib/enums';
 
 const SEGMENT_GAP = 2;
 const BAR_RADIUS = 2;
+/** Keep at least this many px when scaling down inter-segment gaps on thin slices. */
+const MIN_SLICE_PX = 0.5;
+
+function getStackSegmentInsets(segmentIndex: number, totalSegments: number, height: number): { top: number; bottom: number } {
+  if (totalSegments <= 1 || height <= 0) {
+    return { top: 0, bottom: 0 };
+  }
+  let top = segmentIndex < totalSegments - 1 ? SEGMENT_GAP / 2 : 0;
+  let bottom = segmentIndex > 0 ? SEGMENT_GAP / 2 : 0;
+  const desired = top + bottom;
+  if (desired <= 0) {
+    return { top: 0, bottom: 0 };
+  }
+  const maxTotal = Math.max(0, height - MIN_SLICE_PX);
+  if (desired > maxTotal) {
+    const scale = maxTotal / desired;
+    top *= scale;
+    bottom *= scale;
+  }
+  return { top, bottom };
+}
 
 const chartConfig = {
   email: { label: 'Email', color: '#818cf8' },
@@ -99,13 +120,9 @@ function StackedBarSegmentShape({
   segmentIndex, totalSegments,
 }: StackedBarSegmentShapeProps) {
   if (height <= 0) return null;
-  let offsetY = 0;
-  let segmentHeight = height;
-  if (totalSegments > 1) {
-    if (segmentIndex === 0) { offsetY = SEGMENT_GAP / 2; segmentHeight = height - SEGMENT_GAP / 2; }
-    else if (segmentIndex === totalSegments - 1) { segmentHeight = height - SEGMENT_GAP / 2; }
-    else { offsetY = SEGMENT_GAP / 2; segmentHeight = height - SEGMENT_GAP; }
-  }
+  const { top, bottom } = getStackSegmentInsets(segmentIndex, totalSegments, height);
+  const offsetY = top;
+  const segmentHeight = height - top - bottom;
   return (
     <rect
       x={x} y={y + offsetY} width={width}
@@ -151,6 +168,7 @@ function ChartContent({ data, includeTooltip = true }: ChartContentProps) {
           <BarChart data={data} margin={{ left: 0, right: 0, top: 0, bottom: 0 }} barSize={barSize} barGap={2}>
             <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" vertical={false} />
             <XAxis dataKey="date" axisLine={false} tickLine={false} tick={<DeliveryTick />} interval={tickInterval} padding={{ left: 2, right: 2 }} />
+            <YAxis hide domain={[0, 'auto']} />
             {includeTooltip && <ChartTooltip cursor={{ fill: '#f9fafb' }} content={<DeliveryTooltip />} />}
             {visibleChannels.map((channel, idx) => (
               <Bar

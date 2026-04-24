@@ -69,7 +69,6 @@ import {
 import { useApplicationNotes, useDeleteNote } from "@/hooks/useApplicationNotes";
 import { useRemoveCompany } from "@/hooks/useRemoveCompany";
 import type { ApplicationNote } from "@/lib/api/applicationNotes";
-import { RemoveCompanyDialog } from "@/components/applications/RemoveCompanyDialog";
 import { ClientOnboardingModal } from "@/components/applications/onboarding/ClientOnboardingModal";
 import { DeadlineBlockerModal } from "@/components/applications/deadline/DeadlineBlockerModal";
 import { computeDaysLeft } from "@/components/applications/deadline/deadline-date-utils";
@@ -296,12 +295,7 @@ export default function UnifiedApplicationDetailsPage({
   const maxCompanies = 10;
 
   const {
-    removeCompanyDialog,
-    isDeletingDocuments,
     handleRemoveCompanyWithDocuments,
-    handleRemoveDocumentsAndCompany,
-    handleRemoveCompanyDirect,
-    handleCloseRemoveCompanyDialog,
   } = useRemoveCompany({
     allDocuments,
     companies: appState.companies,
@@ -598,18 +592,6 @@ export default function UnifiedApplicationDetailsPage({
         maxCompanies={maxCompanies}
       />
 
-      {removeCompanyDialog.company && (
-        <RemoveCompanyDialog
-          isOpen={removeCompanyDialog.isOpen}
-          onClose={handleCloseRemoveCompanyDialog}
-          onConfirm={handleRemoveCompanyDirect}
-          company={removeCompanyDialog.company}
-          hasDocuments={removeCompanyDialog.hasDocuments}
-          documentCount={removeCompanyDialog.documentCount}
-          isDeleting={isDeletingDocuments}
-          onRemoveDocumentsAndCompany={handleRemoveDocumentsAndCompany}
-        />
-      )}
 
       <ReuploadDocumentModal
         isOpen={modals.isReuploadModalOpen}

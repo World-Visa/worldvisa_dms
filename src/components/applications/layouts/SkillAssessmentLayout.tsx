@@ -55,7 +55,7 @@ export function SkillAssessmentLayout({
   onCategoryChange,
   companies,
   onAddCompany,
-  onRemoveCompany: _onRemoveCompany,
+  onRemoveCompany,
   onRemoveCompanyWithCheck: _onRemoveCompanyWithCheck,
   maxCompanies,
   checklistState,
@@ -135,6 +135,7 @@ export function SkillAssessmentLayout({
             checklistCategories={checklistState.checklistCategories}
             hasCompanyDocuments={checklistState.hasCompanyDocuments}
             onAddCompany={onAddCompany}
+            onRemoveCompany={onRemoveCompany}
             showSampleDocuments={showSampleDocuments}
             onToggleSampleDocuments={
               showSampleDocuments ? onHideSampleDocuments : onShowSampleDocuments
