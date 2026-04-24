@@ -12,7 +12,7 @@ import { useIncomingCallStore } from "@/store/incomingCallStore";
 const BANNER_SPRING = { type: "spring" as const, stiffness: 300, damping: 26 };
 const RING_DURATION = 1.6;
 const RING_DELAYS = [0, 0.5, 1.0];
-const AUTO_DISMISS_MS = 5_000;
+const AUTO_DISMISS_MS = 20_000;
 
 function RingLayer({ delay, reduced }: { delay: number; reduced: boolean }) {
   if (reduced) return null;
@@ -86,7 +86,7 @@ function BannerContent({ leadId, fallbackName, fallbackPhone, onDismiss, reduced
       {/* Header row */}
       <div className="flex items-center justify-between">
         <motion.p
-          className="text-[11px] font-medium tracking-[0.02em] uppercase text-[#a3a3a3] select-none"
+          className="text-[11px] font-medium tracking-[0.02em] uppercase text-neutral-900 select-none"
           style={{ fontFeatureSettings: "'ss11', 'calt' 0" }}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
