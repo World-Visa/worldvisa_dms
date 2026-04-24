@@ -20,6 +20,7 @@ import { SidebarController } from "@/app/(admin-v2)/sidebar-controller";
 import { McubePhoneWidgetLoader } from "@/components/mcube/McubePhoneWidgetLoader";
 import PhoneCard from "@/components/mcube/PhoneCard";
 import { CallEventsSetup } from "@/components/mcube/CallEventsSetup";
+import { IncomingCallBanner } from "@/components/mcube/IncomingCallBanner";
 import { AskNiraButton } from "@/components/ui/ai-elements/ask-nira-button";
 
 function AdminContentFallback() {
@@ -44,7 +45,9 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
       <Suspense fallback={null}>
         <SidebarController />
       </Suspense>
-      <AppSidebar />
+      <Suspense fallback={null}>
+        <AppSidebar />
+      </Suspense>
       <SidebarInset
         className={cn(
           "min-w-0",
@@ -95,6 +98,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
 
       {/* <McubePhoneWidgetLoader /> */}
 
+      <IncomingCallBanner />
     </SidebarProvider>
     </CallEventsSetup>
     </CommandPaletteSetup>
