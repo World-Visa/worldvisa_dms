@@ -174,13 +174,15 @@ export function ApplicantDetails({
           />
         </div>
 
-        <div className="w-[358px]">
-          <DeadlineWidget
-            leadId={application.id}
-            currentDeadline={application.Deadline_For_Lodgment}
-            deadlineExtensions={application.deadline_extensions}
-          />
-        </div>
+        {showDeadlineCard && (
+          <div className="w-[358px]">
+            <DeadlineWidget
+              leadId={application.id}
+              currentDeadline={application.Deadline_For_Lodgment}
+              deadlineExtensions={application.deadline_extensions}
+            />
+          </div>
+        )}
       </div>
 
     </>
