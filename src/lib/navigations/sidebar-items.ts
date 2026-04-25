@@ -13,6 +13,9 @@ import {
 } from "lucide-react";
 import { ROLES } from "@/lib/roles";
 import { ROUTES } from "@/utils/routes";
+import { RiRouteFill } from "react-icons/ri";
+
+export type AdminEnvironment = "prod" | "dev";
 
 export interface NavSubItem {
     title: string;
@@ -26,7 +29,7 @@ export interface NavSubItem {
 export interface NavMainItem {
     title: string;
     url: string;
-    icon?: LucideIcon;
+    icon?: any;
     subItems?: NavSubItem[];
     comingSoon?: boolean;
     newTab?: boolean;
@@ -95,7 +98,7 @@ export const sidebarItems: NavGroup[] = [
                     { title: "Manage Clients", url: "/v2/clients", newTab: false },
                 ],
                 comingSoon: false,
-                allowedRoles: [ROLES.MASTER_ADMIN],
+                allowedRoles: [ROLES.MASTER_ADMIN, ROLES.SUPERVISOR],
             },
         ],
     },
@@ -125,6 +128,20 @@ export const sidebarItems: NavGroup[] = [
                 icon: Phone,
                 comingSoon: false,
                 allowedRoles: [ROLES.MASTER_ADMIN, ROLES.ADMIN, ROLES.TEAM_LEADER, ROLES.SUPERVISOR],
+            },
+        ],
+    },
+];
+
+const devSidebarItems: NavGroup[] = [
+    {
+        id: 100,
+        items: [
+            {
+                title: "Workflows",
+                url: ROUTES.DEV_WORKFLOWS,
+                icon: RiRouteFill,
+                allowedRoles: [ROLES.MASTER_ADMIN],
             },
         ],
     },
@@ -197,4 +214,21 @@ export function getFilteredSidebarItems(role?: string): NavGroup[] {
             return { ...group, items };
         })
         .filter((group) => group.items.length > 0);
+}
+
+export function getSidebarItems(opts: { role?: string; environment: AdminEnvironment }): NavGroup[] {
+    if (opts.environment === "dev") {
+        return devSidebarItems
+            .map((group) => {
+                const items = group.items.filter(
+                    (item) =>
+                        !item.allowedRoles ||
+                        (opts.role !== undefined && item.allowedRoles.includes(opts.role)),
+                );
+                return { ...group, items };
+            })
+            .filter((group) => group.items.length > 0);
+    }
+
+    return getFilteredSidebarItems(opts.role);
 }
