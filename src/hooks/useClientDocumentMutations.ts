@@ -105,47 +105,6 @@ export function useClientReuploadDocument() {
         },
       );
 
-      // Also update client documents cache
-      queryClient.setQueryData<{
-        success: boolean;
-        data: { documents: ClientDocument[] };
-      }>(["client-documents-all"], (old) => {
-        if (
-          !old ||
-          !old.data ||
-          !old.data.documents ||
-          !Array.isArray(old.data.documents)
-        )
-          return old;
-
-        return {
-          ...old,
-          data: {
-            ...old.data,
-            documents: old.data.documents.map((doc) =>
-              doc._id === variables.documentId
-                ? {
-                    ...doc,
-                    status: "pending",
-                    reject_message: undefined,
-                    file_name: variables.file.name,
-                    uploaded_at: new Date().toISOString(),
-                    history: [
-                      ...doc.history,
-                      {
-                        _id: `temp-reupload-${Date.now()}`,
-                        status: "pending",
-                        changed_by: variables.uploaded_by,
-                        changed_at: new Date().toISOString(),
-                      },
-                    ],
-                  }
-                : doc,
-            ),
-          },
-        };
-      });
-
       // Update individual document cache for real-time UI updates (ViewDocumentSheet)
       queryClient.setQueryData<Document>(
         ["document", variables.documentId],
