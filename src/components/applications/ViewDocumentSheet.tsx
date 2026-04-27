@@ -84,7 +84,11 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   useEffect(() => {
     if (!selectedDocument) return;
 
-    if (!currentDoc || currentDoc.status !== selectedDocument.status) {
+    if (
+      !currentDoc ||
+      currentDoc.status !== selectedDocument.status ||
+      currentDoc.storage_type !== selectedDocument.storage_type
+    ) {
       queryClient.setQueryData(
         ["document", selectedDocument._id],
         selectedDocument,
