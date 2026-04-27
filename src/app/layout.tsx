@@ -57,7 +57,7 @@ export default function RootLayout({
             <NotificationProvider>
               <TooltipProvider>{children}</TooltipProvider>
             </NotificationProvider>
-            <Toaster />
+            <Toaster position="top-center" />
           </Providers>
           <ClarityAnalytics />
         </SmoothScroll>

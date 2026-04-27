@@ -33,7 +33,7 @@ export function useClientDocuments(page: number = 1, limit: number = 10) {
     staleTime: 2 * 60 * 1000,
     retry: 1,
     retryOnMount: false,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }
 
@@ -68,6 +68,6 @@ export function useAllClientDocuments() {
     staleTime: 2 * 60 * 1000,
     retry: 1,
     retryOnMount: false,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
   });
 }

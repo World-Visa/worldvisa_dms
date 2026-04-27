@@ -3,7 +3,9 @@
     "allow": [
       "Bash(grep -r \"notification.*comment\\\\|comment.*notification\" src/lib src/hooks --include=*.ts --include=*.tsx)",
       "Skill(clerk-nextjs-patterns)",
-      "Skill(clerk-nextjs-patterns:*)"
+      "Skill(clerk-nextjs-patterns:*)",
+      "Bash(grep -E \"\\\\.\\(ts|tsx\\)$\")",
+      "Bash(grep -E \"\\\\.\\(tsx|jsx\\)$\")"
     ]
   },
   "hooks": {

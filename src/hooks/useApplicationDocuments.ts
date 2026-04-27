@@ -11,7 +11,7 @@ export function useApplicationDocuments(id: string) {
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     refetchOnMount: false,
     retry: 2,
   });
@@ -33,7 +33,7 @@ export function useAllApplicationDocuments(
     enabled: enabled && !!id,
     staleTime: 5 * 60 * 1000,
     gcTime: 15 * 60 * 1000,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     refetchOnMount: false,
     retry: 2,
   });
