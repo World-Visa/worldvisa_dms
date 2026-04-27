@@ -1,7 +1,6 @@
 "use client";
 
 import { useMemo, useCallback, useState } from "react";
-
 import { DocumentCategoryFilter } from "@/components/applications/DocumentCategoryFilter";
 import { DocumentChecklistTable } from "@/components/applications/DocumentChecklistTable";
 import { DocumentsTable } from "@/components/applications/DocumentsTable";
