@@ -14,7 +14,7 @@ export function useReuploadDocument() {
 
   return useMutation<ReuploadDocumentResponse, Error, ReuploadDocumentRequest>({
     mutationFn: reuploadDocument,
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       // First, optimistically update the document status in the cache
       queryClient.setQueryData<{ success: boolean; data: Document[] }>(
         ["application-documents", variables.applicationId],
@@ -72,48 +72,6 @@ export function useReuploadDocument() {
                     reject_message: undefined,
                     file_name: variables.file.name,
                     uploaded_at: new Date().toISOString(),
-                    history: [
-                      ...doc.history,
-                      {
-                        _id: `temp-reupload-${Date.now()}`,
-                        status: "pending",
-                        changed_by: variables.uploaded_by,
-                        changed_at: new Date().toISOString(),
-                      },
-                    ],
-                  }
-                : doc,
-            ),
-          },
-        };
-      });
-
-      // Update client documents cache (all documents)
-      queryClient.setQueryData<{
-        success: boolean;
-        data: { documents: ClientDocument[] };
-      }>(["client-documents-all"], (old) => {
-        if (
-          !old ||
-          !old.data ||
-          !old.data.documents ||
-          !Array.isArray(old.data.documents)
-        ) {
-          return old;
-        }
-
-        return {
-          ...old,
-          data: {
-            ...old.data,
-            documents: old.data.documents.map((doc) =>
-              doc._id === variables.documentId
-                ? {
-                    ...doc,
-                    status: "pending", // Reset to pending after reupload
-                    reject_message: undefined, // Clear rejection message
-                    file_name: variables.file.name, // Update filename
-                    uploaded_at: new Date().toISOString(), // Update upload time
                     history: [
                       ...doc.history,
                       {

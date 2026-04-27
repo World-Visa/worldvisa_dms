@@ -164,6 +164,7 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   const docUrl = getDocumentUrl(displayDoc);
   const viewUrl = docUrl;
   const downloadUrl = docUrl || undefined;
+  const isR2Document = displayDoc.storage_type === "r2";
 
   return (
     <>
@@ -335,6 +336,25 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
                     isClientView={isClientView}
                   />
                   <div className="flex shrink-0 items-center gap-2">
+                    {isR2Document && viewUrl ? (
+                      <Button
+                        size="xs"
+                        variant="secondary"
+                        mode="lighter"
+                        leadingIcon={RiBookOpenLine}
+                        className="shrink-0 cursor-pointer gap-2 text-sm"
+                        onClick={() => {
+                          const opened = window.open(
+                            viewUrl,
+                            "_blank",
+                            "noopener,noreferrer",
+                          );
+                          if (opened) opened.opener = null;
+                        }}
+                      >
+                        Full view
+                      </Button>
+                    ) : null}
                     {!isClientView && (
                       <DocumentStatusButtons
                         document={displayDoc}

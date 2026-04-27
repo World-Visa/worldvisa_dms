@@ -65,7 +65,7 @@ export const showWarningToast = (message: string | ReactNode, title?: string, op
       </>
     ),
     options: {
-      position: 'bottom-center',
+      ...CONSISTENT_TOAST_OPTIONS,
       ...options,
     },
   });
