@@ -88,32 +88,7 @@ export function useReuploadDocument() {
         };
       });
 
-      // Update individual document cache for real-time UI updates
-      queryClient.setQueryData<Document>(
-        ["document", variables.documentId],
-        (old) => {
-          const base = old || ({} as Document);
-          return {
-            ...base,
-            _id: variables.documentId,
-            status: "pending" as Document["status"],
-            reject_message: undefined,
-            file_name: variables.file.name,
-            uploaded_at: new Date().toISOString(),
-            history: [
-              ...(base.history || []),
-              {
-                _id: `temp-reupload-${Date.now()}`,
-                status: "pending" as Document["status"],
-                changed_by: variables.uploaded_by,
-                changed_at: new Date().toISOString(),
-              },
-            ],
-          };
-        },
-      );
-
-      // Then invalidate all relevant queries to ensure UI updates properly
+      // Invalidate all relevant queries to ensure UI updates properly
       Promise.all([
         // Admin view queries
         queryClient.invalidateQueries({
