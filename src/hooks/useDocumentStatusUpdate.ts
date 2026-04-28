@@ -395,17 +395,22 @@ export function useDocumentStatusUpdate({
         data.documentId
       ) {
         try {
-          // Prefer the per-document cache, since it is always present here and should
-          // already include the versioned `r2_key` after reupload.
-          const cachedDoc = queryClient.getQueryData<Document>([
-            "document",
-            data.documentId,
-          ]);
-          let documentLink = cachedDoc
-            ? getDocumentUrl(cachedDoc).trim() || undefined
-            : undefined;
+          // Prefer the snapshot URL the backend just returned — it reflects the
+          // post-move path after the file was archived to the deleted folder.
+          const snapshotUrl = data.response?.rejection_snapshot_url;
+          let documentLink: string | undefined = snapshotUrl ?? undefined;
 
-          // Fallback: refetch the list and derive the link from the fresh list item.
+          // Fall back to cached/refetched URL for WorkDrive docs where snapshot is null.
+          if (!documentLink) {
+            const cachedDoc = queryClient.getQueryData<Document>([
+              "document",
+              data.documentId,
+            ]);
+            documentLink = cachedDoc
+              ? getDocumentUrl(cachedDoc).trim() || undefined
+              : undefined;
+          }
+
           if (!documentLink) {
             await queryClient.refetchQueries({
               queryKey: ["application-documents", applicationId],
