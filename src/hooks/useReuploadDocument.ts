@@ -15,6 +15,29 @@ export function useReuploadDocument() {
   return useMutation<ReuploadDocumentResponse, Error, ReuploadDocumentRequest>({
     mutationFn: reuploadDocument,
     onSuccess: (_data, variables) => {
+      const nowIso = new Date().toISOString();
+
+      queryClient.setQueryData<Document>(["document", variables.documentId], (old) => {
+        if (!old) return old;
+
+        return {
+          ...old,
+          status: "pending",
+          reject_message: undefined,
+          file_name: variables.file.name,
+          uploaded_at: nowIso,
+          history: [
+            ...old.history,
+            {
+              _id: `temp-reupload-${Date.now()}`,
+              status: "pending",
+              changed_by: variables.uploaded_by,
+              changed_at: nowIso,
+            },
+          ],
+        };
+      });
+
       // First, optimistically update the document status in the cache
       queryClient.setQueryData<{ success: boolean; data: Document[] }>(
         ["application-documents", variables.applicationId],
@@ -30,14 +53,14 @@ export function useReuploadDocument() {
                     status: "pending", // Reset to pending after reupload
                     reject_message: undefined, // Clear rejection message
                     file_name: variables.file.name, // Update filename
-                    uploaded_at: new Date().toISOString(), // Update upload time
+                    uploaded_at: nowIso, // Update upload time
                     history: [
                       ...doc.history,
                       {
                         _id: `temp-reupload-${Date.now()}`,
                         status: "pending",
                         changed_by: variables.uploaded_by,
-                        changed_at: new Date().toISOString(),
+                        changed_at: nowIso,
                       },
                     ],
                   }
@@ -71,14 +94,14 @@ export function useReuploadDocument() {
                     status: "pending",
                     reject_message: undefined,
                     file_name: variables.file.name,
-                    uploaded_at: new Date().toISOString(),
+                    uploaded_at: nowIso,
                     history: [
                       ...doc.history,
                       {
                         _id: `temp-reupload-${Date.now()}`,
                         status: "pending",
                         changed_by: variables.uploaded_by,
-                        changed_at: new Date().toISOString(),
+                        changed_at: nowIso,
                       },
                     ],
                   }
