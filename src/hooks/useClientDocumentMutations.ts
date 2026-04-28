@@ -7,8 +7,6 @@ import {
   ClientReuploadDocumentRequest,
   ClientReuploadDocumentResponse,
 } from "@/lib/api/clientDocumentUpload";
-import { ClientDocument } from "@/types/client";
-import { Document } from "@/types/applications";
 import { toast } from "sonner";
 import { showSuccessToast } from "@/components/ui/primitives/sonner-helpers";
 
@@ -21,20 +19,7 @@ export function useClientUploadDocument() {
     ClientUploadDocumentRequest
   >({
     mutationFn: clientUploadDocument,
-    onSuccess: (data, variables) => {
-      const maybeUploaded = data?.data ?? [];
-      for (const uploaded of maybeUploaded) {
-        queryClient.setQueryData<Document>(["document", uploaded.id], (old) => {
-          if (!old) return old;
-
-          return {
-            ...old,
-            file_name: uploaded.name ?? old.file_name,
-            uploaded_at: uploaded.uploaded_at ?? old.uploaded_at,
-          };
-        });
-      }
-
+    onSuccess: (_data, variables) => {
       // Invalidate all relevant queries to ensure UI updates properly
       Promise.all([
         // Client view queries
@@ -86,29 +71,6 @@ export function useClientReuploadDocument() {
   >({
     mutationFn: clientReuploadDocument,
     onSuccess: (_data, variables) => {
-      const nowIso = new Date().toISOString();
-
-      queryClient.setQueryData<Document>(["document", variables.documentId], (old) => {
-        if (!old) return old;
-
-        return {
-          ...old,
-          status: "pending",
-          reject_message: undefined,
-          file_name: variables.file.name,
-          uploaded_at: nowIso,
-          history: [
-            ...old.history,
-            {
-              _id: `temp-reupload-${Date.now()}`,
-              status: "pending",
-              changed_by: variables.uploaded_by,
-              changed_at: nowIso,
-            },
-          ],
-        };
-      });
-
       // Invalidate all relevant queries to ensure UI updates properly
       Promise.all([
         // Client view queries
