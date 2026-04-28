@@ -84,15 +84,22 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   useEffect(() => {
     if (!selectedDocument) return;
 
-    if (
+    const currentUrl = currentDoc ? getDocumentUrl(currentDoc) : "";
+    const nextUrl = getDocumentUrl(selectedDocument);
+
+    const shouldSync =
       !currentDoc ||
       currentDoc.status !== selectedDocument.status ||
-      currentDoc.storage_type !== selectedDocument.storage_type
-    ) {
-      queryClient.setQueryData(
-        ["document", selectedDocument._id],
-        selectedDocument,
-      );
+      currentDoc.storage_type !== selectedDocument.storage_type ||
+      currentDoc.file_name !== selectedDocument.file_name ||
+      currentDoc.uploaded_at !== selectedDocument.uploaded_at ||
+      currentDoc.r2_key !== selectedDocument.r2_key ||
+      currentDoc.document_link !== selectedDocument.document_link ||
+      currentDoc.download_url !== selectedDocument.download_url ||
+      currentUrl !== nextUrl;
+
+    if (shouldSync) {
+      queryClient.setQueryData(["document", selectedDocument._id], selectedDocument);
     }
   }, [selectedDocument, currentDoc, queryClient]);
 
@@ -162,7 +169,11 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   const previewFileName =
     displayDoc.file_name || displayDoc.document_name || "document";
   const docUrl = getDocumentUrl(displayDoc);
-  const viewUrl = docUrl;
+  const viewUrl = docUrl
+    ? `${docUrl}${docUrl.includes("?") ? "&" : "?"}v=${new Date(
+        displayDoc.uploaded_at || Date.now(),
+      ).getTime()}`
+    : "";
   const downloadUrl = docUrl || undefined;
   const isR2Document = displayDoc.storage_type === "r2";
 

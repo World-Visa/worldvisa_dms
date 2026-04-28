@@ -7,8 +7,6 @@ import {
   ClientReuploadDocumentRequest,
   ClientReuploadDocumentResponse,
 } from "@/lib/api/clientDocumentUpload";
-import { ClientDocument } from "@/types/client";
-import { Document } from "@/types/applications";
 import { toast } from "sonner";
 import { showSuccessToast } from "@/components/ui/primitives/sonner-helpers";
 
@@ -21,7 +19,7 @@ export function useClientUploadDocument() {
     ClientUploadDocumentRequest
   >({
     mutationFn: clientUploadDocument,
-    onSuccess: (data, variables) => {
+    onSuccess: (_data, variables) => {
       // Invalidate all relevant queries to ensure UI updates properly
       Promise.all([
         // Client view queries
@@ -72,64 +70,7 @@ export function useClientReuploadDocument() {
     ClientReuploadDocumentRequest
   >({
     mutationFn: clientReuploadDocument,
-    onSuccess: (data, variables) => {
-      // First, optimistically update the document status in the cache
-      queryClient.setQueryData<{ success: boolean; data: ClientDocument[] }>(
-        ["client-documents", variables.clientId],
-        (old) => {
-          if (!old || !old.data || !Array.isArray(old.data)) return old;
-
-          return {
-            ...old,
-            data: old.data.map((doc) =>
-              doc._id === variables.documentId
-                ? {
-                    ...doc,
-                    status: "pending", // Reset to pending after reupload
-                    reject_message: undefined, // Clear rejection message
-                    file_name: variables.file.name, // Update filename
-                    uploaded_at: new Date().toISOString(), // Update upload time
-                    history: [
-                      ...doc.history,
-                      {
-                        _id: `temp-reupload-${Date.now()}`,
-                        status: "pending",
-                        changed_by: variables.uploaded_by,
-                        changed_at: new Date().toISOString(),
-                      },
-                    ],
-                  }
-                : doc,
-            ),
-          };
-        },
-      );
-
-      // Update individual document cache for real-time UI updates (ViewDocumentSheet)
-      queryClient.setQueryData<Document>(
-        ["document", variables.documentId],
-        (old) => {
-          const base = old || ({} as Document);
-          return {
-            ...base,
-            _id: variables.documentId,
-            status: "pending" as Document["status"],
-            reject_message: undefined,
-            file_name: variables.file.name,
-            uploaded_at: new Date().toISOString(),
-            history: [
-              ...(base.history || []),
-              {
-                _id: `temp-reupload-${Date.now()}`,
-                status: "pending" as Document["status"],
-                changed_by: variables.uploaded_by,
-                changed_at: new Date().toISOString(),
-              },
-            ],
-          };
-        },
-      );
-
+    onSuccess: (_data, variables) => {
       // Invalidate all relevant queries to ensure UI updates properly
       Promise.all([
         // Client view queries
