@@ -14,7 +14,7 @@ export function useReuploadDocument() {
 
   return useMutation<ReuploadDocumentResponse, Error, ReuploadDocumentRequest>({
     mutationFn: reuploadDocument,
-    onSuccess: (_data, variables) => {
+    onSuccess: async (_data, variables) => {
       const nowIso = new Date().toISOString();
 
       queryClient.setQueryData<Document>(["document", variables.documentId], (old) => {
@@ -112,7 +112,8 @@ export function useReuploadDocument() {
       });
 
       // Invalidate all relevant queries to ensure UI updates properly
-      Promise.all([
+      try {
+        await Promise.all([
         // Admin view queries
         queryClient.invalidateQueries({
           queryKey: ["application-documents", variables.applicationId],
@@ -150,13 +151,27 @@ export function useReuploadDocument() {
         queryClient.invalidateQueries({
           queryKey: ["checklist", variables.applicationId],
         }),
-      ])
-        .then(async () => {
-          await revalidateDocumentsCache(variables.applicationId);
-        })
-        .catch((error) => {
-          console.error("Error invalidating queries after reupload:", error);
+        ]);
+
+        // Force an immediate refetch so the cache contains the new versioned `r2_key`.
+        await queryClient.refetchQueries({
+          queryKey: ["application-documents", variables.applicationId],
+          exact: true,
         });
+
+        const docs = queryClient.getQueryData<{ success: boolean; data: Document[] }>([
+          "application-documents",
+          variables.applicationId,
+        ]);
+        const freshDoc = docs?.data?.find((d) => d._id === variables.documentId);
+        if (freshDoc) {
+          queryClient.setQueryData(["document", variables.documentId], freshDoc);
+        }
+
+        await revalidateDocumentsCache(variables.applicationId);
+      } catch (error) {
+        console.error("Error invalidating/refetching after reupload:", error);
+      }
     },
     onError: (error) => {
       toast.error(`Failed to reupload document: ${error.message}`);

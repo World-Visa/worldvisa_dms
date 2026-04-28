@@ -70,42 +70,45 @@ export function useClientReuploadDocument() {
     ClientReuploadDocumentRequest
   >({
     mutationFn: clientReuploadDocument,
-    onSuccess: (_data, variables) => {
+    onSuccess: async (_data, variables) => {
       // Invalidate all relevant queries to ensure UI updates properly
-      Promise.all([
-        // Client view queries
-        queryClient.invalidateQueries({
-          queryKey: ["client-documents"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["client-documents-all"],
-        }),
-        queryClient.invalidateQueries({
-          queryKey: ["client-checklist", variables.clientId],
-        }),
+      try {
+        await Promise.all([
+          // Client view queries
+          queryClient.invalidateQueries({
+            queryKey: ["client-documents"],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ["client-documents-all"],
+          }),
+          queryClient.invalidateQueries({
+            queryKey: ["client-checklist", variables.clientId],
+          }),
 
-        // Application details
-        queryClient.invalidateQueries({
-          queryKey: ["application-details", variables.clientId],
-        }),
+          // Application details
+          queryClient.invalidateQueries({
+            queryKey: ["application-details", variables.clientId],
+          }),
 
-        // Document comment counts
-        queryClient.invalidateQueries({
-          queryKey: ["document-comment-counts"],
-        }),
+          // Document comment counts
+          queryClient.invalidateQueries({
+            queryKey: ["document-comment-counts"],
+          }),
 
-        // Checklist queries
-        queryClient.invalidateQueries({
-          queryKey: ["checklist", variables.clientId],
-        }),
-      ])
-        .then(() => {
-          toast.success("Document reuploaded successfully");
-        })
-        .catch((error) => {
-          console.error("Error invalidating queries after reupload:", error);
-          toast.success("Document reuploaded successfully");
-        });
+          // Checklist queries
+          queryClient.invalidateQueries({
+            queryKey: ["checklist", variables.clientId],
+          }),
+        ]);
+
+        // Force immediate refetch so UI sees updated doc metadata quickly.
+        await queryClient.refetchQueries({ queryKey: ["client-documents"], exact: true });
+
+        toast.success("Document reuploaded successfully");
+      } catch (error) {
+        console.error("Error invalidating/refetching after reupload:", error);
+        toast.success("Document reuploaded successfully");
+      }
     },
     onError: (error: Error) => {
       toast.error(`Failed to reupload document: ${error.message}`);
