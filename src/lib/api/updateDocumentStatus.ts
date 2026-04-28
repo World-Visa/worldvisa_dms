@@ -15,8 +15,6 @@ export interface UpdateDocumentStatusResponse {
     status: string;
     changed_by: string;
     changed_at: string;
-    document_link?: string | null;
-    rejection_snapshot_url?: string | null;
   };
 }
 
