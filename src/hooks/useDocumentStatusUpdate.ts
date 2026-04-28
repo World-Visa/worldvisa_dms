@@ -69,36 +69,6 @@ export function useDocumentStatusUpdate({
           );
         }
 
-        if (status === "rejected" && rejectMessage && documentId) {
-          try {
-            const currentDocument = queryClient.getQueryData<Document>([
-              "document",
-              documentId,
-            ]);
-            const documentLink = currentDocument
-              ? getDocumentUrl(currentDocument).trim() || undefined
-              : undefined;
-
-            addCommentMutation.mutate({
-              comment: `Document rejected: ${rejectMessage}`,
-              added_by: changedBy,
-              ...(documentLink ? { document_link: documentLink } : {}),
-            });
-          } catch (commentError) {
-            console.warn("Failed to create rejection comment:", commentError);
-            Sentry.captureException(commentError, {
-              tags: {
-                operation: "create_rejection_comment",
-                documentId,
-              },
-              extra: {
-                rejectMessage,
-                changedBy,
-              },
-            });
-          }
-        }
-
         if (responseTime > 2000) {
           console.warn(`Slow status update response: ${responseTime}ms`);
         }
@@ -383,7 +353,7 @@ export function useDocumentStatusUpdate({
       onError?.(error as Error, documentId, status);
     },
 
-    onSuccess: (data) => {
+    onSuccess: async (data, variables) => {
       // Update the document with the real server response
       queryClient.setQueryData<Document>(
         ["document", data.documentId],
@@ -417,6 +387,60 @@ export function useDocumentStatusUpdate({
           return updatedDocument;
         },
       );
+
+      if (
+        data.newStatus === "rejected" &&
+        data.rejectMessage &&
+        applicationId &&
+        data.documentId
+      ) {
+        try {
+          // Prefer the per-document cache, since it is always present here and should
+          // already include the versioned `r2_key` after reupload.
+          const cachedDoc = queryClient.getQueryData<Document>([
+            "document",
+            data.documentId,
+          ]);
+          let documentLink = cachedDoc
+            ? getDocumentUrl(cachedDoc).trim() || undefined
+            : undefined;
+
+          // Fallback: refetch the list and derive the link from the fresh list item.
+          if (!documentLink) {
+            await queryClient.refetchQueries({
+              queryKey: ["application-documents", applicationId],
+              exact: true,
+            });
+
+            const docs = queryClient.getQueryData<{
+              success: boolean;
+              data: Document[];
+            }>(["application-documents", applicationId]);
+            const freshDoc = docs?.data?.find((d) => d._id === data.documentId);
+            documentLink = freshDoc
+              ? getDocumentUrl(freshDoc).trim() || undefined
+              : undefined;
+          }
+
+          await addCommentMutation.mutateAsync({
+            comment: `Document rejected: ${data.rejectMessage}`,
+            added_by: variables.changedBy,
+            ...(documentLink ? { document_link: documentLink } : {}),
+          });
+        } catch (commentError) {
+          console.warn("Failed to create rejection comment:", commentError);
+          Sentry.captureException(commentError, {
+            tags: {
+              operation: "create_rejection_comment",
+              documentId: data.documentId,
+            },
+            extra: {
+              rejectMessage: data.rejectMessage,
+              changedBy: variables.changedBy,
+            },
+          });
+        }
+      }
 
       // Also update the documents list if available
       if (applicationId) {
