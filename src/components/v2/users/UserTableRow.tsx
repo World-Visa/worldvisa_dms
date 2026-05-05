@@ -40,6 +40,7 @@ import { TableCell, TableRow } from "@/components/ui/table";
 import { cn, getProfileAvatarSrc } from "@/lib/utils";
 import { ROLE_OPTIONS, formatRole, getInitials } from "@/lib/constants/users";
 import type { AdminUserV2 } from "@/hooks/useAdminUsersV2";
+import { SupportRatioGauge } from "@/components/v2/users/SupportRatioGauge";
 import {
   useDeleteUser,
   useMigrateUserToClerk,
@@ -242,6 +243,12 @@ export const UserTableRow = React.memo(function UserTableRow({
 
       <TableCell>
         <StatusCell user={user} />
+      </TableCell>
+
+      <TableCell className="text-center">
+        <div className="flex justify-center">
+          <SupportRatioGauge ratio={user.support_ratio} size="sm" />
+        </div>
       </TableCell>
 
       <TableCell className="text-right">

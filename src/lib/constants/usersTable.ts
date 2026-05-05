@@ -22,6 +22,12 @@ export const USERS_TABLE_COLUMNS: readonly UsersTableColumn[] = [
     skeletonClassName: "h-6 w-24 rounded-md",
   },
   {
+    label: "Support",
+    headerClassName: "w-[80px] text-center",
+    cellClassName: "text-center",
+    skeletonClassName: "size-10 rounded-full mx-auto",
+  },
+  {
     label: "Action",
     headerClassName: "w-[160px] text-right",
     cellClassName: "text-right",

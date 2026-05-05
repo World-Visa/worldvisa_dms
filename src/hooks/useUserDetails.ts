@@ -12,6 +12,7 @@ export interface UserDetailInfo {
   agent_number?: string;
   mcube_username?: string;
   clerk_id?: string;
+  support_ratio?: number;
 }
 
 export interface ReviewDocument {
