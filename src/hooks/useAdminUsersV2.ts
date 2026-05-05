@@ -23,6 +23,7 @@ export interface AdminUserV2 {
   clerk_invitation_id?: string;
   ip_restricted?: boolean;
   ip_restricted_list?: string[];
+  support_ratio?: number;
   stats: {
     active_applications: number;
     reviews_sent: number;

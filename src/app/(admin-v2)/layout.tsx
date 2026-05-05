@@ -22,6 +22,7 @@ import PhoneCard from "@/components/mcube/PhoneCard";
 import { CallEventsSetup } from "@/components/mcube/CallEventsSetup";
 import { IncomingCallBanner } from "@/components/mcube/IncomingCallBanner";
 import { AskNiraButton } from "@/components/ui/ai-elements/ask-nira-button";
+import { HeaderSupportRatioWidget } from "@/components/v2/sidebar/HeaderSupportRatioWidget";
 
 function AdminContentFallback() {
   return (
@@ -66,6 +67,8 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <SidebarTrigger className="-ml-1" />
               <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
               <SearchDialog />
+              <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
+              <HeaderSupportRatioWidget />
             </div>
             <div className="flex items-center gap-1">
               {/* <AskNiraButton /> */}
