@@ -68,7 +68,7 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
               <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
               <SearchDialog />
               <Separator orientation="vertical" className="mx-2 data-[orientation=vertical]:h-4" />
-              <HeaderSupportRatioWidget />
+              {/* <HeaderSupportRatioWidget /> */}
             </div>
             <div className="flex items-center gap-1">
               {/* <AskNiraButton /> */}
