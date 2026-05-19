@@ -70,10 +70,10 @@ import { useApplicationNotes, useDeleteNote } from "@/hooks/useApplicationNotes"
 import { useRemoveCompany } from "@/hooks/useRemoveCompany";
 import type { ApplicationNote } from "@/lib/api/applicationNotes";
 import { ClientOnboardingModal } from "@/components/applications/onboarding/ClientOnboardingModal";
-import { DeadlineBlockerModal } from "@/components/applications/deadline/DeadlineBlockerModal";
-import { computeDaysLeft } from "@/components/applications/deadline/deadline-date-utils";
-import { shouldShowDeadlineCard } from "@/components/applications/ApplicationDeadlineCard";
-import { useApprovalRequestsByLead } from "@/hooks/useAdminApprovalRequests";
+// import { DeadlineBlockerModal } from "@/components/applications/deadline/DeadlineBlockerModal";
+// import { computeDaysLeft } from "@/components/applications/deadline/deadline-date-utils";
+// import { shouldShowDeadlineCard } from "@/components/applications/ApplicationDeadlineCard";
+// import { useApprovalRequestsByLead } from "@/hooks/useAdminApprovalRequests";
 import { useLazyDocumentLoad } from "@/hooks/useLazyDocumentLoad";
 import type { ApplicationLayout } from "@/components/applications/layouts/LayoutChips";
 import { useQueryStates } from "nuqs";
@@ -184,50 +184,50 @@ export default function UnifiedApplicationDetailsPage({
   const dismissedOnboardingIds = useRef(new Set<string>());
   const hasLoadedApplicationData = !isApplicationLoading && Boolean(application);
 
-  const leadId = application?.id ?? "";
+  // const leadId = application?.id ?? "";
 
-  const {
-    data: leadRequestsForBlocker,
-    isLoading: isLeadRequestsLoading,
-  } = useApprovalRequestsByLead(leadId, {});
+  // const {
+  //   data: leadRequestsForBlocker,
+  //   isLoading: isLeadRequestsLoading,
+  // } = useApprovalRequestsByLead(leadId, {});
 
-  const isDeadlineBlocking = useMemo(() => {
-    if (!hasLoadedApplicationData || isLeadRequestsLoading) return false;
-    if (!shouldShowDeadlineCard(application?.Application_Stage)) return false;
-    const daysLeft = computeDaysLeft(application?.Deadline_For_Lodgment);
-    if (daysLeft === null || daysLeft >= 0) return false;
-    const requests = leadRequestsForBlocker?.data ?? [];
-    const latest = [...requests]
-      .filter(
-        (r) =>
-          r.fieldName === "Deadline_For_Lodgment" &&
-          r.recordType === "visa_application",
-      )
-      .sort(
-        (a, b) =>
-          new Date(b.updatedAt || b.createdAt).getTime() -
-          new Date(a.updatedAt || a.createdAt).getTime(),
-      )[0];
-    return latest?.status !== "pending";
-  }, [
-    hasLoadedApplicationData,
-    isLeadRequestsLoading,
-    application?.Application_Stage,
-    application?.Deadline_For_Lodgment,
-    leadRequestsForBlocker,
-  ]);
+  // const isDeadlineBlocking = useMemo(() => {
+  //   if (!hasLoadedApplicationData || isLeadRequestsLoading) return false;
+  //   if (!shouldShowDeadlineCard(application?.Application_Stage)) return false;
+  //   const daysLeft = computeDaysLeft(application?.Deadline_For_Lodgment);
+  //   if (daysLeft === null || daysLeft >= 0) return false;
+  //   const requests = leadRequestsForBlocker?.data ?? [];
+  //   const latest = [...requests]
+  //     .filter(
+  //       (r) =>
+  //         r.fieldName === "Deadline_For_Lodgment" &&
+  //         r.recordType === "visa_application",
+  //     )
+  //     .sort(
+  //       (a, b) =>
+  //         new Date(b.updatedAt || b.createdAt).getTime() -
+  //         new Date(a.updatedAt || a.createdAt).getTime(),
+  //     )[0];
+  //   return latest?.status !== "pending";
+  // }, [
+  //   hasLoadedApplicationData,
+  //   isLeadRequestsLoading,
+  //   application?.Application_Stage,
+  //   application?.Deadline_For_Lodgment,
+  //   leadRequestsForBlocker,
+  // ]);
 
   useEffect(() => {
-    if (!hasLoadedApplicationData || isLeadRequestsLoading) return;
-    if (isDeadlineBlocking) { setIsClientOnboardingOpen(false); return; }
+    if (!hasLoadedApplicationData) return;
+    // if (isDeadlineBlocking) { setIsClientOnboardingOpen(false); return; }
     if (isFullyOnboarded)   { setIsClientOnboardingOpen(false); return; }
     if (dismissedOnboardingIds.current.has(applicationId)) return;
     setIsClientOnboardingOpen(true);
   }, [
     applicationId,
     hasLoadedApplicationData,
-    isLeadRequestsLoading,
-    isDeadlineBlocking,
+    // isLeadRequestsLoading,
+    // isDeadlineBlocking,
     isFullyOnboarded,
   ]);
 
@@ -659,11 +659,11 @@ export default function UnifiedApplicationDetailsPage({
         />
       )}
 
-      <DeadlineBlockerModal
+      {/* <DeadlineBlockerModal
         open={isDeadlineBlocking}
         leadId={leadId}
         currentDeadline={application?.Deadline_For_Lodgment}
-      />
+      /> */}
 
       <ClientOnboardingModal
         applicationId={applicationId}
