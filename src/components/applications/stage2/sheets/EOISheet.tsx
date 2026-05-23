@@ -46,6 +46,13 @@ import { AnzscoCombobox } from "@/components/ui/anzsco-combox";
 import type { EOISheetProps } from "@/types/stage2Documents";
 import TruncatedText from "@/components/ui/truncated-text";
 import {
+  isSubclassWithoutState,
+  requiresStateSelection,
+  resolveStage2StateForApi,
+  resolveStage2StatesForUpload,
+  STAGE2_STATE_NOT_APPLICABLE,
+} from "@/lib/stage2/visaSubclassState";
+import {
   computeEoiExpiryDate,
   formatEoiExpiryForApi,
   formatEoiExpiryForPatch,
@@ -107,6 +114,12 @@ export function EOISheet({
     label: `${s.code} - ${s.name}`,
   }));
 
+  const showStateSelection = requiresStateSelection(subclass);
+  const statesForUpload = resolveStage2StatesForUpload(
+    subclass,
+    selectedStates,
+  );
+
   const pointOptions = Array.from(
     { length: Math.floor((110 - 65) / 5) + 1 },
     (_, index) => (65 + index * 5).toString(),
@@ -161,6 +174,12 @@ export function EOISheet({
       setReplacementFile(null);
     }
   }, [mode, document, isOpen]);
+
+  useEffect(() => {
+    if (isSubclassWithoutState(subclass)) {
+      setSelectedStates([]);
+    }
+  }, [subclass]);
 
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files || []);
@@ -240,7 +259,7 @@ export function EOISheet({
       return;
     }
     if (mode === "create") {
-      if (selectedStates.length === 0) {
+      if (showStateSelection && selectedStates.length === 0) {
         toast.error("Please select at least one state.");
         return;
       }
@@ -261,6 +280,10 @@ export function EOISheet({
 
     try {
       if (mode === "edit" && document) {
+        const apiState = resolveStage2StateForApi(
+          subclass,
+          document.state ?? "",
+        );
         if (replacementFile) {
           await reuploadMutation.mutateAsync({
             applicationId,
@@ -271,7 +294,7 @@ export function EOISheet({
             document_type: replacementFile.type,
             uploaded_by: user?.username ?? user?.email ?? "",
             subclass,
-            state: document.state,
+            state: apiState,
             point: Number(point),
             date: formattedDate,
             skill_assessing_body: anzscoValue,
@@ -284,7 +307,7 @@ export function EOISheet({
             metadata: {
               document_name: document.file_name,
               subclass,
-              state: document.state,
+              state: apiState,
               point: Number(point),
               date: formattedDate,
               skill_assessing_body: anzscoValue,
@@ -297,7 +320,7 @@ export function EOISheet({
         return;
       }
 
-      const total = uploadedFiles.length * selectedStates.length;
+      const total = uploadedFiles.length * statesForUpload.length;
       setUploadProgress({ current: 0, total });
       let done = 0;
       const failed: string[] = [];
@@ -307,7 +330,7 @@ export function EOISheet({
         const documentName = file.name;
         const documentType = file.type;
 
-        for (const stateCode of selectedStates) {
+        for (const stateCode of statesForUpload) {
           try {
             await uploadMutation.mutateAsync({
               applicationId,
@@ -427,7 +450,12 @@ export function EOISheet({
                   </Label>
                   <Select
                     value={subclass}
-                    onValueChange={setSubclass}
+                    onValueChange={(value) => {
+                      setSubclass(value);
+                      if (isSubclassWithoutState(value)) {
+                        setSelectedStates([]);
+                      }
+                    }}
                     disabled={isUploading}
                   >
                     <SelectTrigger className="h-9 w-full">
@@ -446,25 +474,32 @@ export function EOISheet({
                   </Select>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-foreground">
-                    State{mode === "create" ? "s" : ""} *
-                  </Label>
-                  {mode === "create" ? (
-                    <MultiSelect
-                      options={stateOptions}
-                      value={selectedStates}
-                      onChange={setSelectedStates}
-                      placeholder="Select state(s)..."
-                      disabled={isUploading}
-                      portalContainer={sheetContainerRef.current}
-                    />
-                  ) : (
-                    <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
-                      {document?.state ? getStateDisplay(document.state) : "N/A"}
-                    </div>
-                  )}
-                </div>
+                {(showStateSelection || mode === "edit") && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-foreground">
+                      State{mode === "create" ? "s" : ""}
+                      {showStateSelection ? " *" : ""}
+                    </Label>
+                    {mode === "create" ? (
+                      <MultiSelect
+                        options={stateOptions}
+                        value={selectedStates}
+                        onChange={setSelectedStates}
+                        placeholder="Select state(s)..."
+                        disabled={isUploading}
+                        portalContainer={sheetContainerRef.current}
+                      />
+                    ) : (
+                      <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                        {isSubclassWithoutState(subclass)
+                          ? STAGE2_STATE_NOT_APPLICABLE
+                          : document?.state
+                            ? getStateDisplay(document.state)
+                            : STAGE2_STATE_NOT_APPLICABLE}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               <Separator />
@@ -649,11 +684,11 @@ export function EOISheet({
                     <Label className="text-xs font-medium text-muted-foreground">
                       Files to Upload
                     </Label>
-                    {uploadedFiles.length > 0 && selectedStates.length > 0 && (
+                    {uploadedFiles.length > 0 && statesForUpload.length > 0 && (
                       <p className="text-[11px] text-muted-foreground">
-                        {uploadedFiles.length} file(s) × {selectedStates.length}{" "}
+                        {uploadedFiles.length} file(s) × {statesForUpload.length}{" "}
                         state(s) ={" "}
-                        {uploadedFiles.length * selectedStates.length} EOI
+                        {uploadedFiles.length * statesForUpload.length} EOI
                         document(s) will be created.
                       </p>
                     )}
