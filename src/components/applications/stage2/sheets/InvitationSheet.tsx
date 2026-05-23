@@ -45,6 +45,12 @@ import {
 import type { InvitationSheetProps } from "@/types/stage2Documents";
 import TruncatedText from "@/components/ui/truncated-text";
 import {
+  isSubclassWithoutState,
+  requiresStateSelection,
+  resolveStage2StateForApi,
+  STAGE2_STATE_NOT_APPLICABLE,
+} from "@/lib/stage2/visaSubclassState";
+import {
   INVITATION_TYPE_OPTIONS,
   INVITATION_TYPE_STATE_NOMINATION,
   computeInvitationExpiryDate,
@@ -102,6 +108,8 @@ export function InvitationSheet({
     label: `${s.code} - ${s.name}`,
   }));
 
+  const showStateSelection = requiresStateSelection(subclass);
+
   const pointOptions = Array.from(
     { length: Math.floor((110 - 65) / 5) + 1 },
     (_, index) => (65 + index * 5).toString(),
@@ -138,6 +146,14 @@ export function InvitationSheet({
       setReplacementFile(null);
     }
   }, [mode, document, isOpen]);
+
+  useEffect(() => {
+    if (isSubclassWithoutState(subclass)) {
+      setState(STAGE2_STATE_NOT_APPLICABLE);
+    } else if (state === STAGE2_STATE_NOT_APPLICABLE) {
+      setState("");
+    }
+  }, [subclass, state]);
 
   const computedExpiry = useMemo(() => {
     if (!date || !invitationType) return null;
@@ -239,10 +255,12 @@ export function InvitationSheet({
       return;
     }
 
-    if (!state) {
+    if (showStateSelection && !state) {
       toast.error("Please select a state.");
       return;
     }
+
+    const apiState = resolveStage2StateForApi(subclass, state);
 
     if (!point) {
       toast.error("Please select points.");
@@ -299,7 +317,7 @@ export function InvitationSheet({
             document_type: replacementFile.type,
             uploaded_by: user.username,
             subclass,
-            state: document.state,
+            state: apiState,
             point: Number(point),
             date: formattedDate,
             skill_assessing_body: skillBody,
@@ -313,7 +331,7 @@ export function InvitationSheet({
             metadata: {
               document_name: document.file_name,
               subclass,
-              state,
+              state: apiState,
               point: Number(point),
               date: formattedDate,
               invitation_type: invitationType,
@@ -341,7 +359,7 @@ export function InvitationSheet({
           uploaded_by: user.username,
           type: "invitation",
           subclass,
-          state,
+          state: apiState,
           point: Number(point),
           date: formattedDate,
           invitation_type: invitationType,
@@ -444,7 +462,14 @@ export function InvitationSheet({
                   </Label>
                   <Select
                     value={subclass}
-                    onValueChange={setSubclass}
+                    onValueChange={(value) => {
+                      setSubclass(value);
+                      if (isSubclassWithoutState(value)) {
+                        setState(STAGE2_STATE_NOT_APPLICABLE);
+                      } else if (state === STAGE2_STATE_NOT_APPLICABLE) {
+                        setState("");
+                      }
+                    }}
                     disabled={isUploading}
                   >
                     <SelectTrigger className="h-9 w-full">
@@ -463,36 +488,42 @@ export function InvitationSheet({
                   </Select>
                 </div>
 
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-medium text-foreground">
-                    State *
-                  </Label>
-                  {mode === "create" ? (
-                    <Select
-                      value={state}
-                      onValueChange={setState}
-                      disabled={isUploading}
-                    >
-                      <SelectTrigger className="h-9 w-full">
-                        <SelectValue placeholder="Select a state…" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectLabel>State / territory</SelectLabel>
-                          {stateOptions.map((opt) => (
-                            <SelectItem key={opt.value} value={opt.value}>
-                              {opt.label}
-                            </SelectItem>
-                          ))}
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  ) : (
-                    <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
-                      {document?.state ? getStateDisplay(document.state) : "N/A"}
-                    </div>
-                  )}
-                </div>
+                {(showStateSelection || mode === "edit") && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-medium text-foreground">
+                      State{showStateSelection ? " *" : ""}
+                    </Label>
+                    {mode === "create" ? (
+                      <Select
+                        value={state}
+                        onValueChange={setState}
+                        disabled={isUploading}
+                      >
+                        <SelectTrigger className="h-9 w-full">
+                          <SelectValue placeholder="Select a state…" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectGroup>
+                            <SelectLabel>State / territory</SelectLabel>
+                            {stateOptions.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+                    ) : (
+                      <div className="rounded-md border bg-muted/50 px-3 py-2 text-sm">
+                        {isSubclassWithoutState(subclass)
+                          ? STAGE2_STATE_NOT_APPLICABLE
+                          : document?.state
+                            ? getStateDisplay(document.state)
+                            : STAGE2_STATE_NOT_APPLICABLE}
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-foreground">

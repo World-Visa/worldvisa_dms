@@ -733,6 +733,11 @@ export const ANZSCO_CODES: AnzscoCode[] = [
     assessing_authority: "VETASSESS",
   },
   {
+    anzsco_code: "225113",
+    name: "Marketing Specialist",
+    assessing_authority: "VETASSESS",
+  },
+  {
     anzsco_code: "231111",
     name: "Aeroplane Pilot",
     assessing_authority: "CASA",
@@ -2252,6 +2257,11 @@ export const ANZSCO_CODES: AnzscoCode[] = [
   {
     anzsco_code: "399999",
     name: "Other Technicians and Trades Workers nec",
+    assessing_authority: "VETASSESS",
+  },
+  {
+    anzsco_code: "511112",
+    name: "Programme or Project Administrator",
     assessing_authority: "VETASSESS",
   },
 ];
