@@ -1,9 +1,11 @@
 import { fetcher } from "../fetcher";
+import { mapApplicationFromApi } from "@/lib/api/getApplicationById";
 import {
   ApplicationsResponse,
   ApplicationsFilters,
   ApplicationDetailsResponse,
   SearchParams,
+  type Application,
 } from "@/types/applications";
 import { ZOHO_BASE_URL } from "@/lib/config/api";
 
@@ -71,5 +73,10 @@ export async function getSpouseApplicationById(
     url += `?id=${queryId}`;
   }
 
-  return fetcher<ApplicationDetailsResponse>(url);
+  const res = await fetcher<ApplicationDetailsResponse>(url);
+  if (!res?.data) return res;
+  return {
+    ...res,
+    data: mapApplicationFromApi(res.data as Application & Record<string, unknown>),
+  };
 }

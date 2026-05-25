@@ -13,7 +13,6 @@ export interface ClientProfile {
   suggested_anzsco: string;
   assessing_authority: string;
   service_type: string;
-  checklist_reminders_enabled?: boolean;
 }
 
 interface ClientProfileResponse {

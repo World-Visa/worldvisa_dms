@@ -1,13 +1,39 @@
 import { fetcher } from "../fetcher";
-import { ApplicationDetailsResponse } from "@/types/applications";
+import type { Application, ApplicationDetailsResponse } from "@/types/applications";
 import { API_ENDPOINTS } from "@/lib/config/api";
+
+function parseChecklistRemindersEnabled(
+  value: unknown,
+): boolean | undefined {
+  if (value === true || value === "true") return true;
+  if (value === false || value === "false") return false;
+  return undefined;
+}
+
+/** Maps visa application GET payload variants to Application.checklist_reminders_enabled */
+export function mapApplicationFromApi(
+  raw: Application & Record<string, unknown>,
+): Application {
+  const enabled = parseChecklistRemindersEnabled(
+    raw.checklist_reminders_enabled ??
+      raw.Checklist_Reminders_Enabled ??
+      raw.checklistRemindersEnabled,
+  );
+  if (enabled === undefined) return raw;
+  return { ...raw, checklist_reminders_enabled: enabled };
+}
 
 export async function getApplicationById(
   id: string,
 ): Promise<ApplicationDetailsResponse> {
-  return fetcher<ApplicationDetailsResponse>(
+  const res = await fetcher<ApplicationDetailsResponse>(
     API_ENDPOINTS.VISA_APPLICATIONS.BY_ID(id),
   );
+  if (!res?.data) return res;
+  return {
+    ...res,
+    data: mapApplicationFromApi(res.data as Application & Record<string, unknown>),
+  };
 }
 
 export async function updateApplicationFields(
