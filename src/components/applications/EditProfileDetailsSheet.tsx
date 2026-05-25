@@ -32,7 +32,10 @@ export function EditProfileDetailsSheet({
   const sheetContentRef = useCallback((node: HTMLDivElement | null) => {
     setPortalContainer(node);
   }, []);
-  const { data: profile } = useClientProfile(application.id, open);
+  const { data: profile, isPending: isProfileLoading } = useClientProfile(
+    application.id,
+    open,
+  );
   const updateProfile = useUpdateClientProfile(application.id);
 
   const form = useForm<z.infer<typeof EditLeadFormSchema>>({
@@ -120,6 +123,8 @@ export function EditProfileDetailsSheet({
               application={application}
               isSpouseApplication={isSpouseApplication}
               portalContainer={portalContainer}
+              checklistRemindersEnabled={profile?.checklist_reminders_enabled}
+              isChecklistRemindersLoading={open && isProfileLoading}
             />
           </section>
         </SheetMain>
