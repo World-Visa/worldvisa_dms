@@ -159,6 +159,8 @@ export const API_ENDPOINTS = {
     NOTES: (id: string) => `${ZOHO_BASE_URL}/visa_applications/${id}/notes`,
     CHECKLIST_STATUS: (leadId: string) =>
       `${ZOHO_BASE_URL}/visa_applications/${leadId}/checklist-status`,
+    CHECKLIST_REMINDERS: (leadId: string) =>
+      `${ZOHO_BASE_URL}/visa_applications/checklist/${leadId}/reminders`,
     CHECKLIST_REQUESTED: {
       LIST: `${ZOHO_BASE_URL}/visa_applications/checklist/requested`,
       BY_ID: (leadId: string) =>

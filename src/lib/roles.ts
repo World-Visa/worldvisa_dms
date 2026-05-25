@@ -21,5 +21,8 @@ const ADMIN_ROLES_SET = new Set<string>(ADMIN_ROLES);
 export const isAdminRole = (role: string | undefined | null): boolean =>
   ADMIN_ROLES_SET.has(role ?? "");
 
+export const isMasterAdminRole = (role: string | undefined | null): boolean =>
+  role === ROLES.MASTER_ADMIN;
+
 export const isClientRole = (role: string | undefined | null): boolean =>
   role === ROLES.CLIENT;

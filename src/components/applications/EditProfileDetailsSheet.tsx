@@ -1,8 +1,9 @@
 import { standardSchemaResolver } from '@hookform/resolvers/standard-schema';
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { RiUser4Line } from 'react-icons/ri';
 import { z } from 'zod';
+import { ApplicationWorkflowFields } from '@/components/applications/ApplicationWorkflowFields';
 import { Button } from '@/components/ui/primitives/button';
 import { Form, FormRoot } from '@/components/ui/primitives/form';
 import { Separator } from '@/components/ui/primitives/separator';
@@ -18,9 +19,19 @@ interface EditProfileDetailsSheetProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   application: Application;
+  isSpouseApplication?: boolean;
 }
 
-export function EditProfileDetailsSheet({ open, onOpenChange, application }: EditProfileDetailsSheetProps) {
+export function EditProfileDetailsSheet({
+  open,
+  onOpenChange,
+  application,
+  isSpouseApplication = false,
+}: EditProfileDetailsSheetProps) {
+  const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(null);
+  const sheetContentRef = useCallback((node: HTMLDivElement | null) => {
+    setPortalContainer(node);
+  }, []);
   const { data: profile } = useClientProfile(application.id, open);
   const updateProfile = useUpdateClientProfile(application.id);
 
@@ -72,29 +83,45 @@ export function EditProfileDetailsSheet({ open, onOpenChange, application }: Edi
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-full p-0 flex flex-col gap-0">
+      <SheetContent
+        ref={sheetContentRef}
+        className="w-full p-0 flex flex-col gap-0"
+      >
         <SheetHeader className="p-0">
-          <VisuallyHidden><SheetTitle>Edit Account Details</SheetTitle></VisuallyHidden>
+          <VisuallyHidden><SheetTitle>Edit Account &amp; Workflow</SheetTitle></VisuallyHidden>
           <header className="border-bg-soft flex h-12 w-full flex-row items-center gap-3 border-b p-3.5">
             <div className="flex flex-1 items-center gap-1 overflow-hidden text-sm font-medium">
               <RiUser4Line className="size-5 shrink-0 p-0.5" />
-              <TruncatedText className="flex-1">Edit Account Details</TruncatedText>
+              <TruncatedText className="flex-1">Edit Account &amp; Workflow</TruncatedText>
             </div>
           </header>
         </SheetHeader>
 
-        <SheetMain className="p-0 flex-1">
+        <SheetMain className="p-0 flex-1 overflow-y-auto">
           <Form {...form}>
             <FormRoot
               id="edit-lead-form"
               autoComplete="off"
               noValidate
               onSubmit={form.handleSubmit(onSubmit)}
-              className="flex h-full flex-col"
+              className="flex flex-col"
             >
               <EditLeadForm />
             </FormRoot>
           </Form>
+
+          <Separator />
+
+          <section className="pt-2">
+            <p className="px-3.5 pb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              Application workflow
+            </p>
+            <ApplicationWorkflowFields
+              application={application}
+              isSpouseApplication={isSpouseApplication}
+              portalContainer={portalContainer}
+            />
+          </section>
         </SheetMain>
 
         <Separator />
