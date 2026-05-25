@@ -50,6 +50,8 @@ export interface Application {
   Assessing_Authority?: string;
   DMS_Application_Status?: string;
   Application_Stage?: string;
+  Application_State?: string;
+  checklist_reminders_enabled?: boolean;
   Package_Finalize?: string;
   Deadline_For_Lodgment?: string;
   Record_Type?: string;

@@ -1,12 +1,12 @@
 import { fetcher } from "../fetcher";
 import { ApplicationDetailsResponse } from "@/types/applications";
-import { ZOHO_BASE_URL } from "@/lib/config/api";
+import { API_ENDPOINTS } from "@/lib/config/api";
 
 export async function getApplicationById(
   id: string,
 ): Promise<ApplicationDetailsResponse> {
   return fetcher<ApplicationDetailsResponse>(
-    `${ZOHO_BASE_URL}/visa_applications/${id}`,
+    API_ENDPOINTS.VISA_APPLICATIONS.BY_ID(id),
   );
 }
 
@@ -15,7 +15,7 @@ export async function updateApplicationFields(
   fieldsToUpdate: Record<string, unknown>,
   recordType: string,
 ): Promise<Response> {
-  return fetcher<Response>(`${ZOHO_BASE_URL}/visa_applications/update_fields`, {
+  return fetcher<Response>(API_ENDPOINTS.VISA_APPLICATIONS.UPDATE_FIELDS, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
@@ -43,7 +43,7 @@ export async function updateDeadlineForLodgement(
 
   try {
     const response = await fetcher<Response>(
-      `${ZOHO_BASE_URL}/visa_applications/update_fields`,
+      API_ENDPOINTS.VISA_APPLICATIONS.UPDATE_FIELDS,
       {
         method: "PUT",
         headers: {
@@ -65,7 +65,7 @@ export async function updateChecklistRequested(
   checklistRequested: boolean,
   recordType: string,
 ): Promise<Response> {
-  return fetcher<Response>(`${ZOHO_BASE_URL}/visa_applications/update_fields`, {
+  return fetcher<Response>(API_ENDPOINTS.VISA_APPLICATIONS.UPDATE_FIELDS, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

@@ -679,6 +679,7 @@ export default function UnifiedApplicationDetailsPage({
           open={isEditProfileSheetOpen}
           onOpenChange={setIsEditProfileSheetOpen}
           application={application}
+          isSpouseApplication={isSpouseApplication}
         />
       )}
     </main>
