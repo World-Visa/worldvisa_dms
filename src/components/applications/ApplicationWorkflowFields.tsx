@@ -64,9 +64,6 @@ export interface ApplicationWorkflowFieldsProps {
   isSpouseApplication?: boolean;
   disabled?: boolean;
   portalContainer?: HTMLElement | null;
-  /** From client profile API — not on Zoho application payload */
-  checklistRemindersEnabled?: boolean;
-  isChecklistRemindersLoading?: boolean;
 }
 
 export function ApplicationWorkflowFields({
@@ -74,8 +71,6 @@ export function ApplicationWorkflowFields({
   isSpouseApplication = false,
   disabled = false,
   portalContainer,
-  checklistRemindersEnabled,
-  isChecklistRemindersLoading = false,
 }: ApplicationWorkflowFieldsProps) {
   const { user } = useAuth();
   const showApplicationState = isMasterAdminRole(user?.role);
@@ -109,13 +104,10 @@ export function ApplicationWorkflowFields({
       : null;
 
   const applicationState = application.Application_State ?? "";
-  const remindersEnabled = checklistRemindersEnabled === true;
+  const remindersEnabled = application.checklist_reminders_enabled === true;
 
   const isUpdating =
-    disabled ||
-    updateFields.isPending ||
-    patchReminders.isPending ||
-    isChecklistRemindersLoading;
+    disabled || updateFields.isPending || patchReminders.isPending;
 
   const handleStageChange = (item: StageListItem | null) => {
     const next = item?.value;
