@@ -37,12 +37,9 @@ export function useUploadStage2Document() {
     mutationFn: (data: CreateStage2DocumentRequest) =>
       uploadStage2Document(data),
     onSuccess: (data, variables) => {
-      // Invalidate and refetch all stage 2 document queries for this application
       queryClient.invalidateQueries({
         queryKey: ["stage2-documents", variables.applicationId],
       });
-
-      toast.success("Document uploaded successfully!");
     },
     onError: (error: Error) => {
       console.error("Upload stage 2 document error:", error);
