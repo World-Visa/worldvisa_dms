@@ -267,12 +267,6 @@ export function EOISheet({
         toast.error("Please upload at least one file.");
         return;
       }
-      if (uploadedFiles.length > 1 && statesForUpload.length > 1) {
-        toast.error(
-          "When uploading multiple files, please select only one state. To save one document under multiple states, upload files one at a time.",
-        );
-        return;
-      }
     }
 
     const formattedDate = format(date, "yyyy-MM-dd");
@@ -690,24 +684,14 @@ export function EOISheet({
                     <Label className="text-xs font-medium text-muted-foreground">
                       Files to Upload
                     </Label>
-                    {uploadedFiles.length > 1 && statesForUpload.length > 1 ? (
-                      <p className="text-[11px] font-medium text-destructive">
-                        Cannot upload multiple files to multiple states at once.
-                        Select one state, or upload one file at a time.
-                      </p>
-                    ) : uploadedFiles.length === 1 && statesForUpload.length > 1 ? (
+                    {uploadedFiles.length > 0 && statesForUpload.length > 0 && (
                       <p className="text-[11px] text-muted-foreground">
-                        This file will be saved once for each of the{" "}
-                        {statesForUpload.length} selected states (
-                        {statesForUpload.length} document
-                        {statesForUpload.length > 1 ? "s" : ""}).
+                        {uploadedFiles.length} file(s) × {statesForUpload.length}{" "}
+                        state(s) ={" "}
+                        {uploadedFiles.length * statesForUpload.length} EOI
+                        document(s) will be created.
                       </p>
-                    ) : uploadedFiles.length > 1 && statesForUpload.length === 1 ? (
-                      <p className="text-[11px] text-muted-foreground">
-                        {uploadedFiles.length} files will be uploaded to{" "}
-                        {statesForUpload[0]}.
-                      </p>
-                    ) : null}
+                    )}
                     <div className="space-y-1.5">
                       {uploadedFiles.map((uf) => (
                         <div
