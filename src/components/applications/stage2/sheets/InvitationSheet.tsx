@@ -16,7 +16,7 @@ import { Button as SheetFooterButton } from "@/components/ui/primitives/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Upload, X, FileText, File } from "lucide-react";
+import { Upload, X, FileText } from "lucide-react";
 import Image from "next/image";
 import { RiFileAddLine, RiFileEditLine } from "react-icons/ri";
 import { toast } from "sonner";
@@ -646,36 +646,97 @@ export function InvitationSheet({
                 </p>
 
                 {mode === "create" && (
-                  <div className="space-y-2">
-                    <div
-                      className="cursor-pointer rounded-lg border border-dashed border-border bg-muted/25 px-4 py-5 text-center transition-colors hover:bg-muted/40"
-                      onClick={() => fileInputRef.current?.click()}
-                      onDragOver={handleDragOver}
-                      onDrop={handleDrop}
-                    >
-                      <Image
-                        src="/icons/pdf_icon_modal.svg"
-                        alt="Upload"
-                        width={56}
-                        height={72}
-                        className="mx-auto mb-3"
-                      />
-                      <p className="mb-1 text-xs text-muted-foreground">
-                        Drop your files here, or click to browse
+                  <>
+                    {state ? (
+                      <div className="rounded-lg border border-border bg-muted/10 p-3 space-y-2">
+                        {/* State header */}
+                        {state !== STAGE2_STATE_NOT_APPLICABLE && (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                              {state}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {AUSTRALIAN_STATES.find((s) => s.code === state)?.name}
+                            </span>
+                          </div>
+                        )}
+
+                        {/* Drop zone */}
+                        {!isUploading && (
+                          <div
+                            className="cursor-pointer rounded-md border border-dashed border-border px-3 py-3 text-center transition-colors hover:bg-muted/40"
+                            onClick={() => fileInputRef.current?.click()}
+                            onDragOver={handleDragOver}
+                            onDrop={handleDrop}
+                          >
+                            <Upload className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
+                            <p className="text-[11px] text-muted-foreground">
+                              Drop files or click to browse
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              PDF, Word, or images • Max 5MB per file
+                            </p>
+                            <input
+                              ref={fileInputRef}
+                              type="file"
+                              multiple
+                              onChange={handleFileSelect}
+                              className="hidden"
+                            />
+                          </div>
+                        )}
+
+                        {/* File list */}
+                        {uploadedFiles.length > 0 && (
+                          <div className="space-y-1">
+                            {uploadedFiles.map((uploadedFile) => (
+                              <div
+                                key={uploadedFile.id}
+                                className="flex min-w-0 items-center gap-2 rounded-md border border-border/60 bg-background px-2.5 py-1.5"
+                              >
+                                <Image
+                                  src="/icons/pdf_small.svg"
+                                  alt="file"
+                                  width={16}
+                                  height={16}
+                                  className="shrink-0"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <TruncatedText className="text-xs font-medium">
+                                    {uploadedFile.file.name}
+                                  </TruncatedText>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {(
+                                      uploadedFile.file.size /
+                                      1024 /
+                                      1024
+                                    ).toFixed(2)}{" "}
+                                    MB
+                                  </p>
+                                </div>
+                                {!isUploading && (
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 w-6 shrink-0 p-0"
+                                    onClick={() => removeFile(uploadedFile.id)}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="py-1 text-[11px] text-muted-foreground">
+                        {subclass
+                          ? "Select a state above to see the upload area."
+                          : "Select a subclass to get started."}
                       </p>
-                      <p className="text-[11px] leading-snug text-muted-foreground">
-                        PDF, Word, or images • Max 5MB per file. Document name =
-                        file name.
-                      </p>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        onChange={handleFileSelect}
-                        className="hidden"
-                      />
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
 
                 {mode === "edit" && document && (
@@ -732,57 +793,6 @@ export function InvitationSheet({
                   </div>
                 )}
 
-                {mode === "create" && uploadedFiles.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium text-muted-foreground">
-                      Files to Upload
-                    </Label>
-                    <div className="space-y-1.5">
-                      {uploadedFiles.map((uploadedFile) => (
-                        <div
-                          key={uploadedFile.id}
-                          className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border/80 bg-muted/20 p-2.5"
-                        >
-                          {uploadedFile.file.name
-                            .toLowerCase()
-                            .match(/\.(jpg|jpeg|png)$/) ? (
-                            <File className="h-4 w-4 shrink-0 text-green-600" />
-                          ) : uploadedFile.file.name
-                              .toLowerCase()
-                              .match(/\.(doc|docx)$/) ? (
-                            <FileText className="h-4 w-4 shrink-0 text-blue-600" />
-                          ) : (
-                            <Image
-                              src="/icons/pdf_small.svg"
-                              alt="PDF"
-                              width={20}
-                              height={20}
-                              className="shrink-0"
-                            />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <TruncatedText className="text-sm font-medium">
-                              {uploadedFile.file.name}
-                            </TruncatedText>
-                            <p className="text-xs text-muted-foreground">
-                              {(uploadedFile.file.size / 1024 / 1024).toFixed(2)}{" "}
-                              MB
-                            </p>
-                          </div>
-                          {!isUploading && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFile(uploadedFile.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </motion.div>
           </SheetMain>
@@ -831,7 +841,7 @@ export function InvitationSheet({
                 ) : (
                   <>
                     <Upload className="h-4 w-4" />
-                    {mode === "edit" ? "Update Document" : "Upload Documents"}
+                    Save Changes
                   </>
                 )}
               </SheetFooterButton>

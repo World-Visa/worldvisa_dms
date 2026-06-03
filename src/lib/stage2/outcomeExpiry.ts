@@ -27,7 +27,7 @@ export function computeOutcomeExpiryDate({
   const o = outcome.trim();
 
   if (o === OUTCOME_ENGLISH) {
-    return addYears(base, 5);
+    return addYears(base, 3);
   }
   if (o === OUTCOME_SKILL) {
     const meta = getAnzscoCodeByCode(skill_assessing_body?.trim() ?? "");
@@ -57,7 +57,7 @@ export function getOutcomeExpiryPeriodLabel(
   if (!input.outcome?.trim()) return null;
   const o = input.outcome.trim();
 
-  if (o === OUTCOME_ENGLISH) return "5 years";
+  if (o === OUTCOME_ENGLISH) return "3 years";
   if (o === OUTCOME_SKILL) {
     const meta = getAnzscoCodeByCode(input.skill_assessing_body?.trim() ?? "");
     const isAcs = meta?.assessing_authority === "ACS";

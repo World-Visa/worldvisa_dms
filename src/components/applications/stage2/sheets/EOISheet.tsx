@@ -16,7 +16,7 @@ import { Button as SheetFooterButton } from "@/components/ui/primitives/button";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { DatePicker } from "@/components/ui/date-picker";
-import { Upload, X, FileText, File, Plus } from "lucide-react";
+import { Upload, X, FileText } from "lucide-react";
 import Image from "next/image";
 import { RiFileAddLine, RiFileEditLine } from "react-icons/ri";
 import { toast } from "sonner";
@@ -66,6 +66,170 @@ interface UploadedFile {
   id: string;
 }
 
+interface StateUploadCardProps {
+  stateCode: string;
+  stateName: string | null;
+  files: UploadedFile[];
+  onAdd: (newFiles: UploadedFile[]) => void;
+  onRemove: (fileId: string) => void;
+  disabled: boolean;
+  showError: boolean;
+  progress: { current: number; total: number } | undefined;
+}
+
+function StateUploadCard({
+  stateCode,
+  stateName,
+  files,
+  onAdd,
+  onRemove,
+  disabled,
+  showError,
+  progress,
+}: StateUploadCardProps) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files ?? []).map((file) => ({
+      file,
+      progress: 0,
+      id: Math.random().toString(36).substr(2, 9),
+    }));
+    onAdd(selected);
+    if (inputRef.current) inputRef.current.value = "";
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (disabled) return;
+    const dropped = Array.from(e.dataTransfer.files).map((file) => ({
+      file,
+      progress: 0,
+      id: Math.random().toString(36).substr(2, 9),
+    }));
+    onAdd(dropped);
+  };
+
+  const isUploading = progress !== undefined && progress.total > 0;
+  const isDone = isUploading && progress.current >= progress.total;
+  const hasError = showError && files.length === 0;
+  const showStateHeader = stateCode !== STAGE2_STATE_NOT_APPLICABLE && stateName;
+
+  return (
+    <div
+      className={`rounded-lg border p-3 space-y-2 ${
+        hasError
+          ? "border-destructive bg-destructive/5"
+          : "border-border bg-muted/10"
+      }`}
+    >
+      {/* State header */}
+      {showStateHeader && (
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-semibold text-primary">
+            {stateCode}
+          </span>
+          <span className="text-xs text-muted-foreground">{stateName}</span>
+          {isDone && (
+            <span className="ml-auto text-[11px] font-medium text-emerald-600">
+              Uploaded
+            </span>
+          )}
+          {isUploading && !isDone && (
+            <span className="ml-auto text-[11px] tabular-nums text-muted-foreground">
+              {progress.current}/{progress.total} uploading…
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Drop zone — hidden while uploading */}
+      {!isUploading && (
+        <div
+          className={`cursor-pointer rounded-md border border-dashed border-border px-3 py-3 text-center transition-colors ${
+            disabled ? "pointer-events-none opacity-50" : "hover:bg-muted/40"
+          }`}
+          onClick={() => inputRef.current?.click()}
+          onDragOver={handleDragOver}
+          onDrop={handleDrop}
+        >
+          <Upload className="mx-auto mb-1 h-4 w-4 text-muted-foreground" />
+          <p className="text-[11px] text-muted-foreground">
+            Drop files or click to browse
+          </p>
+          <input
+            ref={inputRef}
+            type="file"
+            multiple
+            onChange={handleSelect}
+            className="hidden"
+            disabled={disabled}
+          />
+        </div>
+      )}
+
+      {/* File list */}
+      {files.length > 0 && (
+        <div className="space-y-1">
+          {files.map((uf) => (
+            <div
+              key={uf.id}
+              className="flex min-w-0 items-center gap-2 rounded-md border border-border/60 bg-background px-2.5 py-1.5"
+            >
+              <Image
+                src="/icons/pdf_small.svg"
+                alt="file"
+                width={16}
+                height={16}
+                className="shrink-0"
+              />
+              <div className="min-w-0 flex-1">
+                <TruncatedText className="text-xs font-medium">
+                  {uf.file.name}
+                </TruncatedText>
+                <p className="text-[10px] text-muted-foreground">
+                  {(uf.file.size / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+              {!disabled && !isUploading && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 shrink-0 p-0"
+                  onClick={() => onRemove(uf.id)}
+                >
+                  <X className="h-3 w-3" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Per-card progress */}
+      {isUploading && (
+        <Progress
+          value={progress.total ? (progress.current / progress.total) * 100 : 0}
+          className="h-1"
+        />
+      )}
+
+      {/* Empty validation error */}
+      {hasError && (
+        <p className="text-[11px] text-destructive">
+          Please upload at least one file.
+        </p>
+      )}
+    </div>
+  );
+}
+
 export function EOISheet({
   isOpen,
   onClose,
@@ -76,6 +240,8 @@ export function EOISheet({
   const { user } = useAuth();
   const reduceMotion = useReducedMotion();
   const sheetContainerRef = useRef<HTMLDivElement>(null);
+
+  // Shared form fields
   const [subclass, setSubclass] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [point, setPoint] = useState("");
@@ -88,14 +254,25 @@ export function EOISheet({
   const [extraAnzscoItems, setExtraAnzscoItems] = useState<
     Array<{ value: string; label: string }>
   >([]);
-  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+
+  // Per-state file management
+  const [perStateFiles, setPerStateFiles] = useState<
+    Record<string, UploadedFile[]>
+  >({});
+  const [stateUploadProgress, setStateUploadProgress] = useState<
+    Record<string, { current: number; total: number }>
+  >({});
+  const [showEmptyErrors, setShowEmptyErrors] = useState(false);
+
+  // Upload state
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState({
     current: 0,
     total: 0,
   });
+
+  // Edit mode
   const [replacementFile, setReplacementFile] = useState<File | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const replaceFileInputRef = useRef<HTMLInputElement>(null);
 
   const uploadMutation = useUploadStage2Document();
@@ -104,10 +281,7 @@ export function EOISheet({
 
   const subclassOptions = AUSTRALIAN_VISA_SUBCLASSES.filter((s) =>
     ["189", "190", "491"].includes(s.code),
-  ).map((s) => ({
-    value: s.code,
-    label: s.label,
-  }));
+  ).map((s) => ({ value: s.code, label: s.label }));
 
   const stateOptions = AUSTRALIAN_STATES.map((s) => ({
     value: s.code,
@@ -115,10 +289,7 @@ export function EOISheet({
   }));
 
   const showStateSelection = requiresStateSelection(subclass);
-  const statesForUpload = resolveStage2StatesForUpload(
-    subclass,
-    selectedStates,
-  );
+  const statesForUpload = resolveStage2StatesForUpload(subclass, selectedStates);
 
   const pointOptions = Array.from(
     { length: Math.floor((110 - 65) / 5) + 1 },
@@ -169,7 +340,9 @@ export function EOISheet({
       setCustomAnzscoCode("");
       setCustomAnzscoName("");
       setCustomAssessingAuthority("");
-      setUploadedFiles([]);
+      setPerStateFiles({});
+      setStateUploadProgress({});
+      setShowEmptyErrors(false);
       setUploadProgress({ current: 0, total: 0 });
       setReplacementFile(null);
     }
@@ -178,39 +351,22 @@ export function EOISheet({
   useEffect(() => {
     if (isSubclassWithoutState(subclass)) {
       setSelectedStates([]);
+      setPerStateFiles({});
     }
   }, [subclass]);
 
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []);
-    const newFiles: UploadedFile[] = files.map((file) => ({
-      file,
-      progress: 0,
-      id: Math.random().toString(36).substr(2, 9),
+  const addFilesToState = (stateCode: string, newFiles: UploadedFile[]) => {
+    setPerStateFiles((prev) => ({
+      ...prev,
+      [stateCode]: [...(prev[stateCode] ?? []), ...newFiles],
     }));
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
-    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const removeFile = (fileId: string) => {
-    setUploadedFiles((prev) => prev.filter((f) => f.id !== fileId));
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const files = Array.from(e.dataTransfer.files);
-    const newFiles: UploadedFile[] = files.map((file) => ({
-      file,
-      progress: 0,
-      id: Math.random().toString(36).substr(2, 9),
+  const removeFileFromState = (stateCode: string, fileId: string) => {
+    setPerStateFiles((prev) => ({
+      ...prev,
+      [stateCode]: (prev[stateCode] ?? []).filter((f) => f.id !== fileId),
     }));
-    setUploadedFiles((prev) => [...prev, ...newFiles]);
   };
 
   const handleAddCustomAnzsco = () => {
@@ -258,13 +414,19 @@ export function EOISheet({
       toast.error("Please select a date.");
       return;
     }
+
     if (mode === "create") {
       if (showStateSelection && selectedStates.length === 0) {
         toast.error("Please select at least one state.");
         return;
       }
-      if (uploadedFiles.length === 0) {
-        toast.error("Please upload at least one file.");
+
+      const emptyStates = statesForUpload.filter(
+        (s) => (perStateFiles[s]?.length ?? 0) === 0,
+      );
+      if (emptyStates.length > 0) {
+        setShowEmptyErrors(true);
+        toast.error("Please upload at least one file for each selected state.");
         return;
       }
     }
@@ -272,9 +434,13 @@ export function EOISheet({
     const formattedDate = format(date, "yyyy-MM-dd");
     const anzscoValue = selectedAnzscoCode || undefined;
     const expiryAtApi =
-      computedExpiry != null ? formatEoiExpiryForApi(computedExpiry) : undefined;
+      computedExpiry != null
+        ? formatEoiExpiryForApi(computedExpiry)
+        : undefined;
     const expiryAtPatch =
-      computedExpiry != null ? formatEoiExpiryForPatch(computedExpiry) : undefined;
+      computedExpiry != null
+        ? formatEoiExpiryForPatch(computedExpiry)
+        : undefined;
 
     setIsUploading(true);
 
@@ -320,24 +486,31 @@ export function EOISheet({
         return;
       }
 
-      const total = uploadedFiles.length * statesForUpload.length;
+      // Create mode: upload per state → per file
+      const total = statesForUpload.reduce(
+        (sum, s) => sum + (perStateFiles[s]?.length ?? 0),
+        0,
+      );
       setUploadProgress({ current: 0, total });
       let done = 0;
       const failed: string[] = [];
 
-      for (const uploadedFile of uploadedFiles) {
-        const file = uploadedFile.file;
-        const documentName = file.name;
-        const documentType = file.type;
+      for (const stateCode of statesForUpload) {
+        const stateFiles = perStateFiles[stateCode] ?? [];
+        setStateUploadProgress((prev) => ({
+          ...prev,
+          [stateCode]: { current: 0, total: stateFiles.length },
+        }));
 
-        for (const stateCode of statesForUpload) {
+        for (const uploadedFile of stateFiles) {
+          const file = uploadedFile.file;
           try {
             await uploadMutation.mutateAsync({
               applicationId,
               files: [file],
-              file_name: documentName,
-              document_name: documentName,
-              document_type: documentType,
+              file_name: file.name,
+              document_name: file.name,
+              document_type: file.type,
               uploaded_by: user?.username ?? user?.email ?? "",
               type: "eoi",
               subclass,
@@ -348,10 +521,17 @@ export function EOISheet({
               ...(expiryAtApi ? { expiry_at: expiryAtApi } : {}),
             });
           } catch {
-            failed.push(`${documentName} (${stateCode})`);
+            failed.push(`${file.name} (${stateCode})`);
           }
           done += 1;
           setUploadProgress({ current: done, total });
+          setStateUploadProgress((prev) => ({
+            ...prev,
+            [stateCode]: {
+              current: (prev[stateCode]?.current ?? 0) + 1,
+              total: stateFiles.length,
+            },
+          }));
         }
       }
 
@@ -376,7 +556,14 @@ export function EOISheet({
     setDate(undefined);
     setSelectedAnzscoCode("");
     setExtraAnzscoItems([]);
-    setUploadedFiles([]);
+    setIsCustomAnzscoMode(false);
+    setCustomAnzscoCode("");
+    setCustomAnzscoName("");
+    setCustomAssessingAuthority("");
+    setPerStateFiles({});
+    setStateUploadProgress({});
+    setShowEmptyErrors(false);
+    setUploadProgress({ current: 0, total: 0 });
     setReplacementFile(null);
     if (replaceFileInputRef.current) replaceFileInputRef.current.value = "";
   }
@@ -548,11 +735,11 @@ export function EOISheet({
                       <SelectContent>
                         <SelectGroup>
                           <SelectLabel>Points</SelectLabel>
-                        {pointOptions.map((value) => (
-                          <SelectItem key={value} value={value}>
-                            {value}
-                          </SelectItem>
-                        ))}
+                          {pointOptions.map((value) => (
+                            <SelectItem key={value} value={value}>
+                              {value}
+                            </SelectItem>
+                          ))}
                         </SelectGroup>
                       </SelectContent>
                     </Select>
@@ -590,42 +777,49 @@ export function EOISheet({
 
               {/* Files */}
               <div className="space-y-3 px-4 py-4">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   {mode === "edit" ? "File" : "Upload Files"}
                 </p>
 
+                {/* Create mode: per-state upload cards */}
                 {mode === "create" && (
-                  <div className="space-y-2">
-                    <div
-                      className="cursor-pointer rounded-lg border border-dashed border-border bg-muted/25 px-4 py-5 text-center transition-colors hover:bg-muted/40"
-                      onClick={() => fileInputRef.current?.click()}
-                      onDragOver={handleDragOver}
-                      onDrop={handleDrop}
-                    >
-                      <Image
-                        src="/icons/pdf_icon_modal.svg"
-                        alt="Upload"
-                        width={56}
-                        height={72}
-                        className="mx-auto mb-3"
-                      />
-                      <p className="mb-1 text-xs text-muted-foreground">
-                        Drop your files here, or click to browse
+                  <>
+                    {statesForUpload.length > 0 ? (
+                      <div className="space-y-3">
+                        {statesForUpload.map((stateCode) => {
+                          const stateInfo = AUSTRALIAN_STATES.find(
+                            (s) => s.code === stateCode,
+                          );
+                          return (
+                            <StateUploadCard
+                              key={stateCode}
+                              stateCode={stateCode}
+                              stateName={stateInfo?.name ?? null}
+                              files={perStateFiles[stateCode] ?? []}
+                              onAdd={(newFiles) =>
+                                addFilesToState(stateCode, newFiles)
+                              }
+                              onRemove={(fileId) =>
+                                removeFileFromState(stateCode, fileId)
+                              }
+                              disabled={isUploading}
+                              showError={showEmptyErrors}
+                              progress={stateUploadProgress[stateCode]}
+                            />
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <p className="py-1 text-[11px] text-muted-foreground">
+                        {subclass
+                          ? "Select states above to see upload areas."
+                          : "Select a subclass to get started."}
                       </p>
-                      <p className="text-[11px] leading-snug text-muted-foreground">
-                        Any file type • Max 5MB per file. Document name = file name.
-                      </p>
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        multiple
-                        onChange={handleFileSelect}
-                        className="hidden"
-                      />
-                    </div>
-                  </div>
+                    )}
+                  </>
                 )}
 
+                {/* Edit mode: existing file + optional replacement */}
                 {mode === "edit" && document && (
                   <div className="space-y-2">
                     <div className="flex min-w-0 items-center gap-2.5 rounded-lg border bg-muted/50 p-2.5">
@@ -639,7 +833,8 @@ export function EOISheet({
                         Replace with new file
                       </Label>
                       <p className="text-[11px] text-muted-foreground">
-                        Optionally choose a new file to replace the current document.
+                        Optionally choose a new file to replace the current
+                        document.
                       </p>
                       {replacementFile ? (
                         <div className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border bg-muted/30 p-2.5">
@@ -678,65 +873,11 @@ export function EOISheet({
                     </div>
                   </div>
                 )}
-
-                {mode === "create" && uploadedFiles.length > 0 && (
-                  <div className="space-y-2">
-                    <Label className="text-xs font-medium text-muted-foreground">
-                      Files to Upload
-                    </Label>
-                    {uploadedFiles.length > 0 && statesForUpload.length > 0 && (
-                      <p className="text-[11px] text-muted-foreground">
-                        {uploadedFiles.length} file(s) × {statesForUpload.length}{" "}
-                        state(s) ={" "}
-                        {uploadedFiles.length * statesForUpload.length} EOI
-                        document(s) will be created.
-                      </p>
-                    )}
-                    <div className="space-y-1.5">
-                      {uploadedFiles.map((uf) => (
-                        <div
-                          key={uf.id}
-                          className="flex min-w-0 items-center gap-2.5 rounded-lg border border-border/80 bg-muted/20 p-2.5"
-                        >
-                          {uf.file.name.toLowerCase().match(/\.(jpg|jpeg|png)$/) ? (
-                            <File className="h-4 w-4 shrink-0 text-green-600" />
-                          ) : uf.file.name.toLowerCase().match(/\.(doc|docx)$/) ? (
-                            <FileText className="h-4 w-4 shrink-0 text-blue-600" />
-                          ) : (
-                            <Image
-                              src="/icons/pdf_small.svg"
-                              alt="PDF"
-                              width={20}
-                              height={20}
-                              className="shrink-0"
-                            />
-                          )}
-                          <div className="min-w-0 flex-1">
-                            <TruncatedText className="text-sm font-medium">
-                              {uf.file.name}
-                            </TruncatedText>
-                            <p className="text-xs text-muted-foreground">
-                              {(uf.file.size / 1024 / 1024).toFixed(2)} MB
-                            </p>
-                          </div>
-                          {!isUploading && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => removeFile(uf.id)}
-                            >
-                              <X className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </motion.div>
           </SheetMain>
 
+          {/* Global progress bar */}
           {showProgress && (
             <div className="shrink-0 border-t border-border bg-background px-4 py-2.5">
               <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
@@ -781,12 +922,12 @@ export function EOISheet({
                     <div className="h-4 w-4 animate-spin rounded-full border-b-2 border-white" />
                     {mode === "edit"
                       ? "Updating..."
-                      : `Uploading ${currentUpload > 0 ? `${currentUpload}/${totalUploads}...` : "..."}`}
+                      : `Uploading ${currentUpload > 0 ? `${currentUpload}/${totalUploads}…` : "…"}`}
                   </>
                 ) : (
                   <>
                     <Upload className="h-4 w-4" />
-                    {mode === "edit" ? "Update Document" : "Upload Documents"}
+                    Save Changes
                   </>
                 )}
               </SheetFooterButton>
