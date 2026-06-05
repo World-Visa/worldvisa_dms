@@ -216,6 +216,11 @@ export const ANZSCO_CODES: AnzscoCode[] = [
     assessing_authority: "VETASSESS",
   },
   {
+    anzsco_code: "131112",
+    name: "Sales and Marketing Manager",
+    assessing_authority: "VETASSESS",
+  },
+  {
     anzsco_code: "133111",
     name: "Construction Project Manager",
     assessing_authority: "VETASSESS",
@@ -574,6 +579,16 @@ export const ANZSCO_CODES: AnzscoCode[] = [
     assessing_authority: "VETASSESS",
   },
   {
+    anzsco_code: "221213",
+    name: "External Auditor",
+    assessing_authority: "CA ANZ / CPA Australia",
+  },
+  {
+    anzsco_code: "221214",
+    name: "Internal Auditor",
+    assessing_authority: "CA ANZ / CPA Australia",
+  },
+  {
     anzsco_code: "222111",
     name: "Commodities Trader",
     assessing_authority: "VETASSESS",
@@ -730,6 +745,11 @@ export const ANZSCO_CODES: AnzscoCode[] = [
   {
     anzsco_code: "224999",
     name: "Information and Organisation Professionals nec",
+    assessing_authority: "VETASSESS",
+  },
+  {
+    anzsco_code: "225111",
+    name: "Advertising Specialist",
     assessing_authority: "VETASSESS",
   },
   {
@@ -1080,6 +1100,16 @@ export const ANZSCO_CODES: AnzscoCode[] = [
   {
     anzsco_code: "242111",
     name: "University Lecturer",
+    assessing_authority: "VETASSESS",
+  },
+  {
+    anzsco_code: "249299",
+    name: "Private Tutors and Teachers nec",
+    assessing_authority: "VETASSESS",
+  },
+  {
+    anzsco_code: "249311",
+    name: "Teacher of English to Speakers of Other Languages (TESOL)",
     assessing_authority: "VETASSESS",
   },
   { anzsco_code: "251111", name: "Dietitian", assessing_authority: "DAA" },
@@ -2262,6 +2292,11 @@ export const ANZSCO_CODES: AnzscoCode[] = [
   {
     anzsco_code: "511112",
     name: "Programme or Project Administrator",
+    assessing_authority: "VETASSESS",
+  },
+  {
+    anzsco_code: "611211",
+    name: "Insurance Agent",
     assessing_authority: "VETASSESS",
   },
 ];
