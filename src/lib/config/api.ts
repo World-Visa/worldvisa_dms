@@ -230,6 +230,10 @@ export const API_ENDPOINTS = {
     PROFILE: {
       BY_ID: (leadId: string) => `${ZOHO_BASE_URL}/clients/profile/${leadId}`,
     },
+    TASKS: {
+      LIST: (params?: string) =>
+        `${ZOHO_BASE_URL}/clients/tasks${params ? `?${params}` : ""}`,
+    },
     INVITE: `${ZOHO_BASE_URL}/clients/invite`,
   },
   MCUBE: {
@@ -254,5 +258,12 @@ export const API_ENDPOINTS = {
   },
   NIRA: {
     CHAT: `${ZOHO_BASE_URL}/nira/chat`,
+  },
+  TASKS: {
+    LIST: (params?: string) =>
+      `${ZOHO_BASE_URL}/tasks${params ? `?${params}` : ""}`,
+    CREATE: `${ZOHO_BASE_URL}/tasks`,
+    BY_ID: (taskId: string) => `${ZOHO_BASE_URL}/tasks/${taskId}`,
+    STATUS: (taskId: string) => `${ZOHO_BASE_URL}/tasks/${taskId}/status`,
   },
 } as const;

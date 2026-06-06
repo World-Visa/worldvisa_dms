@@ -34,6 +34,7 @@ export const ROUTES = {
   CALL_LOGS: '/v2/call-logs',
   QUALITY_CHECK: '/v2/quality-check',
   REQUESTED_DOCS: '/v2/requested-docs',
+  TASKS: '/v2/tasks',
   EMAIL: '/v2/mail',
   CHAT: '/v2/messages',
 } as const;

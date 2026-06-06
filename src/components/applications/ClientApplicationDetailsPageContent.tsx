@@ -31,6 +31,7 @@ import { ArrowLeft } from "lucide-react";
 import { ClientChatSheet } from "@/components/chat/ClientChatSheet";
 import { useTotalUnreadCount } from "@/hooks/useChat";
 import { ChatButton } from "@/components/applications/ChatButton";
+import TaskTrigger from "@/components/tasks/TaskTrigger";
 import { Button } from "@/components/ui/button";
 import { Tabs } from "@/components/ui/tabs";
 import { AddCompanyDialog } from "@/components/applications/AddCompanyDialog";
@@ -552,6 +553,7 @@ export default function ClientApplicationDetailsPageContent({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <TaskTrigger applicationId={applicationId} />
           {applicationData?.data?.Application_Handled_By && (
             <ChatButton
               onClick={() => setIsChatOpen(true)}
