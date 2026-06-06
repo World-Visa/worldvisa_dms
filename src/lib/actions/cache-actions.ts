@@ -14,3 +14,12 @@ export async function revalidateDocumentsCache(applicationId: string) {
   revalidateTag(`all-documents-${applicationId}`, "max");
 }
 
+export async function revalidateTasksCache(applicationId: string) {
+  revalidateTag("tasks", "max");
+  revalidateTag(`tasks-${applicationId}`, "max");
+}
+
+export async function revalidateClientTasksCache() {
+  revalidateTag("client-tasks", "max");
+}
+

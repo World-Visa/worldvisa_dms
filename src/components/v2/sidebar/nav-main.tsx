@@ -48,6 +48,42 @@ const UnreadBadge = ({ count }: { count: number }) => (
   </span>
 );
 
+const NavItemLeaf = ({
+  item,
+  isActive,
+  badge,
+}: {
+  item: NavMainItem;
+  isActive: (url: string, subItems?: NavMainItem["subItems"]) => boolean;
+  badge?: number;
+}) => (
+  <SidebarMenuItem>
+    <SidebarMenuButton
+      asChild
+      aria-disabled={item.comingSoon}
+      isActive={isActive(item.url)}
+      tooltip={item.title}
+    >
+      <Link
+        prefetch={false}
+        href={item.url}
+        target={item.newTab ? "_blank" : undefined}
+        className="flex w-full items-center gap-2"
+      >
+        {item.icon && <item.icon />}
+        <span className="flex items-center gap-1.5">
+          <span>{item.title}</span>
+          {item.isNew && <IsNew />}
+        </span>
+        <span className="ml-auto flex items-center justify-end gap-1.5">
+          {item.comingSoon && <IsComingSoon />}
+          {badge ? <UnreadBadge count={badge} /> : null}
+        </span>
+      </Link>
+    </SidebarMenuButton>
+  </SidebarMenuItem>
+);
+
 const NavItemExpanded = ({
   item,
   isActive,
@@ -59,65 +95,51 @@ const NavItemExpanded = ({
   isSubmenuOpen: (subItems?: NavMainItem["subItems"]) => boolean;
   badge?: number;
 }) => {
+  if (!item.subItems?.length) {
+    return <NavItemLeaf item={item} isActive={isActive} badge={badge} />;
+  }
+
   return (
-    <Collapsible key={item.title} asChild defaultOpen={isSubmenuOpen(item.subItems)} className="group/collapsible">
+    <Collapsible
+      key={item.title}
+      asChild
+      defaultOpen={isSubmenuOpen(item.subItems)}
+      className="group/collapsible"
+    >
       <SidebarMenuItem>
         <CollapsibleTrigger asChild>
-          {item.subItems ? (
-            <SidebarMenuButton
-              disabled={item.comingSoon}
-              isActive={isActive(item.url, item.subItems)}
-              tooltip={item.title}
-            >
-              {item.icon && <item.icon />}
-              <span className="flex items-center gap-1.5">
-                <span>{item.title}</span>
-                {item.isNew && <IsNew />}
-              </span>
-              <span className="ml-auto flex items-center justify-end gap-1.5">
-                {item.comingSoon && <IsComingSoon />}
-                {badge ? <UnreadBadge count={badge} /> : null}
-              </span>
-              <ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
-            </SidebarMenuButton>
-          ) : (
-            <SidebarMenuButton
-              asChild
-              aria-disabled={item.comingSoon}
-              isActive={isActive(item.url)}
-              tooltip={item.title}
-            >
-              <Link prefetch={false} href={item.url} target={item.newTab ? "_blank" : undefined} className="flex items-center gap-2 w-full">
-                {item.icon && <item.icon />}
-                <span className="flex items-center gap-1.5">
-                  <span>{item.title}</span>
-                  {item.isNew && <IsNew />}
-                </span>
-                <span className="ml-auto flex items-center justify-end gap-1.5">
-                  {item.comingSoon && <IsComingSoon />}
-                  {badge ? <UnreadBadge count={badge} /> : null}
-                </span>
-              </Link>
-            </SidebarMenuButton>
-          )}
+          <SidebarMenuButton
+            disabled={item.comingSoon}
+            isActive={isActive(item.url, item.subItems)}
+            tooltip={item.title}
+          >
+            {item.icon && <item.icon />}
+            <span className="flex items-center gap-1.5">
+              <span>{item.title}</span>
+              {item.isNew && <IsNew />}
+            </span>
+            <span className="ml-auto flex items-center justify-end gap-1.5">
+              {item.comingSoon && <IsComingSoon />}
+              {badge ? <UnreadBadge count={badge} /> : null}
+            </span>
+            <ChevronRight className="transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+          </SidebarMenuButton>
         </CollapsibleTrigger>
-        {item.subItems && (
-          <CollapsibleContent>
-            <SidebarMenuSub>
-              {item.subItems.map((subItem) => (
-                <SidebarMenuSubItem key={subItem.title}>
-                  <SidebarMenuSubButton aria-disabled={subItem.comingSoon} isActive={isActive(subItem.url)} asChild>
-                    <Link prefetch={false} href={subItem.url} target={subItem.newTab ? "_blank" : undefined}>
-                      {subItem.icon && <subItem.icon />}
-                      <span>{subItem.title}</span>
-                      {subItem.comingSoon && <IsComingSoon />}
-                    </Link>
-                  </SidebarMenuSubButton>
-                </SidebarMenuSubItem>
-              ))}
-            </SidebarMenuSub>
-          </CollapsibleContent>
-        )}
+        <CollapsibleContent>
+          <SidebarMenuSub>
+            {item.subItems.map((subItem) => (
+              <SidebarMenuSubItem key={subItem.title}>
+                <SidebarMenuSubButton aria-disabled={subItem.comingSoon} isActive={isActive(subItem.url)} asChild>
+                  <Link prefetch={false} href={subItem.url} target={subItem.newTab ? "_blank" : undefined}>
+                    {subItem.icon && <subItem.icon />}
+                    <span>{subItem.title}</span>
+                    {subItem.comingSoon && <IsComingSoon />}
+                  </Link>
+                </SidebarMenuSubButton>
+              </SidebarMenuSubItem>
+            ))}
+          </SidebarMenuSub>
+        </CollapsibleContent>
       </SidebarMenuItem>
     </Collapsible>
   );

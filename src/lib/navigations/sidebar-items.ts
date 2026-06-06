@@ -76,6 +76,12 @@ export const sidebarItems: NavGroup[] = [
                 comingSoon: false,
             },
             {
+                title: "Tasks",
+                url: ROUTES.TASKS,
+                icon: ClipboardList,
+                comingSoon: false,
+            },
+            {
                 title: "Quality Check",
                 url: "/v2/quality-check",
                 icon: Forklift,

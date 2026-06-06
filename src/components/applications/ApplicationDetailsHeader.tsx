@@ -28,6 +28,7 @@ import { ApplicationActivitySheet } from "@/components/applications/ApplicationA
 import { ChatButton } from "@/components/applications/ChatButton";
 import { ROUTES } from "@/utils/routes";
 import { RiFileDownloadLine, RiMailLine, RiMore2Fill, RiStickyNoteLine, RiPhoneLine, RiEditLine, RiFileEditLine, RiPlug2Line, RiPlugFill, RiUser4Line, RiFingerprint2Line } from "react-icons/ri";
+import TaskTrigger from "../tasks/TaskTrigger";
 
 interface QcRequested {
   qcId: string;
@@ -241,6 +242,7 @@ export function ApplicationDetailsHeader({
           </AnimatePresence>
         </div>
       )}
+      <TaskTrigger applicationId={applicationId} />
 
       <ChatButton onClick={onStartChat} unreadCount={unreadChatCount ?? 0} />
 
