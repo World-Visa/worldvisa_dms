@@ -8,9 +8,9 @@ import { AlertTriangle, Calendar, Edit3 } from "lucide-react";
 export const STAGES_WITH_DEADLINE = [
   "Stage 1 Documentation: Approved",
   "Stage 1 Documentation: Rejected",
-  "Stage 1 Milestone Completed",
   "Stage 1 Documentation Reviewed",
   "Skill Assessment Stage",
+  "SEND CHECKLIST",
 ] as const;
 
 export function shouldShowDeadlineCard(

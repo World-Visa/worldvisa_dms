@@ -5,7 +5,8 @@ import { Application } from "@/types/applications";
 import { shouldShowDeadlineCard } from "./ApplicationDeadlineCard";
 import { ApplicationInfoCard } from "./ApplicationInfoCard";
 import DeadlineWidget from "./deadline/DeadlineWidget";
-import { DeadlineWidgetSkeleton } from "./deadline/DeadlineWidgetSkeleton";
+import RecentActiveTaskWidget from "./recent-task/RecentActiveTaskWidget";
+import { RecentActiveTaskWidgetSkeleton } from "./recent-task/RecentActiveTaskWidgetSkeleton";
 
 interface ApplicantDetailsProps {
   application: Application | undefined;
@@ -37,7 +38,7 @@ export function ApplicantDetailsLoadingPlaceholder({
     <div className="flex gap-2 items-stretch w-full min-w-0">
       {/* Gray outer container — matches ApplicationInfoCard */}
       <div
-        className={cn("min-w-0 flex flex-col flex-1")}
+        className={cn("min-w-0 flex flex-col flex-7")}
         style={{
           background: "#f7f7f7",
           border: "1px solid #e5e7eb",
@@ -116,8 +117,8 @@ export function ApplicantDetailsLoadingPlaceholder({
         </div>
       </div>
 
-      <div className="w-[358px]">
-        <DeadlineWidgetSkeleton />
+      <div className="w-[358px] flex flex-col gap-2">
+        <RecentActiveTaskWidgetSkeleton />
       </div>
     </div>
   );
@@ -163,7 +164,7 @@ export function ApplicantDetails({
   return (
     <>
       <div className="flex gap-2 items-stretch w-full min-w-0 ">
-        <div className={cn("min-w-0", showDeadlineCard ? "flex-7" : "flex-1")}>
+        <div className="min-w-0 flex-7">
           <ApplicationInfoCard
             application={application}
             isSpouseApplication={isSpouseApplication}
@@ -174,15 +175,16 @@ export function ApplicantDetails({
           />
         </div>
 
-        {showDeadlineCard && (
-          <div className="w-[358px]">
+        <div className="w-[358px] flex flex-col gap-2">
+          {showDeadlineCard && (
             <DeadlineWidget
               leadId={application.id}
               currentDeadline={application.Deadline_For_Lodgment}
               deadlineExtensions={application.deadline_extensions}
             />
-          </div>
-        )}
+          )}
+          <RecentActiveTaskWidget leadId={application.id} />
+        </div>
       </div>
 
     </>
