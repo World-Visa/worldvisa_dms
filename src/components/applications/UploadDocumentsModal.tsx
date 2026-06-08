@@ -474,19 +474,12 @@ export function UploadDocumentsModal(props: DocumentUploadModalProps) {
           const apiCategory = getDocumentCategory(effectiveCategory);
           const displayCategory = getDisplayCategory(apiCategory);
 
-          const newDocuments = uploadResult.data.map(
-            (doc: {
-              id: string;
-              name: string;
-              size: number;
-              type: string;
-              uploaded_at: string;
-            }) => ({
-              _id: doc.id,
+          const newDocuments = uploadResult.data.map((doc) => ({
+              _id: doc._id,
               record_id: applicationId,
-              workdrive_file_id: doc.id,
+              workdrive_file_id: doc._id,
               workdrive_parent_id: "",
-              file_name: doc.name,
+              file_name: doc.file_name,
               uploaded_by: uploadedBy,
               status: "pending" as const,
               history: [],
