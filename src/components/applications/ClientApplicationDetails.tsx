@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/accordion";
 import DeadlineWidget from "./deadline/DeadlineWidget";
 import { DeadlineWidgetSkeleton } from "./deadline/DeadlineWidgetSkeleton";
+import RecentActiveTaskWidget from "./recent-task/RecentActiveTaskWidget";
+import { RecentActiveTaskWidgetSkeleton } from "./recent-task/RecentActiveTaskWidgetSkeleton";
 
 const FF: React.CSSProperties = { fontFeatureSettings: "'ss11', 'calt' 0" };
 
@@ -117,8 +119,9 @@ export function ClientApplicationDetails({
               </div>
             </div>
           </div>
-          <div className="w-[358px] hidden md:block">
+          <div className="w-[358px] hidden md:flex md:flex-col gap-2">
             <DeadlineWidgetSkeleton />
+            <RecentActiveTaskWidgetSkeleton />
           </div>
         </div>
       </div>
@@ -599,14 +602,15 @@ export function ClientApplicationDetails({
           </div>
         </div>
 
-        {/* Right — Application Deadline (30%) */}
-        <div className="w-[358px] hidden md:block">
+        {/* Right — Deadline + active task (30%) */}
+        <div className="w-[358px] hidden md:flex md:flex-col gap-2">
           <DeadlineWidget
             isClientView
             leadId={leadId}
             currentDeadline={application.Deadline_For_Lodgment}
             deadlineExtensions={application.deadline_extensions}
           />
+          <RecentActiveTaskWidget leadId={leadId} isClientView />
         </div>
       </div>
     </div>

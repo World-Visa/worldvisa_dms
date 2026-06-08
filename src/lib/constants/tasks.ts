@@ -107,6 +107,28 @@ export function taskDatePresetToApiRange(
   }
 }
 
+/** Active (non-terminal) task statuses for sidebar preview. */
+export const ACTIVE_TASK_STATUSES: TaskStatus[] = ["todo", "in_progress"];
+
+export function isActiveTaskStatus(status: TaskStatus): boolean {
+  return ACTIVE_TASK_STATUSES.includes(status);
+}
+
+function compareTaskSchedule(a: ApplicationTask, b: ApplicationTask): number {
+  const dateCompare = a.date.localeCompare(b.date);
+  if (dateCompare !== 0) return dateCompare;
+  return timePartsToMinutes(a.timeStart) - timePartsToMinutes(b.timeStart);
+}
+
+/** Nearest upcoming active task from a date-asc list. */
+export function pickNearestActiveTask(
+  tasks: ApplicationTask[],
+): ApplicationTask | null {
+  const active = tasks.filter((t) => isActiveTaskStatus(t.status));
+  if (active.length === 0) return null;
+  return [...active].sort(compareTaskSchedule)[0];
+}
+
 /** Status columns shown on the kanban board (cancelled excluded). */
 export const KANBAN_BOARD_STATUSES: TaskStatus[] = [
   "todo",
