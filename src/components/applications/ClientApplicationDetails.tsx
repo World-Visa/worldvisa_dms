@@ -75,7 +75,7 @@ export function ClientApplicationDetails({
   if (isLoading) {
     return (
       <div className="space-y-6">
-        <div className="flex gap-2 items-stretch w-full min-w-0">
+        <div className="flex gap-2 items-start w-full min-w-0">
           {/* Skeleton — gray container matching ApplicationInfoCard */}
           <div
             className="flex-7 min-w-0 flex flex-col"
@@ -119,7 +119,7 @@ export function ClientApplicationDetails({
               </div>
             </div>
           </div>
-          <div className="w-[358px] hidden md:flex md:flex-col gap-2">
+          <div className="hidden md:flex w-[358px] shrink-0 flex-col gap-2 sticky top-6 self-start">
             <DeadlineWidgetSkeleton />
             <RecentActiveTaskWidgetSkeleton />
           </div>
@@ -187,7 +187,7 @@ export function ClientApplicationDetails({
   return (
     <div className="space-y-6">
       {/* 70/30 row — match admin ApplicantDetails layout */}
-      <div className="flex gap-2 items-stretch w-full min-w-0">
+      <div className="flex gap-2 items-start w-full min-w-0">
         {/* Left — Application Information (70%) */}
         <div
           className="flex-7 min-w-0 flex flex-col"
@@ -603,7 +603,7 @@ export function ClientApplicationDetails({
         </div>
 
         {/* Right — Deadline + active task (30%) */}
-        <div className="w-[358px] hidden md:flex md:flex-col gap-2">
+        <div className="hidden md:flex w-[358px] shrink-0 flex-col gap-2 sticky top-6 self-start">
           <DeadlineWidget
             isClientView
             leadId={leadId}

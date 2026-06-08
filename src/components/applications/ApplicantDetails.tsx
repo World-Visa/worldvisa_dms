@@ -35,7 +35,7 @@ export function ApplicantDetailsLoadingPlaceholder({
   isSpouseApplication?: boolean;
 }) {
   return (
-    <div className="flex gap-2 items-stretch w-full min-w-0">
+    <div className="flex gap-2 items-start w-full min-w-0">
       {/* Gray outer container — matches ApplicationInfoCard */}
       <div
         className={cn("min-w-0 flex flex-col flex-7")}
@@ -117,7 +117,7 @@ export function ApplicantDetailsLoadingPlaceholder({
         </div>
       </div>
 
-      <div className="w-[358px] flex flex-col gap-2">
+      <div className="w-[358px] shrink-0 flex flex-col gap-2 sticky top-6 self-start">
         <RecentActiveTaskWidgetSkeleton />
       </div>
     </div>
@@ -163,7 +163,7 @@ export function ApplicantDetails({
 
   return (
     <>
-      <div className="flex gap-2 items-stretch w-full min-w-0 ">
+      <div className="flex gap-2 items-start w-full min-w-0">
         <div className="min-w-0 flex-7">
           <ApplicationInfoCard
             application={application}
@@ -175,7 +175,7 @@ export function ApplicantDetails({
           />
         </div>
 
-        <div className="w-[358px] flex flex-col gap-2">
+        <div className="w-[358px] shrink-0 flex flex-col gap-2 sticky top-6 self-start">
           {showDeadlineCard && (
             <DeadlineWidget
               leadId={application.id}

@@ -568,7 +568,7 @@ export default function ClientApplicationDetailsPageContent({
         isApplicationLoading ||
         isAllDocumentsLoading ||
         isChecklistLoading ? (
-        <ApplicationDetailsSkeleton variant="admin" showHeader={false} />
+        <ApplicationDetailsSkeleton variant="client" showHeader={false} />
       ) : !isAuthLoading && isAuthenticated && user?.role === "client" ? (
         <div className="space-y-6 mt-6">
           {/* Application Details */}
