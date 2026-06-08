@@ -18,11 +18,13 @@ export interface ClientUploadDocumentRequest {
 export interface ClientUploadDocumentResponse {
   success: boolean;
   data: {
-    id: string;
-    name: string;
-    size: number;
-    type: string;
+    _id: string;
+    file_name: string;
+    document_name: string;
+    document_category: string;
+    document_type?: string;
     uploaded_at: string;
+    status: string;
   }[];
   message?: string;
 }
