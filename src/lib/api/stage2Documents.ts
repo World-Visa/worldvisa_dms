@@ -277,6 +277,13 @@ export async function updateStage2Document(
   ) {
     metadata.expiry_at = String(request.metadata.expiry_at).trim();
   }
+  if (
+    request.metadata.type !== undefined &&
+    request.metadata.type !== null &&
+    String(request.metadata.type).trim() !== ""
+  ) {
+    metadata.type = String(request.metadata.type).trim();
+  }
 
   const headers: Record<string, string> = {
     "Content-Type": "application/json",

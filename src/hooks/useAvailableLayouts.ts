@@ -26,7 +26,7 @@ export function useAvailableLayouts(
     if (documentTypes.has("outcome")) {
       availableLayouts.push("outcome");
     }
-    if (documentTypes.has("eoi")) {
+    if (documentTypes.has("eoi") || documentTypes.has("roi")) {
       availableLayouts.push("eoi");
     }
     if (documentTypes.has("invitation")) {

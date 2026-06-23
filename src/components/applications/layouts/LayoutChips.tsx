@@ -17,7 +17,7 @@ interface LayoutChipsProps {
 const layoutChips: { id: ApplicationLayout; label: string }[] = [
   { id: "skill-assessment", label: "Skill Assessment" },
   { id: "outcome", label: "Outcome" },
-  { id: "eoi", label: "EOI" },
+  { id: "eoi", label: "EOI/ROI" },
   { id: "invitation", label: "Invitation" },
 ];
 
