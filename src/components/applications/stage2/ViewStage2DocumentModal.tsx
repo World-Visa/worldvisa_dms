@@ -19,7 +19,8 @@ import {
 } from "@/lib/stage2DocumentDisplay";
 import { getOutcomeExpiryDisplayParts } from "@/lib/stage2/outcomeExpiry";
 import { invitationTypeLabel } from "@/lib/stage2/invitationExpiry";
-import { getResolvedEoiExpiryDate } from "@/lib/stage2/eoiExpiry";
+import { getResolvedInterestExpiryDate } from "@/lib/stage2/eoiExpiry";
+import { isInterestDocumentType } from "@/lib/stage2/interestDocument";
 import { cn } from "@/lib/utils";
 import { DocumentEmbedPreview } from "@/components/applications/document-preview/DocumentEmbedPreview";
 import { getDocumentUrl } from "@/lib/documents/getDocumentUrl";
@@ -29,6 +30,8 @@ function typeLabel(type: Stage2DocumentType) {
   switch (type) {
     case "eoi":
       return "EOI";
+    case "roi":
+      return "ROI";
     case "invitation":
       return "Invitation";
     case "outcome":
@@ -87,8 +90,10 @@ export function ViewStage2DocumentModal({
       : { type: "spring" as const, stiffness: 420, damping: 36 },
   };
 
-  const resolvedEoiExpiry =
-    document?.type === "eoi" ? getResolvedEoiExpiryDate(document) : null;
+  const resolvedInterestExpiry =
+    document && isInterestDocumentType(document.type)
+      ? getResolvedInterestExpiryDate(document)
+      : null;
 
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
@@ -146,7 +151,7 @@ export function ViewStage2DocumentModal({
               </div>
               <div className="min-h-0 flex-1 overflow-y-auto px-4 py-2">
                 <dl>
-                  {document.type === "eoi" && (
+                  {document.type === "eoi" || document.type === "roi" ? (
                     <>
                       <DetailRow label="State">
                         {document.state ? getStage2StateDisplay(document.state) : "N/A"}
@@ -157,8 +162,8 @@ export function ViewStage2DocumentModal({
                         {document.date ? formatDate(document.date, "short") : "N/A"}
                       </DetailRow>
                       <DetailRow label="Expiry">
-                        {resolvedEoiExpiry
-                          ? formatDate(resolvedEoiExpiry, "short")
+                        {resolvedInterestExpiry
+                          ? formatDate(resolvedInterestExpiry, "short")
                           : "—"}
                       </DetailRow>
                       <DetailRow label="Skill assessing body">
@@ -168,7 +173,7 @@ export function ViewStage2DocumentModal({
                         {getStage2AnzscoDisplay(document.language_assessing_body)}
                       </DetailRow> */}
                     </>
-                  )}
+                  ) : null}
                   {document.type === "invitation" && (
                     <>
                       <DetailRow label="Invitation type">

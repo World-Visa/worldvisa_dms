@@ -1,6 +1,6 @@
 // Type definitions for Stage 2 Documents (Outcome, EOI, Invitation)
 
-export type Stage2DocumentType = "outcome" | "eoi" | "invitation";
+export type Stage2DocumentType = "outcome" | "eoi" | "roi" | "invitation";
 
 export interface Stage2Document {
   _id: string;
@@ -73,6 +73,7 @@ export interface UpdateStage2DocumentRequest {
     outcome?: string;
     skill_assessing_body?: string;
     expiry_at?: string;
+    type?: Stage2DocumentType;
   };
 }
 

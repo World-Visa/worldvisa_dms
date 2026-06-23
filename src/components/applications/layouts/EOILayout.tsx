@@ -13,6 +13,7 @@ import {
 import { EOISheet } from "@/components/applications/stage2/sheets/EOISheet";
 import { ViewStage2DocumentModal } from "@/components/applications/stage2/ViewStage2DocumentModal";
 import type { EOILayoutProps, Stage2Document } from "@/types/stage2Documents";
+import { isInterestDocumentType } from "@/lib/stage2/interestDocument";
 import { ErrorState } from "@/components/ui/ErrorState";
 import { ConfirmationModal } from "@/components/ui/confirmation-modal";
 
@@ -34,10 +35,12 @@ export function EOILayout({
     null,
   );
 
-  const { data, isLoading, error } = useStage2Documents(applicationId, "eoi");
+  const { data, isLoading, error } = useStage2Documents(applicationId);
   const deleteMutation = useDeleteStage2Document();
 
-  const documents = data?.data || [];
+  const documents = (data?.data ?? []).filter((doc) =>
+    isInterestDocumentType(doc.type),
+  );
 
   const handleView = (document: Stage2Document) => {
     if (!getDocumentUrl(document)) {
@@ -88,22 +91,22 @@ export function EOILayout({
 
       <div className="space-y-4">
         {error ? (
-          <ErrorState title="Failed to load EOI documents" message="Please try again later." />
+          <ErrorState title="Failed to load EOI/ROI documents" message="Please try again later." />
         ) : !isLoading && documents.length === 0 ? (
           <StageDocumentsEmptyState
-            title="No EOI Yet"
-            description="No EOI documents have been uploaded for this application."
+            title="No EOI/ROI Yet"
+            description="No EOI/ROI documents have been uploaded for this application."
             isClientView={isClientView}
-            createButtonLabel="Create EOI"
+            createButtonLabel="Create EOI/ROI"
             onCreate={() => setIsModalOpen(true)}
           />
         ) : (
           <div className="pb-10">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-lg font-medium">EOI Documents</h2>
+              <h2 className="text-lg font-medium">EOI/ROI Documents</h2>
               <StageDocumentsHeaderAction
                 isClientView={isClientView}
-                label="Add EOI"
+                label="Add EOI/ROI"
                 onClick={() => setIsModalOpen(true)}
               />
             </div>

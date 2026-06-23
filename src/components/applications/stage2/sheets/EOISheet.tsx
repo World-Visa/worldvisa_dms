@@ -53,11 +53,17 @@ import {
   STAGE2_STATE_NOT_APPLICABLE,
 } from "@/lib/stage2/visaSubclassState";
 import {
-  computeEoiExpiryDate,
+  computeInterestExpiryDate,
   formatEoiExpiryForApi,
   formatEoiExpiryForPatch,
-  getEoiExpiryPeriodLabel,
+  getInterestDateLabel,
+  getInterestExpiryPeriodLabel,
+  type InterestDocumentType,
 } from "@/lib/stage2/eoiExpiry";
+import {
+  getInterestUploadFields,
+  INTEREST_TYPE_OPTIONS,
+} from "@/lib/stage2/interestDocument";
 import { formatDate } from "@/utils/format";
 
 interface UploadedFile {
@@ -242,6 +248,7 @@ export function EOISheet({
   const sheetContainerRef = useRef<HTMLDivElement>(null);
 
   // Shared form fields
+  const [interestType, setInterestType] = useState<InterestDocumentType>("eoi");
   const [subclass, setSubclass] = useState("");
   const [selectedStates, setSelectedStates] = useState<string[]>([]);
   const [point, setPoint] = useState("");
@@ -296,15 +303,19 @@ export function EOISheet({
     (_, index) => (65 + index * 5).toString(),
   );
 
-  const computedExpiry = useMemo(() => computeEoiExpiryDate(date), [date]);
+  const computedExpiry = useMemo(
+    () => computeInterestExpiryDate(date, interestType),
+    [date, interestType],
+  );
 
   const expiryDisplayText = useMemo(() => {
     if (!computedExpiry) return "N/A";
-    return `${formatDate(computedExpiry, "short")} (${getEoiExpiryPeriodLabel()} from EOI date)`;
-  }, [computedExpiry]);
+    return `${formatDate(computedExpiry, "short")} (${getInterestExpiryPeriodLabel(interestType)} from ${getInterestDateLabel(interestType)})`;
+  }, [computedExpiry, interestType]);
 
   useEffect(() => {
     if (mode === "edit" && document) {
+      setInterestType(document.type === "roi" ? "roi" : "eoi");
       setSubclass(document.subclass || "");
       setSelectedStates(document.state ? [document.state] : []);
       setPoint(document.point?.toString() || "");
@@ -330,6 +341,7 @@ export function EOISheet({
       setCustomAssessingAuthority("");
       setReplacementFile(null);
     } else {
+      setInterestType("eoi");
       setSubclass("");
       setSelectedStates([]);
       setPoint("");
@@ -477,6 +489,7 @@ export function EOISheet({
               point: Number(point),
               date: formattedDate,
               skill_assessing_body: anzscoValue,
+              type: interestType,
               ...(expiryAtPatch ? { expiry_at: expiryAtPatch } : {}),
             },
           });
@@ -504,15 +517,14 @@ export function EOISheet({
 
         for (const uploadedFile of stateFiles) {
           const file = uploadedFile.file;
+          const uploadFields = getInterestUploadFields(interestType, file);
           try {
             await uploadMutation.mutateAsync({
               applicationId,
               files: [file],
               file_name: file.name,
-              document_name: file.name,
-              document_type: file.type,
+              ...uploadFields,
               uploaded_by: user?.username ?? user?.email ?? "",
-              type: "eoi",
               subclass,
               state: stateCode,
               point: Number(point),
@@ -550,6 +562,7 @@ export function EOISheet({
   };
 
   function clearFormState() {
+    setInterestType("eoi");
     setSubclass("");
     setSelectedStates([]);
     setPoint("");
@@ -598,7 +611,7 @@ export function EOISheet({
   const showProgress = mode === "create" && isUploading && totalUploads > 0;
 
   const title =
-    mode === "edit" ? "Edit EOI Document" : "Create EOI Document";
+    mode === "edit" ? "Edit EOI/ROI Document" : "Create EOI/ROI Document";
 
   return (
     <Sheet open={isOpen} onOpenChange={handleOpenChange}>
@@ -631,6 +644,33 @@ export function EOISheet({
             >
               {/* Visa Information */}
               <div className="space-y-3 px-4 py-4">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-medium text-foreground">
+                    Type *
+                  </Label>
+                  <Select
+                    value={interestType}
+                    onValueChange={(value) =>
+                      setInterestType(value as InterestDocumentType)
+                    }
+                    disabled={isUploading}
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Select type…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Type</SelectLabel>
+                        {INTEREST_TYPE_OPTIONS.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+
                 <div className="space-y-1.5">
                   <Label className="text-xs font-medium text-foreground">
                     Subclass *

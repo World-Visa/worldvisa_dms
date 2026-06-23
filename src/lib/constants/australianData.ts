@@ -221,6 +221,11 @@ export const ANZSCO_CODES: AnzscoCode[] = [
     assessing_authority: "VETASSESS",
   },
   {
+    anzsco_code: "132511",
+    name: "Research and Development Manager",
+    assessing_authority: "VETASSESS",
+  },
+  {
     anzsco_code: "133111",
     name: "Construction Project Manager",
     assessing_authority: "VETASSESS",
@@ -510,7 +515,7 @@ export const ANZSCO_CODES: AnzscoCode[] = [
   },
   {
     anzsco_code: "212411",
-    name: "Policy Analyst",
+    name: "Copywriter",
     assessing_authority: "VETASSESS",
   },
   {
@@ -753,8 +758,23 @@ export const ANZSCO_CODES: AnzscoCode[] = [
     assessing_authority: "VETASSESS",
   },
   {
+    anzsco_code: "225112",
+    name: "Market Research Analyst",
+    assessing_authority: "VETASSESS",
+  },
+  {
     anzsco_code: "225113",
     name: "Marketing Specialist",
+    assessing_authority: "VETASSESS",
+  },
+  {
+    anzsco_code: "225211",
+    name: "ICT Account Manager",
+    assessing_authority: "ACS",
+  },
+  {
+    anzsco_code: "225499",
+    name: "Technical Sales Representative nec",
     assessing_authority: "VETASSESS",
   },
   {
@@ -891,6 +911,11 @@ export const ANZSCO_CODES: AnzscoCode[] = [
   {
     anzsco_code: "233512",
     name: "Mechanical Engineer",
+    assessing_authority: "Engineers Australia",
+  },
+  {
+    anzsco_code: "233513",
+    name: "Production or Plant Engineer",
     assessing_authority: "Engineers Australia",
   },
   {
@@ -1113,6 +1138,11 @@ export const ANZSCO_CODES: AnzscoCode[] = [
     assessing_authority: "VETASSESS",
   },
   { anzsco_code: "251111", name: "Dietitian", assessing_authority: "DAA" },
+  {
+    anzsco_code: "251112",
+    name: "Nutritionist",
+    assessing_authority: "DAA",
+  },
   {
     anzsco_code: "251211",
     name: "Medical Diagnostic Radiographer",
@@ -2292,6 +2322,11 @@ export const ANZSCO_CODES: AnzscoCode[] = [
   {
     anzsco_code: "511112",
     name: "Programme or Project Administrator",
+    assessing_authority: "VETASSESS",
+  },
+  {
+    anzsco_code: "599915",
+    name: "Technical Writer nec",
     assessing_authority: "VETASSESS",
   },
   {

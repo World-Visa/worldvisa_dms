@@ -157,9 +157,11 @@ export default function ClientApplicationDetailsPageContent({
   const invitationDocuments = invitationDocumentsQuery.data?.data ?? [];
   const hasInvitationDocuments = invitationDocuments.length > 0;
 
-  const eoiDocumentsQuery = useStage2Documents(applicationId, "eoi");
-  const eoiDocuments = eoiDocumentsQuery.data?.data ?? [];
-  const hasEOIDocuments = eoiDocuments.length > 0;
+  const stage2DocumentsQuery = useStage2Documents(applicationId);
+  const interestDocuments = (stage2DocumentsQuery.data?.data ?? []).filter(
+    (doc) => doc.type === "eoi" || doc.type === "roi",
+  );
+  const hasInterestDocuments = interestDocuments.length > 0;
 
   const outcomeDocumentsQuery = useStage2Documents(applicationId, "outcome");
   const outcomeDocuments = outcomeDocumentsQuery.data?.data ?? [];
@@ -172,7 +174,7 @@ export default function ClientApplicationDetailsPageContent({
       layouts.push("outcome");
     }
 
-    if (hasEOIDocuments) {
+    if (hasInterestDocuments) {
       layouts.push("eoi");
     }
 
@@ -181,7 +183,7 @@ export default function ClientApplicationDetailsPageContent({
     }
 
     return layouts;
-  }, [hasEOIDocuments, hasInvitationDocuments, hasOutcomeDocuments]);
+  }, [hasInterestDocuments, hasInvitationDocuments, hasOutcomeDocuments]);
 
   useEffect(() => {
     if (!availableLayouts.includes(selectedLayout)) {
@@ -635,7 +637,7 @@ export default function ClientApplicationDetailsPageContent({
                 </Suspense>
               ) : null
             ) : selectedLayout === "eoi" ? (
-              hasEOIDocuments ? (
+              hasInterestDocuments ? (
                 <Suspense
                   fallback={<Skeleton className="h-96 w-full rounded-xl" />}
                 >

@@ -24,7 +24,8 @@ type Stage2DocumentsTableProps = {
 };
 
 function Stage2LoadingRow({ type }: { type: Stage2DocumentType }) {
-  const colCount = type === "outcome" ? 7 : type === "eoi" ? 7 : 7;
+  const colCount =
+    type === "outcome" ? 7 : type === "eoi" || type === "roi" ? 6 : 7;
   return (
     <TableRow>
       <TableCell colSpan={colCount} className="py-3">
@@ -57,14 +58,14 @@ export function Stage2DocumentsTable({
           </>
         );
       case "eoi":
+      case "roi":
         return (
           <>
             <TableHead className="min-w-0">Document Name</TableHead>
+            <TableHead className="whitespace-nowrap">Type</TableHead>
             <TableHead className="min-w-0">State</TableHead>
             <TableHead className="min-w-0">Subclass</TableHead>
-            <TableHead className="whitespace-nowrap">Points</TableHead>
             <TableHead className="whitespace-nowrap">Date</TableHead>
-            <TableHead className="whitespace-nowrap">Expiry</TableHead>
             <TableHead className="w-20 text-right">Actions</TableHead>
           </>
         );
@@ -84,7 +85,7 @@ export function Stage2DocumentsTable({
   };
 
   const displayDocuments = React.useMemo(() => {
-    if (type !== "eoi") return documents;
+    if (type !== "eoi" && type !== "roi") return documents;
     return [...documents].sort((a, b) => {
       const fileCompare = (a.document_name || a.file_name || "").localeCompare(
         b.document_name || b.file_name || "",
@@ -113,7 +114,7 @@ export function Stage2DocumentsTable({
           {displayDocuments.map((document, index) => {
             const prevDoc = index > 0 ? displayDocuments[index - 1] : null;
             const sameFileAsPrev =
-              type === "eoi" &&
+              (type === "eoi" || type === "roi") &&
               !!prevDoc &&
               (prevDoc.file_name || prevDoc.document_name) ===
                 (document.file_name || document.document_name);

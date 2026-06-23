@@ -14,7 +14,7 @@ interface ApplicationDetailsSkeletonProps {
 const LAYOUT_TAB_LABELS = [
   "Skill Assessment",
   "Outcome",
-  "EOI",
+  "EOI/ROI",
   "Invitation",
 ] as const;
 const CATEGORY_CARD_SKELETON_COUNT = 5;

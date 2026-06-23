@@ -8,7 +8,6 @@ import {
 } from "@/lib/stage2DocumentDisplay";
 import type { Stage2Document } from "@/types/stage2Documents";
 import { formatDate } from "@/utils/format";
-import { getResolvedEoiExpiryDate } from "@/lib/stage2/eoiExpiry";
 import { Stage2RowActionsCell } from "@/components/applications/stage2/Stage2RowActionsCell";
 import {
   MotionTableRow,
@@ -38,7 +37,7 @@ export function EOIDocumentRow({
 }: EOIDocumentRowProps) {
   const motionProps = useStage2RowMotionProps(rowIndex);
   const stateLabel = document.state ? getStage2StateDisplay(document.state) : "N/A";
-  const resolvedExpiry = getResolvedEoiExpiryDate(document);
+  const interestTypeLabel = document.type === "roi" ? "ROI" : "EOI";
 
   return (
     <MotionTableRow
@@ -52,6 +51,11 @@ export function EOIDocumentRow({
         <TruncatedText className="max-w-full text-neutral-700">{document.document_name?.slice(0, 20) || document.file_name?.slice(0, 20)}</TruncatedText>
       </TableCell>
       <TableCell className="min-w-0 font-normal">
+        <Badge variant="lighter" color={document.type === "roi" ? "blue" : "green"} size="md">
+          {interestTypeLabel}
+        </Badge>
+      </TableCell>
+      <TableCell className="min-w-0 font-normal">
         <Badge variant="lighter" color="purple" size="md" className="min-w-0 max-w-full">
           <TruncatedText className="max-w-[18ch]">{stateLabel}</TruncatedText>
         </Badge>
@@ -61,16 +65,8 @@ export function EOIDocumentRow({
         <TruncatedText className="max-w-full">{getStage2SubclassDisplay(document.subclass)}</TruncatedText>
       </TableCell>
 
-      <TableCell className="whitespace-nowrap tabular-nums text-sm">
-        {document.point ?? "N/A"}
-      </TableCell>
-
       <TableCell className="whitespace-nowrap text-sm">
         {formatDate(document.date, "short")}
-      </TableCell>
-
-      <TableCell className="whitespace-nowrap text-sm tabular-nums">
-        {resolvedExpiry ? formatDate(resolvedExpiry, "short") : "—"}
       </TableCell>
 
       <Stage2RowActionsCell
