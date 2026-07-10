@@ -9,7 +9,6 @@ export function buildMcubeWidgetIframeSrc(
     username,
     auth_token: authToken,
   });
-  console.log(`${MCUBE_WIDGET_AUTH_BASE}?${params.toString()}`);
   return `${MCUBE_WIDGET_AUTH_BASE}?${params.toString()}`;
 }
 

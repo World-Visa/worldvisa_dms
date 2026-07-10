@@ -17,7 +17,6 @@ import { Inbox } from "@/components/applications/in-app-notifications/inbox";
 import { AccountSwitcher } from "@/components/v2/sidebar/account-switcher";
 import { ContentArea } from "@/app/(admin-v2)/content-area";
 import { SidebarController } from "@/app/(admin-v2)/sidebar-controller";
-import { McubePhoneWidgetLoader } from "@/components/mcube/McubePhoneWidgetLoader";
 import PhoneCard from "@/components/mcube/PhoneCard";
 import { CallEventsSetup } from "@/components/mcube/CallEventsSetup";
 import { IncomingCallBanner } from "@/components/mcube/IncomingCallBanner";
@@ -98,8 +97,6 @@ export default async function Layout({ children }: Readonly<{ children: ReactNod
           </Suspense>
         </div>
       </SidebarInset>
-
-      {/* <McubePhoneWidgetLoader /> */}
 
       <IncomingCallBanner />
     </SidebarProvider>

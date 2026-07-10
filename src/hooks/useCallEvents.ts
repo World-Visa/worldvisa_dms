@@ -19,6 +19,7 @@ export function useCallEvents() {
         { queryKey: callLogKeys.all(), exact: false },
         (old) => {
           if (!old?.data?.callLogs) return old;
+          if (old.data.callLogs.some((log) => log.call_id === doc.call_id)) return old;
           return {
             ...old,
             results: old.results + 1,
