@@ -3,7 +3,6 @@
 import { memo, useState } from "react";
 import { parseAsInteger, parseAsString, useQueryState } from "nuqs";
 import { useCallLogs } from "@/hooks/useCallLogs";
-import { useCallLogRealtime } from "@/hooks/useCallLogRealtime";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   Table,
@@ -64,9 +63,6 @@ export function CallLogsClient() {
     page,
     limit,
   });
-
-  // Mount once — socket events keep the React Query cache fresh
-  useCallLogRealtime();
 
   // ── Derived ────────────────────────────────────────────────────────────────
   const callLogs  = data?.data?.callLogs ?? [];

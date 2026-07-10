@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -14,11 +14,6 @@ export function PhonePanelController() {
   const { setOpen } = useSidebar();
   const pathname = usePathname();
   const dockWidth = usePhoneDockWidth();
-  const [iframeMounted, setIframeMounted] = useState(false);
-
-  useEffect(() => {
-    if (phonePanelOpen && !iframeMounted) setIframeMounted(true);
-  }, [phonePanelOpen, iframeMounted]);
 
   useEffect(() => {
     if (phonePanelOpen) setOpen(false);
@@ -35,7 +30,7 @@ export function PhonePanelController() {
       className="flex h-full min-h-0 shrink-0 flex-col overflow-hidden border-l bg-background"
       style={{ willChange: "width", pointerEvents: phonePanelOpen ? undefined : "none" }}
     >
-      {iframeMounted && <SlidePhoneCard onClose={closePhonePanel} />}
+      <SlidePhoneCard onClose={closePhonePanel} />
     </motion.div>
   );
 }
