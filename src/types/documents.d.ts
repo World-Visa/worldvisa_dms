@@ -149,6 +149,10 @@ export interface MovedDocument {
   file_id: string;
   moved_by?: string;
   moved_at: string;
+  storage_type?: "workdrive" | "r2";
+  r2_key?: string;
+  document_link?: string;
+  download_url?: string;
 }
 
 export interface GetMovedDocsResponse {
@@ -163,10 +167,11 @@ export interface DocumentLink {
 }
 
 export interface GetDocumentLinkResponse {
-  status: "success" | "error";
-  data: {
-    data: {
-      attributes: DocumentLink;
+  status?: "success" | "error";
+  data?: {
+    data?: {
+      attributes?: Partial<DocumentLink>;
     };
+    attributes?: Partial<DocumentLink>;
   };
 }

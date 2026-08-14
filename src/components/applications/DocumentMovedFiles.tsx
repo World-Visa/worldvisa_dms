@@ -1,7 +1,10 @@
 "use client";
 
 import React from "react";
-import { useDocumentMovedDocs } from "@/hooks/useDocumentMovedDocs";
+import {
+  useDocumentLink,
+  useDocumentMovedDocs,
+} from "@/hooks/useDocumentMovedDocs";
 import {
   Sheet,
   SheetContent,
@@ -11,10 +14,21 @@ import {
 } from "../ui/sheet";
 import { Skeleton } from "../ui/skeleton";
 import { cn } from "@/lib/utils";
+import { formatDate } from "@/utils/format";
+import {
+  getMovedDocumentUrl,
+  isWorkDriveResourceId,
+} from "@/lib/documents/getDocumentUrl";
+import {
+  navigateDocumentWindow,
+  openBlankDocumentWindow,
+  openDocumentInSizedWindow,
+} from "@/lib/documents/openDocumentViewer";
+import { toast } from "sonner";
+import type { MovedDocument } from "@/types/documents";
 
 type Props = {
   documentId: string;
-  /** When set, clicking "Deleted Files" calls this instead of opening a sheet (e.g. inline panel in document modal). */
   onOpenInPanel?: () => void;
 };
 
@@ -25,32 +39,28 @@ export function DocumentMovedFilesPanel({
   documentId: string;
   className?: string;
 }) {
-  const { movedDocs, isLoading, error, getDocumentLink } =
-    useDocumentMovedDocs(documentId);
+  const { movedDocs, isLoading, error } = useDocumentMovedDocs(documentId);
+  const { mutateAsync: fetchLink, isPending, variables } = useDocumentLink();
 
-  const handleOpenDocument = async (fileId: string) => {
-    const link = await getDocumentLink(fileId);
-    if (link && link.link) {
-      window.open(link.link, "_blank", "width=800,height=800");
+  const handleOpenDocument = async (file: MovedDocument) => {
+    const url = getMovedDocumentUrl(file);
+    if (url) {
+      openDocumentInSizedWindow(url);
+      return;
     }
-  };
 
-  const formattedDate = (moved_at: string) => {
-    const date = new Date(moved_at);
-    const options: Intl.DateTimeFormatOptions = {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    };
-    const datePart = date.toLocaleDateString(undefined, options);
-    let hours = date.getHours();
-    const minutes = date.getMinutes();
-    const ampm = hours >= 12 ? "pm" : "am";
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    const minutesStr = minutes < 10 ? "0" + minutes : minutes;
-    const timePart = `${hours}:${minutesStr} ${ampm}`;
-    return `${datePart}, ${timePart}`;
+    if (!isWorkDriveResourceId(file.file_id)) {
+      toast.error("Document URL not available");
+      return;
+    }
+
+    const popup = openBlankDocumentWindow();
+    try {
+      const { link } = await fetchLink(file.file_id);
+      navigateDocumentWindow(popup, link);
+    } catch {
+      popup?.close();
+    }
   };
 
   return (
@@ -80,37 +90,42 @@ export function DocumentMovedFilesPanel({
         <p className="text-sm text-muted-foreground">No deleted files found.</p>
       ) : (
         <div className="overflow-auto">
-          {movedDocs.map((file, idx) => (
-            <div
-              key={file._id || idx}
-              className="group relative pb-8 pl-8 last:pb-0"
-            >
-              <div className="absolute left-2 top-[10px] h-full w-0.5 bg-border group-last:hidden" />
-              <div className="absolute left-0 top-[10px] h-4 w-4 rounded-full border-2 border-background bg-emerald-500 shadow-sm ring-1 ring-border/40" />
-              <div className="ml-2">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="flex min-w-0 flex-col">
-                    <button
-                      type="button"
-                      onClick={() => handleOpenDocument(file.file_id)}
-                      className="max-w-[220px] truncate border-b border-primary text-left text-sm font-semibold text-primary hover:text-primary/90"
- title={file.file_name || "Unnamed File"}
-                    >
-                      {file.file_name || "Unnamed File"}
-                    </button>
-                  </div>
-                  <div className="flex shrink-0 flex-col items-end">
-                    <p className="text-[13px] text-muted-foreground">
-                      {file.moved_by || "Unknown"}
-                    </p>
-                    <p className="text-xs text-muted-foreground/80 tabular-nums">
-                      {file.moved_at ? formattedDate(file.moved_at) : ""}
-                    </p>
+          {movedDocs.map((file, idx) => {
+            const isOpening = isPending && variables === file.file_id;
+            return (
+              <div
+                key={file._id || idx}
+                className="group relative pb-8 pl-8 last:pb-0"
+              >
+                <div className="absolute left-2 top-[10px] h-full w-0.5 bg-border group-last:hidden" />
+                <div className="absolute left-0 top-[10px] h-4 w-4 rounded-full border-2 border-background bg-emerald-500 shadow-sm ring-1 ring-border/40" />
+                <div className="ml-2">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex min-w-0 flex-col">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenDocument(file)}
+                        disabled={isPending}
+                        aria-busy={isOpening}
+                        title={file.file_name || "Unnamed File"}
+                        className="max-w-[220px] truncate border-b border-primary text-left text-sm font-semibold text-primary hover:text-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {file.file_name || "Unnamed File"}
+                      </button>
+                    </div>
+                    <div className="flex shrink-0 flex-col items-end">
+                      <p className="text-[13px] text-muted-foreground">
+                        {file.moved_by || "Unknown"}
+                      </p>
+                      <p className="text-xs text-muted-foreground/80 tabular-nums">
+                        {file.moved_at ? formatDate(file.moved_at, "time") : ""}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
