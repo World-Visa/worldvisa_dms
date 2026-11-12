@@ -1,6 +1,7 @@
 import React from 'react'
 import { Button } from '../ui/primitives/button'
-import { RiArrowDownSLine, RiDeleteBin2Line, RiHistoryLine, RiRouteFill } from 'react-icons/ri'
+import { RiArrowDownSLine, RiDeleteBin2Line, RiHistoryLine } from 'react-icons/ri'
+import { SendForReviewButton } from './SendForReviewButton'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/primitives/dropdown-menu'
 
 interface DocumentModalActionsProps {
@@ -16,16 +17,10 @@ const DocumentModalActions = ({ onActivityLog, onDeletedFiles, onSendForVerifica
             {!isClientView ? (
                 <>
 
-                    <Button
-                        mode="gradient"
-                        variant="primary"
-                        size="2xs"
-                        className="rounded-r-none border-r border-white/20 text-xs"
-                        leadingIcon={RiRouteFill}
+                    <SendForReviewButton
+                        className="rounded-r-none border-r border-white/20"
                         onClick={onSendForVerification}
-                    >
-                        Send for review
-                    </Button>
+                    />
                     <DropdownMenu modal={false}>
                         <DropdownMenuTrigger asChild>
                             <Button

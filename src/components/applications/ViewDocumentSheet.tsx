@@ -12,7 +12,7 @@ import CommentErrorBoundary from "./CommentErrorBoundary";
 import DocumentStatusButtons from "./DocumentStatusButtons";
 import DocumentStatusDisplay from "./DocumentStatusDisplay";
 import { ReuploadDocumentModal } from "./ReuploadDocumentModal";
-import { SendDocumentModal } from "./SendDocumentModal";
+import { SendForReviewOverlay } from "./SendForReviewOverlay";
 import {
   User,
   Clock,
@@ -29,11 +29,6 @@ import { getDocumentUrl } from "@/lib/documents/getDocumentUrl";
 import { RiArrowLeftLine, RiBookOpenLine, RiUploadLine } from "react-icons/ri";
 import DocumentModalActions from "./DocumentModalActions";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  AnimatePresence as FMAnimatePresence,
-  motion as fmMotion,
-  useReducedMotion,
-} from "framer-motion";
 interface ViewDocumentSheetProps {
   document: Document;
   documents: Document[];
@@ -62,7 +57,6 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
   const [isReuploadModalOpen, setIsReuploadModalOpen] = useState(false);
   const [isSendModalOpen, setIsSendModalOpen] = useState(false);
   const [activePanel, setActivePanel] = useState<'comments' | 'timeline' | 'deletedFiles'>('comments');
-  const sendWidgetReducedMotion = useReducedMotion();
 
   const finalDocumentType =
     documentType || document.document_type || "Document";
@@ -137,18 +131,6 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, documents.length]);
-
-  useEffect(() => {
-    if (!isSendModalOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      e.preventDefault();
-      e.stopPropagation();
-      setIsSendModalOpen(false);
-    };
-    window.addEventListener("keydown", onKey, true);
-    return () => window.removeEventListener("keydown", onKey, true);
-  }, [isSendModalOpen]);
 
   if (!displayDoc || documents.length === 0) {
     if (hideTrigger) return null;
@@ -277,59 +259,11 @@ const ViewDocumentSheet: React.FC<ViewDocumentSheetProps> = ({
             </div>
 
             <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
-              <FMAnimatePresence initial={false}>
-                {isSendModalOpen && (
-                  <fmMotion.div
-                    key="send-verification-layer"
-                    role="presentation"
-                    className="absolute inset-0 z-20 flex justify-end max-lg:justify-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{
-                      duration: sendWidgetReducedMotion ? 0 : 0.18,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                  >
-                    <button
-                      type="button"
-                      tabIndex={-1}
-                      aria-label="Dismiss send verification"
-                      className="absolute inset-0 cursor-default border-0 bg-foreground/7 p-0 transition-colors hover:bg-foreground/9"
-                      onClick={() => setIsSendModalOpen(false)}
-                    />
-                    <fmMotion.div
-                      key="send-verification-panel"
-                      role="group"
-                      aria-label="Send for verification"
-                      className="pointer-events-auto relative z-10 mx-4 mt-3 w-full max-w-[min(375px,calc(100%-2rem))] shrink-0 origin-top-right max-lg:mx-auto lg:mr-6"
-                      initial={{
-                        opacity: 0,
-                        y: sendWidgetReducedMotion ? 0 : -10,
-                        scale: sendWidgetReducedMotion ? 1 : 0.96,
-                      }}
-                      animate={{
-                        opacity: 1,
-                        y: 0,
-                        scale: 1,
-                        transition: {
-                          type: "spring",
-                          stiffness: 380,
-                          damping: 28,
-                        },
-                      }}
-                      onPointerDown={(e) => e.stopPropagation()}
-                    >
-                      <SendDocumentModal
-                        selectedDocument={displayDoc}
-                        onSend={() => {}}
-                        onOpenChange={setIsSendModalOpen}
-                        className="max-w-none"
-                      />
-                    </fmMotion.div>
-                  </fmMotion.div>
-                )}
-              </FMAnimatePresence>
+              <SendForReviewOverlay
+                open={isSendModalOpen}
+                document={displayDoc}
+                onOpenChange={setIsSendModalOpen}
+              />
               <div className="order-1 flex min-h-0 flex-1 flex-col">
                 <DocumentEmbedPreview
                   className="min-h-0 flex-1 max-lg:min-h-[36vh]"

@@ -3,16 +3,14 @@
 import React, { useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { ChevronLeft, X } from "lucide-react";
-import { Document } from "@/types/applications";
 import {
   useAdminUsers,
   type AdminUser,
 } from "@/hooks/useAdminUsers";
-import { sendForReview } from "@/lib/api/reviewRequest";
+import { useSendForReview } from "@/hooks/useSendForReview";
+import { getReviewRecipientRoles } from "@/lib/roles";
 import { useAuth } from "@/hooks/useAuth";
-import { useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-import { showSuccessToast, showWarningToast } from "../ui/primitives/sonner-helpers";
+import { showWarningToast } from "../ui/primitives/sonner-helpers";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getInitials } from "@/lib/constants/users";
 import { getFileIcon } from "@/lib/utils/fileIcon";
@@ -43,21 +41,6 @@ function formatAdminRole(role: AdminUser["role"]): string {
     admin: "Admin",
   };
   return labels[role] ?? role;
-}
-
-function getRolePermissions(userRole: string): AdminUser["role"][] {
-  switch (userRole) {
-    case "admin":
-      return ["team_leader"];
-    case "team_leader":
-      return ["master_admin", "supervisor", "admin"];
-    case "master_admin":
-      return ["team_leader", "supervisor", "admin", "master_admin"];
-    case "supervisor":
-      return ["team_leader", "master_admin", "admin", "supervisor"];
-    default:
-      return [];
-  }
 }
 
 function SuccessCheck() {
@@ -534,13 +517,16 @@ function NoteCard({
   );
 }
 
+/** The only document fields the review picker needs. */
+export interface ReviewableDocument {
+  _id: string;
+  file_name?: string;
+  document_name?: string;
+  uploaded_by?: string;
+}
+
 export interface SendDocumentModalProps {
-  selectedDocument: Document;
-  onSend?: (
-    documentIds: string[],
-    notes: string,
-    sendToUsers: string[],
-  ) => void;
+  selectedDocument: ReviewableDocument;
   onOpenChange: (open: boolean) => void;
   /** Merged onto the root panel; use for width when embedded in a popover. */
   className?: string;
@@ -548,12 +534,11 @@ export interface SendDocumentModalProps {
 
 export function SendDocumentModal({
   selectedDocument,
-  onSend,
   onOpenChange,
   className,
 }: SendDocumentModalProps) {
   const { user } = useAuth();
-  const queryClient = useQueryClient();
+  const sendMutation = useSendForReview();
   const {
     data: adminUsers,
     isLoading: isLoadingAdmins,
@@ -563,7 +548,6 @@ export function SendDocumentModal({
   const [step, setStep] = useState<"users" | "note">("users");
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [note, setNote] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   const reduced = useReducedMotion();
   const documentCloseRef = useRef<HTMLButtonElement>(null);
@@ -571,7 +555,7 @@ export function SendDocumentModal({
 
   const filteredReviewers = useMemo(() => {
     if (!adminUsers || !user?.role) return [];
-    const allowedRoles = getRolePermissions(user.role);
+    const allowedRoles = getReviewRecipientRoles(user.role);
     return adminUsers.filter(
       (admin) =>
         allowedRoles.includes(admin.role) &&
@@ -584,7 +568,6 @@ export function SendDocumentModal({
     setStep("users");
     setSelectedUser(null);
     setNote("");
-    setSubmitting(false);
   }, [selectedDocument._id]);
 
   useEffect(() => {
@@ -595,24 +578,12 @@ export function SendDocumentModal({
     return () => clearTimeout(id);
   }, [step, selectedDocument._id]);
 
-  const invalidateReviewCaches = () => {
-    const keys = [
-      ["requested-documents-to-me"],
-      ["my-requested-documents"],
-      ["all-requested-documents"],
-      ["application-documents"],
-      ["application-documents-paginated"],
-      ["application-details"],
-    ];
-    for (const key of keys) {
-      queryClient.invalidateQueries({ queryKey: key });
-    }
-  };
-
   const recipientUsername =
     selectedUser?.username ?? selectedUser?.full_name ?? "";
 
-  async function handleSubmit() {
+  const submitting = sendMutation.isPending;
+
+  function handleSubmit() {
     if (submitting || !selectedUser || !recipientUsername) return;
     const message = note.trim();
     if (!message) {
@@ -624,21 +595,10 @@ export function SendDocumentModal({
       return;
     }
 
-    setSubmitting(true);
-    try {
-      await sendForReview(selectedDocument._id, {
-        requested_to: [recipientUsername],
-        message,
-      });
-      invalidateReviewCaches();
-      showSuccessToast(`Review request sent to ${recipientUsername}.`);
-      onOpenChange(false);
-      onSend?.([selectedDocument._id], message, [recipientUsername]);
-    } catch {
-      toast.error("Failed to send review requests. Please try again.");
-    } finally {
-      setSubmitting(false);
-    }
+    sendMutation.mutate(
+      { documentId: selectedDocument._id, recipient: recipientUsername, message },
+      { onSuccess: () => onOpenChange(false) },
+    );
   }
 
   const fileLabel =
@@ -690,7 +650,7 @@ export function SendDocumentModal({
             >
               <DocumentSummaryCard
                 fileName={fileLabel}
-                uploadedBy={selectedDocument.uploaded_by}
+                uploadedBy={selectedDocument.uploaded_by ?? ""}
                 onClose={() => onOpenChange(false)}
                 closeButtonRef={documentCloseRef}
               />

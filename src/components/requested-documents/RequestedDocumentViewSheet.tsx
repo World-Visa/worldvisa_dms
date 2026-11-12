@@ -56,6 +56,9 @@ import {
 } from "@/components/ui/primitives/dropdown-menu";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { cn } from "@/lib/utils";
+import { isMasterAdminRole } from "@/lib/roles";
+import { SendForReviewButton } from "@/components/applications/SendForReviewButton";
+import { SendForReviewOverlay } from "@/components/applications/SendForReviewOverlay";
 
 const REVIEW_COMMENT_SUGGESTIONS = [
   "Good to go",
@@ -118,6 +121,7 @@ export function RequestedDocumentViewSheet({
 
   const [reviewComment, setReviewComment] = useState("");
   const [isReviewing, setIsReviewing] = useState(false);
+  const [isSendOpen, setIsSendOpen] = useState(false);
   const [sidePanel, setSidePanel] = useState<SidePanelView>("messages");
   const [publishState, setPublishState] = useState<{
     isOpen: boolean;
@@ -130,6 +134,7 @@ export function RequestedDocumentViewSheet({
     if (!isOpen) {
       setReviewComment("");
       setIsReviewing(false);
+      setIsSendOpen(false);
       setSidePanel("messages");
     }
   }, [isOpen]);
@@ -251,6 +256,9 @@ export function RequestedDocumentViewSheet({
     displayDoc.requested_review.status === "pending" &&
     displayDoc.requested_review.requested_by !== user?.username &&
     (isAssignedToMe || !!canReviewAnyAsRole);
+  const canForwardReview =
+    isMasterAdminRole(user?.role) &&
+    displayDoc.requested_review.status === "pending";
   const canDelete = !isRequestedToMe;
   const iterationCount = displayDoc.review_chain?.filter(
     (e) => e.requested_to_role === "master_admin" || e.requested_to_role === "supervisor"
@@ -345,6 +353,9 @@ export function RequestedDocumentViewSheet({
               </div>
 
               <div className="flex shrink-0 items-center gap-2">
+                {canForwardReview && (
+                  <SendForReviewButton onClick={() => setIsSendOpen(true)} />
+                )}
                 {displayDoc?.record_id && (
                   <div className="flex items-center">
                     <Button
@@ -393,7 +404,12 @@ export function RequestedDocumentViewSheet({
               </div>
             </DialogHeader>
 
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+            <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden lg:flex-row">
+              <SendForReviewOverlay
+                open={isSendOpen}
+                document={displayDoc}
+                onOpenChange={setIsSendOpen}
+              />
               <div className="order-1 flex min-h-0 flex-1 flex-col">
                 <DocumentEmbedPreview
                   className="min-h-0 flex-1 max-lg:min-h-[36vh]"
