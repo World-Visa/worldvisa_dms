@@ -27,11 +27,11 @@ export const ApplicationTableRow = memo(function ApplicationTableRow({
       onClick={() => onClick(application.id)}
     >
       <TableCell className="font-medium">
-        <TruncatedText className="max-w-[28ch]">{application.Name}</TruncatedText>
+        <TruncatedText className="max-w-[18ch] text-sm font-normal">{application.Name}</TruncatedText>
       </TableCell>
       <TableCell>
         <div className="flex items-center gap-1">
-          <TruncatedText className="text-foreground-600 max-w-[32ch] text-sm font-normal">
+          <TruncatedText className="text-foreground-600 max-w-[18ch] text-sm font-normal">
             {application.Email || "—"}
           </TruncatedText>
           {application.Email && (
@@ -72,7 +72,7 @@ export const ApplicationTableRow = memo(function ApplicationTableRow({
         )}
       </TableCell>
       <TableCell className="text-foreground-600 text-sm">
-        <TruncatedText>
+        <TruncatedText className="max-w-[14ch]">
           {application.Created_Time ? formatDate(application.Created_Time, "time") : "—"}
         </TruncatedText>
       </TableCell>

@@ -293,15 +293,10 @@ export default function RequestedDocsClient() {
 
   return (
     <main className="w-full">
-      {/* Page title */}
-      <div className="mb-3">
-        <h1 className="text-xl  text-foreground">Requested Documents</h1>
-      </div>
-
       {/* Tabs row */}
-      <div className="mb-4">
+      <div className="">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList variant="regular" className="border-t-0 px-0">
+          <TabsList variant="regular" className="border-t-0 px-0 -mx-1">
             {isMasterAdmin && (
               <TabsTrigger value="all-requests" variant="regular" size="lg" className="gap-2">
                 All Requests
@@ -339,7 +334,7 @@ export default function RequestedDocsClient() {
       </div>
 
       {/* Filter pills */}
-      <div className="flex flex-wrap items-center gap-2 py-2.5">
+      <div className="flex flex-wrap items-center gap-2 py-2">
         <FacetedFormFilter
           type="text"
           size="small"

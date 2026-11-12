@@ -46,7 +46,7 @@ function CountryTabNav({
   onCountryChange,
 }: CountryTabNavProps) {
   return (
-    <div className="mb-6">
+    <div className="">
       <div className="flex border-b border-gray-200">
         {countries.map((country) => {
           const isActive = selectedCountry === country;
@@ -245,10 +245,7 @@ export const ApplicationsListPage = memo(function ApplicationsListPage({
       />
 
       {/* Title */}
-      <div className="mb-2 flex w-full items-center gap-4 md:justify-between flex-col md:flex-row">
-        <h2 className="text-xl font-medium text-foreground">
-          {getTitle(selectedCountry)}
-        </h2>
+      <div className="flex w-full items-center gap-2 flex-col md:flex-row">
         <ApplicationsFilterBar
           search={search}
           applicationStage={enabledFilters.applicationStage ? applicationStage : []}

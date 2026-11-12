@@ -7,6 +7,7 @@ import { useApplicationDetails } from "@/hooks/useApplicationDetails";
 import { useSpouseApplicationDetails } from "@/hooks/useSpouseApplicationDetails";
 import { ApplicationDetailsResponse } from "@/types/applications";
 import { HighlightText } from "@/components/ui/HighlightText";
+import TruncatedText from "../ui/truncated-text";
 
 interface ClientNameCellProps {
   recordId: string;
@@ -20,16 +21,13 @@ export function ClientNameCell({ recordId, clientName, searchQuery }: ClientName
   if (clientName != null && clientName.trim() !== "") {
     return (
       <div className="flex items-center gap-2">
-        <span
-          className="text-[13px] font-normal text-gray-800 truncate "
-          title={clientName}
-        >
+        <TruncatedText className="max-w-[16ch] text-[13px] font-medium text-text-base capitalize" title={clientName}>
           {hasQuery ? (
             <HighlightText text={clientName} query={searchQuery!} />
           ) : (
             clientName
           )}
-        </span>
+        </TruncatedText>
       </div>
     );
   }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { Toaster } from "@/components/ui/sonner";
@@ -10,10 +10,9 @@ import { ClarityAnalytics } from "@/components/ClarityAnalytics";
 import { ClerkProvider } from "@clerk/nextjs";
 import { ClerkTokenProvider } from "@/components/auth/ClerkTokenProvider";
 
-const outfit = Outfit({
-  variable: "--font-outfit",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
   display: "swap",
 });
 
@@ -47,7 +46,7 @@ export default function RootLayout({
         <meta name="msapplication-TileImage" content="/icons/icon-512x512.png" />
       </head>
       <body
-        className={`${outfit.variable} antialiased`}
+        className={`${inter.variable} antialiased`}
         suppressHydrationWarning={true}
       >
         <ClerkProvider>

@@ -26,3 +26,20 @@ export const isMasterAdminRole = (role: string | undefined | null): boolean =>
 
 export const isClientRole = (role: string | undefined | null): boolean =>
   role === ROLES.CLIENT;
+
+/** Roles each role may send a document review request to. */
+const REVIEW_RECIPIENT_ROLES: Partial<Record<UserRole, UserRole[]>> = {
+  [ROLES.ADMIN]: [ROLES.TEAM_LEADER],
+  [ROLES.TEAM_LEADER]: [ROLES.MASTER_ADMIN, ROLES.SUPERVISOR],
+  [ROLES.MASTER_ADMIN]: [ROLES.MASTER_ADMIN, ROLES.SUPERVISOR],
+  [ROLES.SUPERVISOR]: [
+    ROLES.TEAM_LEADER,
+    ROLES.MASTER_ADMIN,
+    ROLES.ADMIN,
+    ROLES.SUPERVISOR,
+  ],
+};
+
+export const getReviewRecipientRoles = (
+  role: string | undefined | null,
+): UserRole[] => REVIEW_RECIPIENT_ROLES[role as UserRole] ?? [];
